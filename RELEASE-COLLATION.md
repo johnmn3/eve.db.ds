@@ -1,5 +1,9 @@
 # RELEASE-COLLATION — eve.db.ds release/0.1
 
+## Translation rule (standing)
+
+Every incoming fix comes from trees that still use the old names. Before it is collated here it is translated, mechanically and scripted: `datascript.*` -> `eve.db.ds.*` (namespaces, requires, fully-qualified symbols, keyword namespaces such as `:datascript.db/cmp-eavt`), `datascript/X` reader tags -> `eve.db.ds/X`, `datascript/<file>` source paths -> `eve/db/ds/<file>` (lib-ds/datascript/ -> src/eve/db/ds/), `datascript-on-eve` coordinates -> `eve.db.ds`. Not translated: `me.tonsky.persistent-sorted-set` and `extend-clj` (separate libraries). There is no compatibility with the old names (operator ruling). After translating, `grep datascript` over the touched files must show only the README attribution line. The translated fix runs check-dup-features.py and the paren-balance check before it is proven.
+
 One line per PROVEN DS-port fix: fix | source commit | proof. A fix is listed only after its proof ran; nothing waiting on proof is here.
 
 | fix | source commit | proof |
