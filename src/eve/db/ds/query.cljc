@@ -1,4 +1,5 @@
 (ns ^:no-doc eve.db.ds.query
+  #?(:cljs (:require-macros [eve.db.ds.eve-record :refer [def-eve-record]]))
   (:require
     ;; PORT DELTA (F-JANK-READER-LIBSPEC): see eve.db.ds.core — the
     ;; #?-inside-libspec form is not portable (jank's loader rejects
@@ -12,6 +13,7 @@
     [clojure.walk :as walk]
     [eve.db.ds.built-ins :as built-ins]
     [eve.db.ds.db :as db]
+    [eve.db.ds.eve-record :refer [def-eve-record]]
     [me.tonsky.persistent-sorted-set.arrays :as da]
     [eve.db.ds.lru :as lru]
     [eve.db.ds.impl.entity :as de]
@@ -45,14 +47,14 @@
 
 ;; Records
 
-(defrecord Context [rels sources rules])
+(def-eve-record Context [rels sources rules])
 
 ;; attrs:
 ;;    {?e 0, ?v 1} or {?e2 "a", ?age "v"}
 ;; tuples:
 ;;    [#js [1 "Ivan" 5 14] ...]
 ;; or [(Datom. 2 "Oleg" 1 55) ...]
-(defrecord Relation [attrs tuples])
+(def-eve-record Relation [attrs tuples])
 
 #?(:clj
    (defmethod print-method Relation [r, ^java.io.Writer w]
@@ -230,14 +232,14 @@
                         (conj! acc tuple')))
                     (transient (vec tuples-a))
                     tuples-b))]
-    (Relation. attrs-a tuples')))
+    (->Relation attrs-a tuples')))
 
 (defn sum-rel [a b]
   (let [{attrs-a :attrs, tuples-a :tuples} a
         {attrs-b :attrs, tuples-b :tuples} b]
     (cond
       (= attrs-a attrs-b)
-      (Relation. attrs-a (into (vec tuples-a) tuples-b))
+      (->Relation attrs-a (into (vec tuples-a) tuples-b))
 
       ;; BEFORE checking same-keys
       ;; because one rel could have had its resolution shortcircuited
@@ -258,13 +260,13 @@
 
 (defn prod-rel
   ([]
-   (Relation. {} [(da/make-array 0)]))
+   (->Relation {} [(da/make-array 0)]))
   ([rel1 rel2]
    (let [attrs1 (keys (:attrs rel1))
          attrs2 (keys (:attrs rel2))
          idxs1  (to-array (map (:attrs rel1) attrs1))
          idxs2  (to-array (map (:attrs rel2) attrs2))]
-     (Relation.
+     (->Relation
        (zipmap (concat attrs1 attrs2) (range))
        (persistent!
          (reduce
@@ -284,7 +286,7 @@
 (defn empty-rel [binding]
   (let [vars (->> (dp/collect-vars-distinct binding)
                (map :symbol))]
-    (Relation. (zipmap vars (range)) [])))
+    (->Relation (zipmap vars (range)) [])))
 
 (defprotocol IBinding
   (in->rel [binding value]))
@@ -296,7 +298,7 @@
   
   #?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/BindScalar :clje dp/BindScalar :lpy dp/BindScalar)
   (in->rel [binding value]
-    (Relation. {(get-in binding [:variable :symbol]) 0} [(into-array [value])]))
+    (->Relation {(get-in binding [:variable :symbol]) 0} [(into-array [value])]))
   
   #?(:jank dp/BindColl :clj BindColl :cljr BindColl :cljs dp/BindColl :clje dp/BindColl :lpy dp/BindColl)
   (in->rel [binding coll]
@@ -508,7 +510,7 @@
                                       acc)))
                           (transient []))
                         (persistent!))]
-    (Relation. (zipmap (concat keep-attrs1 keep-attrs2) (range))
+    (->Relation (zipmap (concat keep-attrs1 keep-attrs2) (range))
       new-tuples)))
 
 (defn subtract-rel [a b]
@@ -571,7 +573,7 @@
         attr->prop     (->> (map vector pattern ["e" "a" "v" "tx"])
                          (filter (fn [[s _]] (free-var? s)))
                          (into {}))]
-    (Relation. attr->prop datoms)))
+    (->Relation attr->prop datoms)))
 
 (defn matches-pattern? [pattern tuple]
   (loop [tuple   tuple
@@ -589,7 +591,7 @@
         attr->idx  (->> (map vector pattern (range))
                      (filter (fn [[s _]] (free-var? s)))
                      (into {}))]
-    (Relation. attr->idx (mapv to-array data)))) ;; FIXME to-array
+    (->Relation attr->idx (mapv to-array data)))) ;; FIXME to-array
 
 (defn normalize-pattern-clause [clause]
   (if (source? (first clause))
@@ -725,7 +727,7 @@
                                         :when (not (nil? val))]
                                     (reduce prod-rel
                                       (collapse-rels
-                                         [(Relation. (:attrs production) [tuple])]
+                                         [(->Relation (:attrs production) [tuple])]
                                          (in->rel binding val))))]
                      (if (empty? rels)
                        (prod-rel
@@ -821,7 +823,7 @@
                         :clauses        [clause]
                         :used-args      {}
                         :pending-guards {}})
-           rel   (Relation. final-attrs-map [])]
+           rel   (->Relation final-attrs-map [])]
       (if-some [frame (first stack)]
         (let [[clauses [rule-clause & next-clauses]] (split-with #(not (rule? context %)) (:clauses frame))]
           (if (nil? rule-clause)
@@ -829,7 +831,7 @@
             ;; no rules -> expand, collect, sum
             (let [context (solve (:prefix-context frame) clauses)
                   tuples  (util/distinct-by vec (-collect context final-attrs))
-                  new-rel (Relation. final-attrs-map tuples)]
+                  new-rel (->Relation final-attrs-map tuples)]
               (recur (next stack) (sum-rel rel new-rel)))
 
             ;; has rule -> add guards -> check if dead -> expand rule -> push to stack, recur
@@ -1004,7 +1006,7 @@
   (if (some #(empty? (:tuples %)) (:rels context))
     (assoc context
       :rels
-      [(Relation.
+      [(->Relation
          (zipmap (mapcat #(keys (:attrs %)) (:rels context)) (range))
          [])])
     context))
@@ -1181,7 +1183,7 @@
         q             (cond-> q
                         (sequential? q) dp/query->map)
         wheres        (:where q)
-        context       (-> (Context. [] {} {})
+        context       (-> (->Context [] {} {})
                         (resolve-ins (:qin parsed-q) inputs))
         resultset     (-> context
                         (-q wheres)

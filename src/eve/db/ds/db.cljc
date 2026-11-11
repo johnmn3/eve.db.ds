@@ -24,13 +24,15 @@
     ;; every host — the per-host require branch is gone (ledger rows
     ;; db.cljc:22 et al.).
     [eve.deftype :refer [deftype]]
+    [eve.db.ds.eve-record :refer [def-eve-record]]
     [me.tonsky.persistent-sorted-set :as set]
     [me.tonsky.persistent-sorted-set.arrays :as arrays])
   ;; PORT DELTA (D6, PORTING-DS.md): vanilla's (:import
   ;; clojure.lang.IFn$OOL) is gone — SCI hosts (bb) cannot register
   ;; that class, and its only use was defcomp's invokePrim arm,
   ;; which D6 drops. The ns needs no :import on the :clj read.
-  #?(:cljs (:require-macros [eve.db.ds.db :refer [case-tree combine-cmp defn+ defcomp defrecord-updatable int-compare validate-attr validate-val]]))
+  #?(:cljs (:require-macros [eve.db.ds.db :refer [case-tree combine-cmp defn+ defcomp defrecord-updatable int-compare validate-attr validate-val]]
+                            [eve.db.ds.eve-record :refer [def-eve-record]]))
   (:refer-clojure :exclude [seqable? #?(:clj update) deftype]))
 
 #?(:clj (set! *warn-on-reflection* true) :cljr (set! *warn-on-reflection* true))
@@ -1686,28 +1688,21 @@
                        (-assoc [_ _ _]       (throw (enc/unsupported "-assoc is not supported on FilteredDB")))
 
   ICollection          (-conj [db o]       (throw (enc/unsupported "cons is not supported on FilteredDB")))
-
   IDB
   (-schema [db]
     (-schema (.-unfiltered-db db)))
-
   (-attrs-by [db property]
     (-attrs-by (.-unfiltered-db db) property))
-
   ISearch
   (-search [db pattern]
     (filter (.-pred db) (-search (.-unfiltered-db db) pattern)))
-
   IIndexAccess
   (-datoms [db index c0 c1 c2 c3]
     (filter (.-pred db) (-datoms (.-unfiltered-db db) index c0 c1 c2 c3)))
-
   (-seek-datoms [db index c0 c1 c2 c3]
     (filter (.-pred db) (-seek-datoms (.-unfiltered-db db) index c0 c1 c2 c3)))
-
   (-rseek-datoms [db index c0 c1 c2 c3]
     (filter (.-pred db) (-rseek-datoms (.-unfiltered-db db) index c0 c1 c2 c3)))
-
   (-index-range [db attr start end]
     (filter (.-pred db) (-index-range (.-unfiltered-db db) attr start end))))
 
@@ -2141,7 +2136,7 @@
 
 ;; ----------------------------------------------------------------------------
 
-(defrecord TxReport [db-before db-after tx-data tempids tx-meta])
+(def-eve-record TxReport [db-before db-after tx-data tempids tx-meta])
 
 (defn+ ^boolean is-attr? [db attr property]
   (contains? (-attrs-by db property) attr))

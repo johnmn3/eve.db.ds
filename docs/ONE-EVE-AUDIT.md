@@ -1,0 +1,752 @@
+# ONE-EVE-AUDIT
+
+Scope: every lexical `#?(`/`#?@(` in `src/` at main `473fb050` (376), comments and strings excluded, nested openings counted once. Method: `scripts/one_eve_counts.py`.
+
+Baseline: **376** host branches, **20** plain type sites at `473fb050`.
+After unit 1 (ab142948): 349 / 15.
+After unit 2 (584e364): 346 / 15.
+After LRU Counted (30f1d19): 346 / 15.
+After unit 3 (this commit, working tree): **342** / **0**.
+
+Plain type sites (deftype/defrecord/defrecord-updatable that are not eve-deftype / eve.deftype/deftype) are **0**. Remaining `(deftype …)` forms in source are eve.deftype/deftype (LRU, Entity, AutoTempid, FilteredDB, ArrayRelation, CollRelation, SingletonRelation) or evicted through `def-eve-record` / `deftrecord`.
+
+Kept branches still include portable/glue work owned by vm (non-record host-branch removal). A kept row is **glue** only when it is loader/require-macros wiring that does not touch data, memory, threading, or HTTP; otherwise it is **open** for vm.
+
+## Original 376 branches
+
+| # | file | line at 473fb050 | snippet | status | reason |
+|---|------|------------------|---------|--------|--------|
+| 1 | `eve/db/ds/built_ins.cljc` | 127 | `(#?(:cljs js/Math.sqrt :clj Math/sqrt :cljr Math/Sqrt) (aggregate-variance coll)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 2 | `eve/db/ds/conn.cljc` | 8 | `#?(:lpy [eve.deftype :refer [deftype]])` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 3 | `eve/db/ds/conn.cljc` | 13 | `#?(:clje [eve.host :refer [volatile! swap! reset! compare-and-set! locking]]))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 4 | `eve/db/ds/conn.cljc` | 14 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 5 | `eve/db/ds/conn.cljc` | 30 | `#?(:jank  (if (identical? (:db @atom) oldv) @atom (assoc @atom :db oldv))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 6 | `eve/db/ds/conn.cljc` | 41 | `(if (instance? #?(:jank db/FilteredDB :clj FilteredDB :cljr FilteredDB :cljs db/` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 7 | `eve/db/ds/conn.cljc` | 45 | `(defn #?@(:jank [^db/DB db-with] :clj [^DB db-with] :cljr [^DB db-with] :cljs [^` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 8 | `eve/db/ds/conn.cljc` | 53 | `#?(:clj  (instance? clojure.lang.IDeref conn) :cljr (instance? clojure.lang.IDer` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 9 | `eve/db/ds/conn.cljc` | 87 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 10 | `eve/db/ds/conn.cljc` | 114 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 11 | `eve/db/ds/conn.cljc` | 189 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 12 | `eve/db/ds/core.cljc` | 9 | `#?(:cljs [cljs.reader :as edn]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 13 | `eve/db/ds/core.cljc` | 16 | `#?(:clj [eve.db.ds.pprint])` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 14 | `eve/db/ds/core.cljc` | 24 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 15 | `eve/db/ds/core.cljc` | 39 | `(def ^{:tag #?(:jank de/Entity :clj Entity :cljr Entity :cljs de/Entity :clje de` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 16 | `eve/db/ds/core.cljc` | 97 | `(defn #?@(:jank [^db/DB entity-db] :clj [^DB entity-db] :cljr [^DB entity-db] :c` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 17 | `eve/db/ds/core.cljc` | 99 | `[#?@(:jank [^de/Entity entity] :clj [^Entity entity] :cljr [^Entity entity] :clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 18 | `eve/db/ds/core.cljc` | 103 | `(def ^{:tag #?(:jank de/Entity :clj Entity :cljr Entity :cljs de/Entity :clje de` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 19 | `eve/db/ds/core.cljc` | 163 | `(defn #?@(:jank [^db/DB empty-db] :clj [^DB empty-db] :cljr [^DB empty-db] :cljs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 20 | `eve/db/ds/core.cljc` | 194 | `(def ^{:tag #?(:jank db/Datom :clj Datom :cljr Datom :cljs db/Datom :clje db/Dat` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 21 | `eve/db/ds/core.cljc` | 207 | `(defn #?@(:jank [^db/DB init-db] :clj [^DB init-db] :cljr [^DB init-db] :cljs [^` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 22 | `eve/db/ds/core.cljc` | 233 | `(def ^{:tag #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :lpy db/DB)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 23 | `eve/db/ds/core.cljc` | 257 | `(instance? #?(:jank db/FilteredDB :clj FilteredDB :cljr FilteredDB :cljs db/Filt` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 24 | `eve/db/ds/core.cljc` | 271 | `(let [#?@(:jank [^db/FilteredDB fdb] :clj [^FilteredDB fdb] :cljr [^FilteredDB f` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 25 | `eve/db/ds/core.cljc` | 277 | `#?(:jank (db/->FilteredDB orig-db #(and (orig-pred %) (pred orig-db %)) (atom 0)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 26 | `eve/db/ds/core.cljc` | 281 | `#?(:jank (db/->FilteredDB db #(pred db %) (atom 0))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 27 | `eve/db/ds/core.cljc` | 293 | `(def ^{:arglists '([db tx-data]) :tag #?(:jank db/DB :clj DB :cljr DB :cljs db/D` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 28 | `eve/db/ds/core.cljc` | 297 | `(defn #?@(:jank [^db/DB with-schema] :clj [^DB with-schema] :cljr [^DB with-sche` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 29 | `eve/db/ds/core.cljc` | 381 | `(defn #?@(:jank [^db/Datom find-datom] :clj [^Datom find-datom] :cljr [^Datom fi` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 30 | `eve/db/ds/core.cljc` | 488 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 31 | `eve/db/ds/core.cljc` | 615 | `#?(:cljs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 32 | `eve/db/ds/core.cljc` | 628 | `#?(:lpy` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 33 | `eve/db/ds/core.cljc` | 656 | `(defn #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db/DB db] :clje` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 34 | `eve/db/ds/core.cljc` | 672 | `#?(:cljs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 35 | `eve/db/ds/core.cljc` | 714 | `#?(:clje` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 36 | `eve/db/ds/core.cljc` | 723 | `#?(:cljs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 37 | `eve/db/ds/core.cljc` | 760 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 38 | `eve/db/ds/core.cljc` | 767 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 39 | `eve/db/ds/core.cljc` | 784 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 40 | `eve/db/ds/core.cljc` | 791 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 41 | `eve/db/ds/core.cljc` | 802 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 42 | `eve/db/ds/core.cljc` | 811 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 43 | `eve/db/ds/db.cljc` | 3 | `#?(:cljs [goog.array :as garray])` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 44 | `eve/db/ds/db.cljc` | 6 | `#?(:clj [eve.db.ds.inline :refer [update]])` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 45 | `eve/db/ds/db.cljc` | 8 | `#?(:clje [eve.host :refer [transient persistent! conj! dissoc! long volatile!]])` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 46 | `eve/db/ds/db.cljc` | 22 | `#?(:lpy [eve.deftype :refer [deftype]])` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 47 | `eve/db/ds/db.cljc` | 29 | `#?(:cljs (:require-macros [eve.db.ds.db :refer [case-tree combine-cmp defn+ defc` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 48 | `eve/db/ds/db.cljc` | 30 | `(:refer-clojure :exclude [seqable? #?(:clj update)]))` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 49 | `eve/db/ds/db.cljc` | 32 | `#?(:clj (set! *warn-on-reflection* true) :cljr (set! *warn-on-reflection* true))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 50 | `eve/db/ds/db.cljc` | 36 | `#?(:cljs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 51 | `eve/db/ds/db.cljc` | 59 | `(do #?@(:clj [(defn ^Boolean seqable? [x] (and (not (string? x))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 52 | `eve/db/ds/db.cljc` | 60 | `#?@(:clj [(or (seq? x)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 53 | `eve/db/ds/db.cljc` | 79 | `#?@(:clj [(or (seq? x)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 54 | `eve/db/ds/db.cljc` | 105 | `#?@(:clj [(or (seq? x)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 55 | `eve/db/ds/db.cljc` | 128 | `#?(:clje (defn seqable? [x] (and (not (string? x))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 56 | `eve/db/ds/db.cljc` | 141 | `(do #?@(:clj [(defn- cljs-env?` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 57 | `eve/db/ds/db.cljc` | 164 | `#?(:clje (defn- cljs-env?` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 58 | `eve/db/ds/db.cljc` | 168 | `(do #?@(:clj [(defmacro if-cljs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 59 | `eve/db/ds/db.cljc` | 188 | `#?(:clje (defmacro if-cljs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 60 | `eve/db/ds/db.cljc` | 192 | `(do #?@(:clj [(defn patch-tag [meta cljs-env?]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 61 | `eve/db/ds/db.cljc` | 225 | `#?(:clje (defn patch-tag` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 62 | `eve/db/ds/db.cljc` | 238 | `(do #?@(:clj [(defmacro defn+` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 63 | `eve/db/ds/db.cljc` | 322 | `#?(:clje (defmacro defn+` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 64 | `eve/db/ds/db.cljc` | 348 | `#?(:clje (defn- hash-combine* [seed hash]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 65 | `eve/db/ds/db.cljc` | 358 | `#?@(:clj [(clojure.lang.Util/hashCombine x y)] :cljr [(clojure.lang.Util/hashCom` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 66 | `eve/db/ds/db.cljc` | 363 | `(do #?@(:clj [   (defn- get-sig [method]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 67 | `eve/db/ds/db.cljc` | 387 | `#?(:clje (defn- get-sig [& _args] nil))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 68 | `eve/db/ds/db.cljc` | 389 | `(do #?@(:clj [   (defn- dedupe-interfaces [deftype-form]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 69 | `eve/db/ds/db.cljc` | 407 | `#?(:clje (defn- dedupe-interfaces [& _args] nil))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 70 | `eve/db/ds/db.cljc` | 409 | `(do #?@(:clj [(defn- make-record-updatable-cljs [name fields & impls]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 71 | `eve/db/ds/db.cljc` | 431 | `#?(:clje (defn- make-record-updatable-cljs [name fields & impls]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 72 | `eve/db/ds/db.cljc` | 436 | `(do #?@(:clj [(defn- make-record-updatable-clj [name fields & impls]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 73 | `eve/db/ds/db.cljc` | 480 | `#?(:clje (defn- make-record-updatable-clj [name fields & impls]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 74 | `eve/db/ds/db.cljc` | 483 | `(do #?@(:clj [(defmacro defrecord-updatable [name fields & impls]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 75 | `eve/db/ds/db.cljc` | 497 | `#?(:clje (defmacro defrecord-updatable [name fields & impls]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 76 | `eve/db/ds/db.cljc` | 515 | `#?(:clj  (declare hash-datom) :cljr (declare hash-datom)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 77 | `eve/db/ds/db.cljc` | 520 | `#?(:clj  (declare equiv-datom) :cljr (declare equiv-datom)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 78 | `eve/db/ds/db.cljc` | 525 | `#?(:clj  (declare seq-datom) :cljr (declare seq-datom)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 79 | `eve/db/ds/db.cljc` | 530 | `#?(:clj  (declare nth-datom) :cljr (declare nth-datom)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 80 | `eve/db/ds/db.cljc` | 535 | `#?(:clj  (declare assoc-datom) :cljr (declare assoc-datom)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 81 | `eve/db/ds/db.cljc` | 540 | `#?(:clj  (declare val-at-datom) :cljr (declare val-at-datom)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 82 | `eve/db/ds/db.cljc` | 577 | `(empty [d] (throw #?(:cljr (System.NotSupportedException. "empty is not supporte` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 83 | `eve/db/ds/db.cljc` | 596 | `#?(:clje (vector k)` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 84 | `eve/db/ds/db.cljc` | 607 | `#?(:cljs (goog/exportSymbol "eve.db.ds.db.Datom" Datom))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 85 | `eve/db/ds/db.cljc` | 662 | `#?@(:clj [(throw (IndexOutOfBoundsException.))] :cljr [(throw (System.IndexOutOf` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 86 | `eve/db/ds/db.cljc` | 686 | `(throw #?(:clje (ex-info (str "invalid key for #eve.db.ds/Datom: " k) {})` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 87 | `eve/db/ds/db.cljc` | 697 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 88 | `eve/db/ds/db.cljc` | 710 | `(do #?@(:clj [(defmacro combine-cmp [& comps]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 89 | `eve/db/ds/db.cljc` | 758 | `#?(:clje (defmacro combine-cmp [& comps]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 90 | `eve/db/ds/db.cljc` | 770 | `(do #?@(:clj [(defn- -case-tree [queries variants]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 91 | `eve/db/ds/db.cljc` | 805 | `#?(:clje (defn- -case-tree [queries variants]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 92 | `eve/db/ds/db.cljc` | 814 | `(do #?@(:clj [(defmacro case-tree [qs vs]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 93 | `eve/db/ds/db.cljc` | 822 | `#?(:clje (defmacro case-tree [qs vs]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 94 | `eve/db/ds/db.cljc` | 826 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 95 | `eve/db/ds/db.cljc` | 838 | `#?(:clj  {:inline (fn [x y] `(identical? (class ~x) (class ~y)))} :cljr {:inline` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 96 | `eve/db/ds/db.cljc` | 840 | `#?@(:clj [(identical? (class x) (class y))] :cljr [(identical? (class x) (class ` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 97 | `eve/db/ds/db.cljc` | 845 | `(do #?@(:jank [   (defn class-name` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 98 | `eve/db/ds/db.cljc` | 866 | `#?(:clje (defn class-name` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 99 | `eve/db/ds/db.cljc` | 872 | `#?@(:clj [(long (compare (class-name x) (class-name y)))] :cljr [(long (compare ` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 100 | `eve/db/ds/db.cljc` | 877 | `(do #?@(:jank [(defmacro int-compare [x y]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 101 | `eve/db/ds/db.cljc` | 898 | `#?(:clje (defmacro int-compare [x y]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 102 | `eve/db/ds/db.cljc` | 903 | `(do #?@(:jank [(defn ihash` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 103 | `eve/db/ds/db.cljc` | 920 | `#?(:clje (defn ihash` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 104 | `eve/db/ds/db.cljc` | 924 | `(do #?@(:clj [(declare value-compare)] :cljr [(declare value-compare)]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 105 | `eve/db/ds/db.cljc` | 928 | `#?(:clje (declare value-compare))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 106 | `eve/db/ds/db.cljc` | 974 | `#?@(:clj  [(instance? Number x)       (compare x y)] :cljr [(number? x)         ` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 107 | `eve/db/ds/db.cljc` | 976 | `#?@(:clj  [(instance? Comparable x)   (compare x y)] :cljr [(instance? System.IC` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 108 | `eve/db/ds/db.cljc` | 980 | `#?@(:cljs [(or (number? x) (string? x) (array? x) (true? x) (false? x)) (garray/` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 109 | `eve/db/ds/db.cljc` | 982 | `(catch #?@(:clj [ClassCastException] :cljr [System.InvalidCastException]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 110 | `eve/db/ds/db.cljc` | 991 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 111 | `eve/db/ds/db.cljc` | 1009 | `(do #?@(:jank [(defmacro defcomp [sym [arg1 arg2] & body]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 112 | `eve/db/ds/db.cljc` | 1054 | `#?(:clje (defmacro defcomp [sym [arg1 arg2] & body]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 113 | `eve/db/ds/db.cljc` | 1084 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 114 | `eve/db/ds/db.cljc` | 1092 | `#?@(:clj [(long (compare a1 a2))] :cljr [(long (compare a1 a2))]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 115 | `eve/db/ds/db.cljc` | 1159 | `(catch #?@(:clj [ClassCastException] :cljr [System.InvalidCastException]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 116 | `eve/db/ds/db.cljc` | 1172 | `(do #?@(:clj [(declare hash-db pr-db)] :cljr [(declare hash-db pr-db)]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 117 | `eve/db/ds/db.cljc` | 1179 | `#?(:clje (declare hash-db pr-db))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 118 | `eve/db/ds/db.cljc` | 1181 | `(do #?@(:clj [(declare hash-fdb)] :cljr [(declare hash-fdb)]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 119 | `eve/db/ds/db.cljc` | 1185 | `#?(:clje (declare hash-fdb))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 120 | `eve/db/ds/db.cljc` | 1187 | `(do #?@(:clj [(declare equiv-db)] :cljr [(declare equiv-db)]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 121 | `eve/db/ds/db.cljc` | 1191 | `#?(:clje (declare equiv-db))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 122 | `eve/db/ds/db.cljc` | 1193 | `(do #?@(:clj [(declare restore-db)] :cljr [(declare restore-db)]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 123 | `eve/db/ds/db.cljc` | 1197 | `#?(:clje (declare restore-db))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 124 | `eve/db/ds/db.cljc` | 1199 | `(do #?@(:clj [(declare indexing?)] :cljr [(declare indexing?)]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 125 | `eve/db/ds/db.cljc` | 1203 | `#?(:clje (declare indexing?))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 126 | `eve/db/ds/db.cljc` | 1205 | `#?(:cljs (defn pr-db [db w opts]))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 127 | `eve/db/ds/db.cljc` | 1207 | `(do #?@(:clj [(declare resolve-datom)] :cljr [(declare resolve-datom)]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 128 | `eve/db/ds/db.cljc` | 1211 | `#?(:clje (declare resolve-datom))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 129 | `eve/db/ds/db.cljc` | 1213 | `(do #?@(:clj [(declare components->pattern)] :cljr [(declare components->pattern` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 130 | `eve/db/ds/db.cljc` | 1217 | `#?(:clje (declare components->pattern))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 131 | `eve/db/ds/db.cljc` | 1221 | `(do #?@(:clj [(defmacro validate-attr [attr at]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 132 | `eve/db/ds/db.cljc` | 1255 | `#?(:clje (defmacro validate-attr [attr at]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 133 | `eve/db/ds/db.cljc` | 1264 | `(do #?@(:clj [(defmacro validate-val [v at]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 134 | `eve/db/ds/db.cljc` | 1284 | `#?(:clje (defmacro validate-val [v at]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 135 | `eve/db/ds/db.cljc` | 1329 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 136 | `eve/db/ds/db.cljc` | 1367 | `#?(:lpy (declare -schema -attrs-by -search -datoms -seek-datoms -rseek-datoms -i` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 137 | `eve/db/ds/db.cljc` | 1373 | `#?(:lpy (declare multival?))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 138 | `eve/db/ds/db.cljc` | 1387 | `(let [entry #?(:clj  (fn [k v] (clojure.lang.MapEntry. k v)) :cljr (fn [k v] (cl` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 139 | `eve/db/ds/db.cljc` | 1416 | `#?(:bb (seq x) :default x))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 140 | `eve/db/ds/db.cljc` | 1453 | `#?(:clje [k v]` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 141 | `eve/db/ds/db.cljc` | 1496 | `(-schema [db] #?(:clje schema` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 142 | `eve/db/ds/db.cljc` | 1508 | `pred       #?(:clj  (vpred v)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 143 | `eve/db/ds/db.cljc` | 1566 | `#?(:bb  (seq (set/slice (get db index)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 144 | `eve/db/ds/db.cljc` | 1630 | `#?(:clje` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 145 | `eve/db/ds/db.cljc` | 1643 | `#?@(:jank [(and (satisfies? ISearch x)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 146 | `eve/db/ds/db.cljc` | 1678 | `#?@(:cljs` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 147 | `eve/db/ds/db.cljc` | 1767 | `(defn #?@(:clj [^DB unfiltered-db] :cljr [^DB unfiltered-db] :cljs [^DB unfilter` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 148 | `eve/db/ds/db.cljc` | 2031 | `#?(:cljs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 149 | `eve/db/ds/db.cljc` | 2056 | `#?(:lpy` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 150 | `eve/db/ds/db.cljc` | 2066 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 151 | `eve/db/ds/db.cljc` | 2096 | `(do #?@(:clj [(declare entid-strict)] :cljr [(declare entid-strict)]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 152 | `eve/db/ds/db.cljc` | 2100 | `#?(:clje (declare entid-strict))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 153 | `eve/db/ds/db.cljc` | 2102 | `(do #?@(:clj [(declare ref?)] :cljr [(declare ref?)]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 154 | `eve/db/ds/db.cljc` | 2106 | `#?(:clje (declare ref?))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 155 | `eve/db/ds/db.cljc` | 2108 | `(do #?@(:clj [(declare tuple?)] :cljr [(declare tuple?)]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 156 | `eve/db/ds/db.cljc` | 2112 | `#?(:clje (declare tuple?))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 157 | `eve/db/ds/db.cljc` | 2114 | `(do #?@(:clj [(declare resolve-tuple-refs)] :cljr [(declare resolve-tuple-refs)]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 158 | `eve/db/ds/db.cljc` | 2118 | `#?(:clje (declare resolve-tuple-refs))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 159 | `eve/db/ds/db.cljc` | 2142 | `cmp     #?(:bb (case index` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 160 | `eve/db/ds/db.cljc` | 2179 | `datom   #?(:bb (first (set/slice set from to))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 161 | `eve/db/ds/db.cljc` | 2265 | `(do #?@(:clj [(defn-  ^Boolean tuple-ref-slot? [db schema-a idx] (cond` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 162 | `eve/db/ds/db.cljc` | 2284 | `#?(:clje (defn- tuple-ref-slot? [db schema-a idx] (cond` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 163 | `eve/db/ds/db.cljc` | 2289 | `(do #?@(:clj [(defn-  ^Boolean resolved-eid? [x] (or` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 164 | `eve/db/ds/db.cljc` | 2301 | `#?(:clje (defn- resolved-eid? [x] (or` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 165 | `eve/db/ds/db.cljc` | 2353 | `#?@(:cljs [(array? eid) (recur db (array-seq eid))])` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 166 | `eve/db/ds/db.cljc` | 2382 | `#?@(:cljs` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 167 | `eve/db/ds/db.cljc` | 2402 | `#?(:clj` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 168 | `eve/db/ds/db.cljc` | 2468 | `#?(:clj {:inline (fn [report] `(-> ~report :db-before :max-tx long inc))} :cljr ` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 169 | `eve/db/ds/db.cljc` | 2473 | `#?(:clj {:inline (fn [db] `(inc (long (:max-eid ~db))))} :cljr {:inline (fn [db]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 170 | `eve/db/ds/db.cljc` | 2477 | `(do #?@(:clj [(defn- ^Boolean tx-id?` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 171 | `eve/db/ds/db.cljc` | 2507 | `#?(:clje (defn- tx-id?` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 172 | `eve/db/ds/db.cljc` | 2514 | `(do #?@(:clj [(defn-  ^Boolean tempid? [x] (or` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 173 | `eve/db/ds/db.cljc` | 2530 | `#?(:clje (defn- tempid? [x] (or` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 174 | `eve/db/ds/db.cljc` | 2654 | `(do #?@(:clj [(defn-  ^Boolean tuple-has-tempids? [db a vs] (and` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 175 | `eve/db/ds/db.cljc` | 2714 | `#?(:clje (defn- tuple-has-tempids? [db a vs] (and` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 176 | `eve/db/ds/db.cljc` | 2891 | `(do #?@(:clj [(declare transact-tx-data-impl)] :cljr [(declare transact-tx-data-` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 177 | `eve/db/ds/db.cljc` | 2895 | `#?(:clje (declare transact-tx-data-impl))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 178 | `eve/db/ds/impl/entity.cljc` | 15 | `#?@(:cljs [[cljs.core :as c]]` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 179 | `eve/db/ds/impl/entity.cljc` | 22 | `#?(:lpy [eve.deftype :refer [deftype]])` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 180 | `eve/db/ds/impl/entity.cljc` | 24 | `#?(:clje [eve.host :refer [volatile!]])` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 181 | `eve/db/ds/impl/entity.cljc` | 54 | `#?(:bb (reduce #(conj %1 (entity db (:v %2))) [] datoms)` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 182 | `eve/db/ds/impl/entity.cljc` | 66 | `#?(:bb (reduce #(conj %1 (entity db (:e %2))) [] datoms)` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 183 | `eve/db/ds/impl/entity.cljc` | 70 | `#?(:cljs` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 184 | `eve/db/ds/impl/entity.cljc` | 74 | `#?(:cljs` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 185 | `eve/db/ds/impl/entity.cljc` | 82 | `#?(:cljs` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 186 | `eve/db/ds/impl/entity.cljc` | 87 | `#?(:cljs` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 187 | `eve/db/ds/impl/entity.cljc` | 93 | `#?@(:cljs` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 188 | `eve/db/ds/impl/entity.cljc` | 155 | `#?(:clje (vector k)` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 189 | `eve/db/ds/impl/entity.cljc` | 184 | `#?(:clje (vector k)` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 190 | `eve/db/ds/impl/entity.cljc` | 226 | `#?(:clje (vector k)` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 191 | `eve/db/ds/impl/entity.cljc` | 291 | `#?(:cljs` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 192 | `eve/db/ds/impl/entity.cljc` | 299 | `#?(:clj` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 193 | `eve/db/ds/impl/entity.cljc` | 319 | `(#?(:clj System/identityHashCode :cljr System.Runtime.CompilerServices.RuntimeHe` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 194 | `eve/db/ds/impl/entity.cljc` | 344 | `#?(:cljs` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 195 | `eve/db/ds/impl/entity.cljc` | 408 | `#?(:cljs (goog/exportSymbol "eve.db.ds.impl.entity.Entity" Entity))` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 196 | `eve/db/ds/lru.cljc` | 14 | `#?(:lpy  (:require [eve.deftype :refer [deftype]])` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 197 | `eve/db/ds/lru.cljc` | 20 | `#?(:cljs` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 198 | `eve/db/ds/lru.cljc` | 163 | `#?(:lpy` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 199 | `eve/db/ds/lru.cljc` | 185 | `(let [*impl #?(:clje (atom (lru limit))` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 200 | `eve/db/ds/lru.cljc` | 193 | `(do #?(:clje (swap! *impl assoc key cached)` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 201 | `eve/db/ds/lru.cljc` | 200 | `#?(:clje (swap! *impl assoc key computed)` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 202 | `eve/db/ds/parser.cljc` | 3 | `#?(:cljs (:require-macros [eve.db.ds.parser :refer [deftrecord]]))` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 203 | `eve/db/ds/parser.cljc` | 18 | `#?(:jank (defmacro deftrecord` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 204 | `eve/db/ds/parser.cljc` | 126 | `#?(:clje (defmacro deftrecord` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 205 | `eve/db/ds/pull_api.cljc` | 12 | `#?(:clje [eve.host :refer [transient persistent! conj! assoc! volatile!]]))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 206 | `eve/db/ds/pull_api.cljc` | 13 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 207 | `eve/db/ds/pull_api.cljc` | 46 | `(defn- first-seq [#?(:bb xs :clj ^ISeq xs :cljs ^seq xs :clje xs :cljr xs :lpy x` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 208 | `eve/db/ds/pull_api.cljc` | 49 | `#?(:bb (first xs) :clj (first xs) :cljr (first xs) :cljs (-first xs) :clje (firs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 209 | `eve/db/ds/pull_api.cljc` | 51 | `(defn- next-seq [#?(:bb xs :clj ^ISeq xs :cljs ^seq xs :clje xs :cljr xs :lpy xs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 210 | `eve/db/ds/pull_api.cljc` | 54 | `#?(:bb (next xs) :clj (next xs) :cljr (next xs) :cljs (-next xs) :clje (next xs)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 211 | `eve/db/ds/pull_api.cljc` | 56 | `(defn- conj-seq [#?(:bb xs :clj ^ISeq xs :cljs ^seq xs :clje xs :cljr xs :lpy xs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 212 | `eve/db/ds/pull_api.cljc` | 59 | `#?(:bb (cons x xs) :clj (conj xs x) :cljr (conj xs x) :cljs (-conj xs x) :clje (` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 213 | `eve/db/ds/pull_api.cljc` | 88 | `#?(:lpy (-merge [this result] (throw (ex-info "ResultFrame does not implement -m` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 214 | `eve/db/ds/pull_api.cljc` | 89 | `#?(:lpy (-run [this context] (throw (ex-info "ResultFrame does not implement -ru` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 215 | `eve/db/ds/pull_api.cljc` | 93 | `(defrecord MultivalAttrFrame [acc #?@(:clj [^PullAttr attr] :cljr [^PullAttr att` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 216 | `eve/db/ds/pull_api.cljc` | 95 | `#?(:lpy (-merge [this result] (throw (ex-info "MultivalAttrFrame does not implem` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 217 | `eve/db/ds/pull_api.cljc` | 100 | `:let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 218 | `eve/db/ds/pull_api.cljc` | 108 | `(let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 219 | `eve/db/ds/pull_api.cljc` | 119 | `(defrecord MultivalRefAttrFrame [seen recursion-limits acc pattern #?@(:clj [^Pu` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 220 | `eve/db/ds/pull_api.cljc` | 132 | `:let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 221 | `eve/db/ds/pull_api.cljc` | 140 | `(let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 222 | `eve/db/ds/pull_api.cljc` | 153 | `(defrecord AttrsFrame [seen recursion-limits acc #?@(:clj [^PullPattern pattern]` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 223 | `eve/db/ds/pull_api.cljc` | 153 | `(defrecord AttrsFrame [seen recursion-limits acc #?@(:clj [^PullPattern pattern]` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 224 | `eve/db/ds/pull_api.cljc` | 179 | `:let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 225 | `eve/db/ds/pull_api.cljc` | 204 | `(and datom-ahead? (some? (#?(:clj .-default :cljr .-default :cljs :default :clje` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 226 | `eve/db/ds/pull_api.cljc` | 205 | `(recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 227 | `eve/db/ds/pull_api.cljc` | 236 | `(defrecord ReverseAttrsFrame [seen recursion-limits acc pattern #?@(:clj [^PullA` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 228 | `eve/db/ds/pull_api.cljc` | 258 | `datoms (if (instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :l` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 229 | `eve/db/ds/pull_api.cljc` | 259 | `(set/slice (.-avet #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 230 | `eve/db/ds/pull_api.cljc` | 264 | `(and (empty? datoms) (some? (#?(:clj .-default :cljr .-default :cljs :default :c` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 231 | `eve/db/ds/pull_api.cljc` | 265 | `(recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 232 | `eve/db/ds/pull_api.cljc` | 272 | `(ref-frame context seen recursion-limits pattern attr (.-e #?@(:clj [^Datom (fir` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 233 | `eve/db/ds/pull_api.cljc` | 281 | `(defn- auto-expanding? [#?@(:clj [^PullAttr attr] :cljr [^PullAttr attr] :cljs [` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 234 | `eve/db/ds/pull_api.cljc` | 286 | `(.-wildcard? #?(:clj ^PullPattern (.-pattern attr) :cljr ^PullPattern (.-pattern` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 235 | `eve/db/ds/pull_api.cljc` | 288 | `(defn ref-frame [context seen recursion-limits pattern #?@(:clj [^PullAttr attr]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 236 | `eve/db/ds/pull_api.cljc` | 310 | `(defn attrs-frame [^Context context seen recursion-limits #?@(:clj [^PullPattern` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 237 | `eve/db/ds/pull_api.cljc` | 313 | `(and (.-wildcard? pattern) (instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/D` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 238 | `eve/db/ds/pull_api.cljc` | 314 | `(set/slice (.-eavt #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 239 | `eve/db/ds/pull_api.cljc` | 322 | `:let [from (.-name #?(:clj ^PullAttr (.-first-attr pattern) :cljr ^PullAttr (.-f` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 240 | `eve/db/ds/pull_api.cljc` | 323 | `to   (.-name #?(:clj ^PullAttr (.-last-attr pattern) :cljr ^PullAttr (.-last-att` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 241 | `eve/db/ds/pull_api.cljc` | 325 | `(instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :lpy db/DB) d` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 242 | `eve/db/ds/pull_api.cljc` | 326 | `(set/slice (.-eavt #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 243 | `eve/db/ds/pull_api.cljc` | 331 | `(fn [#?@(:jank [^db/Datom d] :clj [^Datom d] :cljr [^Datom d] :cljs [^db/Datom d` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 244 | `eve/db/ds/pull_api.cljc` | 349 | `#?@(:clj [^PullPattern pattern :pattern] :cljr [^PullPattern pattern :pattern] :` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 245 | `eve/db/ds/pull_parser.cljc` | 8 | `#?(:clje [eve.host :refer [volatile!]])))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 246 | `eve/db/ds/pull_parser.cljc` | 73 | `#?(:clj (when (namespace sym-or-fn)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 247 | `eve/db/ds/pull_parser.cljc` | 156 | `(defn #?@(:clj [^PullPattern parse-pattern] :cljr [^PullPattern parse-pattern] :` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 248 | `eve/db/ds/query.cljc` | 6 | `#?@(:cljs [[cljs.reader :as edn]]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 249 | `eve/db/ds/query.cljc` | 25 | `#?(:clje [eve.host :refer [transient persistent! conj! assoc! volatile! to-array` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 250 | `eve/db/ds/query.cljc` | 26 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 251 | `eve/db/ds/query.cljc` | 37 | `#?(:clj (set! *warn-on-reflection* true) :cljr (set! *warn-on-reflection* true))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 252 | `eve/db/ds/query.cljc` | 57 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 253 | `eve/db/ds/query.cljc` | 121 | `#?(:clj (set! *unchecked-math* true) :cljr (set! *unchecked-math* true))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 254 | `eve/db/ds/query.cljc` | 131 | `#?(:cljs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 255 | `eve/db/ds/query.cljc` | 137 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 256 | `eve/db/ds/query.cljc` | 199 | `#?(:clje` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 257 | `eve/db/ds/query.cljc` | 213 | `#?(:clj (set! *unchecked-math* false) :cljr (set! *unchecked-math* false))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 258 | `eve/db/ds/query.cljc` | 293 | `#?(:jank dp/BindIgnore :clj BindIgnore :cljr BindIgnore :cljs dp/BindIgnore :clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 259 | `eve/db/ds/query.cljc` | 297 | `#?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/BindScalar :clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 260 | `eve/db/ds/query.cljc` | 301 | `#?(:jank dp/BindColl :clj BindColl :cljr BindColl :cljs dp/BindColl :clje dp/Bin` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 261 | `eve/db/ds/query.cljc` | 314 | `#?(:jank dp/BindTuple :clj BindTuple :cljr BindTuple :cljs dp/BindTuple :clje dp` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 262 | `eve/db/ds/query.cljc` | 329 | `(and (instance? #?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 263 | `eve/db/ds/query.cljc` | 330 | `(instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar :clje dp/` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 264 | `eve/db/ds/query.cljc` | 332 | `(and (instance? #?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 265 | `eve/db/ds/query.cljc` | 333 | `(instance? #?(:jank dp/RulesVar :clj RulesVar :cljr RulesVar :cljs dp/RulesVar :` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 266 | `eve/db/ds/query.cljc` | 370 | `(let [eid #?(:cljs (tuple-get tuple idx)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 267 | `eve/db/ds/query.cljc` | 381 | `(let [eid #?(:cljs (tuple-get tuple idx)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 268 | `eve/db/ds/query.cljc` | 396 | `#?(:cljs (tuple-get tuple idx)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 269 | `eve/db/ds/query.cljc` | 412 | `#?(:cljs (tuple-get tuple idx)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 270 | `eve/db/ds/query.cljc` | 425 | `#?(:clje (let [getters (mapv #(getter-fn attrs %) common-attrs)]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 271 | `eve/db/ds/query.cljc` | 434 | `(let [^objects getters-arr #?(:clj (into-array Object common-attrs) :cljr (into-` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 272 | `eve/db/ds/query.cljc` | 441 | `#?(:jank` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 273 | `eve/db/ds/query.cljc` | 504 | `(if-some [tuples1 #?(:clj (hash key) :cljr (hash key) :cljs (get hash key) :clje` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 274 | `eve/db/ds/query.cljc` | 533 | `(#?(:cljs tuple-get :clj get :cljr get :clje da/aget :lpy get) tuple idx)))))))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 275 | `eve/db/ds/query.cljc` | 617 | `(#?(:cljs tuple-get :clj get :cljr get :clje da/aget :lpy get) tuple ((:attrs re` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 276 | `eve/db/ds/query.cljc` | 649 | `(if #?(:clj  false :cljr false` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 277 | `eve/db/ds/query.cljc` | 661 | `(da/aset a i #?(:cljs (tuple-get tuple tuple-idx)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 278 | `eve/db/ds/query.cljc` | 677 | `(da/aset a i #?(:cljs (tuple-get tuple tuple-idx)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 279 | `eve/db/ds/query.cljc` | 687 | `#?(:cljs nil` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 280 | `eve/db/ds/query.cljc` | 1032 | `(fn [#?(:cljs t1` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 281 | `eve/db/ds/query.cljc` | 1082 | `#?(:jank dp/Variable :clj Variable :cljr Variable :cljs dp/Variable :clje dp/Var` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 282 | `eve/db/ds/query.cljc` | 1085 | `#?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar :clje dp/SrcVar :lpy` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 283 | `eve/db/ds/query.cljc` | 1088 | `#?(:jank dp/PlainSymbol :clj PlainSymbol :cljr PlainSymbol :cljs dp/PlainSymbol ` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 284 | `eve/db/ds/query.cljc` | 1092 | `#?(:jank dp/Constant :clj Constant :cljr Constant :cljs dp/Constant :clje dp/Con` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 285 | `eve/db/ds/query.cljc` | 1137 | `#?(:jank dp/FindRel :clj FindRel :cljr FindRel :cljs dp/FindRel :clje dp/FindRel` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 286 | `eve/db/ds/query.cljc` | 1143 | `#?(:jank dp/FindColl :clj FindColl :cljr FindColl :cljs dp/FindColl :clje dp/Fin` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 287 | `eve/db/ds/query.cljc` | 1147 | `#?(:jank dp/FindScalar :clj FindScalar :cljr FindScalar :cljs dp/FindScalar :clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 288 | `eve/db/ds/query.cljc` | 1151 | `#?(:jank dp/FindTuple :clj FindTuple :cljr FindTuple :cljs dp/FindTuple :clje dp` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 289 | `eve/db/ds/query_v3.cljc` | 15 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 290 | `eve/db/ds/query_v3.cljc` | 62 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 291 | `eve/db/ds/query_v3.cljc` | 107 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 292 | `eve/db/ds/query_v3.cljc` | 178 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 293 | `eve/db/ds/query_v3.cljc` | 274 | `(.write #?(:clj  (.getSimpleName ^Class (class rel)) :cljr (.getSimpleName ^Clas` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 294 | `eve/db/ds/query_v3.cljc` | 306 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 295 | `eve/db/ds/query_v3.cljc` | 345 | `(instance? #?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/Bind` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 296 | `eve/db/ds/query_v3.cljc` | 347 | `(instance? #?(:jank dp/Variable :clj Variable :cljr Variable :cljs dp/Variable) ` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 297 | `eve/db/ds/query_v3.cljc` | 357 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 298 | `eve/db/ds/query_v3.cljc` | 516 | `#?(:jank dp/BindIgnore :clj BindIgnore :cljr BindIgnore :cljs dp/BindIgnore)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 299 | `eve/db/ds/query_v3.cljc` | 519 | `#?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/BindScalar)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 300 | `eve/db/ds/query_v3.cljc` | 525 | `#?(:jank dp/BindColl :clj BindColl :cljr BindColl :cljs dp/BindColl)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 301 | `eve/db/ds/query_v3.cljc` | 539 | `#?(:jank dp/BindTuple :clj BindTuple :cljr BindTuple :cljs dp/BindTuple)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 302 | `eve/db/ds/query_v3.cljc` | 570 | `(and (instance? #?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 303 | `eve/db/ds/query_v3.cljc` | 571 | `(instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar) (:variab` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 304 | `eve/db/ds/query_v3.cljc` | 597 | `(instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar) source) ` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 305 | `eve/db/ds/query_v3.cljc` | 598 | `(instance? #?(:jank dp/DefaultSrc :clj DefaultSrc :cljr DefaultSrc :cljs dp/Defa` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 306 | `eve/db/ds/query_v3.cljc` | 610 | `search-pattern (mapv #(when (instance? #?(:jank dp/Constant :clj Constant :cljr ` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 307 | `eve/db/ds/query_v3.cljc` | 634 | `idxs    (->> (map #(when (instance? #?(:jank dp/Constant :clj Constant :cljr Con` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 308 | `eve/db/ds/query_v3.cljc` | 641 | `(into #{} (map :symbol) (dp/collect #(instance? #?(:jank dp/Variable :clj Variab` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 309 | `eve/db/ds/query_v3.cljc` | 650 | `(if (instance? #?(:jank dp/Variable :clj Variable :cljr Variable :cljs dp/Variab` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 310 | `eve/db/ds/query_v3.cljc` | 656 | `#?(:clj (Constant. subs) :cljr (Constant. subs) :cljs (dp/->Constant subs))` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
+| 311 | `eve/db/ds/query_v3.cljc` | 758 | `(if (instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar) sour` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 312 | `eve/db/ds/query_v3.cljc` | 811 | `(instance? #?(:jank dp/Variable :clj Variable :cljr Variable :cljs dp/Variable) ` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 313 | `eve/db/ds/query_v3.cljc` | 814 | `(instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar) arg)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 314 | `eve/db/ds/query_v3.cljc` | 819 | `(instance? #?(:jank dp/Constant :clj Constant :cljr Constant :cljs dp/Constant) ` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 315 | `eve/db/ds/query_v3.cljc` | 824 | `(if (instance? #?(:jank dp/PlainSymbol :clj PlainSymbol :cljr PlainSymbol :cljs ` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 316 | `eve/db/ds/query_v3.cljc` | 840 | `:when   (instance? #?(:jank dp/Variable :clj Variable :cljr Variable :cljs dp/Va` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 317 | `eve/db/ds/query_v3.cljc` | 878 | `#?(:jank dp/Pattern :clj Pattern :cljr Pattern :cljs dp/Pattern)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 318 | `eve/db/ds/query_v3.cljc` | 881 | `#?(:jank dp/Not :clj Not :cljr Not :cljs dp/Not)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 319 | `eve/db/ds/query_v3.cljc` | 884 | `#?(:jank dp/Or :clj Or :cljr Or :cljs dp/Or)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 320 | `eve/db/ds/query_v3.cljc` | 887 | `#?(:jank dp/And :clj And :cljr And :cljs dp/And)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 321 | `eve/db/ds/query_v3.cljc` | 890 | `#?(:jank dp/Predicate :clj Predicate :cljr Predicate :cljs dp/Predicate)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 322 | `eve/db/ds/serialize.cljc` | 15 | `#?(:clje [eve.host :refer [transient persistent! conj! assoc! volatile! locking]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 323 | `eve/db/ds/serialize.cljc` | 16 | `#?(:cljs (:require-macros [eve.db.ds.serialize :refer [array dict]]))` | KEPT | glue: cljs :require-macros loader wiring; does not touch data, memory, threading, or HTTP |
+| 324 | `eve/db/ds/serialize.cljc` | 17 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 325 | `eve/db/ds/serialize.cljc` | 41 | `(def ^:private pos-inf #?(:jank (/ 1.0 0.0) :clj Double/POSITIVE_INFINITY :cljr ` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 326 | `eve/db/ds/serialize.cljc` | 42 | `(def ^:private neg-inf #?(:jank (/ -1.0 0.0) :clj Double/NEGATIVE_INFINITY :cljr` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 327 | `eve/db/ds/serialize.cljc` | 43 | `(def ^:private nan-val #?(:jank (/ 0.0 0.0) :clj Double/NaN :cljr Double/NaN :cl` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 328 | `eve/db/ds/serialize.cljc` | 48 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 329 | `eve/db/ds/serialize.cljc` | 81 | `#?(:clje` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 330 | `eve/db/ds/serialize.cljc` | 87 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 331 | `eve/db/ds/serialize.cljc` | 117 | `#?(:clje` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 332 | `eve/db/ds/serialize.cljc` | 127 | `#?(:clj  (.get ^java.util.List d (int i)) :cljr (nth d i)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 333 | `eve/db/ds/serialize.cljc` | 133 | `#?(:clj  (.get ^java.util.Map d k) :cljr (get d k)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 334 | `eve/db/ds/serialize.cljc` | 139 | `#?(:clj  (instance? java.util.List a) :cljr (instance? System.Collections.IList ` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 335 | `eve/db/ds/serialize.cljc` | 145 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 336 | `eve/db/ds/serialize.cljc` | 161 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 337 | `eve/db/ds/serialize.cljc` | 178 | `[#?@(:jank [^db/Datom d1] :clj [^Datom d1] :cljr [^Datom d1] :cljs [^db/Datom d1` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 338 | `eve/db/ds/serialize.cljc` | 178 | `[#?@(:jank [^db/Datom d1] :clj [^Datom d1] :cljr [^Datom d1] :cljs [^db/Datom d1` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 339 | `eve/db/ds/serialize.cljc` | 242 | `#?@(:clj [(or` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 340 | `eve/db/ds/serialize.cljc` | 256 | `#?(:clje false :default (== pos-inf v)) (array marker-inf)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 341 | `eve/db/ds/serialize.cljc` | 257 | `#?(:clje false :default (== neg-inf v)) (array marker-minus-inf)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 342 | `eve/db/ds/serialize.cljc` | 258 | `#?(:jank (not (== v v)) :clj (Double/isNaN v) :cljr (Double/IsNaN v) :cljs (js/i` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 343 | `eve/db/ds/serialize.cljc` | 270 | `(fn [_idx #?@(:jank [^db/Datom d] :clj [^Datom d] :cljr [^Datom d] :cljs [^db/Da` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 344 | `eve/db/ds/serialize.cljc` | 277 | `aevt        (amap-indexed (fn [_ #?@(:jank [^db/Datom d] :clj [^Datom d] :cljr [` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 345 | `eve/db/ds/serialize.cljc` | 278 | `avet        (amap-indexed (fn [_ #?@(:jank [^db/Datom d] :clj [^Datom d] :cljr [` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 346 | `eve/db/ds/serialize.cljc` | 282 | `#?@(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 347 | `eve/db/ds/serialize.cljc` | 295 | `#?@(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 348 | `eve/db/ds/serialize.cljc` | 300 | `#?(:jank` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 349 | `eve/db/ds/serialize.cljc` | 362 | `#?(:clj arrays/into-array :cljr arrays/into-array))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 350 | `eve/db/ds/serialize.cljc` | 363 | `aevt     (some->> (dict-get from "aevt") (amap #(arrays/aget eavt %)) #?(:clj ar` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 351 | `eve/db/ds/serialize.cljc` | 364 | `avet     (some->> (dict-get from "avet") (amap #(arrays/aget eavt %)) #?(:clj ar` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 352 | `eve/db/ds/storage.cljc` | 21 | `#?(:lpy` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 353 | `eve/db/ds/util.cljc` | 10 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 354 | `eve/db/ds/util.cljc` | 20 | `#?(:clj (defmacro log [& body]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 355 | `eve/db/ds/util.cljc` | 40 | `#?(:clje (defmacro log [& body]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 356 | `eve/db/ds/util.cljc` | 49 | `#?(:lpy (defmacro raise [& fragments]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 357 | `eve/db/ds/util.cljc` | 70 | `#?(:clje (defmacro raise [& fragments]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 358 | `eve/db/ds/util.cljc` | 75 | `#?(:clj (def ^:private ^:dynamic *if+-syms) :cljr (def ^:private ^:dynamic *if+-` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 359 | `eve/db/ds/util.cljc` | 79 | `#?(:clje (def ^:private ^:dynamic *if+-syms))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 360 | `eve/db/ds/util.cljc` | 81 | `#?(:clj (defn- if+-rewrite-cond-impl [cond]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 361 | `eve/db/ds/util.cljc` | 181 | `#?(:clje (defn- if+-rewrite-cond-impl [cond]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 362 | `eve/db/ds/util.cljc` | 207 | `#?(:clj (defn- if+-rewrite-cond [cond]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 363 | `eve/db/ds/util.cljc` | 219 | `#?(:clje (defn- if+-rewrite-cond [cond]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 364 | `eve/db/ds/util.cljc` | 223 | `#?(:clj (defn- flatten-1 [xs]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 365 | `eve/db/ds/util.cljc` | 235 | `#?(:clje (defn- flatten-1 [xs]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 366 | `eve/db/ds/util.cljc` | 239 | `#?(:clj (defmacro if+` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 367 | `eve/db/ds/util.cljc` | 384 | `#?(:clje (defmacro if+` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 368 | `eve/db/ds/util.cljc` | 403 | `#?(:clj (defmacro cond+ [& clauses]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 369 | `eve/db/ds/util.cljc` | 431 | `#?(:clje (defmacro cond+ [& clauses]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 370 | `eve/db/ds/util.cljc` | 439 | `#?(:clj (defmacro some-of` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 371 | `eve/db/ds/util.cljc` | 459 | `#?(:clje (defmacro some-of` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 372 | `eve/db/ds/util.cljc` | 468 | `#?(:cljr` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 373 | `eve/db/ds/util.cljc` | 477 | `#?(:cljs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 374 | `eve/db/ds/util.cljc` | 488 | `(squuid #?(:clj  (System/currentTimeMillis) :cljr (.ToUnixTimeMilliseconds (Syst` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 375 | `eve/db/ds/util.cljc` | 491 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 376 | `eve/db/ds/util.cljc` | 523 | `#?(:clj (-> (.getMostSignificantBits ^UUID uuid)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+
+## Tally
+
+- Original: 376
+- Removed (snippet no longer in the same file): 42
+- Kept: 334 (glue-by-require-macros heuristic: 1; the rest are open for vm)
+- Current lexical count at this tree: 342
+- Note: kept (334) vs current lexical (342) can differ when a snippet moved between files or was rewritten but still a reader conditional. Current remaining sites:
+
+| file | line now | snippet |
+|------|----------|---------|
+| `eve/db/ds/built_ins.cljc` | 127 | `(#?(:cljs js/Math.sqrt :clj Math/sqrt :cljr Math/Sqrt) (aggregate-variance coll)` |
+| `eve/db/ds/conn.cljc` | 8 | `#?(:lpy [eve.deftype :refer [deftype]])` |
+| `eve/db/ds/conn.cljc` | 13 | `#?(:clje [eve.host :refer [volatile! swap! reset! compare-and-set! locking]]))` |
+| `eve/db/ds/conn.cljc` | 14 | `#?(:clj` |
+| `eve/db/ds/conn.cljc` | 30 | `#?(:jank  (if (identical? (:db @atom) oldv) @atom (assoc @atom :db oldv))` |
+| `eve/db/ds/conn.cljc` | 41 | `(if (instance? #?(:jank db/FilteredDB :clj FilteredDB :cljr FilteredDB :cljs db/` |
+| `eve/db/ds/conn.cljc` | 45 | `(defn #?@(:jank [^db/DB db-with] :clj [^DB db-with] :cljr [^DB db-with] :cljs [^` |
+| `eve/db/ds/conn.cljc` | 53 | `#?(:clj  (instance? clojure.lang.IDeref conn) :cljr (instance? clojure.lang.IDer` |
+| `eve/db/ds/conn.cljc` | 87 | `#?(:clj` |
+| `eve/db/ds/conn.cljc` | 114 | `#?(:clj` |
+| `eve/db/ds/conn.cljc` | 189 | `#?(:clj` |
+| `eve/db/ds/core.cljc` | 9 | `#?(:cljs [cljs.reader :as edn]` |
+| `eve/db/ds/core.cljc` | 16 | `#?(:clj [eve.db.ds.pprint])` |
+| `eve/db/ds/core.cljc` | 24 | `#?(:clj` |
+| `eve/db/ds/core.cljc` | 39 | `(def ^{:tag #?(:jank de/Entity :clj Entity :cljr Entity :cljs de/Entity :clje de` |
+| `eve/db/ds/core.cljc` | 97 | `(defn #?@(:jank [^db/DB entity-db] :clj [^DB entity-db] :cljr [^DB entity-db] :c` |
+| `eve/db/ds/core.cljc` | 99 | `[#?@(:jank [^de/Entity entity] :clj [^Entity entity] :cljr [^Entity entity] :clj` |
+| `eve/db/ds/core.cljc` | 103 | `(def ^{:tag #?(:jank de/Entity :clj Entity :cljr Entity :cljs de/Entity :clje de` |
+| `eve/db/ds/core.cljc` | 163 | `(defn #?@(:jank [^db/DB empty-db] :clj [^DB empty-db] :cljr [^DB empty-db] :cljs` |
+| `eve/db/ds/core.cljc` | 194 | `(def ^{:tag #?(:jank db/Datom :clj Datom :cljr Datom :cljs db/Datom :clje db/Dat` |
+| `eve/db/ds/core.cljc` | 207 | `(defn #?@(:jank [^db/DB init-db] :clj [^DB init-db] :cljr [^DB init-db] :cljs [^` |
+| `eve/db/ds/core.cljc` | 233 | `(def ^{:tag #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :lpy db/DB)` |
+| `eve/db/ds/core.cljc` | 257 | `(instance? #?(:jank db/FilteredDB :clj FilteredDB :cljr FilteredDB :cljs db/Filt` |
+| `eve/db/ds/core.cljc` | 271 | `(let [#?@(:jank [^db/FilteredDB fdb] :clj [^FilteredDB fdb] :cljr [^FilteredDB f` |
+| `eve/db/ds/core.cljc` | 277 | `#?(:jank (db/->FilteredDB orig-db #(and (orig-pred %) (pred orig-db %)) (atom 0)` |
+| `eve/db/ds/core.cljc` | 281 | `#?(:jank (db/->FilteredDB db #(pred db %) (atom 0))` |
+| `eve/db/ds/core.cljc` | 293 | `(def ^{:arglists '([db tx-data]) :tag #?(:jank db/DB :clj DB :cljr DB :cljs db/D` |
+| `eve/db/ds/core.cljc` | 297 | `(defn #?@(:jank [^db/DB with-schema] :clj [^DB with-schema] :cljr [^DB with-sche` |
+| `eve/db/ds/core.cljc` | 381 | `(defn #?@(:jank [^db/Datom find-datom] :clj [^Datom find-datom] :cljr [^Datom fi` |
+| `eve/db/ds/core.cljc` | 488 | `#?(:clj` |
+| `eve/db/ds/core.cljc` | 615 | `#?(:cljs` |
+| `eve/db/ds/core.cljc` | 628 | `#?(:lpy` |
+| `eve/db/ds/core.cljc` | 656 | `(defn #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db/DB db] :clje` |
+| `eve/db/ds/core.cljc` | 672 | `#?(:cljs` |
+| `eve/db/ds/core.cljc` | 714 | `#?(:clje` |
+| `eve/db/ds/core.cljc` | 723 | `#?(:cljs` |
+| `eve/db/ds/core.cljc` | 760 | `#?(:clj` |
+| `eve/db/ds/core.cljc` | 767 | `#?(:clj` |
+| `eve/db/ds/core.cljc` | 784 | `#?(:clj` |
+| `eve/db/ds/core.cljc` | 791 | `#?(:clj` |
+| `eve/db/ds/core.cljc` | 802 | `#?(:clj` |
+| `eve/db/ds/core.cljc` | 811 | `#?(:clj` |
+| `eve/db/ds/db.cljc` | 3 | `#?(:cljs [goog.array :as garray])` |
+| `eve/db/ds/db.cljc` | 6 | `#?(:clj [eve.db.ds.inline :refer [update]])` |
+| `eve/db/ds/db.cljc` | 8 | `#?(:clje [eve.host :refer [transient persistent! conj! dissoc! long volatile!]])` |
+| `eve/db/ds/db.cljc` | 34 | `#?(:cljs (:require-macros [eve.db.ds.db :refer [case-tree combine-cmp defn+ defc` |
+| `eve/db/ds/db.cljc` | 36 | `(:refer-clojure :exclude [seqable? #?(:clj update) deftype]))` |
+| `eve/db/ds/db.cljc` | 38 | `#?(:clj (set! *warn-on-reflection* true) :cljr (set! *warn-on-reflection* true))` |
+| `eve/db/ds/db.cljc` | 42 | `#?(:cljs` |
+| `eve/db/ds/db.cljc` | 65 | `(do #?@(:clj [(defn ^Boolean seqable? [x] (and (not (string? x))` |
+| `eve/db/ds/db.cljc` | 66 | `#?@(:clj [(or (seq? x)` |
+| `eve/db/ds/db.cljc` | 85 | `#?@(:clj [(or (seq? x)` |
+| `eve/db/ds/db.cljc` | 111 | `#?@(:clj [(or (seq? x)` |
+| `eve/db/ds/db.cljc` | 134 | `#?(:clje (defn seqable? [x] (and (not (string? x))` |
+| `eve/db/ds/db.cljc` | 147 | `(do #?@(:clj [(defn- cljs-env?` |
+| `eve/db/ds/db.cljc` | 170 | `#?(:clje (defn- cljs-env?` |
+| `eve/db/ds/db.cljc` | 174 | `(do #?@(:clj [(defmacro if-cljs` |
+| `eve/db/ds/db.cljc` | 194 | `#?(:clje (defmacro if-cljs` |
+| `eve/db/ds/db.cljc` | 198 | `(do #?@(:clj [(defn patch-tag [meta cljs-env?]` |
+| `eve/db/ds/db.cljc` | 231 | `#?(:clje (defn patch-tag` |
+| `eve/db/ds/db.cljc` | 244 | `(do #?@(:clj [(defmacro defn+` |
+| `eve/db/ds/db.cljc` | 328 | `#?(:clje (defmacro defn+` |
+| `eve/db/ds/db.cljc` | 354 | `#?(:clje (defn- hash-combine* [seed hash]` |
+| `eve/db/ds/db.cljc` | 364 | `#?@(:clj [(clojure.lang.Util/hashCombine x y)] :cljr [(clojure.lang.Util/hashCom` |
+| `eve/db/ds/db.cljc` | 369 | `(do #?@(:clj [   (defn- get-sig [method]` |
+| `eve/db/ds/db.cljc` | 393 | `#?(:clje (defn- get-sig [& _args] nil))` |
+| `eve/db/ds/db.cljc` | 395 | `(do #?@(:clj [   (defn- dedupe-interfaces [deftype-form]` |
+| `eve/db/ds/db.cljc` | 413 | `#?(:clje (defn- dedupe-interfaces [& _args] nil))` |
+| `eve/db/ds/db.cljc` | 415 | `(do #?@(:clj [(defn- make-record-updatable-cljs [name fields & impls]` |
+| `eve/db/ds/db.cljc` | 437 | `#?(:clje (defn- make-record-updatable-cljs [name fields & impls]` |
+| `eve/db/ds/db.cljc` | 442 | `(do #?@(:clj [(defn- make-record-updatable-clj [name fields & impls]` |
+| `eve/db/ds/db.cljc` | 486 | `#?(:clje (defn- make-record-updatable-clj [name fields & impls]` |
+| `eve/db/ds/db.cljc` | 489 | `(do #?@(:clj [(defmacro defrecord-updatable [name fields & impls]` |
+| `eve/db/ds/db.cljc` | 503 | `#?(:clje (defmacro defrecord-updatable [name fields & impls]` |
+| `eve/db/ds/db.cljc` | 521 | `#?(:clj  (declare hash-datom) :cljr (declare hash-datom)` |
+| `eve/db/ds/db.cljc` | 526 | `#?(:clj  (declare equiv-datom) :cljr (declare equiv-datom)` |
+| `eve/db/ds/db.cljc` | 531 | `#?(:clj  (declare seq-datom) :cljr (declare seq-datom)` |
+| `eve/db/ds/db.cljc` | 536 | `#?(:clj  (declare nth-datom) :cljr (declare nth-datom)` |
+| `eve/db/ds/db.cljc` | 541 | `#?(:clj  (declare assoc-datom) :cljr (declare assoc-datom)` |
+| `eve/db/ds/db.cljc` | 546 | `#?(:clj  (declare val-at-datom) :cljr (declare val-at-datom)` |
+| `eve/db/ds/db.cljc` | 583 | `(empty [d] (throw #?(:cljr (System.NotSupportedException. "empty is not supporte` |
+| `eve/db/ds/db.cljc` | 609 | `#?(:cljs (goog/exportSymbol "eve.db.ds.db.Datom" Datom))` |
+| `eve/db/ds/db.cljc` | 664 | `#?@(:clj [(throw (IndexOutOfBoundsException.))] :cljr [(throw (System.IndexOutOf` |
+| `eve/db/ds/db.cljc` | 688 | `(throw #?(:clje (ex-info (str "invalid key for #eve.db.ds/Datom: " k) {})` |
+| `eve/db/ds/db.cljc` | 699 | `#?(:clj` |
+| `eve/db/ds/db.cljc` | 712 | `(do #?@(:clj [(defmacro combine-cmp [& comps]` |
+| `eve/db/ds/db.cljc` | 760 | `#?(:clje (defmacro combine-cmp [& comps]` |
+| `eve/db/ds/db.cljc` | 772 | `(do #?@(:clj [(defn- -case-tree [queries variants]` |
+| `eve/db/ds/db.cljc` | 807 | `#?(:clje (defn- -case-tree [queries variants]` |
+| `eve/db/ds/db.cljc` | 816 | `(do #?@(:clj [(defmacro case-tree [qs vs]` |
+| `eve/db/ds/db.cljc` | 824 | `#?(:clje (defmacro case-tree [qs vs]` |
+| `eve/db/ds/db.cljc` | 828 | `#?(:clj` |
+| `eve/db/ds/db.cljc` | 840 | `#?(:clj  {:inline (fn [x y] `(identical? (class ~x) (class ~y)))} :cljr {:inline` |
+| `eve/db/ds/db.cljc` | 842 | `#?@(:clj [(identical? (class x) (class y))] :cljr [(identical? (class x) (class ` |
+| `eve/db/ds/db.cljc` | 847 | `(do #?@(:jank [   (defn class-name` |
+| `eve/db/ds/db.cljc` | 868 | `#?(:clje (defn class-name` |
+| `eve/db/ds/db.cljc` | 874 | `#?@(:clj [(long (compare (class-name x) (class-name y)))] :cljr [(long (compare ` |
+| `eve/db/ds/db.cljc` | 879 | `(do #?@(:jank [(defmacro int-compare [x y]` |
+| `eve/db/ds/db.cljc` | 900 | `#?(:clje (defmacro int-compare [x y]` |
+| `eve/db/ds/db.cljc` | 905 | `(do #?@(:jank [(defn ihash` |
+| `eve/db/ds/db.cljc` | 922 | `#?(:clje (defn ihash` |
+| `eve/db/ds/db.cljc` | 926 | `(do #?@(:clj [(declare value-compare)] :cljr [(declare value-compare)]` |
+| `eve/db/ds/db.cljc` | 930 | `#?(:clje (declare value-compare))` |
+| `eve/db/ds/db.cljc` | 976 | `#?@(:clj  [(instance? Number x)       (compare x y)] :cljr [(number? x)         ` |
+| `eve/db/ds/db.cljc` | 978 | `#?@(:clj  [(instance? Comparable x)   (compare x y)] :cljr [(instance? System.IC` |
+| `eve/db/ds/db.cljc` | 982 | `#?@(:cljs [(or (number? x) (string? x) (array? x) (true? x) (false? x)) (garray/` |
+| `eve/db/ds/db.cljc` | 984 | `(catch #?@(:clj [ClassCastException] :cljr [System.InvalidCastException]` |
+| `eve/db/ds/db.cljc` | 993 | `#?(:clj` |
+| `eve/db/ds/db.cljc` | 1011 | `(do #?@(:jank [(defmacro defcomp [sym [arg1 arg2] & body]` |
+| `eve/db/ds/db.cljc` | 1056 | `#?(:clje (defmacro defcomp [sym [arg1 arg2] & body]` |
+| `eve/db/ds/db.cljc` | 1086 | `#?(:clj` |
+| `eve/db/ds/db.cljc` | 1094 | `#?@(:clj [(long (compare a1 a2))] :cljr [(long (compare a1 a2))]` |
+| `eve/db/ds/db.cljc` | 1161 | `(catch #?@(:clj [ClassCastException] :cljr [System.InvalidCastException]` |
+| `eve/db/ds/db.cljc` | 1174 | `(do #?@(:clj [(declare hash-db pr-db)] :cljr [(declare hash-db pr-db)]` |
+| `eve/db/ds/db.cljc` | 1181 | `#?(:clje (declare hash-db pr-db))` |
+| `eve/db/ds/db.cljc` | 1183 | `(do #?@(:clj [(declare hash-fdb)] :cljr [(declare hash-fdb)]` |
+| `eve/db/ds/db.cljc` | 1187 | `#?(:clje (declare hash-fdb))` |
+| `eve/db/ds/db.cljc` | 1189 | `(do #?@(:clj [(declare equiv-db)] :cljr [(declare equiv-db)]` |
+| `eve/db/ds/db.cljc` | 1193 | `#?(:clje (declare equiv-db))` |
+| `eve/db/ds/db.cljc` | 1195 | `(do #?@(:clj [(declare restore-db)] :cljr [(declare restore-db)]` |
+| `eve/db/ds/db.cljc` | 1199 | `#?(:clje (declare restore-db))` |
+| `eve/db/ds/db.cljc` | 1201 | `(do #?@(:clj [(declare indexing?)] :cljr [(declare indexing?)]` |
+| `eve/db/ds/db.cljc` | 1205 | `#?(:clje (declare indexing?))` |
+| `eve/db/ds/db.cljc` | 1207 | `#?(:cljs (defn pr-db [db w opts]))` |
+| `eve/db/ds/db.cljc` | 1209 | `(do #?@(:clj [(declare resolve-datom)] :cljr [(declare resolve-datom)]` |
+| `eve/db/ds/db.cljc` | 1213 | `#?(:clje (declare resolve-datom))` |
+| `eve/db/ds/db.cljc` | 1215 | `(do #?@(:clj [(declare components->pattern)] :cljr [(declare components->pattern` |
+| `eve/db/ds/db.cljc` | 1219 | `#?(:clje (declare components->pattern))` |
+| `eve/db/ds/db.cljc` | 1223 | `(do #?@(:clj [(defmacro validate-attr [attr at]` |
+| `eve/db/ds/db.cljc` | 1257 | `#?(:clje (defmacro validate-attr [attr at]` |
+| `eve/db/ds/db.cljc` | 1266 | `(do #?@(:clj [(defmacro validate-val [v at]` |
+| `eve/db/ds/db.cljc` | 1286 | `#?(:clje (defmacro validate-val [v at]` |
+| `eve/db/ds/db.cljc` | 1331 | `#?(:clj` |
+| `eve/db/ds/db.cljc` | 1369 | `#?(:lpy (declare -schema -attrs-by -search -datoms -seek-datoms -rseek-datoms -i` |
+| `eve/db/ds/db.cljc` | 1375 | `#?(:lpy (declare multival?))` |
+| `eve/db/ds/db.cljc` | 1413 | `#?(:bb (seq x) :default x))` |
+| `eve/db/ds/db.cljc` | 1490 | `(-schema [db] #?(:clje schema` |
+| `eve/db/ds/db.cljc` | 1502 | `pred       #?(:clj  (vpred v)` |
+| `eve/db/ds/db.cljc` | 1560 | `#?(:bb  (seq (set/slice (get db index)` |
+| `eve/db/ds/db.cljc` | 1624 | `#?(:clje` |
+| `eve/db/ds/db.cljc` | 1637 | `#?@(:jank [(and (satisfies? ISearch x)` |
+| `eve/db/ds/db.cljc` | 1719 | `(defn #?@(:clj [^DB unfiltered-db] :cljr [^DB unfiltered-db] :cljs [^DB unfilter` |
+| `eve/db/ds/db.cljc` | 1983 | `#?(:cljs` |
+| `eve/db/ds/db.cljc` | 2008 | `#?(:lpy` |
+| `eve/db/ds/db.cljc` | 2018 | `#?(:clj` |
+| `eve/db/ds/db.cljc` | 2048 | `(do #?@(:clj [(declare entid-strict)] :cljr [(declare entid-strict)]` |
+| `eve/db/ds/db.cljc` | 2052 | `#?(:clje (declare entid-strict))` |
+| `eve/db/ds/db.cljc` | 2054 | `(do #?@(:clj [(declare ref?)] :cljr [(declare ref?)]` |
+| `eve/db/ds/db.cljc` | 2058 | `#?(:clje (declare ref?))` |
+| `eve/db/ds/db.cljc` | 2060 | `(do #?@(:clj [(declare tuple?)] :cljr [(declare tuple?)]` |
+| `eve/db/ds/db.cljc` | 2064 | `#?(:clje (declare tuple?))` |
+| `eve/db/ds/db.cljc` | 2066 | `(do #?@(:clj [(declare resolve-tuple-refs)] :cljr [(declare resolve-tuple-refs)]` |
+| `eve/db/ds/db.cljc` | 2070 | `#?(:clje (declare resolve-tuple-refs))` |
+| `eve/db/ds/db.cljc` | 2094 | `cmp     #?(:bb (case index` |
+| `eve/db/ds/db.cljc` | 2131 | `datom   #?(:bb (first (set/slice set from to))` |
+| `eve/db/ds/db.cljc` | 2217 | `(do #?@(:clj [(defn-  ^Boolean tuple-ref-slot? [db schema-a idx] (cond` |
+| `eve/db/ds/db.cljc` | 2236 | `#?(:clje (defn- tuple-ref-slot? [db schema-a idx] (cond` |
+| `eve/db/ds/db.cljc` | 2241 | `(do #?@(:clj [(defn-  ^Boolean resolved-eid? [x] (or` |
+| `eve/db/ds/db.cljc` | 2253 | `#?(:clje (defn- resolved-eid? [x] (or` |
+| `eve/db/ds/db.cljc` | 2305 | `#?@(:cljs [(array? eid) (recur db (array-seq eid))])` |
+| `eve/db/ds/db.cljc` | 2405 | `#?(:clj {:inline (fn [report] `(-> ~report :db-before :max-tx long inc))} :cljr ` |
+| `eve/db/ds/db.cljc` | 2410 | `#?(:clj {:inline (fn [db] `(inc (long (:max-eid ~db))))} :cljr {:inline (fn [db]` |
+| `eve/db/ds/db.cljc` | 2414 | `(do #?@(:clj [(defn- ^Boolean tx-id?` |
+| `eve/db/ds/db.cljc` | 2444 | `#?(:clje (defn- tx-id?` |
+| `eve/db/ds/db.cljc` | 2451 | `(do #?@(:clj [(defn-  ^Boolean tempid? [x] (or` |
+| `eve/db/ds/db.cljc` | 2467 | `#?(:clje (defn- tempid? [x] (or` |
+| `eve/db/ds/db.cljc` | 2591 | `(do #?@(:clj [(defn-  ^Boolean tuple-has-tempids? [db a vs] (and` |
+| `eve/db/ds/db.cljc` | 2651 | `#?(:clje (defn- tuple-has-tempids? [db a vs] (and` |
+| `eve/db/ds/db.cljc` | 2828 | `(do #?@(:clj [(declare transact-tx-data-impl)] :cljr [(declare transact-tx-data-` |
+| `eve/db/ds/db.cljc` | 2832 | `#?(:clje (declare transact-tx-data-impl))` |
+| `eve/db/ds/eve_record.cljc` | 6 | `#?(:cljs (:require-macros [eve.db.ds.eve-record :refer [def-eve-record]]))` |
+| `eve/db/ds/parser.cljc` | 3 | `#?(:cljs (:require-macros [eve.db.ds.parser :refer [deftrecord]]` |
+| `eve/db/ds/pull_api.cljc` | 2 | `#?(:cljs (:require-macros [eve.db.ds.eve-record :refer [def-eve-record]]))` |
+| `eve/db/ds/pull_api.cljc` | 14 | `#?(:clje [eve.host :refer [transient persistent! conj! assoc! volatile!]]))` |
+| `eve/db/ds/pull_api.cljc` | 15 | `#?(:clj` |
+| `eve/db/ds/pull_api.cljc` | 48 | `(defn- first-seq [#?(:bb xs :clj ^ISeq xs :cljs ^seq xs :clje xs :cljr xs :lpy x` |
+| `eve/db/ds/pull_api.cljc` | 51 | `#?(:bb (first xs) :clj (first xs) :cljr (first xs) :cljs (-first xs) :clje (firs` |
+| `eve/db/ds/pull_api.cljc` | 53 | `(defn- next-seq [#?(:bb xs :clj ^ISeq xs :cljs ^seq xs :clje xs :cljr xs :lpy xs` |
+| `eve/db/ds/pull_api.cljc` | 56 | `#?(:bb (next xs) :clj (next xs) :cljr (next xs) :cljs (-next xs) :clje (next xs)` |
+| `eve/db/ds/pull_api.cljc` | 58 | `(defn- conj-seq [#?(:bb xs :clj ^ISeq xs :cljs ^seq xs :clje xs :cljr xs :lpy xs` |
+| `eve/db/ds/pull_api.cljc` | 61 | `#?(:bb (cons x xs) :clj (conj xs x) :cljr (conj xs x) :cljs (-conj xs x) :clje (` |
+| `eve/db/ds/pull_api.cljc` | 90 | `#?(:lpy (-merge [this result] (throw (ex-info "ResultFrame does not implement -m` |
+| `eve/db/ds/pull_api.cljc` | 91 | `#?(:lpy (-run [this context] (throw (ex-info "ResultFrame does not implement -ru` |
+| `eve/db/ds/pull_api.cljc` | 97 | `#?(:lpy (-merge [this result] (throw (ex-info "MultivalAttrFrame does not implem` |
+| `eve/db/ds/pull_api.cljc` | 102 | `:let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs` |
+| `eve/db/ds/pull_api.cljc` | 110 | `(let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs` |
+| `eve/db/ds/pull_api.cljc` | 134 | `:let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs` |
+| `eve/db/ds/pull_api.cljc` | 142 | `(let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs` |
+| `eve/db/ds/pull_api.cljc` | 181 | `:let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs` |
+| `eve/db/ds/pull_api.cljc` | 206 | `(and datom-ahead? (some? (#?(:clj .-default :cljr .-default :cljs :default :clje` |
+| `eve/db/ds/pull_api.cljc` | 207 | `(recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default` |
+| `eve/db/ds/pull_api.cljc` | 260 | `datoms (if (instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :l` |
+| `eve/db/ds/pull_api.cljc` | 261 | `(set/slice (.-avet #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db` |
+| `eve/db/ds/pull_api.cljc` | 266 | `(and (empty? datoms) (some? (#?(:clj .-default :cljr .-default :cljs :default :c` |
+| `eve/db/ds/pull_api.cljc` | 267 | `(recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default` |
+| `eve/db/ds/pull_api.cljc` | 274 | `(ref-frame context seen recursion-limits pattern attr (.-e #?@(:clj [^Datom (fir` |
+| `eve/db/ds/pull_api.cljc` | 283 | `(defn- auto-expanding? [#?@(:clj [^PullAttr attr] :cljr [^PullAttr attr] :cljs [` |
+| `eve/db/ds/pull_api.cljc` | 288 | `(.-wildcard? #?(:clj ^PullPattern (.-pattern attr) :cljr ^PullPattern (.-pattern` |
+| `eve/db/ds/pull_api.cljc` | 290 | `(defn ref-frame [context seen recursion-limits pattern #?@(:clj [^PullAttr attr]` |
+| `eve/db/ds/pull_api.cljc` | 312 | `(defn attrs-frame [^Context context seen recursion-limits #?@(:clj [^PullPattern` |
+| `eve/db/ds/pull_api.cljc` | 315 | `(and (.-wildcard? pattern) (instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/D` |
+| `eve/db/ds/pull_api.cljc` | 316 | `(set/slice (.-eavt #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db` |
+| `eve/db/ds/pull_api.cljc` | 324 | `:let [from (.-name #?(:clj ^PullAttr (.-first-attr pattern) :cljr ^PullAttr (.-f` |
+| `eve/db/ds/pull_api.cljc` | 325 | `to   (.-name #?(:clj ^PullAttr (.-last-attr pattern) :cljr ^PullAttr (.-last-att` |
+| `eve/db/ds/pull_api.cljc` | 327 | `(instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :lpy db/DB) d` |
+| `eve/db/ds/pull_api.cljc` | 328 | `(set/slice (.-eavt #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db` |
+| `eve/db/ds/pull_api.cljc` | 333 | `(fn [#?@(:jank [^db/Datom d] :clj [^Datom d] :cljr [^Datom d] :cljs [^db/Datom d` |
+| `eve/db/ds/pull_api.cljc` | 351 | `#?@(:clj [^PullPattern pattern :pattern] :cljr [^PullPattern pattern :pattern] :` |
+| `eve/db/ds/pull_parser.cljc` | 2 | `#?(:cljs (:require-macros [eve.db.ds.eve-record :refer [def-eve-record]]))` |
+| `eve/db/ds/pull_parser.cljc` | 10 | `#?(:clje [eve.host :refer [volatile!]])))` |
+| `eve/db/ds/pull_parser.cljc` | 75 | `#?(:clj (when (namespace sym-or-fn)` |
+| `eve/db/ds/pull_parser.cljc` | 158 | `(defn #?@(:clj [^PullPattern parse-pattern] :cljr [^PullPattern parse-pattern] :` |
+| `eve/db/ds/query.cljc` | 2 | `#?(:cljs (:require-macros [eve.db.ds.eve-record :refer [def-eve-record]]))` |
+| `eve/db/ds/query.cljc` | 7 | `#?@(:cljs [[cljs.reader :as edn]]` |
+| `eve/db/ds/query.cljc` | 27 | `#?(:clje [eve.host :refer [transient persistent! conj! assoc! volatile! to-array` |
+| `eve/db/ds/query.cljc` | 28 | `#?(:clj` |
+| `eve/db/ds/query.cljc` | 39 | `#?(:clj (set! *warn-on-reflection* true) :cljr (set! *warn-on-reflection* true))` |
+| `eve/db/ds/query.cljc` | 59 | `#?(:clj` |
+| `eve/db/ds/query.cljc` | 123 | `#?(:clj (set! *unchecked-math* true) :cljr (set! *unchecked-math* true))` |
+| `eve/db/ds/query.cljc` | 133 | `#?(:cljs` |
+| `eve/db/ds/query.cljc` | 139 | `#?(:clj` |
+| `eve/db/ds/query.cljc` | 201 | `#?(:clje` |
+| `eve/db/ds/query.cljc` | 215 | `#?(:clj (set! *unchecked-math* false) :cljr (set! *unchecked-math* false))` |
+| `eve/db/ds/query.cljc` | 295 | `#?(:jank dp/BindIgnore :clj BindIgnore :cljr BindIgnore :cljs dp/BindIgnore :clj` |
+| `eve/db/ds/query.cljc` | 299 | `#?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/BindScalar :clj` |
+| `eve/db/ds/query.cljc` | 303 | `#?(:jank dp/BindColl :clj BindColl :cljr BindColl :cljs dp/BindColl :clje dp/Bin` |
+| `eve/db/ds/query.cljc` | 316 | `#?(:jank dp/BindTuple :clj BindTuple :cljr BindTuple :cljs dp/BindTuple :clje dp` |
+| `eve/db/ds/query.cljc` | 331 | `(and (instance? #?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp` |
+| `eve/db/ds/query.cljc` | 332 | `(instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar :clje dp/` |
+| `eve/db/ds/query.cljc` | 334 | `(and (instance? #?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp` |
+| `eve/db/ds/query.cljc` | 335 | `(instance? #?(:jank dp/RulesVar :clj RulesVar :cljr RulesVar :cljs dp/RulesVar :` |
+| `eve/db/ds/query.cljc` | 372 | `(let [eid #?(:cljs (tuple-get tuple idx)` |
+| `eve/db/ds/query.cljc` | 383 | `(let [eid #?(:cljs (tuple-get tuple idx)` |
+| `eve/db/ds/query.cljc` | 398 | `#?(:cljs (tuple-get tuple idx)` |
+| `eve/db/ds/query.cljc` | 414 | `#?(:cljs (tuple-get tuple idx)` |
+| `eve/db/ds/query.cljc` | 427 | `#?(:clje (let [getters (mapv #(getter-fn attrs %) common-attrs)]` |
+| `eve/db/ds/query.cljc` | 436 | `(let [^objects getters-arr #?(:clj (into-array Object common-attrs) :cljr (into-` |
+| `eve/db/ds/query.cljc` | 443 | `#?(:jank` |
+| `eve/db/ds/query.cljc` | 506 | `(if-some [tuples1 #?(:clj (hash key) :cljr (hash key) :cljs (get hash key) :clje` |
+| `eve/db/ds/query.cljc` | 535 | `(#?(:cljs tuple-get :clj get :cljr get :clje da/aget :lpy get) tuple idx)))))))` |
+| `eve/db/ds/query.cljc` | 619 | `(#?(:cljs tuple-get :clj get :cljr get :clje da/aget :lpy get) tuple ((:attrs re` |
+| `eve/db/ds/query.cljc` | 651 | `(if #?(:clj  false :cljr false` |
+| `eve/db/ds/query.cljc` | 663 | `(da/aset a i #?(:cljs (tuple-get tuple tuple-idx)` |
+| `eve/db/ds/query.cljc` | 679 | `(da/aset a i #?(:cljs (tuple-get tuple tuple-idx)` |
+| `eve/db/ds/query.cljc` | 689 | `#?(:cljs nil` |
+| `eve/db/ds/query.cljc` | 1034 | `(fn [#?(:cljs t1` |
+| `eve/db/ds/query.cljc` | 1084 | `#?(:jank dp/Variable :clj Variable :cljr Variable :cljs dp/Variable :clje dp/Var` |
+| `eve/db/ds/query.cljc` | 1087 | `#?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar :clje dp/SrcVar :lpy` |
+| `eve/db/ds/query.cljc` | 1090 | `#?(:jank dp/PlainSymbol :clj PlainSymbol :cljr PlainSymbol :cljs dp/PlainSymbol ` |
+| `eve/db/ds/query.cljc` | 1094 | `#?(:jank dp/Constant :clj Constant :cljr Constant :cljs dp/Constant :clje dp/Con` |
+| `eve/db/ds/query.cljc` | 1139 | `#?(:jank dp/FindRel :clj FindRel :cljr FindRel :cljs dp/FindRel :clje dp/FindRel` |
+| `eve/db/ds/query.cljc` | 1145 | `#?(:jank dp/FindColl :clj FindColl :cljr FindColl :cljs dp/FindColl :clje dp/Fin` |
+| `eve/db/ds/query.cljc` | 1149 | `#?(:jank dp/FindScalar :clj FindScalar :cljr FindScalar :cljs dp/FindScalar :clj` |
+| `eve/db/ds/query.cljc` | 1153 | `#?(:jank dp/FindTuple :clj FindTuple :cljr FindTuple :cljs dp/FindTuple :clje dp` |
+| `eve/db/ds/query_v3.cljc` | 17 | `#?(:clj` |
+| `eve/db/ds/query_v3.cljc` | 64 | `#?(:clj` |
+| `eve/db/ds/query_v3.cljc` | 109 | `#?(:clj` |
+| `eve/db/ds/query_v3.cljc` | 180 | `#?(:clj` |
+| `eve/db/ds/query_v3.cljc` | 276 | `(.write #?(:clj  (.getSimpleName ^Class (class rel)) :cljr (.getSimpleName ^Clas` |
+| `eve/db/ds/query_v3.cljc` | 311 | `#?(:clj` |
+| `eve/db/ds/query_v3.cljc` | 359 | `(instance? #?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/Bind` |
+| `eve/db/ds/query_v3.cljc` | 361 | `(instance? #?(:jank dp/Variable :clj Variable :cljr Variable :cljs dp/Variable) ` |
+| `eve/db/ds/query_v3.cljc` | 371 | `#?(:clj` |
+| `eve/db/ds/query_v3.cljc` | 533 | `#?(:jank dp/BindIgnore :clj BindIgnore :cljr BindIgnore :cljs dp/BindIgnore)` |
+| `eve/db/ds/query_v3.cljc` | 536 | `#?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/BindScalar)` |
+| `eve/db/ds/query_v3.cljc` | 542 | `#?(:jank dp/BindColl :clj BindColl :cljr BindColl :cljs dp/BindColl)` |
+| `eve/db/ds/query_v3.cljc` | 556 | `#?(:jank dp/BindTuple :clj BindTuple :cljr BindTuple :cljs dp/BindTuple)` |
+| `eve/db/ds/query_v3.cljc` | 587 | `(and (instance? #?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp` |
+| `eve/db/ds/query_v3.cljc` | 588 | `(instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar) (:variab` |
+| `eve/db/ds/query_v3.cljc` | 614 | `(instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar) source) ` |
+| `eve/db/ds/query_v3.cljc` | 615 | `(instance? #?(:jank dp/DefaultSrc :clj DefaultSrc :cljr DefaultSrc :cljs dp/Defa` |
+| `eve/db/ds/query_v3.cljc` | 627 | `search-pattern (mapv #(when (instance? #?(:jank dp/Constant :clj Constant :cljr ` |
+| `eve/db/ds/query_v3.cljc` | 651 | `idxs    (->> (map #(when (instance? #?(:jank dp/Constant :clj Constant :cljr Con` |
+| `eve/db/ds/query_v3.cljc` | 658 | `(into #{} (map :symbol) (dp/collect #(instance? #?(:jank dp/Variable :clj Variab` |
+| `eve/db/ds/query_v3.cljc` | 667 | `(if (instance? #?(:jank dp/Variable :clj Variable :cljr Variable :cljs dp/Variab` |
+| `eve/db/ds/query_v3.cljc` | 673 | `#?(:clj (->Constant subs) :cljr (->Constant subs) :cljs (dp/->Constant subs))` |
+| `eve/db/ds/query_v3.cljc` | 775 | `(if (instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar) sour` |
+| `eve/db/ds/query_v3.cljc` | 828 | `(instance? #?(:jank dp/Variable :clj Variable :cljr Variable :cljs dp/Variable) ` |
+| `eve/db/ds/query_v3.cljc` | 831 | `(instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar) arg)` |
+| `eve/db/ds/query_v3.cljc` | 836 | `(instance? #?(:jank dp/Constant :clj Constant :cljr Constant :cljs dp/Constant) ` |
+| `eve/db/ds/query_v3.cljc` | 841 | `(if (instance? #?(:jank dp/PlainSymbol :clj PlainSymbol :cljr PlainSymbol :cljs ` |
+| `eve/db/ds/query_v3.cljc` | 857 | `:when   (instance? #?(:jank dp/Variable :clj Variable :cljr Variable :cljs dp/Va` |
+| `eve/db/ds/query_v3.cljc` | 895 | `#?(:jank dp/Pattern :clj Pattern :cljr Pattern :cljs dp/Pattern)` |
+| `eve/db/ds/query_v3.cljc` | 898 | `#?(:jank dp/Not :clj Not :cljr Not :cljs dp/Not)` |
+| `eve/db/ds/query_v3.cljc` | 901 | `#?(:jank dp/Or :clj Or :cljr Or :cljs dp/Or)` |
+| `eve/db/ds/query_v3.cljc` | 904 | `#?(:jank dp/And :clj And :cljr And :cljs dp/And)` |
+| `eve/db/ds/query_v3.cljc` | 907 | `#?(:jank dp/Predicate :clj Predicate :cljr Predicate :cljs dp/Predicate)` |
+| `eve/db/ds/serialize.cljc` | 15 | `#?(:clje [eve.host :refer [transient persistent! conj! assoc! volatile! locking]` |
+| `eve/db/ds/serialize.cljc` | 16 | `#?(:cljs (:require-macros [eve.db.ds.serialize :refer [array dict]]))` |
+| `eve/db/ds/serialize.cljc` | 17 | `#?(:clj` |
+| `eve/db/ds/serialize.cljc` | 41 | `(def ^:private pos-inf #?(:jank (/ 1.0 0.0) :clj Double/POSITIVE_INFINITY :cljr ` |
+| `eve/db/ds/serialize.cljc` | 42 | `(def ^:private neg-inf #?(:jank (/ -1.0 0.0) :clj Double/NEGATIVE_INFINITY :cljr` |
+| `eve/db/ds/serialize.cljc` | 43 | `(def ^:private nan-val #?(:jank (/ 0.0 0.0) :clj Double/NaN :cljr Double/NaN :cl` |
+| `eve/db/ds/serialize.cljc` | 48 | `#?(:clj` |
+| `eve/db/ds/serialize.cljc` | 81 | `#?(:clje` |
+| `eve/db/ds/serialize.cljc` | 87 | `#?(:clj` |
+| `eve/db/ds/serialize.cljc` | 117 | `#?(:clje` |
+| `eve/db/ds/serialize.cljc` | 127 | `#?(:clj  (.get ^java.util.List d (int i)) :cljr (nth d i)` |
+| `eve/db/ds/serialize.cljc` | 133 | `#?(:clj  (.get ^java.util.Map d k) :cljr (get d k)` |
+| `eve/db/ds/serialize.cljc` | 139 | `#?(:clj  (instance? java.util.List a) :cljr (instance? System.Collections.IList ` |
+| `eve/db/ds/serialize.cljc` | 145 | `#?(:clj` |
+| `eve/db/ds/serialize.cljc` | 161 | `#?(:clj` |
+| `eve/db/ds/serialize.cljc` | 178 | `[#?@(:jank [^db/Datom d1] :clj [^Datom d1] :cljr [^Datom d1] :cljs [^db/Datom d1` |
+| `eve/db/ds/serialize.cljc` | 178 | `[#?@(:jank [^db/Datom d1] :clj [^Datom d1] :cljr [^Datom d1] :cljs [^db/Datom d1` |
+| `eve/db/ds/serialize.cljc` | 242 | `#?@(:clj [(or` |
+| `eve/db/ds/serialize.cljc` | 256 | `#?(:clje false :default (== pos-inf v)) (array marker-inf)` |
+| `eve/db/ds/serialize.cljc` | 257 | `#?(:clje false :default (== neg-inf v)) (array marker-minus-inf)` |
+| `eve/db/ds/serialize.cljc` | 258 | `#?(:jank (not (== v v)) :clj (Double/isNaN v) :cljr (Double/IsNaN v) :cljs (js/i` |
+| `eve/db/ds/serialize.cljc` | 270 | `(fn [_idx #?@(:jank [^db/Datom d] :clj [^Datom d] :cljr [^Datom d] :cljs [^db/Da` |
+| `eve/db/ds/serialize.cljc` | 277 | `aevt        (amap-indexed (fn [_ #?@(:jank [^db/Datom d] :clj [^Datom d] :cljr [` |
+| `eve/db/ds/serialize.cljc` | 278 | `avet        (amap-indexed (fn [_ #?@(:jank [^db/Datom d] :clj [^Datom d] :cljr [` |
+| `eve/db/ds/serialize.cljc` | 282 | `#?@(:clj` |
+| `eve/db/ds/serialize.cljc` | 295 | `#?@(:clj` |
+| `eve/db/ds/serialize.cljc` | 300 | `#?(:jank` |
+| `eve/db/ds/serialize.cljc` | 362 | `#?(:clj arrays/into-array :cljr arrays/into-array))` |
+| `eve/db/ds/serialize.cljc` | 363 | `aevt     (some->> (dict-get from "aevt") (amap #(arrays/aget eavt %)) #?(:clj ar` |
+| `eve/db/ds/serialize.cljc` | 364 | `avet     (some->> (dict-get from "avet") (amap #(arrays/aget eavt %)) #?(:clj ar` |
+| `eve/db/ds/storage.cljc` | 21 | `#?(:lpy` |
+| `eve/db/ds/util.cljc` | 10 | `#?(:clj` |
+| `eve/db/ds/util.cljc` | 20 | `#?(:clj (defmacro log [& body]` |
+| `eve/db/ds/util.cljc` | 40 | `#?(:clje (defmacro log [& body]` |
+| `eve/db/ds/util.cljc` | 49 | `#?(:lpy (defmacro raise [& fragments]` |
+| `eve/db/ds/util.cljc` | 70 | `#?(:clje (defmacro raise [& fragments]` |
+| `eve/db/ds/util.cljc` | 75 | `#?(:clj (def ^:private ^:dynamic *if+-syms) :cljr (def ^:private ^:dynamic *if+-` |
+| `eve/db/ds/util.cljc` | 79 | `#?(:clje (def ^:private ^:dynamic *if+-syms))` |
+| `eve/db/ds/util.cljc` | 81 | `#?(:clj (defn- if+-rewrite-cond-impl [cond]` |
+| `eve/db/ds/util.cljc` | 181 | `#?(:clje (defn- if+-rewrite-cond-impl [cond]` |
+| `eve/db/ds/util.cljc` | 207 | `#?(:clj (defn- if+-rewrite-cond [cond]` |
+| `eve/db/ds/util.cljc` | 219 | `#?(:clje (defn- if+-rewrite-cond [cond]` |
+| `eve/db/ds/util.cljc` | 223 | `#?(:clj (defn- flatten-1 [xs]` |
+| `eve/db/ds/util.cljc` | 235 | `#?(:clje (defn- flatten-1 [xs]` |
+| `eve/db/ds/util.cljc` | 239 | `#?(:clj (defmacro if+` |
+| `eve/db/ds/util.cljc` | 384 | `#?(:clje (defmacro if+` |
+| `eve/db/ds/util.cljc` | 403 | `#?(:clj (defmacro cond+ [& clauses]` |
+| `eve/db/ds/util.cljc` | 431 | `#?(:clje (defmacro cond+ [& clauses]` |
+| `eve/db/ds/util.cljc` | 439 | `#?(:clj (defmacro some-of` |
+| `eve/db/ds/util.cljc` | 459 | `#?(:clje (defmacro some-of` |
+| `eve/db/ds/util.cljc` | 468 | `#?(:cljr` |
+| `eve/db/ds/util.cljc` | 477 | `#?(:cljs` |
+| `eve/db/ds/util.cljc` | 488 | `(squuid #?(:clj  (System/currentTimeMillis) :cljr (.ToUnixTimeMilliseconds (Syst` |
+| `eve/db/ds/util.cljc` | 491 | `#?(:clj` |
+| `eve/db/ds/util.cljc` | 523 | `#?(:clj (-> (.getMostSignificantBits ^UUID uuid)` |
+
+## Data / memory / threading / HTTP check on kept branches
+
+Not yet certified. Many kept rows are still open portable branches (host I/O of exceptions, type hints, seq interop, print-method, `:bb`/`:lpy` arms). Unit 3 only converted records. vm is assigned remaining non-record branch removal. No RESULT #56 until only glue remains, each with a reason, and none touch data, memory, threading, or HTTP.
+

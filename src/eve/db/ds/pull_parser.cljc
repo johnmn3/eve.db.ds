@@ -1,15 +1,17 @@
 (ns ^:no-doc eve.db.ds.pull-parser
+  #?(:cljs (:require-macros [eve.db.ds.eve-record :refer [def-eve-record]]))
   (:require
     [eve.db.ds.built-ins :as built-ins]
     [eve.db.ds.db :as db]
+    [eve.db.ds.eve-record :refer [def-eve-record]]
     [eve.db.ds.util :as util]
     ;; PORT DELTA (F-CLJE-HOST-REFERS): util/if+ expansions emit
     ;; (volatile! nil) into the using ns; see eve.db.ds.util
     #?(:clje [eve.host :refer [volatile!]])))
 
-(defrecord PullAttr [as default limit name pattern recursion-limit recursive? reverse? xform multival? ref? component?])
+(def-eve-record PullAttr [as default limit name pattern recursion-limit recursive? reverse? xform multival? ref? component?])
 
-(defrecord PullPattern [attrs first-attr last-attr reverse-attrs wildcard?])
+(def-eve-record PullPattern [attrs first-attr last-attr reverse-attrs wildcard?])
 
 (def default-db-id-attr
   (map->PullAttr {:name :db/id :as :db/id :xform identity}))

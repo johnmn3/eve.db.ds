@@ -1,6 +1,8 @@
 (ns ^:no-doc eve.db.ds.pull-api
+  #?(:cljs (:require-macros [eve.db.ds.eve-record :refer [def-eve-record]]))
   (:require
     [clojure.string :as str]
+    [eve.db.ds.eve-record :refer [def-eve-record]]
     [eve.db.ds.pull-parser :as dpp]
     ;; PORT DELTA (F-NBB-MACROS round): as in eve.db.ds.conn — no
     ;; :cljs type refer; types are named qualified at their uses
@@ -64,7 +66,7 @@
 (defn- conj-some! [xs v]
   (if (nil? v) xs (conj! xs v)))
 
-(defrecord Context [db visitor])
+(def-eve-record Context [db visitor])
 
 (defn visit [^Context context pattern e a v]
   (when-some [visitor (.-visitor context)]
@@ -78,7 +80,7 @@
 (defn- attr-str [attr]
   (or (:as attr) (:name attr)))
 
-(defrecord ResultFrame [value datoms]
+(def-eve-record ResultFrame [value datoms]
   IFrame
   ;; PORT DELTA (F-LPY-FRAME-STUBS): basilisp's deftype* requires
   ;; every method of a protocol's interface in the class body;
@@ -90,7 +92,7 @@
   (-str [this]
     (str "ResultFrame<value=" value ">")))
 
-(defrecord MultivalAttrFrame [acc #?@(:clj [^PullAttr attr] :cljr [^PullAttr attr] :cljs [^PullAttr attr] :clje [attr] :lpy [attr]) datoms]
+(def-eve-record MultivalAttrFrame [acc attr datoms]
   IFrame
   #?(:lpy (-merge [this result] (throw (ex-info "MultivalAttrFrame does not implement -merge" {}))))
   (-run [this context]
@@ -100,14 +102,14 @@
         :let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs [^db/Datom datom] :clje [datom] :lpy [datom]) (first-seq datoms)]
 
         (or (nil? datom) (not= (.-a datom) (.-name attr)))
-        [(ResultFrame. (not-empty (persistent! acc)) (or datoms ()))]
+        [(->ResultFrame (not-empty (persistent! acc)) (or datoms ()))]
 
         ; got limit, skip rest of the datoms
         (and (.-limit attr) (>= (count acc) (.-limit attr)))
         (loop [datoms datoms]
           (let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs [^db/Datom datom] :clje [datom] :lpy [datom]) (first-seq datoms)]
             (if (or (nil? datom) (not= (.-a datom) (.-name attr)))
-              [(ResultFrame. (persistent! acc) (or datoms ()))]
+              [(->ResultFrame (persistent! acc) (or datoms ()))]
               (recur (next-seq datoms)))))
 
         :else
@@ -116,10 +118,10 @@
   (-str [this]
     (str "MultivalAttrFrame<attr=" (attr-str attr) ">")))
 
-(defrecord MultivalRefAttrFrame [seen recursion-limits acc pattern #?@(:clj [^PullAttr attr] :cljr [^PullAttr attr] :cljs [^PullAttr attr] :clje [attr] :lpy [attr]) datoms]
+(def-eve-record MultivalRefAttrFrame [seen recursion-limits acc pattern attr datoms]
   IFrame
   (-merge [this result]
-    (MultivalRefAttrFrame.
+    (->MultivalRefAttrFrame
       seen
       recursion-limits
       (conj-some! acc (.-value ^ResultFrame result))
@@ -132,14 +134,14 @@
       :let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs [^db/Datom datom] :clje [datom] :lpy [datom]) (first-seq datoms)]
 
       (or (nil? datom) (not= (.-a datom) (.-name attr)))
-      [(ResultFrame. (not-empty (persistent! acc)) (or datoms ()))]
+      [(->ResultFrame (not-empty (persistent! acc)) (or datoms ()))]
 
       ; got limit, skip rest of the datoms
       (and (.-limit attr) (>= (count acc) (.-limit attr)))
       (loop [datoms datoms]
         (let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs [^db/Datom datom] :clje [datom] :lpy [datom]) (first-seq datoms)]
           (if (or (nil? datom) (not= (.-a datom) (.-name attr)))
-            [(ResultFrame. (persistent! acc) (or datoms ()))]
+            [(->ResultFrame (persistent! acc) (or datoms ()))]
             (recur (next-seq datoms)))))
 
       :let [id (if (.-reverse? attr) (.-e datom) (.-v datom))]
@@ -150,10 +152,10 @@
   (-str [this]
     (str "MultivalAttrFrame<attr=" (attr-str attr) ">")))
 
-(defrecord AttrsFrame [seen recursion-limits acc #?@(:clj [^PullPattern pattern] :cljr [^PullPattern pattern] :cljs [^PullPattern pattern] :clje [pattern] :lpy [pattern]) #?@(:clj [^PullAttr attr] :cljr [^PullAttr attr] :cljs [^PullAttr attr] :clje [attr] :lpy [^dpp/PullAttr attr]) attrs datoms id]
+(def-eve-record AttrsFrame [seen recursion-limits acc pattern attr attrs datoms id]
   IFrame
   (-merge [this result]
-    (AttrsFrame.
+    (->AttrsFrame
       seen
       recursion-limits
       (assoc-some! acc (.-as attr) ((.-xform attr) (.-value ^ResultFrame result)))
@@ -212,15 +214,15 @@
 
         ;; matching attr
         (and (.-multival? attr) (.-ref? attr))
-        [(AttrsFrame. seen recursion-limits acc pattern attr attrs datoms id)
-         (MultivalRefAttrFrame. seen recursion-limits (transient []) pattern attr datoms)]
+        [(->AttrsFrame seen recursion-limits acc pattern attr attrs datoms id)
+         (->MultivalRefAttrFrame seen recursion-limits (transient []) pattern attr datoms)]
 
         (.-multival? attr)
-        [(AttrsFrame. seen recursion-limits acc pattern attr attrs datoms id)
-         (MultivalAttrFrame. (transient []) attr datoms)]
+        [(->AttrsFrame seen recursion-limits acc pattern attr attrs datoms id)
+         (->MultivalAttrFrame (transient []) attr datoms)]
 
         (.-ref? attr)
-        [(AttrsFrame. seen recursion-limits acc pattern attr attrs datoms id)
+        [(->AttrsFrame seen recursion-limits acc pattern attr attrs datoms id)
          (ref-frame context seen recursion-limits pattern attr (.-v datom))]
 
         :else
@@ -233,10 +235,10 @@
   (-str [this]
     (str "AttrsFrame<id=" id ", attr=" (attr-str attr) ", attrs=" (str/join " " (map attr-str attrs)) ">")))
 
-(defrecord ReverseAttrsFrame [seen recursion-limits acc pattern #?@(:clj [^PullAttr attr] :cljr [^PullAttr attr] :cljs [^PullAttr attr] :clje [attr] :lpy [attr]) attrs id]
+(def-eve-record ReverseAttrsFrame [seen recursion-limits acc pattern attr attrs id]
   IFrame
   (-merge [this result]
-    (ReverseAttrsFrame.
+    (->ReverseAttrsFrame
       seen
       recursion-limits
       (assoc-some! acc (.-as attr) ((.-xform attr) (.-value ^ResultFrame result)))
@@ -251,7 +253,7 @@
            attrs attrs]
       (util/cond+
         (nil? attr)
-        [(ResultFrame. (not-empty (persistent! acc)) nil)]
+        [(->ResultFrame (not-empty (persistent! acc)) nil)]
 
         :let [name   (.-name attr)
               db     (.-db ^Context context)
@@ -268,12 +270,12 @@
         (recur acc (first-seq attrs) (next-seq attrs))
 
         (.-component? attr)
-        [(ReverseAttrsFrame. seen recursion-limits acc pattern attr attrs id)
+        [(->ReverseAttrsFrame seen recursion-limits acc pattern attr attrs id)
          (ref-frame context seen recursion-limits pattern attr (.-e #?@(:clj [^Datom (first-seq datoms)] :cljr [^Datom (first-seq datoms)] :cljs [^db/Datom (first-seq datoms)] :clje [(first-seq datoms)] :lpy [(first-seq datoms)])))]
 
         :else
-        [(ReverseAttrsFrame. seen recursion-limits acc pattern attr attrs id)
-         (MultivalRefAttrFrame. seen recursion-limits (transient []) pattern attr datoms)])))
+        [(->ReverseAttrsFrame seen recursion-limits acc pattern attr attrs id)
+         (->MultivalRefAttrFrame seen recursion-limits (transient []) pattern attr datoms)])))
   
   (-str [this]
     (str "ReverseAttrsFrame<id=" id ", attr=" (attr-str attr) ", attrs=" (str/join " " (map attr-str attrs)) ">")))
@@ -291,12 +293,12 @@
     (attrs-frame context seen recursion-limits (.-pattern attr) id)
 
     (seen id)
-    (ResultFrame. {:db/id id} nil)
+    (->ResultFrame {:db/id id} nil)
 
     :let [lim (recursion-limits attr)]
 
     (and lim (<= lim 0))
-    (ResultFrame. nil nil)
+    (->ResultFrame nil nil)
 
     :let [seen' (conj seen id)
           recursion-limits' (cond
@@ -334,7 +336,7 @@
                        (<= (compare (.-a d) to) 0)))))]
     (when (.-wildcard? pattern)
       (visit context :db.pull/wildcard id nil nil))
-    (AttrsFrame.
+    (->AttrsFrame
       seen
       recursion-limits
       (transient {})
@@ -369,7 +371,7 @@
   ([db pattern] (parse-opts db pattern nil))
   ([db pattern {:keys [visitor]}]
    {:pattern (lru/-get db/pull-patterns-cache pattern #(dpp/parse-pattern db pattern))
-    :context (Context. db visitor)}))
+    :context (->Context db visitor)}))
 
 (defn pull
   "Supported opts:

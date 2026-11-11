@@ -1,6 +1,8 @@
 (ns ^:no-doc eve.db.ds.query-v3
+  (:refer-clojure :exclude [deftype])
   (:require
     [clojure.set :as set]
+    [eve.deftype :refer [deftype]]
     [eve.db.ds.built-ins :as built-ins]
     [eve.db.ds.core :as d]
     [eve.db.ds.db :as db]
@@ -283,6 +285,9 @@
     (.write "}")))
 
 (deftype ArrayRelation [offset-map coll]
+  clojure.lang.ILookup
+  (valAt [_ k] (case k :offset-map offset-map :coll coll nil))
+  (valAt [_ k nf] (case k :offset-map offset-map :coll coll nf))
   IRelation
   (-project [_ syms]
     (ArrayRelation. (select-keys offset-map syms) coll))
@@ -311,6 +316,9 @@
      (pr-rel rel w)) :cljr (defmethod print-method ArrayRelation [rel w]
      (pr-rel rel w)))
 
+(defn ->ArrayRelation [offset-map coll]
+  (ArrayRelation. offset-map coll))
+
 (defn array-rel [symbols coll]
   (->ArrayRelation (zipmap symbols (range)) coll))
 
@@ -318,6 +326,9 @@
 ;;; CollRelation
 
 (deftype CollRelation [offset-map coll]
+  clojure.lang.ILookup
+  (valAt [_ k] (case k :offset-map offset-map :coll coll nil))
+  (valAt [_ k nf] (case k :offset-map offset-map :coll coll nf))
   IRelation
   (-project [_ syms]
     (CollRelation. (select-keys offset-map syms) coll))
@@ -340,6 +351,9 @@
     (assert (instance? CollRelation rel))
     (assert (= offset-map (.-offset-map rel)))
     (CollRelation. offset-map (concat coll (.-coll rel)))))
+
+(defn ->CollRelation [offset-map coll]
+  (CollRelation. offset-map coll))
 
 (defn coll-rel [symbols coll]
   (let [offset-map (reduce-kv
@@ -414,6 +428,9 @@
   (-size       [_] 1)
   (-indexes    [_ _] (to-array []))
   (-copy-tuple [_ _ _ _ _]))
+
+(defn ->SingletonRelation []
+  (SingletonRelation.))
 
 (def singleton-rel ->SingletonRelation)
 
@@ -656,7 +673,7 @@
                 ;; PORT DELTA (F-NBB-MACROS round): as in
                 ;; eve.db.ds.core's FilteredDB — class constructor
                 ;; on :clj, factory var on :cljs
-                #?(:clj (Constant. subs) :cljr (Constant. subs) :cljs (dp/->Constant subs))
+                #?(:clj (->Constant subs) :cljr (->Constant subs) :cljs (dp/->Constant subs))
                 form))
             form)))
       clause)))
