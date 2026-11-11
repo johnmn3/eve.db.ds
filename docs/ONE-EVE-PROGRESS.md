@@ -162,3 +162,7 @@ Folded `ihash` (#102, #103) to one portable `(defn ihash ^long [x] (hash x))` an
 ## Open-other batch 17 — portable db?
 
 Folded `db?` (#145) to one portable `satisfies?` of ISearch, IIndexAccess and IDB. No vm rows touched. Counts **284** → **283** / **0**. Four-host only-core + lru-portable vs `:dev` Eve `7840ffe529`: JVM, bb, nbb, basilisp all PASS.
+
+## Open-other batch 18 — portable vpred / -search pred
+
+Folded `vpred` (#135) to one portable `defn` using `=` (same string?/int? guards as the JVM body) and `-search` pred (#142) to `(vpred v)` on every host. No vm rows touched. Counts **283** → **281** / **0**. Four-host only-core + lru-portable vs `:dev` Eve `7840ffe529`: JVM, bb, nbb, basilisp all PASS.

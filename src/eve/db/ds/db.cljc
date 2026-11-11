@@ -1312,20 +1312,13 @@
     (update :aevt persistent!)
     (update :avet persistent!)))
 
-#?(:clj
-   (defn vpred [v]
-     (cond
-       (string? v)  (fn [x] (if (string? x) (.equals ^String v x) false))
-       (int? v)     (fn [x] (if (int? x) (= (long v) (long x)) false))
-       (keyword? v) (fn [x] (.equals ^Object v x))
-       (nil? v)     (fn [x] (nil? x))
-       :else        (fn [x] (= v x)))) :cljr (defn vpred [v]
-     (cond
-       (string? v)  (fn [x] (if (string? x) (.Equals ^String v x) false))
-       (int? v)     (fn [x] (if (int? x) (= (long v) (long x)) false))
-       (keyword? v) (fn [x] (.Equals ^Object v x))
-       (nil? v)     (fn [x] (nil? x))
-       :else        (fn [x] (= v x)))))
+(defn vpred [v]
+  (cond
+    (string? v)  (fn [x] (and (string? x) (= v x)))
+    (int? v)     (fn [x] (and (int? x) (= (long v) (long x))))
+    (keyword? v) (fn [x] (= v x))
+    (nil? v)     (fn [x] (nil? x))
+    :else        (fn [x] (= v x))))
 
 ;; PORT (PORTING-DS.md T2): DB is an eve-deftype with record semantics
 ;; implemented as protocol groups. Vanilla's defrecord carried three
@@ -1483,17 +1476,7 @@
           eavt       (.-eavt db)
           aevt       (.-aevt db)
           avet       (.-avet db)
-          pred       #?(:clj  (vpred v)
-                        ;; PORT DELTA (F-CLJE-PRED): vpred is a :clj-only
-                        ;; defn (.equals interop); on clojerl = is exact
-                        ;; for the string/int/keyword cases vpred
-                        ;; special-cases, so the :cljs arm is faithful
-                        ;; here. The arm must exist: without it the
-                        ;; binding value vanishes and the let misaligns.
-                        :cljr (fn [x] (= v x))
-                        :clje (fn [x] (= v x))
-                        :lpy  (fn [x] (= v x))
-                        :cljs #(= v %))
+          pred       (vpred v)
           multival?  (contains? (-attrs-by db :db.cardinality/many) a)]
       (search-result (case-tree [e a (some? v) tx]
         [(set/slice eavt (datom e a v tx) (datom e a v tx))                   ;; e a v tx

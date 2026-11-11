@@ -1,6 +1,6 @@
-# Remaining 283 host branches — classification for vm
+# Remaining 281 host branches — classification for vm
 
-Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–5, 7, 10 and 11 removed 54 branches; 342→288; batches 6, 8, 9, 12 and 13 marked 193 as glue plus batch 10 #334, open-other 216→2). Comments/strings excluded, nested counted once. Re-derive of glue from batches 6, 8, 12, 13 and 14: 148 rows held up as real host glue; 44 reclassified data, 10 memory, 4 threading (vm data/memory rows untouched). Batch 16 folded ihash (#102/#103) and tx-id? (#170/#171) to portable clojure.core (288→284). Batch 17 folded db? (#145) to portable satisfies? (284→283).
+Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–5, 7, 10 and 11 removed 54 branches; 342→288; batches 6, 8, 9, 12 and 13 marked 193 as glue plus batch 10 #334, open-other 216→2). Comments/strings excluded, nested counted once. Re-derive of glue from batches 6, 8, 12, 13 and 14: 148 rows held up as real host glue; 44 reclassified data, 10 memory, 4 threading (vm data/memory rows untouched). Batch 16 folded ihash (#102/#103) and tx-id? (#170/#171) to portable clojure.core (288→284). Batch 17 folded db? (#145) to portable satisfies? (284→283). Batch 18 folded vpred (#135) and -search pred (#142) to portable = (283→281).
 
 **Glue** = loader/require-macros/import/refer/type-hint/instance?-class-name/warn-on-reflection/export wiring that does not itself implement data, memory, threading, or HTTP.
 
@@ -9,7 +9,7 @@ Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–5
 **Open-other** = remaining host branches (math, host interop, etc.) that are not obviously glue and not in the four forbidden areas by snippet.
 
 
-## data (78)
+## data (76)
 
 - #1 `eve/db/ds/built_ins.cljc:127` — `(#?(:cljs js/Math.sqrt :clj Math/sqrt :cljr Math/Sqrt) (aggregate-variance coll)`
 - #20 `eve/db/ds/core.cljc:194` — `(def ^{:tag #?(:jank db/Datom :clj Datom :cljr Datom :cljs db/Datom :clje db/Dat`
@@ -62,7 +62,6 @@ Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–5
 - #85 `eve/db/ds/db.cljc:662` — `#?@(:clj [(throw (IndexOutOfBoundsException.))] :cljr [(throw (System.IndexOutOf`
 - #109 `eve/db/ds/db.cljc:982` — `(catch #?@(:clj [ClassCastException] :cljr [System.InvalidCastException]`
 - #115 `eve/db/ds/db.cljc:1159` — `(catch #?@(:clj [ClassCastException] :cljr [System.InvalidCastException]`
-- #135 `eve/db/ds/db.cljc:1329` — `#?(:clj`
 - #290 `eve/db/ds/query_v3.cljc:62` — `#?(:clj`
 - #291 `eve/db/ds/query_v3.cljc:107` — `#?(:clj`
 - #292 `eve/db/ds/query_v3.cljc:178` — `#?(:clj`
@@ -77,7 +76,6 @@ Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–5
 - #98 `eve/db/ds/db.cljc:866` — `#?(:clje (defn class-name`
 - #139 `eve/db/ds/db.cljc:1416` — `#?(:bb (seq x) :default x))`
 - #141 `eve/db/ds/db.cljc:1496` — `(-schema [db] #?(:clje schema`
-- #142 `eve/db/ds/db.cljc:1508` — `pred       #?(:clj  (vpred v)`
 - #144 `eve/db/ds/db.cljc:1630` — `#?(:clje`
 - #159 `eve/db/ds/db.cljc:2142` — `cmp     #?(:bb (case index`
 - #335 `eve/db/ds/serialize.cljc:145` — `#?(:clj`

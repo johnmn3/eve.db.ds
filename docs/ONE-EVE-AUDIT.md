@@ -24,6 +24,7 @@ After open-other batch 14 (portable join-tuples + tuple-key-fn glue): **288** / 
 After glue re-derive (batches 6/8/12/13/14 reviewed; 58 reclassified data/memory/threading, 0 folded, counts unchanged): **288** / **0**.
 After open-other batch 16 (portable ihash + tx-id?): **284** / **0**.
 After open-other batch 17 (portable db?): **283** / **0**.
+After open-other batch 18 (portable vpred / -search pred): **281** / **0**.
 
 Plain type sites (deftype/defrecord/defrecord-updatable that are not eve-deftype / eve.deftype/deftype) are **0**. Remaining `(deftype …)` forms in source are eve.deftype/deftype (LRU, Entity, AutoTempid, FilteredDB, ArrayRelation, CollRelation, SingletonRelation) or evicted through `def-eve-record` / `deftrecord`.
 
@@ -167,14 +168,14 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 132 | `eve/db/ds/db.cljc` | 1255 | `#?(:clje (defmacro validate-attr [attr at]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
 | 133 | `eve/db/ds/db.cljc` | 1264 | `(do #?@(:clj [(defmacro validate-val [v at]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
 | 134 | `eve/db/ds/db.cljc` | 1284 | `#?(:clje (defmacro validate-val [v at]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
-| 135 | `eve/db/ds/db.cljc` | 1329 | `#?(:clj` | KEPT | data: vpred is a fast search predicate over datom values (host .equals); foldable to = if four hosts pass |
+| 135 | `eve/db/ds/db.cljc` | 1329 | `#?(:clj` | REMOVED | portable vpred via =; dropped host .equals/.Equals arms |
 | 136 | `eve/db/ds/db.cljc` | 1367 | `#?(:lpy (declare -schema -attrs-by -search -datoms -seek-datoms -rseek-datoms -i` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 137 | `eve/db/ds/db.cljc` | 1373 | `#?(:lpy (declare multival?))` | KEPT | glue: basilisp-only forward declare so deftype method bodies resolve at analysis |
 | 138 | `eve/db/ds/db.cljc` | 1387 | `(let [entry #?(:clj  (fn [k v] (clojure.lang.MapEntry. k v)) :cljr (fn [k v] (cl` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
 | 139 | `eve/db/ds/db.cljc` | 1416 | `#?(:bb (seq x) :default x))` | KEPT | data: search-result wraps -search slices so transact can vec them; data-path (F-BB-SEARCH-SEQ) |
 | 140 | `eve/db/ds/db.cljc` | 1453 | `#?(:clje [k v]` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
 | 141 | `eve/db/ds/db.cljc` | 1496 | `(-schema [db] #?(:clje schema` | KEPT | data: DB -schema field access (F-CLJE-SCHEMA); data-path field read, not loader glue |
-| 142 | `eve/db/ds/db.cljc` | 1508 | `pred       #?(:clj  (vpred v)` | KEPT | data: -search value predicate (vpred vs =); data-path. Foldable to = if four hosts pass |
+| 142 | `eve/db/ds/db.cljc` | 1508 | `pred       #?(:clj  (vpred v)` | REMOVED | -search pred uses portable vpred on every host |
 | 143 | `eve/db/ds/db.cljc` | 1566 | `#?(:bb  (seq (set/slice (get db index)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 144 | `eve/db/ds/db.cljc` | 1630 | `#?(:clje` | KEPT | data: clje extend-type of IAssociative on DB so assoc/update work in transact; data-path |
 | 145 | `eve/db/ds/db.cljc` | 1643 | `#?@(:jank [(and (satisfies? ISearch x)` | REMOVED | portable satisfies? of ISearch/IIndexAccess/IDB; dropped host instance? arms |
