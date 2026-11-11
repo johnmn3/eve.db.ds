@@ -12,10 +12,12 @@
 ;; separate, explicit decision.
 ;;
 ;; Dev/test pin: alias :dev overrides eve/eve to johnmn3/atom.broker
-;; lane-m/eve-db-ds-gaps-eve (the eve/ subdir) @ 55cd54ca34, which
-;; adds IPending on eve.thread Promise/Future (so clojure.core/realized?
-;; works), the bb MapEntry presentation, nbb pending test and bb slab-map
-;; SciMap carve-out fix (55cd54ca34),
+;; lane-m/eve-db-ds-gaps-eve (the eve/ subdir) @ ec22aba4c0, which
+;; caps heap bitmap-class growth below the i32/byte-array limit (no
+;; integer overflow in make-heap-region; ec22aba4c0), adds IPending
+;; on eve.thread Promise/Future (so clojure.core/realized? works), the
+;; bb MapEntry presentation, nbb pending test and bb slab-map SciMap
+;; carve-out fix (55cd54ca34),
 ;; the #460 test fix, and the jank satisfies? load order, on
 ;; top of the earlier bb SciMap/lookup-ns? overlays, JS enc/unsupported,
 ;; and process-slab auto-init. Four-host gates use
@@ -31,7 +33,7 @@
  :aliases
  {:dev {:override-deps
         {eve/eve {:git/url "https://github.com/johnmn3/atom.broker"
-                  :git/sha "55cd54ca341efe9ce97bfa265aaa02fb8873bc36"
+                  :git/sha "ec22aba4c0ddf4f2ff58f26b04d654d53f247d61"
                   :deps/root "eve"}}}
   :test {:extra-paths ["test/drivers"]}
   ;; DataScript's upstream test suite (test/upstream-ds, tag 1.8.1, renamed
