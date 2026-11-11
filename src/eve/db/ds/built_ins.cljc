@@ -123,8 +123,21 @@
                  (* delta delta)))]
     (/ sum (count coll))))
 
+(defn- sqrt [x]
+  ;; Newton's method; portable across JVM/bb/nbb/basilisp (no host Math).
+  ;; aggregate-variance is a non-negative sum-of-squares mean, so x >= 0.
+  (let [x (double x)]
+    (if (zero? x)
+      0.0
+      (loop [g (if (< x 1.0) 1.0 x)
+             i 0]
+        (let [n (* 0.5 (+ g (/ x g)))]
+          (if (or (== n g) (> i 48))
+            n
+            (recur n (inc i))))))))
+
 (defn- aggregate-stddev [coll]
-  (#?(:cljs js/Math.sqrt :clj Math/sqrt :cljr Math/Sqrt) (aggregate-variance coll)))
+  (sqrt (aggregate-variance coll)))
 
 (defn- aggregate-min
   ([coll]
