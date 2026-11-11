@@ -30,7 +30,7 @@
   ;; that class, and its only use was defcomp's invokePrim arm,
   ;; which D6 drops. The ns needs no :import on the :clj read.
   #?(:cljs (:require-macros [eve.db.ds.db :refer [case-tree combine-cmp defn+ defcomp defrecord-updatable int-compare validate-attr validate-val]]))
-  (:refer-clojure :exclude [seqable? #?(:clj update)]))
+  (:refer-clojure :exclude [seqable? #?(:clj update) deftype]))
 
 #?(:clj (set! *warn-on-reflection* true) :cljr (set! *warn-on-reflection* true))
 

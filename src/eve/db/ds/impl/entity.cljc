@@ -77,7 +77,7 @@
 
   IPrintWithWriter
   (-pr-writer [this writer opts]
-    (e/-write writer (pr-str (assoc @cache :db/id eid)))))
+    (e/-write writer (pr-str (assoc @(.-cache this) :db/id (.-eid this))))))
 
 (defn entity? [x] (instance? Entity x))
 

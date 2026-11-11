@@ -33,10 +33,10 @@
   (entryAt [_ k]     (find key-value k))
   (assoc [this k v]  (assoc-lru this k v))
   clojure.lang.Seqable
-  (seq [_] (seq key-value))
+  (seq [this] (seq (.-key-value this)))
   IPrintWithWriter
-  (-pr-writer [_ writer opts]
-    (e/-write writer (pr-str key-value))))
+  (-pr-writer [this writer opts]
+    (e/-write writer (pr-str (.-key-value this)))))
 
 (defn assoc-lru [^LRU lru k v]
   (let [key-value (.-key-value lru)
