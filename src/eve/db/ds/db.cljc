@@ -19,7 +19,10 @@
     [eve.vec]
     [eve.list]
     [eve.deftype :refer [eve-deftype]]
-    #?(:lpy [eve.deftype :refer [deftype]])
+    ;; UNIT1 (#56): eve.deftype/deftype is the one portable deftype on
+    ;; every host — the per-host require branch is gone (ledger rows
+    ;; db.cljc:22 et al.).
+    [eve.deftype :refer [deftype]]
     [me.tonsky.persistent-sorted-set :as set]
     [me.tonsky.persistent-sorted-set.arrays :as arrays])
   ;; PORT DELTA (D6, PORTING-DS.md): vanilla's (:import
@@ -2378,35 +2381,20 @@
 (def *last-auto-tempid
   (atom 0))
 
+;; UNIT1 (DISPATCH #56, one-Eve-implementation): AutoTempid is ONE
+;; definition, eve.deftype/deftype — print fidelity only (tempid
+;; resolution reads the type and field, not Object methods). The print
+;; body is the Datom house style (IPrintWithWriter over e/-write +
+;; pr-str): eve.deftype realizes it per host (print-method on the
+;; JVM/CLR/basilisp faces, the protocol on bb/jank/cljs). The old four
+;; per-host arm splices and the two print-method defmethods delete.
 (deftype AutoTempid [id]
-  #?@(:cljs
-      [IPrintWithWriter
-       (-pr-writer [d writer opts]
-         (pr-sequential-writer writer pr-writer "#eve.db.ds/AutoTempid [" " " "]" opts [id]))]
-      :clj
-      [Object
-       (toString [d]
-         (str "#eve.db.ds/AutoTempid [" id "]"))]
-      :cljr
-      [Object
-       (ToString [d]
-         (str "#eve.db.ds/AutoTempid [" id "]"))]
-      ;; F-LPY-ENTITY family: no :lpy arm -> AutoTempid carried no
-      ;; impls on basilisp (print fidelity only — tempid resolution
-      ;; reads the type and field, not Object methods). Mirror :clj.
-      :lpy
-      [Object
-       (toString [d]
-         (str "#eve.db.ds/AutoTempid [" id "]"))]))
-
-#?(:clj
-   (defmethod print-method AutoTempid [^AutoTempid id, ^java.io.Writer w]
-     (.write w (str "#eve.db.ds/AutoTempid "))
-     (binding [*out* w]
-       (pr [(.-id id)]))) :cljr (defmethod print-method AutoTempid [^AutoTempid id, ^System.IO.TextWriter w]
-     (.Write w (str "#eve.db.ds/AutoTempid "))
-     (binding [*out* w]
-       (pr [(.-id id)]))))
+  Object
+  (toString [this]
+    (str "#eve.db.ds/AutoTempid [" id "]"))
+  IPrintWithWriter
+  (-pr-writer [this writer opts]
+    (e/-write writer (str "#eve.db.ds/AutoTempid [" (.-id this) "]"))))
 
 (defn auto-tempid []
   (AutoTempid. (swap! *last-auto-tempid inc)))
