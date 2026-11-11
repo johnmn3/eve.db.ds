@@ -8,6 +8,7 @@ After unit 2 (584e364): 346 / 15.
 After LRU Counted (30f1d19): 346 / 15.
 After unit 3 (this commit, working tree): **342** / **0**.
 After open-other batch 1 (pull_api first/next/conj-seq): **336** / **0**.
+After open-other batch 2 (pull_api PullAttr/PullPattern hints): **329** / **0**.
 
 Plain type sites (deftype/defrecord/defrecord-updatable that are not eve-deftype / eve.deftype/deftype) are **0**. Remaining `(deftype …)` forms in source are eve.deftype/deftype (LRU, Entity, AutoTempid, FilteredDB, ArrayRelation, CollRelation, SingletonRelation) or evicted through `def-eve-record` / `deftrecord`.
 
@@ -249,18 +250,18 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 230 | `eve/db/ds/pull_api.cljc` | 264 | `(and (empty? datoms) (some? (#?(:clj .-default :cljr .-default :cljs :default :c` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 231 | `eve/db/ds/pull_api.cljc` | 265 | `(recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 232 | `eve/db/ds/pull_api.cljc` | 272 | `(ref-frame context seen recursion-limits pattern attr (.-e #?@(:clj [^Datom (fir` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 233 | `eve/db/ds/pull_api.cljc` | 281 | `(defn- auto-expanding? [#?@(:clj [^PullAttr attr] :cljr [^PullAttr attr] :cljs [` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 234 | `eve/db/ds/pull_api.cljc` | 286 | `(.-wildcard? #?(:clj ^PullPattern (.-pattern attr) :cljr ^PullPattern (.-pattern` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 235 | `eve/db/ds/pull_api.cljc` | 288 | `(defn ref-frame [context seen recursion-limits pattern #?@(:clj [^PullAttr attr]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 236 | `eve/db/ds/pull_api.cljc` | 310 | `(defn attrs-frame [^Context context seen recursion-limits #?@(:clj [^PullPattern` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 233 | `eve/db/ds/pull_api.cljc` | 281 | `(defn- auto-expanding? [#?@(:clj [^PullAttr attr] :cljr [^PullAttr attr] :cljs [` | REMOVED | dropped host type hints; field reads use portable (.-pattern)/(.-name)/(.-first-attr) |
+| 234 | `eve/db/ds/pull_api.cljc` | 286 | `(.-wildcard? #?(:clj ^PullPattern (.-pattern attr) :cljr ^PullPattern (.-pattern` | REMOVED | dropped host type hints; field reads use portable (.-pattern)/(.-name)/(.-first-attr) |
+| 235 | `eve/db/ds/pull_api.cljc` | 288 | `(defn ref-frame [context seen recursion-limits pattern #?@(:clj [^PullAttr attr]` | REMOVED | dropped host type hints; field reads use portable (.-pattern)/(.-name)/(.-first-attr) |
+| 236 | `eve/db/ds/pull_api.cljc` | 310 | `(defn attrs-frame [^Context context seen recursion-limits #?@(:clj [^PullPattern` | REMOVED | dropped host type hints; field reads use portable (.-pattern)/(.-name)/(.-first-attr) |
 | 237 | `eve/db/ds/pull_api.cljc` | 313 | `(and (.-wildcard? pattern) (instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/D` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 238 | `eve/db/ds/pull_api.cljc` | 314 | `(set/slice (.-eavt #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 239 | `eve/db/ds/pull_api.cljc` | 322 | `:let [from (.-name #?(:clj ^PullAttr (.-first-attr pattern) :cljr ^PullAttr (.-f` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 240 | `eve/db/ds/pull_api.cljc` | 323 | `to   (.-name #?(:clj ^PullAttr (.-last-attr pattern) :cljr ^PullAttr (.-last-att` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 239 | `eve/db/ds/pull_api.cljc` | 322 | `:let [from (.-name #?(:clj ^PullAttr (.-first-attr pattern) :cljr ^PullAttr (.-f` | REMOVED | dropped host type hints; field reads use portable (.-pattern)/(.-name)/(.-first-attr) |
+| 240 | `eve/db/ds/pull_api.cljc` | 323 | `to   (.-name #?(:clj ^PullAttr (.-last-attr pattern) :cljr ^PullAttr (.-last-att` | REMOVED | dropped host type hints; field reads use portable (.-pattern)/(.-name)/(.-first-attr) |
 | 241 | `eve/db/ds/pull_api.cljc` | 325 | `(instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :lpy db/DB) d` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 242 | `eve/db/ds/pull_api.cljc` | 326 | `(set/slice (.-eavt #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 243 | `eve/db/ds/pull_api.cljc` | 331 | `(fn [#?@(:jank [^db/Datom d] :clj [^Datom d] :cljr [^Datom d] :cljs [^db/Datom d` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 244 | `eve/db/ds/pull_api.cljc` | 349 | `#?@(:clj [^PullPattern pattern :pattern] :cljr [^PullPattern pattern :pattern] :` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 244 | `eve/db/ds/pull_api.cljc` | 349 | `#?@(:clj [^PullPattern pattern :pattern] :cljr [^PullPattern pattern :pattern] :` | REMOVED | dropped host type hints; field reads use portable (.-pattern)/(.-name)/(.-first-attr) |
 | 245 | `eve/db/ds/pull_parser.cljc` | 8 | `#?(:clje [eve.host :refer [volatile!]])))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 246 | `eve/db/ds/pull_parser.cljc` | 73 | `#?(:clj (when (namespace sym-or-fn)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 247 | `eve/db/ds/pull_parser.cljc` | 156 | `(defn #?@(:clj [^PullPattern parse-pattern] :cljr [^PullPattern parse-pattern] :` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |

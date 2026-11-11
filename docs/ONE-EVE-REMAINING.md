@@ -1,6 +1,6 @@
-# Remaining 336 host branches — classification for vm
+# Remaining 329 host branches — classification for vm
 
-Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batch 1 removed 6 pull_api seq-helper branches; 342→336). Comments/strings excluded, nested counted once.
+Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–2 removed 13 pull_api seq-helper and type-hint branches; 342→329). Comments/strings excluded, nested counted once.
 
 **Glue** = loader/require-macros/import/refer/type-hint/instance?-class-name/warn-on-reflection/export wiring that does not itself implement data, memory, threading, or HTTP.
 
@@ -136,7 +136,7 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 ## glue-candidate (0)
 
 
-## open-other (227)
+## open-other (220)
 
 - #4 `eve/db/ds/conn.cljc:14` — `#?(:clj`
 - #9 `eve/db/ds/conn.cljc:87` — `#?(:clj`
@@ -261,13 +261,6 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 - #216 `eve/db/ds/pull_api.cljc:95` — `#?(:lpy (-merge [this result] (throw (ex-info "MultivalAttrFrame does not implem`
 - #226 `eve/db/ds/pull_api.cljc:205` — `(recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default`
 - #231 `eve/db/ds/pull_api.cljc:265` — `(recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default`
-- #233 `eve/db/ds/pull_api.cljc:281` — `(defn- auto-expanding? [#?@(:clj [^PullAttr attr] :cljr [^PullAttr attr] :cljs [`
-- #234 `eve/db/ds/pull_api.cljc:286` — `(.-wildcard? #?(:clj ^PullPattern (.-pattern attr) :cljr ^PullPattern (.-pattern`
-- #235 `eve/db/ds/pull_api.cljc:288` — `(defn ref-frame [context seen recursion-limits pattern #?@(:clj [^PullAttr attr]`
-- #236 `eve/db/ds/pull_api.cljc:310` — `(defn attrs-frame [^Context context seen recursion-limits #?@(:clj [^PullPattern`
-- #239 `eve/db/ds/pull_api.cljc:322` — `:let [from (.-name #?(:clj ^PullAttr (.-first-attr pattern) :cljr ^PullAttr (.-f`
-- #240 `eve/db/ds/pull_api.cljc:323` — `to   (.-name #?(:clj ^PullAttr (.-last-attr pattern) :cljr ^PullAttr (.-last-att`
-- #244 `eve/db/ds/pull_api.cljc:349` — `#?@(:clj [^PullPattern pattern :pattern] :cljr [^PullPattern pattern :pattern] :`
 - #246 `eve/db/ds/pull_parser.cljc:73` — `#?(:clj (when (namespace sym-or-fn)`
 - #247 `eve/db/ds/pull_parser.cljc:156` — `(defn #?@(:clj [^PullPattern parse-pattern] :cljr [^PullPattern parse-pattern] :`
 - #250 `eve/db/ds/query.cljc:26` — `#?(:clj`

@@ -89,3 +89,7 @@ Counts unchanged: **342/376** host branches, **0/20** plain types. open-other (~
 ## Open-other batch 1 — pull_api seq helpers
 
 Collapsed `first-seq` / `next-seq` / `conj-seq` to portable `clojure.core` `first` / `next` / `cons` (no host type hints). Audit rows #207–#212 REMOVED. Counts **342 → 336** / **0**. vm data/memory rows untouched. Parse LRU left in place.
+
+## Open-other batch 2 — pull_api PullAttr/PullPattern hints
+
+Dropped host type-hint reader branches on `auto-expanding?`, `ref-frame`, `attrs-frame`, `pull-impl`, and `.-first-attr`/`.-last-attr`/`.-pattern` field reads. Audit rows #233–#236, #239, #240, #244 REMOVED. Counts **336 → 329** / **0**. vm data/memory rows (including #225/#230 `.-default`) untouched.

@@ -273,14 +273,14 @@
   (-str [this]
     (str "ReverseAttrsFrame<id=" id ", attr=" (attr-str attr) ", attrs=" (str/join " " (map attr-str attrs)) ">")))
 
-(defn- auto-expanding? [#?@(:clj [^PullAttr attr] :cljr [^PullAttr attr] :cljs [^PullAttr attr] :clje [attr] :lpy [attr])]
+(defn- auto-expanding? [attr]
   (or
     (.-recursive? attr)
     (and
       (.-component? attr)
-      (.-wildcard? #?(:clj ^PullPattern (.-pattern attr) :cljr ^PullPattern (.-pattern attr) :cljs ^PullPattern (.-pattern attr) :clje (.-pattern attr) :lpy ^dpp/PullPattern (.-pattern attr))))))
+      (.-wildcard? (.-pattern attr)))))
 
-(defn ref-frame [context seen recursion-limits pattern #?@(:clj [^PullAttr attr] :cljr [^PullAttr attr] :cljs [^PullAttr attr] :clje [attr] :lpy [attr]) id]
+(defn ref-frame [context seen recursion-limits pattern attr id]
   (util/cond+
     (not (auto-expanding? attr))
     (attrs-frame context seen recursion-limits (.-pattern attr) id)
@@ -302,7 +302,7 @@
     :else
     (attrs-frame context seen' recursion-limits' (if (.-recursive? attr) pattern (.-pattern attr)) id)))
 
-(defn attrs-frame [^Context context seen recursion-limits #?@(:clj [^PullPattern pattern] :cljr [^PullPattern pattern] :cljs [^PullPattern pattern] :clje [pattern] :lpy [pattern]) id]
+(defn attrs-frame [^Context context seen recursion-limits pattern id]
   (let [db (.-db context)
         datoms (util/cond+
                  (and (.-wildcard? pattern) (instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :lpy db/DB) db))
@@ -314,8 +314,8 @@
                  (nil? (.-first-attr pattern))
                  nil
 
-                 :let [from (.-name #?(:clj ^PullAttr (.-first-attr pattern) :cljr ^PullAttr (.-first-attr pattern) :cljs ^PullAttr (.-first-attr pattern) :clje (.-first-attr pattern) :lpy ^dpp/PullAttr (.-first-attr pattern)))
-                       to   (.-name #?(:clj ^PullAttr (.-last-attr pattern) :cljr ^PullAttr (.-last-attr pattern) :cljs ^PullAttr (.-last-attr pattern) :clje (.-last-attr pattern) :lpy ^dpp/PullAttr (.-last-attr pattern)))]
+                 :let [from (.-name (.-first-attr pattern))
+                       to   (.-name (.-last-attr pattern))]
                  
                  (instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :lpy db/DB) db)
                  (set/slice (.-eavt #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db/DB db] :clje [db] :lpy [db])) (db/datom id from nil db/tx0) (db/datom id to nil db/txmax))
@@ -341,7 +341,7 @@
 
 (defn pull-impl [parsed-opts id]
   (let [{^Context context :context
-         #?@(:clj [^PullPattern pattern :pattern] :cljr [^PullPattern pattern :pattern] :cljs [^PullPattern pattern :pattern] :clje [pattern :pattern] :lpy [pattern :pattern])} parsed-opts]
+         pattern :pattern} parsed-opts]
     (when-some [eid (db/entid (.-db context) id)]
       (loop [stack (list (attrs-frame context #{} {} pattern eid))]
         (util/cond+
