@@ -31,17 +31,28 @@
 (def ^:const ^:private marker-minus-inf 3)
 (def ^:const ^:private marker-nan 4)
 
-;; PORT DELTA (F-CLJE-INF): the ##Inf/##-Inf/##NaN literals are gone
-;; from this file entirely — clojerl's reader parses ## as a tagged
-;; literal and cannot even skip-read them inside a non-selected #?
-;; arm, so one literal anywhere breaks the whole file on that seat.
-;; The values are named here with text-safe spellings; BEAM floats
-;; have no infinity/NaN term, so on :clje these are nil and the
-;; write-side tests below are seat-conditionalized to false (a clje
-;; db cannot contain an infinite value in the first place).
-(def ^:private pos-inf #?(:jank (/ 1.0 0.0) :clj Double/POSITIVE_INFINITY :cljr Double/PositiveInfinity :cljs js/Infinity :clje nil :lpy ##Inf))
-(def ^:private neg-inf #?(:jank (/ -1.0 0.0) :clj Double/NEGATIVE_INFINITY :cljr Double/NegativeInfinity :cljs (- js/Infinity) :clje nil :lpy ##-Inf))
-(def ^:private nan-val #?(:jank (/ 0.0 0.0) :clj Double/NaN :cljr Double/NaN :cljs js/NaN :clje nil :lpy ##NaN))
+;; PORT DELTA (F-CLJE-INF): ##Inf/##-Inf/##NaN literals are gone from
+;; this file — clojerl's reader parses ## as a tagged literal and cannot
+;; even skip-read them inside a non-selected #? arm. Values are produced
+;; by overflowing the max finite double (IEEE Infinity / NaN). BEAM
+;; floats have neither, so the overflow stays finite (or is unusable)
+;; and these bindings stay nil; a clje db cannot contain an infinite
+;; value in the first place. Write-side tests guard with some? / ==.
+(defn- ieee-overflow
+  [sign]
+  (let [x (* sign 1.7976931348623157E308 2.0)]
+    (when (and (number? x) (== x (* x 2.0)) (not (zero? x)))
+      ;; reject saturation to the max finite double (non-IEEE hosts)
+      (when-not (== (if (pos? sign) x (- x)) 1.7976931348623157E308)
+        x))))
+
+(def ^:private pos-inf (ieee-overflow 1.0))
+(def ^:private neg-inf (ieee-overflow -1.0))
+(def ^:private nan-val
+  (when (some? pos-inf)
+    (let [x (- pos-inf pos-inf)]
+      (when (not (== x x))
+        x))))
 
 (defn- if-cljs [env then else]
   (if (:ns env) then else))
@@ -75,11 +86,10 @@
      [& args]
      (if-cljs &env
        (list* 'js* (str "[" (str/join "," (repeat (count args) "~{}")) "]") args)
-       (vec args))))
-
-;; PORT DELTA (F-CLJE-SERIALIZE): :clje twin of array (the :clj arm's
-;; expansion is seat-correct here: vectors are the array representation)
-#?(:clje
+       (vec args)))
+   ;; PORT DELTA (F-CLJE-SERIALIZE): :clje twin of array (the :clj arm's
+   ;; expansion is seat-correct here: vectors are the array representation)
+   :clje
 (defmacro array
      "Platform-native array representation (java.util.List on JVM, Array on JS)"
      [& args]
@@ -112,10 +122,9 @@
      [& args]
      (if-cljs &env
        (list* 'js* (str "{" (str/join "," (repeat (/ (count args) 2) "~{}:~{}")) "}") args)
-       `(array-map ~@args))))
-
-;; PORT DELTA (F-CLJE-SERIALIZE): :clje twin of dict (array-map branch)
-#?(:clje
+       `(array-map ~@args)))
+   ;; PORT DELTA (F-CLJE-SERIALIZE): :clje twin of dict (array-map branch)
+   :clje
 (defmacro dict
      "Platform-native dictionary representation (java.util.Map on JVM, Object on JS)"
      [& args]
@@ -170,7 +179,7 @@
 
 (defn- attr-comparator
   "Looks for a datom with attribute exactly bigger than the given one"
-  [#?@(:jank [^db/Datom d1] :clj [^Datom d1] :cljr [^Datom d1] :cljs [^db/Datom d1] :clje [d1] :lpy [d1]) #?@(:jank [^db/Datom d2] :clj [^Datom d2] :cljr [^Datom d2] :cljs [^db/Datom d2] :clje [d2] :lpy [d2])]
+  [d1 d2]
   (cond 
     (nil? (.-a d2)) -1
     (<= (compare (.-a d1) (.-a d2)) 0) -1
@@ -248,9 +257,9 @@
                         
                         (number? v)  
                         (cond
-                          #?(:clje false :default (== pos-inf v)) (array marker-inf)
-                          #?(:clje false :default (== neg-inf v)) (array marker-minus-inf)
-                          #?(:jank (not (== v v)) :clj (Double/isNaN v) :cljr (Double/IsNaN v) :cljs (js/isNaN v) :clje (not (== v v)) :lpy (not= v v)) (array marker-nan)
+                          (and (some? pos-inf) (== pos-inf v)) (array marker-inf)
+                          (and (some? neg-inf) (== neg-inf v)) (array marker-minus-inf)
+                          (not (== v v)) (array marker-nan)
                           :else v)
 
                         (boolean? v) v
@@ -262,7 +271,7 @@
         ;; the freeze builds a side table keyed by the datom value.
         idx-of      (into {} (map-indexed (fn [i d] [d i]) (:eavt db)))
         eavt        (amap-indexed
-                      (fn [_idx #?@(:jank [^db/Datom d] :clj [^Datom d] :cljr [^Datom d] :cljs [^db/Datom d] :clje [d] :lpy [d])]
+                      (fn [_idx d]
                         (let [e  (.-e d)
                               a  (attrs-map (.-a d))
                               v  (write-v (.-v d))
@@ -332,7 +341,7 @@
                                               {:error :serialize :value v}))
                                   tx (+ tx0 (array-get arr 3))]
                               (db/datom e a v tx))))
-                    #?(:clj arrays/into-array :cljr arrays/into-array))
+                    arrays/into-array)
          aevt     (some->> (dict-get from "aevt") (amap #(arrays/aget eavt %)) #?(:clj arrays/into-array :cljr arrays/into-array))
          avet     (some->> (dict-get from "avet") (amap #(arrays/aget eavt %)) #?(:clj arrays/into-array :cljr arrays/into-array))
          settings (merge

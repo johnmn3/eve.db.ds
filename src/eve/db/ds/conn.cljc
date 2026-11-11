@@ -11,11 +11,7 @@
     [extend-clj.core :as extend]
     [me.tonsky.persistent-sorted-set :as set]
     ;; PORT DELTA (F-CLJE-HOST-REFERS): see eve.db.ds.util
-    #?(:clje [eve.host :refer [volatile! swap! reset! compare-and-set! locking]]))
-  #?(:clj
-     (:import
-       [eve.db.ds.db DB FilteredDB]) :cljr (:import
-       [eve.db.ds.db DB FilteredDB])))
+    #?(:clje [eve.host :refer [volatile! swap! reset! compare-and-set! locking]])))
 
 (extend/deftype-atom Conn [atom]
   (deref-impl [this]
@@ -23,13 +19,12 @@
   (compare-and-set-impl [this oldv newv]
     (compare-and-set!
       atom
-      ;; the expected state: on the JVM (assoc @atom :db oldv) IS @atom when
-      ;; :db already holds oldv (the array map's identity shortcut), which
-      ;; is what the atom's identity cas compares against; this seat's maps
-      ;; copy on assoc, so the :jank face states the identity directly
-      ;; (F-JANK-CAS-ASSOC-IDENTITY)
-      #?(:jank  (if (identical? (:db @atom) oldv) @atom (assoc @atom :db oldv))
-         :default (assoc @atom :db oldv))
+      ;; the expected state: when :db already holds oldv, reuse @atom so
+      ;; CAS compares against the atom's current identity. JVM/cljs
+      ;; array-maps already shortcut assoc to the same object; jank maps
+      ;; copy on assoc, so the explicit identical? is required there and
+      ;; is equivalent on hosts with the shortcut (F-JANK-CAS-ASSOC-IDENTITY).
+      (if (identical? (:db @atom) oldv) @atom (assoc @atom :db oldv))
       (assoc @atom :db newv))))
 
 (defn- make-conn [opts]
@@ -39,11 +34,11 @@
   ([db tx-data] (with db tx-data nil))
   ([db tx-data tx-meta]
    {:pre [(db/db? db)]}
-   (if (instance? #?(:jank db/FilteredDB :clj FilteredDB :cljr FilteredDB :cljs db/FilteredDB :clje db/FilteredDB :lpy db/FilteredDB) db)
+   (if (not (identical? db (db/unfiltered-db db)))
      (throw (ex-info "Filtered DB cannot be modified" {:error :transaction/filtered}))
      (db/transact-tx-data (db/->TxReport db db [] {} tx-meta) tx-data))))
 
-(defn #?@(:jank [^db/DB db-with] :clj [^DB db-with] :cljr [^DB db-with] :cljs [^db/DB db-with] :clje [db-with] :lpy [db-with])
+(defn db-with
   "Applies transaction to an immutable db value, returning new immutable db value. Same as `(:db-after (with db tx-data))`."
   [db tx-data]
   {:pre [(db/db? db)]}
@@ -51,9 +46,7 @@
 
 (defn conn? [conn]
   (and
-    #?(:clj  (instance? clojure.lang.IDeref conn) :cljr (instance? clojure.lang.IDeref conn)
-       :cljs (satisfies? cljs.core/IDeref conn)
-       :clje (satisfies? clojerl.IDeref conn))
+    (instance? Conn conn)
     (if-some [db @conn]
       (db/db? db)
       true)))
