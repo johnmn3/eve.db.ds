@@ -6,10 +6,10 @@
 ;; Eve) and every Clojure-like cohost supports (through cohost bodies
 ;; over the Eve backend).
 ;;
-;; Release pin: eve/eve below stays on the published SeniorCareMarket/eve
-;; 0.9.3.1 tree (4a921298…). Do not retarget that default dep to an
-;; unreleased work branch. Collation onto a later Eve release is a
-;; separate, explicit decision.
+;; Release pin: eve/eve below is the published SeniorCareMarket/eve
+;; release/eve-0.9.3.2 tip (f08d4cf7120008503d42f5ccae0c6767ae9f7cff).
+;; Do not retarget that default dep to an unreleased work branch.
+;; Collation onto a later Eve release is a separate, explicit decision.
 ;;
 ;; Dev/test pin: alias :dev overrides eve/eve to johnmn3/atom.broker
 ;; lane-m/eve-db-ds-gaps-eve (the eve/ subdir) @ ec22aba4c0, which
@@ -27,7 +27,7 @@
 {:paths ["src"]
  :deps {org.clojure/clojure {:mvn/version "1.12.0"}
         eve/eve {:git/url "https://github.com/SeniorCareMarket/eve"
-                 :git/sha "4a921298168080c2af9f57fcfcdee2db570dec4c"}
+                 :git/sha "f08d4cf7120008503d42f5ccae0c6767ae9f7cff"}
         me.tonsky/persistent-sorted-set {:local/root "lib"}
         extend-clj/extend-clj {:local/root "lib-ds-deps"}}
  :aliases
