@@ -105,3 +105,7 @@ Unhinted `defn` for `entity-db`, `empty-db`, `init-db`, `with-schema`, `find-dat
 ## Open-other batch 5 — pull_api Datom/DB type hints
 
 Unhinted Datom bindings, `fn [d]`, `(.-e (first-seq datoms))`, and `(.-eavt db)` / `(.-avet db)` slice targets. Left in place: `instance?` DB class-name branches and the data-owned `.-default` field branches (#225, #230). Audit #217, #218, #220, #221, #224, #229, #232, #238, #242, #243 REMOVED. Counts **318 → 308** / **0**.
+
+## Open-other batch 6 — mark 35 declare/import/flag/stub rows as glue
+
+No source change. Audit rows marked glue with a one-line reason: F-CLJE-DECLARE forward-declare twins (#116–#125, #129–#130, #151–#158, #176–#177), basilisp `multival?` declare (#137), cljs `pr-db` stub (#126), basilisp IFrame protocol stubs (#213, #214, #216), `*unchecked-math*` flags (#253, #257), and host `:import` / cljs `:require-macros` (#4, #14, #50, #206, #324, #353). Counts unchanged **308** / **0**. open-other 216→181; glue 37→72.

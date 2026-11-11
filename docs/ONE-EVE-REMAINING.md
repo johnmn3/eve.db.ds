@@ -1,6 +1,6 @@
 # Remaining 308 host branches — classification for vm
 
-Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–5 removed 34 branches; 342→308). Comments/strings excluded, nested counted once.
+Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–5 removed 34 branches; 342→308; batch 6 marked 35 as glue, open-other 216→181). Comments/strings excluded, nested counted once.
 
 **Glue** = loader/require-macros/import/refer/type-hint/instance?-class-name/warn-on-reflection/export wiring that does not itself implement data, memory, threading, or HTTP.
 
@@ -76,7 +76,7 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 
 **HTTP count for vm: 0.**
 
-## glue (37)
+## glue (72)
 
 - #2 `eve/db/ds/conn.cljc:8` — `#?(:lpy [eve.deftype :refer [deftype]])`
 - #6 `eve/db/ds/conn.cljc:41` — `(if (instance? #?(:jank db/FilteredDB :clj FilteredDB :cljr FilteredDB :cljs db/`
@@ -115,17 +115,51 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 - #343 `eve/db/ds/serialize.cljc:270` — `(fn [_idx #?@(:jank [^db/Datom d] :clj [^Datom d] :cljr [^Datom d] :cljs [^db/Da`
 - #344 `eve/db/ds/serialize.cljc:277` — `aevt        (amap-indexed (fn [_ #?@(:jank [^db/Datom d] :clj [^Datom d] :cljr [`
 - #345 `eve/db/ds/serialize.cljc:278` — `avet        (amap-indexed (fn [_ #?@(:jank [^db/Datom d] :clj [^Datom d] :cljr [`
+- #4 `eve/db/ds/conn.cljc:14` — `#?(:clj`
+- #14 `eve/db/ds/core.cljc:24` — `#?(:clj`
+- #50 `eve/db/ds/db.cljc:36` — `#?(:cljs`
+- #116 `eve/db/ds/db.cljc:1172` — `(do #?@(:clj [(declare hash-db pr-db)] :cljr [(declare hash-db pr-db)]`
+- #117 `eve/db/ds/db.cljc:1179` — `#?(:clje (declare hash-db pr-db))`
+- #118 `eve/db/ds/db.cljc:1181` — `(do #?@(:clj [(declare hash-fdb)] :cljr [(declare hash-fdb)]`
+- #119 `eve/db/ds/db.cljc:1185` — `#?(:clje (declare hash-fdb))`
+- #120 `eve/db/ds/db.cljc:1187` — `(do #?@(:clj [(declare equiv-db)] :cljr [(declare equiv-db)]`
+- #121 `eve/db/ds/db.cljc:1191` — `#?(:clje (declare equiv-db))`
+- #122 `eve/db/ds/db.cljc:1193` — `(do #?@(:clj [(declare restore-db)] :cljr [(declare restore-db)]`
+- #123 `eve/db/ds/db.cljc:1197` — `#?(:clje (declare restore-db))`
+- #124 `eve/db/ds/db.cljc:1199` — `(do #?@(:clj [(declare indexing?)] :cljr [(declare indexing?)]`
+- #125 `eve/db/ds/db.cljc:1203` — `#?(:clje (declare indexing?))`
+- #126 `eve/db/ds/db.cljc:1205` — `#?(:cljs (defn pr-db [db w opts]))`
+- #129 `eve/db/ds/db.cljc:1213` — `(do #?@(:clj [(declare components->pattern)] :cljr [(declare components->pattern`
+- #130 `eve/db/ds/db.cljc:1217` — `#?(:clje (declare components->pattern))`
+- #137 `eve/db/ds/db.cljc:1373` — `#?(:lpy (declare multival?))`
+- #151 `eve/db/ds/db.cljc:2096` — `(do #?@(:clj [(declare entid-strict)] :cljr [(declare entid-strict)]`
+- #152 `eve/db/ds/db.cljc:2100` — `#?(:clje (declare entid-strict))`
+- #153 `eve/db/ds/db.cljc:2102` — `(do #?@(:clj [(declare ref?)] :cljr [(declare ref?)]`
+- #154 `eve/db/ds/db.cljc:2106` — `#?(:clje (declare ref?))`
+- #155 `eve/db/ds/db.cljc:2108` — `(do #?@(:clj [(declare tuple?)] :cljr [(declare tuple?)]`
+- #156 `eve/db/ds/db.cljc:2112` — `#?(:clje (declare tuple?))`
+- #157 `eve/db/ds/db.cljc:2114` — `(do #?@(:clj [(declare resolve-tuple-refs)] :cljr [(declare resolve-tuple-refs)]`
+- #158 `eve/db/ds/db.cljc:2118` — `#?(:clje (declare resolve-tuple-refs))`
+- #176 `eve/db/ds/db.cljc:2891` — `(do #?@(:clj [(declare transact-tx-data-impl)] :cljr [(declare transact-tx-data-`
+- #177 `eve/db/ds/db.cljc:2895` — `#?(:clje (declare transact-tx-data-impl))`
+- #206 `eve/db/ds/pull_api.cljc:13` — `#?(:clj`
+- #213 `eve/db/ds/pull_api.cljc:88` — `#?(:lpy (-merge [this result] (throw (ex-info "ResultFrame does not implement -m`
+- #214 `eve/db/ds/pull_api.cljc:89` — `#?(:lpy (-run [this context] (throw (ex-info "ResultFrame does not implement -ru`
+- #216 `eve/db/ds/pull_api.cljc:95` — `#?(:lpy (-merge [this result] (throw (ex-info "MultivalAttrFrame does not implem`
+- #253 `eve/db/ds/query.cljc:121` — `#?(:clj (set! *unchecked-math* true) :cljr (set! *unchecked-math* true))`
+- #257 `eve/db/ds/query.cljc:213` — `#?(:clj (set! *unchecked-math* false) :cljr (set! *unchecked-math* false))`
+- #324 `eve/db/ds/serialize.cljc:17` — `#?(:clj`
+- #353 `eve/db/ds/util.cljc:10` — `#?(:clj`
+
 
 ## glue-candidate (0)
 
 
-## open-other (216)
+## open-other (181)
 
-- #4 `eve/db/ds/conn.cljc:14` — `#?(:clj`
 - #9 `eve/db/ds/conn.cljc:87` — `#?(:clj`
 - #10 `eve/db/ds/conn.cljc:114` — `#?(:clj`
 - #11 `eve/db/ds/conn.cljc:189` — `#?(:clj`
-- #14 `eve/db/ds/core.cljc:24` — `#?(:clj`
 - #30 `eve/db/ds/core.cljc:488` — `#?(:clj`
 - #31 `eve/db/ds/core.cljc:615` — `#?(:cljs`
 - #32 `eve/db/ds/core.cljc:628` — `#?(:lpy`
@@ -138,7 +172,6 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 - #40 `eve/db/ds/core.cljc:791` — `#?(:clj`
 - #41 `eve/db/ds/core.cljc:802` — `#?(:clj`
 - #42 `eve/db/ds/core.cljc:811` — `#?(:clj`
-- #50 `eve/db/ds/db.cljc:36` — `#?(:cljs`
 - #52 `eve/db/ds/db.cljc:60` — `#?@(:clj [(or (seq? x)`
 - #53 `eve/db/ds/db.cljc:79` — `#?@(:clj [(or (seq? x)`
 - #54 `eve/db/ds/db.cljc:105` — `#?@(:clj [(or (seq? x)`
@@ -184,25 +217,11 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 - #112 `eve/db/ds/db.cljc:1054` — `#?(:clje (defmacro defcomp [sym [arg1 arg2] & body]`
 - #113 `eve/db/ds/db.cljc:1084` — `#?(:clj`
 - #115 `eve/db/ds/db.cljc:1159` — `(catch #?@(:clj [ClassCastException] :cljr [System.InvalidCastException]`
-- #116 `eve/db/ds/db.cljc:1172` — `(do #?@(:clj [(declare hash-db pr-db)] :cljr [(declare hash-db pr-db)]`
-- #117 `eve/db/ds/db.cljc:1179` — `#?(:clje (declare hash-db pr-db))`
-- #118 `eve/db/ds/db.cljc:1181` — `(do #?@(:clj [(declare hash-fdb)] :cljr [(declare hash-fdb)]`
-- #119 `eve/db/ds/db.cljc:1185` — `#?(:clje (declare hash-fdb))`
-- #120 `eve/db/ds/db.cljc:1187` — `(do #?@(:clj [(declare equiv-db)] :cljr [(declare equiv-db)]`
-- #121 `eve/db/ds/db.cljc:1191` — `#?(:clje (declare equiv-db))`
-- #122 `eve/db/ds/db.cljc:1193` — `(do #?@(:clj [(declare restore-db)] :cljr [(declare restore-db)]`
-- #123 `eve/db/ds/db.cljc:1197` — `#?(:clje (declare restore-db))`
-- #124 `eve/db/ds/db.cljc:1199` — `(do #?@(:clj [(declare indexing?)] :cljr [(declare indexing?)]`
-- #125 `eve/db/ds/db.cljc:1203` — `#?(:clje (declare indexing?))`
-- #126 `eve/db/ds/db.cljc:1205` — `#?(:cljs (defn pr-db [db w opts]))`
-- #129 `eve/db/ds/db.cljc:1213` — `(do #?@(:clj [(declare components->pattern)] :cljr [(declare components->pattern`
-- #130 `eve/db/ds/db.cljc:1217` — `#?(:clje (declare components->pattern))`
 - #131 `eve/db/ds/db.cljc:1221` — `(do #?@(:clj [(defmacro validate-attr [attr at]`
 - #132 `eve/db/ds/db.cljc:1255` — `#?(:clje (defmacro validate-attr [attr at]`
 - #133 `eve/db/ds/db.cljc:1264` — `(do #?@(:clj [(defmacro validate-val [v at]`
 - #134 `eve/db/ds/db.cljc:1284` — `#?(:clje (defmacro validate-val [v at]`
 - #135 `eve/db/ds/db.cljc:1329` — `#?(:clj`
-- #137 `eve/db/ds/db.cljc:1373` — `#?(:lpy (declare multival?))`
 - #139 `eve/db/ds/db.cljc:1416` — `#?(:bb (seq x) :default x))`
 - #141 `eve/db/ds/db.cljc:1496` — `(-schema [db] #?(:clje schema`
 - #142 `eve/db/ds/db.cljc:1508` — `pred       #?(:clj  (vpred v)`
@@ -211,14 +230,6 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 - #148 `eve/db/ds/db.cljc:2031` — `#?(:cljs`
 - #149 `eve/db/ds/db.cljc:2056` — `#?(:lpy`
 - #150 `eve/db/ds/db.cljc:2066` — `#?(:clj`
-- #151 `eve/db/ds/db.cljc:2096` — `(do #?@(:clj [(declare entid-strict)] :cljr [(declare entid-strict)]`
-- #152 `eve/db/ds/db.cljc:2100` — `#?(:clje (declare entid-strict))`
-- #153 `eve/db/ds/db.cljc:2102` — `(do #?@(:clj [(declare ref?)] :cljr [(declare ref?)]`
-- #154 `eve/db/ds/db.cljc:2106` — `#?(:clje (declare ref?))`
-- #155 `eve/db/ds/db.cljc:2108` — `(do #?@(:clj [(declare tuple?)] :cljr [(declare tuple?)]`
-- #156 `eve/db/ds/db.cljc:2112` — `#?(:clje (declare tuple?))`
-- #157 `eve/db/ds/db.cljc:2114` — `(do #?@(:clj [(declare resolve-tuple-refs)] :cljr [(declare resolve-tuple-refs)]`
-- #158 `eve/db/ds/db.cljc:2118` — `#?(:clje (declare resolve-tuple-refs))`
 - #159 `eve/db/ds/db.cljc:2142` — `cmp     #?(:bb (case index`
 - #161 `eve/db/ds/db.cljc:2265` — `(do #?@(:clj [(defn-  ^Boolean tuple-ref-slot? [db schema-a idx] (cond`
 - #162 `eve/db/ds/db.cljc:2284` — `#?(:clje (defn- tuple-ref-slot? [db schema-a idx] (cond`
@@ -232,23 +243,15 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 - #173 `eve/db/ds/db.cljc:2530` — `#?(:clje (defn- tempid? [x] (or`
 - #174 `eve/db/ds/db.cljc:2654` — `(do #?@(:clj [(defn-  ^Boolean tuple-has-tempids? [db a vs] (and`
 - #175 `eve/db/ds/db.cljc:2714` — `#?(:clje (defn- tuple-has-tempids? [db a vs] (and`
-- #176 `eve/db/ds/db.cljc:2891` — `(do #?@(:clj [(declare transact-tx-data-impl)] :cljr [(declare transact-tx-data-`
-- #177 `eve/db/ds/db.cljc:2895` — `#?(:clje (declare transact-tx-data-impl))`
-- #206 `eve/db/ds/pull_api.cljc:13` — `#?(:clj`
-- #213 `eve/db/ds/pull_api.cljc:88` — `#?(:lpy (-merge [this result] (throw (ex-info "ResultFrame does not implement -m`
-- #214 `eve/db/ds/pull_api.cljc:89` — `#?(:lpy (-run [this context] (throw (ex-info "ResultFrame does not implement -ru`
-- #216 `eve/db/ds/pull_api.cljc:95` — `#?(:lpy (-merge [this result] (throw (ex-info "MultivalAttrFrame does not implem`
 - #226 `eve/db/ds/pull_api.cljc:205` — `(recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default`
 - #231 `eve/db/ds/pull_api.cljc:265` — `(recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default`
 - #246 `eve/db/ds/pull_parser.cljc:73` — `#?(:clj (when (namespace sym-or-fn)`
 - #247 `eve/db/ds/pull_parser.cljc:156` — `(defn #?@(:clj [^PullPattern parse-pattern] :cljr [^PullPattern parse-pattern] :`
 - #250 `eve/db/ds/query.cljc:26` — `#?(:clj`
 - #252 `eve/db/ds/query.cljc:57` — `#?(:clj`
-- #253 `eve/db/ds/query.cljc:121` — `#?(:clj (set! *unchecked-math* true) :cljr (set! *unchecked-math* true))`
 - #254 `eve/db/ds/query.cljc:131` — `#?(:cljs`
 - #255 `eve/db/ds/query.cljc:137` — `#?(:clj`
 - #256 `eve/db/ds/query.cljc:199` — `#?(:clje`
-- #257 `eve/db/ds/query.cljc:213` — `#?(:clj (set! *unchecked-math* false) :cljr (set! *unchecked-math* false))`
 - #258 `eve/db/ds/query.cljc:293` — `#?(:jank dp/BindIgnore :clj BindIgnore :cljr BindIgnore :cljs dp/BindIgnore :clj`
 - #259 `eve/db/ds/query.cljc:297` — `#?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/BindScalar :clj`
 - #260 `eve/db/ds/query.cljc:301` — `#?(:jank dp/BindColl :clj BindColl :cljr BindColl :cljs dp/BindColl :clje dp/Bin`
@@ -298,7 +301,6 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 - #319 `eve/db/ds/query_v3.cljc:884` — `#?(:jank dp/Or :clj Or :cljr Or :cljs dp/Or)`
 - #320 `eve/db/ds/query_v3.cljc:887` — `#?(:jank dp/And :clj And :cljr And :cljs dp/And)`
 - #321 `eve/db/ds/query_v3.cljc:890` — `#?(:jank dp/Predicate :clj Predicate :cljr Predicate :cljs dp/Predicate)`
-- #324 `eve/db/ds/serialize.cljc:17` — `#?(:clj`
 - #328 `eve/db/ds/serialize.cljc:48` — `#?(:clj`
 - #329 `eve/db/ds/serialize.cljc:81` — `#?(:clje`
 - #330 `eve/db/ds/serialize.cljc:87` — `#?(:clj`
@@ -315,7 +317,6 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 - #347 `eve/db/ds/serialize.cljc:295` — `#?@(:clj`
 - #348 `eve/db/ds/serialize.cljc:300` — `#?(:jank`
 - #352 `eve/db/ds/storage.cljc:21` — `#?(:lpy`
-- #353 `eve/db/ds/util.cljc:10` — `#?(:clj`
 - #354 `eve/db/ds/util.cljc:20` — `#?(:clj (defmacro log [& body]`
 - #355 `eve/db/ds/util.cljc:40` — `#?(:clje (defmacro log [& body]`
 - #356 `eve/db/ds/util.cljc:49` — `#?(:lpy (defmacro raise [& fragments]`
