@@ -178,3 +178,7 @@ Un-branched `restore-conn` / `storage` / `store` / `restore` / `addresses` / `co
 ## Open-other batch 21 — serialize locking via eve.host
 
 Folded `serializable` (#348) to one portable `defn` using `eve.host/locking` around `eve.host/token`. No vm rows touched. Counts **266** → **265** / **0**. Four-host only-core + lru-portable vs `:dev` Eve `7840ffe529`: JVM, bb, nbb, basilisp all PASS.
+
+## Open-other batch 22 — transact/future-call via eve.thread
+
+Folded `transact` (#34) to return an immediately delivered `eve.thread/promise`, and `transact-async` to `eve.thread/future-call`. Dropped the cljs/clje/clj/cljr/jank IDeref reify twins and the host `future-call` defs (#35, #36). No vm rows touched. Counts **265** → **262** / **0**. Four-host only-core + lru-portable vs `:dev` Eve `7840ffe529`: JVM, bb, nbb, basilisp all PASS.

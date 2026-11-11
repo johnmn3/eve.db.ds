@@ -28,6 +28,7 @@ After open-other batch 18 (portable vpred / -search pred): **281** / **0**.
 After open-other batch 19 (portable seqable?): **276** / **0**.
 After open-other batch 20 (storage API through Eve atoms): **266** / **0**.
 After open-other batch 21 (serialize locking via eve.host): **265** / **0**.
+After open-other batch 22 (transact/future-call via eve.thread): **262** / **0**.
 
 Plain type sites (deftype/defrecord/defrecord-updatable that are not eve-deftype / eve.deftype/deftype) are **0**. Remaining `(deftype …)` forms in source are eve.deftype/deftype (LRU, Entity, AutoTempid, FilteredDB, ArrayRelation, CollRelation, SingletonRelation) or evicted through `def-eve-record` / `deftrecord`.
 
@@ -70,9 +71,9 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 31 | `eve/db/ds/core.cljc` | 615 | `#?(:cljs` | KEPT | glue: cljs EDN tag-parser registration for data-readers |
 | 32 | `eve/db/ds/core.cljc` | 628 | `#?(:lpy` | KEPT | glue: basilisp programmatic *data-readers* merge (file route runs too early) |
 | 33 | `eve/db/ds/core.cljc` | 656 | `(defn #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db/DB db] :clje` | REMOVED | dropped host type hints on defn name/args; unhinted clojure.core defn |
-| 34 | `eve/db/ds/core.cljc` | 672 | `#?(:cljs` | KEPT | threading: transact realized-future reify of host IDeref/IPending; jank already uses eve.host-completion — should go through Eve, not glue |
-| 35 | `eve/db/ds/core.cljc` | 714 | `#?(:clje` | KEPT | threading: clje future-call is a synchronous IDeref reify; should go through Eve host-completion |
-| 36 | `eve/db/ds/core.cljc` | 723 | `#?(:cljs` | KEPT | threading: cljs future-call uses js/setTimeout plus IDeref reify; should go through Eve host-completion |
+| 34 | `eve/db/ds/core.cljc` | 672 | `#?(:cljs` | REMOVED | transact returns an eve.thread/promise; transact-async uses eve.thread/future-call; dropped host IDeref reify twins |
+| 35 | `eve/db/ds/core.cljc` | 714 | `#?(:clje` | REMOVED | transact returns an eve.thread/promise; transact-async uses eve.thread/future-call; dropped host IDeref reify twins |
+| 36 | `eve/db/ds/core.cljc` | 723 | `#?(:cljs` | REMOVED | transact returns an eve.thread/promise; transact-async uses eve.thread/future-call; dropped host IDeref reify twins |
 | 37 | `eve/db/ds/core.cljc` | 760 | `#?(:clj` | REMOVED | storage is an Eve atom; dropped vanilla IStorage host wrappers / dead tail-store side channel |
 | 38 | `eve/db/ds/core.cljc` | 767 | `#?(:clj` | REMOVED | storage is an Eve atom; dropped vanilla IStorage host wrappers / dead tail-store side channel |
 | 39 | `eve/db/ds/core.cljc` | 784 | `#?(:clj` | REMOVED | storage is an Eve atom; dropped vanilla IStorage host wrappers / dead tail-store side channel |

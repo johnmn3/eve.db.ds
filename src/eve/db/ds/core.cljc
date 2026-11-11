@@ -20,6 +20,7 @@
     [eve.db.ds.query :as dq]
     [eve.db.ds.impl.entity :as de]
     [eve.db.ds.util :as util]
+    [eve.thread :as thread]
     [me.tonsky.persistent-sorted-set :as set])
   #?(:clj
      (:import
@@ -662,78 +663,14 @@
   ([conn tx-data tx-meta]
    {:pre [(conn? conn)]}
    (let [res (transact! conn tx-data tx-meta)]
-     #?(:cljs
-        (reify
-          IDeref
-          (-deref [_] res)
-          IDerefWithTimeout
-          (-deref-with-timeout [_ _ _] res)
-          IPending
-          (-realized? [_] true))
-        :jank
-        (reify
-          eve.host-completion/IDeref
-          (-deref [_] res)
-          eve.host-completion/IBlockingDeref
-          (-deref-within [_ _ _] res)
-          eve.host-completion/IPending
-          (-realized? [_] true))
-        :clj
-        (reify
-          clojure.lang.IDeref
-          (deref [_] res)
-          clojure.lang.IBlockingDeref
-          (deref [_ _ _] res)
-          clojure.lang.IPending
-          (isRealized [_] true)) :cljr (reify
-          clojure.lang.IDeref
-          (deref [_] res)
-          clojure.lang.IBlockingDeref
-          (deref [_ _ _] res)
-          clojure.lang.IPending
-          (isRealized [_] true))
-        ;; PORT DELTA (F-CLJE-CORE): clojerl reify spellings
-        :clje
-        (reify
-          clojerl.IDeref
-          (deref [_] res)
-          clojerl.IPending
-          (realized? [_] true))))))
-
-
-;; ersatz future without proper blocking
-;; PORT DELTA (F-CLJE-CORE): no setTimeout/future pool on this seat;
-;; the ersatz future is realized synchronously
-#?(:clje
-   (defn- future-call [f]
-     (let [res (f)]
-       (reify
-         clojerl.IDeref
-         (deref [_] res)
-         clojerl.IPending
-         (realized? [_] true)))))
-
-#?(:cljs
-   (defn- future-call [f]
-     (let [res      (atom nil)
-           realized (atom false)]
-       (js/setTimeout #(do (reset! res (f)) (reset! realized true)) 0)
-       (reify
-         IDeref
-         (-deref [_] @res)
-         IDerefWithTimeout
-         (-deref-with-timeout [_ _ timeout-val] (if @realized @res timeout-val))
-         IPending
-         (-realized? [_] @realized)))))
+     (doto (thread/promise) (thread/deliver res)))))
 
 (defn transact-async
-  "In CLJ, calls [[transact!]] on a future thread pool, returning immediately.
-  
-   In CLJS, just calls [[transact!]] and returns a realized future."
+  "Calls [[transact!]] through eve.thread/future-call and returns that future."
   ([conn tx-data] (transact-async conn tx-data nil))
   ([conn tx-data tx-meta]
    {:pre [(conn? conn)]}
-   (future-call #(transact! conn tx-data tx-meta))))
+   (thread/future-call #(transact! conn tx-data tx-meta))))
 
 
 ;; squuid

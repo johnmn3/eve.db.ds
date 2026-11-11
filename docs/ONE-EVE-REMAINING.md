@@ -1,6 +1,6 @@
-# Remaining 265 host branches — classification for vm
+# Remaining 262 host branches — classification for vm
 
-Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–5, 7, 10 and 11 removed 54 branches; 342→288; batches 6, 8, 9, 12 and 13 marked 193 as glue plus batch 10 #334, open-other 216→2). Comments/strings excluded, nested counted once. Re-derive of glue from batches 6, 8, 12, 13 and 14: 148 rows held up as real host glue; 44 reclassified data, 10 memory, 4 threading (vm data/memory rows untouched). Batch 16 folded ihash (#102/#103) and tx-id? (#170/#171) to portable clojure.core (288→284). Batch 17 folded db? (#145) to portable satisfies? (284→283). Batch 18 folded vpred (#135) and -search pred (#142) to portable = (283→281). Batch 19 folded seqable? (#51–#55) to one portable defn (281→276). Batch 20 routed the storage API (#9–#11, #30, #37–#42) through Eve atoms (276→266). Batch 21 folded serialize locking (#348) through eve.host (266→265).
+Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–5, 7, 10 and 11 removed 54 branches; 342→288; batches 6, 8, 9, 12 and 13 marked 193 as glue plus batch 10 #334, open-other 216→2). Comments/strings excluded, nested counted once. Re-derive of glue from batches 6, 8, 12, 13 and 14: 148 rows held up as real host glue; 44 reclassified data, 10 memory, 4 threading (vm data/memory rows untouched). Batch 16 folded ihash (#102/#103) and tx-id? (#170/#171) to portable clojure.core (288→284). Batch 17 folded db? (#145) to portable satisfies? (284→283). Batch 18 folded vpred (#135) and -search pred (#142) to portable = (283→281). Batch 19 folded seqable? (#51–#55) to one portable defn (281→276). Batch 20 routed the storage API (#9–#11, #30, #37–#42) through Eve atoms (276→266). Batch 21 folded serialize locking (#348) through eve.host (266→265). Batch 22 routed transact/future-call (#34–#36) through eve.thread (265→262).
 
 **Glue** = loader/require-macros/import/refer/type-hint/instance?-class-name/warn-on-reflection/export wiring that does not itself implement data, memory, threading, or HTTP.
 
@@ -91,17 +91,14 @@ Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–5
 - #25 `eve/db/ds/core.cljc:277` — `#?(:jank (db/->FilteredDB orig-db #(and (orig-pred %) (pred orig-db %)) (atom 0)`
 - #26 `eve/db/ds/core.cljc:281` — `#?(:jank (db/->FilteredDB db #(pred db %) (atom 0))`
 
-## threading (3 bodies; 2 glue refers)
+## threading (0 bodies; 2 glue refers)
 
-Four reclassified threading bodies should go through Eve (`eve.host-completion` / Eve locking) rather than host IDeref reify or `locking`. The two `:clje eve.host` *refers* stay glue (they mention `locking` only as an imported name):
+The transact/future-call and serialize-lock bodies have been folded through eve.thread / eve.host. The two `:clje eve.host` *refers* stay glue (they mention `locking` only as an imported name):
 
 - #3 `eve/db/ds/conn.cljc:13` — `#?(:clje [eve.host :refer [volatile! swap! reset! compare-and-set! locking]]))`
 - #322 `eve/db/ds/serialize.cljc:15` — `#?(:clje [eve.host :refer [transient persistent! conj! assoc! volatile! locking]`
 
-**Threading-implementation count: 3** (#34–#36 transact/future-call IDeref reify; #348 folded in batch 21). Treat the two refer rows as glue.
-- #34 `eve/db/ds/core.cljc:672` — `#?(:cljs`
-- #35 `eve/db/ds/core.cljc:714` — `#?(:clje`
-- #36 `eve/db/ds/core.cljc:723` — `#?(:cljs`
+**Threading-implementation count: 0.** #34–#36 folded in batch 22 via eve.thread; #348 folded in batch 21 via eve.host/locking. Treat the two refer rows as glue.
 
 ## http (0)
 
