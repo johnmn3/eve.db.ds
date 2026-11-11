@@ -1,19 +1,19 @@
-(ns datascript.conn
+(ns eve.db.ds.conn
   (:require
     ;; PORT DELTA (F-NBB-MACROS round): vanilla refers the DB types
     ;; on :cljs; the interpreted seat (nbb/SCI) cannot refer a type
     ;; name (a class entry, not a var), so the types are named
     ;; qualified (db/DB) at their uses in this file
-    [datascript.db :as db]
-    [datascript.storage :as storage]
+    [eve.db.ds.db :as db]
+    [eve.db.ds.storage :as storage]
     [extend-clj.core :as extend]
     [me.tonsky.persistent-sorted-set :as set]
-    ;; PORT DELTA (F-CLJE-HOST-REFERS): see datascript.util
+    ;; PORT DELTA (F-CLJE-HOST-REFERS): see eve.db.ds.util
     #?(:clje [eve.host :refer [volatile! swap! reset! compare-and-set! locking]]))
   #?(:clj
      (:import
-       [datascript.db DB FilteredDB]) :cljr (:import
-       [datascript.db DB FilteredDB])))
+       [eve.db.ds.db DB FilteredDB]) :cljr (:import
+       [eve.db.ds.db DB FilteredDB])))
 
 (extend/deftype-atom Conn [atom]
   (deref-impl [this]

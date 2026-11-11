@@ -59,7 +59,7 @@ This is ordinary DataScript, unchanged (the port's first-light driver,
 `contract-test/drivers/contract/ds_behave.cljc`, runs exactly this):
 
 ```clojure
-(require '[datascript.core :as d])
+(require '[eve.db.ds.core :as d])
 
 (def conn (d/create-conn))                    ; optionally (d/create-conn schema)
 
@@ -89,7 +89,7 @@ the flagship driver pattern, verbatim in shape
 ```clojure
 (require '[eve.atom :as atom]
          '[eve.host :refer [swap!]]
-         '[datascript.core :as d])
+         '[eve.db.ds.core :as d])
 
 (def domain (atom/persistent-atom-domain "/path/to/domain-dir"))
 (def db-atom (atom/lookup-or-create-mmap-atom! domain "my/db" nil))
@@ -107,7 +107,7 @@ the flagship driver pattern, verbatim in shape
 ```
 
 Any Eve program — on any proven seat — that opens the same domain sees
-the same database. A second process derefs a real `datascript.db.DB`,
+the same database. A second process derefs a real `eve.db.ds.db.DB`,
 queries it identically, and its seal matches the writer's exactly
 (measured first on the JVM seat: residence proof, PORTING-DS.md T1–T3).
 
@@ -134,7 +134,7 @@ see CHANGELOG.md). Babashka's behave driver runs **fully green**.
 | Cross-runtime | JVM *or* ClojureScript builds, separately | the same .cljc library on every Eve seat; a DB written by the JVM seat is read — identically, seal and all — by Babashka, Jolt, nbb, glojure |
 | Concurrent writers | one process transacts at a time | multiple host processes transact **in parallel** into one shared DB via atom swaps |
 | Indexes | persistent-sorted-set (host arrays underneath) | the same library's Eve port — Eve vectors, slab-resident sets |
-| API | `datascript.core` | `datascript.core` — unchanged |
+| API | `eve.db.ds.core` | `eve.db.ds.core` — unchanged |
 
 What is identical: the API, the transaction format, the query language,
 the data model, the failure modes of the library itself. What changes
@@ -148,7 +148,7 @@ transacting in parallel into **one shared DataScript database in one
 shared on-disk Eve atom**, under a rendezvous protocol (all workers
 READY, released together on a common GO). Result, as banked by the
 flagship lane (commit `06e5371dd62`, logs under `contract-test/logs/`
-on `lane-m/datascript-flagship4`):
+on `lane-m/…-flagship4`):
 
 - every seat `:inc-fail 0` — no lost or failed increments;
 - **readback unanimous: 1,138 datoms, one identical seal on all five
@@ -205,11 +205,11 @@ names the library, nothing else:
 
 ```clojure
 ;; in this repo
-{:deps {datascript-on-eve/datascript-on-eve {:local/root "contract-test/lib-ds"}}}
+{:deps {eve.db.ds/eve.db.ds {:local/root "contract-test/lib-ds"}}}
 
 ;; from your own project (git dep; the nested :local/root deps
 ;; resolve inside the checkout)
-{:deps {datascript-on-eve/datascript-on-eve
+{:deps {eve.db.ds/eve.db.ds
         {:git/url "https://github.com/SeniorCareMarket/eve"
          :git/tag "v0.9.3.1"
          :deps/root "contract-test/lib-ds"}}}

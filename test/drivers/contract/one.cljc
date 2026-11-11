@@ -1,5 +1,5 @@
 (ns contract.one
-  (:require [eve.atom :as atom] [datascript.core :as d] [eve.core :as e]))
+  (:require [eve.atom :as atom] [eve.db.ds.core :as d] [eve.core :as e]))
 (defn -main [& [dir]]
   (let [dom (atom/persistent-atom-domain dir)
         a (atom/lookup-or-create-mmap-atom! dom "contract/ds-cli-update-db" nil)]

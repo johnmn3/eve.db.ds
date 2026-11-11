@@ -35,7 +35,7 @@
    [eve.host :refer [swap!]]
    [eve.atom :as atom]
    [eve.core :as e]
-   [datascript.core :as d]))
+   [eve.db.ds.core :as d]))
 
 (defmacro attempt
   "Run body; on any throw, answer the string ':throws <err>' (the

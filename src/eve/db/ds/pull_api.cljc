@@ -1,23 +1,23 @@
-(ns ^:no-doc datascript.pull-api
+(ns ^:no-doc eve.db.ds.pull-api
   (:require
     [clojure.string :as str]
-    [datascript.pull-parser :as dpp]
-    ;; PORT DELTA (F-NBB-MACROS round): as in datascript.conn — no
+    [eve.db.ds.pull-parser :as dpp]
+    ;; PORT DELTA (F-NBB-MACROS round): as in eve.db.ds.conn — no
     ;; :cljs type refer; types are named qualified at their uses
-    [datascript.db :as db]
-    [datascript.lru :as lru]
-    [datascript.util :as util]
+    [eve.db.ds.db :as db]
+    [eve.db.ds.lru :as lru]
+    [eve.db.ds.util :as util]
     [me.tonsky.persistent-sorted-set :as set]
-    ;; PORT DELTA (F-CLJE-HOST-REFERS): see datascript.util
+    ;; PORT DELTA (F-CLJE-HOST-REFERS): see eve.db.ds.util
     #?(:clje [eve.host :refer [transient persistent! conj! assoc! volatile!]]))
   #?(:clj
      (:import
        [clojure.lang ISeq]
-       [datascript.db Datom DB]
-       [datascript.pull_parser PullAttr PullPattern]) :cljr (:import
+       [eve.db.ds.db Datom DB]
+       [eve.db.ds.pull_parser PullAttr PullPattern]) :cljr (:import
        [clojure.lang ISeq]
-       [datascript.db Datom DB]
-       [datascript.pull_parser PullAttr PullPattern])))
+       [eve.db.ds.db Datom DB]
+       [eve.db.ds.pull_parser PullAttr PullPattern])))
 
 (declare pull-impl attrs-frame ref-frame ->ReverseAttrsFrame)
 

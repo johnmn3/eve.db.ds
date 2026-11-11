@@ -1203,7 +1203,7 @@
             ~class)))))
 
 ;; PORT DELTA (F-CLJE-DEFTYPE-ATOM): deftype-atom had :clj/:cljs arms
-;; only; on clojerl the macro did not exist and datascript.conn's
+;; only; on clojerl the macro did not exist and eve.db.ds.conn's
 ;; (extend/deftype-atom Conn ...) analyzed Conn as a value. The :clje
 ;; arm below expands to a plain clojerl deftype with clojerl protocol
 ;; spellings: clojerl.IDeref for deref, clojerl.ILookup for field

@@ -1,7 +1,7 @@
-(ns ^:no-doc datascript.lru
+(ns ^:no-doc eve.db.ds.lru
   ;; PORT DELTA (F-LPY-LRU-CTOR): on basilisp the LRU type is written with
   ;; eve.deftype's deftype macro (see the :lpy arm below), which
-  ;; datascript.db also uses for Datom/DB on this seat.
+  ;; eve.db.ds.db also uses for Datom/DB on this seat.
   ;; PORT DELTA (F-CLJE-LRU-CTOR): same arrangement on clojerl — see the
   ;; :clje arm below.
   ;; PORT DELTA (F-CLJE-VOLATILE): clojerl's clojure.core has no
@@ -34,7 +34,7 @@
    ;; :phase :macroexpansion). A plain basilisp deftype cannot name the
    ;; cljs protocol vars IAssociative/ILookup either (they do not exist
    ;; on this seat). The port's house form for a host type here is the
-   ;; JVM-interface spelling (as datascript.db's Datom/DB use): the
+   ;; JVM-interface spelling (as eve.db.ds.db's Datom/DB use): the
    ;; :clj arm's interfaces and methods, which Eve's basilisp type
    ;; layer (eve.types) translates onto basilisp.lang.interfaces at
    ;; expansion — clojure.lang.Associative -> IAssociative (whose

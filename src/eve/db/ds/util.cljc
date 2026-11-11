@@ -1,4 +1,4 @@
-(ns datascript.util
+(ns eve.db.ds.util
   (:refer-clojure :exclude [find])
   ;; PORT DELTA (F-CLJE-HOST-REFERS): clojerl's clojure.core has no
   ;; transient family (bare-boot inventory in STATUS-DS-CLJE-LRU);
@@ -18,7 +18,7 @@
   false)
 
 #?(:clj (defmacro log [& body]
-     (when (System/getProperty "datascript.debug")
+     (when (System/getProperty "eve.db.ds.debug")
        `(when *debug*
           (println ~@body)))) :cljr (defmacro log [& body]
      (when (System.Environment/GetEnvironmentVariable "DATASCRIPT_DEBUG")
@@ -574,7 +574,7 @@
 ;; PORT DELTA (F-CLJE-LITERAL-DEF): these two defs were (fnil conj [])
 ;; and (fnil conj #{}) — clojerl's emitter rejects a def init that
 ;; evaluates to an anonymous fn object ("Init value for
-;; #'datascript.util/conjv is not a literal", util.cljc:309). The
+;; #'eve.db.ds.util/conjv is not a literal", util.cljc:309). The
 ;; explicit fns are fnil's exact semantics (a nil first arg reads as
 ;; the empty collection); a fn FORM is emittable on every seat.
 (def conjv

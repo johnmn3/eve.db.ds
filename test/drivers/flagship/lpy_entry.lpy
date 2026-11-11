@@ -2,8 +2,8 @@
   ;; Roster entry ticket — BASILISP seat: DataScript load +
   ;; transact + query on basilisp against the release tree.
   ;; Heap conn first, then a persistent (mmap) domain round.
-  (:require [datascript.core :as d]
-            [datascript.conn :as conn]
+  (:require [eve.db.ds.core :as d]
+            [eve.db.ds.conn :as conn]
             [eve.atom :as atom]))
 
 (def base-tx (mapv (fn [i] {:db/id i :name (str "base-" i) :age (+ 20 i)})

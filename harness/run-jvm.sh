@@ -1,5 +1,5 @@
 #!/bin/bash
-# datascript.cljc harness — JVM runner (plane A: directly on Eve).
+# eve.db.ds harness — JVM runner (plane A: directly on Eve).
 # Usage: run-jvm.sh <namespace> <args...>
 # Env: EVE_LOCAL (default: the seat's verified Eve 0.9.3.1 checkout)
 # overrides the lib's Eve git pin with a local tree while git transport

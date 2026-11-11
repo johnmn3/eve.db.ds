@@ -6,23 +6,23 @@
   (:require [eve.host] [eve.atom] [clojure.test :as t]))
 
 (def suite-nss
-  '[datascript.test.components datascript.test.conn datascript.test.core
-    datascript.test.datafy datascript.test.db datascript.test.entity
-    datascript.test.explode datascript.test.filter datascript.test.ident
-    datascript.test.index datascript.test.issues datascript.test.listen
-    datascript.test.lookup-refs datascript.test.lru datascript.test.parser
-    datascript.test.parser-find datascript.test.parser-query
-    datascript.test.parser-return-map datascript.test.parser-rules
-    datascript.test.parser-where datascript.test.pull-api
-    datascript.test.pull-parser datascript.test.query
-    datascript.test.query-aggregates datascript.test.query-find-specs
-    datascript.test.query-fns datascript.test.query-not
-    datascript.test.query-or datascript.test.query-pull
-    datascript.test.query-return-map datascript.test.query-rules
-    datascript.test.query-v3 datascript.test.serialize
-    datascript.test.storage datascript.test.transact
-    datascript.test.tuples datascript.test.upsert
-    datascript.test.validation])
+  '[eve.db.ds.test.components eve.db.ds.test.conn eve.db.ds.test.core
+    eve.db.ds.test.datafy eve.db.ds.test.db eve.db.ds.test.entity
+    eve.db.ds.test.explode eve.db.ds.test.filter eve.db.ds.test.ident
+    eve.db.ds.test.index eve.db.ds.test.issues eve.db.ds.test.listen
+    eve.db.ds.test.lookup-refs eve.db.ds.test.lru eve.db.ds.test.parser
+    eve.db.ds.test.parser-find eve.db.ds.test.parser-query
+    eve.db.ds.test.parser-return-map eve.db.ds.test.parser-rules
+    eve.db.ds.test.parser-where eve.db.ds.test.pull-api
+    eve.db.ds.test.pull-parser eve.db.ds.test.query
+    eve.db.ds.test.query-aggregates eve.db.ds.test.query-find-specs
+    eve.db.ds.test.query-fns eve.db.ds.test.query-not
+    eve.db.ds.test.query-or eve.db.ds.test.query-pull
+    eve.db.ds.test.query-return-map eve.db.ds.test.query-rules
+    eve.db.ds.test.query-v3 eve.db.ds.test.serialize
+    eve.db.ds.test.storage eve.db.ds.test.transact
+    eve.db.ds.test.tuples eve.db.ds.test.upsert
+    eve.db.ds.test.validation])
 
 (defn -main [& _]
   (doseq [ns-sym suite-nss]

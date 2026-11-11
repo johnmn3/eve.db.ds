@@ -4,7 +4,7 @@
    the repeating unit of an infinite recursion is visible."
   (:require [eve.host]
             [eve.atom]
-            [datascript.core :as d]))
+            [eve.db.ds.core :as d]))
 
 (defn -main [& _]
   (let [conn (d/create-conn)]

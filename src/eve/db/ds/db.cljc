@@ -1,13 +1,13 @@
-(ns ^:no-doc datascript.db
+(ns ^:no-doc eve.db.ds.db
   (:require
     #?(:cljs [goog.array :as garray])
     [clojure.walk]
     [clojure.data]
-    #?(:clj [datascript.inline :refer [update]])
-    ;; PORT DELTA (F-CLJE-HOST-REFERS): see datascript.util
+    #?(:clj [eve.db.ds.inline :refer [update]])
+    ;; PORT DELTA (F-CLJE-HOST-REFERS): see eve.db.ds.util
     #?(:clje [eve.host :refer [transient persistent! conj! dissoc! long volatile!]])
-    [datascript.lru :as lru]
-    [datascript.util :as util]
+    [eve.db.ds.lru :as lru]
+    [eve.db.ds.util :as util]
     [eve.core :as e]
     [eve.deftype :refer [eve-deftype]]
     #?(:lpy [eve.deftype :refer [deftype]])
@@ -17,7 +17,7 @@
   ;; clojure.lang.IFn$OOL) is gone — SCI hosts (bb) cannot register
   ;; that class, and its only use was defcomp's invokePrim arm,
   ;; which D6 drops. The ns needs no :import on the :clj read.
-  #?(:cljs (:require-macros [datascript.db :refer [case-tree combine-cmp defn+ defcomp defrecord-updatable int-compare validate-attr validate-val]]))
+  #?(:cljs (:require-macros [eve.db.ds.db :refer [case-tree combine-cmp defn+ defcomp defrecord-updatable int-compare validate-attr validate-val]]))
   (:refer-clojure :exclude [seqable? #?(:clj update)]))
 
 #?(:clj (set! *warn-on-reflection* true) :cljr (set! *warn-on-reflection* true))
@@ -407,7 +407,7 @@
  :lpy  [(defn- make-record-updatable-cljs [name fields & impls]
      ;; NOT syntax-quoted: basilisk's syntax quote ns-qualifies the
      ;; impls' group symbols (clojure.lang.IHashEq becomes
-     ;; datascript.db/clojure.lang.IHashEq, unresolvable) and eve's
+     ;; eve.db.ds.db/clojure.lang.IHashEq, unresolvable) and eve's
      ;; deftype consumes the first group positionally, so the quoted
      ;; expansion mangles the record. Build the expansion as data:
      ;; the impls ride INLINE in the deftype (the proven DB path —
@@ -593,9 +593,9 @@
 
   IPrintWithWriter
   (-pr-writer [d w _opts]
-    (e/-write w (str "#datascript/Datom " (pr-str [(.-e d) (.-a d) (.-v d) (datom-tx d) (datom-added d)])))))
+    (e/-write w (str "#eve.db.ds/Datom " (pr-str [(.-e d) (.-a d) (.-v d) (datom-tx d) (datom-added d)])))))
 
-#?(:cljs (goog/exportSymbol "datascript.db.Datom" Datom))
+#?(:cljs (goog/exportSymbol "eve.db.ds.db.Datom" Datom))
 
 (defn ^Datom datom
   ([e a v] (->Datom e a v tx0 0))
@@ -674,10 +674,10 @@
     :v     (datom (.-e d) (.-a d) v       (datom-tx d) (datom-added d))
     :tx    (datom (.-e d) (.-a d) (.-v d) v            (datom-added d))
     :added (datom (.-e d) (.-a d) (.-v d) (datom-tx d) v)
-    (throw #?(:clje (ex-info (str "invalid key for #datascript/Datom: " k) {})
-              :clj  (IllegalArgumentException. (str "invalid key for #datascript/Datom: " k)) :cljr (System.ArgumentException. (str "invalid key for #datascript/Datom: " k))
-              :cljs (IllegalArgumentException. (str "invalid key for #datascript/Datom: " k))
-              :lpy  (IllegalArgumentException. (str "invalid key for #datascript/Datom: " k))))))
+    (throw #?(:clje (ex-info (str "invalid key for #eve.db.ds/Datom: " k) {})
+              :clj  (IllegalArgumentException. (str "invalid key for #eve.db.ds/Datom: " k)) :cljr (System.ArgumentException. (str "invalid key for #eve.db.ds/Datom: " k))
+              :cljs (IllegalArgumentException. (str "invalid key for #eve.db.ds/Datom: " k))
+              :lpy  (IllegalArgumentException. (str "invalid key for #eve.db.ds/Datom: " k))))))
 
 ;; printing and reading
 ;; #datomic/DB {:schema <map>, :datoms <vector of [e a v tx]>}
@@ -687,10 +687,10 @@
 
 #?(:clj
    (defmethod print-method Datom [^Datom d, ^java.io.Writer w]
-     (.write w (str "#datascript/Datom "))
+     (.write w (str "#eve.db.ds/Datom "))
      (binding [*out* w]
        (pr [(.-e d) (.-a d) (.-v d) (datom-tx d) (datom-added d)]))) :cljr (defmethod print-method Datom [^Datom d, ^System.IO.TextWriter w]
-     (.Write w (str "#datascript/Datom "))
+     (.Write w (str "#eve.db.ds/Datom "))
      (binding [*out* w]
        (pr [(.-e d) (.-a d) (.-v d) (datom-tx d) (datom-added d)]))))
 
@@ -1129,9 +1129,9 @@
 ;; slab value on every host; a host fn is not — this is what lets a DB's
 ;; indexes cross Eve's codec and lets DBs built on different hosts hold
 ;; field-identical index sets. cmp-of resolves the name at each use.
-(set/register-comparator! :datascript.db/cmp-eavt cmp-datoms-eavt)
-(set/register-comparator! :datascript.db/cmp-aevt cmp-datoms-aevt)
-(set/register-comparator! :datascript.db/cmp-avet cmp-datoms-avet)
+(set/register-comparator! :eve.db.ds.db/cmp-eavt cmp-datoms-eavt)
+(set/register-comparator! :eve.db.ds.db/cmp-aevt cmp-datoms-aevt)
+(set/register-comparator! :eve.db.ds.db/cmp-avet cmp-datoms-avet)
 
 (defn- diff-sorted [a b cmp]
   (loop [only-a []
@@ -1459,13 +1459,13 @@
                 ;; (.-meta db), not (meta db): the field shadows
                 ;; clojure.core/meta inside method bodies.
                 (with-meta (.-meta db))))
-  (cons [db _v] (throw (ex-info "datascript.DB/cons is not supported" {})))
+  (cons [db _v] (throw (ex-info "eve.db.ds.db.DB/cons is not supported" {})))
 
   clojure.lang.IEditableCollection
   (asTransient [db] (db-transient db))
 
   clojure.lang.ITransientCollection
-  (conj [db _v] (throw (ex-info "datascript.DB/conj! is not supported" {})))
+  (conj [db _v] (throw (ex-info "eve.db.ds.db.DB/conj! is not supported" {})))
   (persistent [db] (db-persistent! db))
 
   clojure.lang.Reversible
@@ -1477,7 +1477,7 @@
   IDB
   ;; PORT DELTA (F-CLJE-SCHEMA): on clojerl a field read (.-schema db)
   ;; and this protocol method are one module function
-  ;; ('datascript.db.DB':'-schema'/1) -- the method shadows the
+  ;; ('eve.db.ds.db.DB':'-schema'/1) -- the method shadows the
   ;; generated field accessor, so the dot spelling in this body
   ;; recursed without bound (live backtrace, hang27: 7.5e9 reductions,
   ;; DB:-schema/1 -> clj_rt:type_module -> erlang:make_fun). The :clje
@@ -1580,7 +1580,7 @@
       (resolve-datom db nil attr end nil emax txmax)))
                 
   clojure.data/EqualityPartition
-  (equality-partition [x] :datascript/db)
+  (equality-partition [x] :eve/db/ds/db)
 
   clojure.data/Diff
   (diff-similar [a b]
@@ -1598,7 +1598,7 @@
     :max-eid (->DB (.-schema db) (.-eavt db) (.-aevt db) (.-avet db) v (.-max-tx db) (.-rschema db) (.-meta db))
     :max-tx  (->DB (.-schema db) (.-eavt db) (.-aevt db) (.-avet db) (.-max-eid db) v (.-rschema db) (.-meta db))
     :rschema (->DB (.-schema db) (.-eavt db) (.-aevt db) (.-avet db) (.-max-eid db) (.-max-tx db) v (.-meta db))
-    (throw (ex-info (str "datascript.DB has no field " k) {:key k}))))
+    (throw (ex-info (str "eve.db.ds.db.DB has no field " k) {:key k}))))
 
 
 ;; PORT DELTA (F-CLJE-DB-ASSOC): eve-deftype's beam translation
@@ -1635,24 +1635,24 @@
               (satisfies? IDB x))]
    :clj [(or
        (and x
-         (instance? datascript.db.ISearch x)
-         (instance? datascript.db.IIndexAccess x)
-         (instance? datascript.db.IDB x))
+         (instance? eve.db.ds.db.ISearch x)
+         (instance? eve.db.ds.db.IIndexAccess x)
+         (instance? eve.db.ds.db.IDB x))
        (and (satisfies? ISearch x)
          (satisfies? IIndexAccess x)
          (satisfies? IDB x)))] :cljr [(or
        (and x
-         (instance? datascript.db.ISearch x)
-         (instance? datascript.db.IIndexAccess x)
-         (instance? datascript.db.IDB x))
+         (instance? eve.db.ds.db.ISearch x)
+         (instance? eve.db.ds.db.IIndexAccess x)
+         (instance? eve.db.ds.db.IDB x))
        (and (satisfies? ISearch x)
          (satisfies? IIndexAccess x)
          (satisfies? IDB x)))]
    :lpy  [(or
        (and x
-         (instance? datascript.db.ISearch x)
-         (instance? datascript.db.IIndexAccess x)
-         (instance? datascript.db.IDB x))
+         (instance? eve.db.ds.db.ISearch x)
+         (instance? eve.db.ds.db.IIndexAccess x)
+         (instance? eve.db.ds.db.IDB x))
        (and (satisfies? ISearch x)
          (satisfies? IIndexAccess x)
          (satisfies? IDB x)))]
@@ -1903,9 +1903,9 @@
   (map->DB
     {:schema        schema
      :rschema       (rschema (merge implicit-schema schema))
-     :eavt          (set/sorted-set* (assoc opts :cmp :datascript.db/cmp-eavt))
-     :aevt          (set/sorted-set* (assoc opts :cmp :datascript.db/cmp-aevt))
-     :avet          (set/sorted-set* (assoc opts :cmp :datascript.db/cmp-avet))
+     :eavt          (set/sorted-set* (assoc opts :cmp :eve.db.ds.db/cmp-eavt))
+     :aevt          (set/sorted-set* (assoc opts :cmp :eve.db.ds.db/cmp-aevt))
+     :avet          (set/sorted-set* (assoc opts :cmp :eve.db.ds.db/cmp-avet))
      :max-eid       e0
      :max-tx        tx0
      :pull-patterns (lru/cache 100)
@@ -1948,13 +1948,13 @@
         ;; sorts left init-db's indexes in insertion order (upstream
         ;; pull-api's init-db-built *test-db exposed it).
         arr         (arrays/asort arr cmp-datoms-eavt-quick)
-        eavt        (set/from-sorted-array :datascript.db/cmp-eavt arr (arrays/alength arr) opts)
+        eavt        (set/from-sorted-array :eve.db.ds.db/cmp-eavt arr (arrays/alength arr) opts)
         arr         (arrays/asort arr cmp-datoms-aevt-quick)
-        aevt        (set/from-sorted-array :datascript.db/cmp-aevt arr (arrays/alength arr) opts)
+        aevt        (set/from-sorted-array :eve.db.ds.db/cmp-aevt arr (arrays/alength arr) opts)
         avet-datoms (filter (fn [^Datom d] (contains? indexed (.-a d))) datoms)
         avet-arr    (arrays/into-array avet-datoms) ;; PORT (D2 addendum): vanilla's to-array makes a host Object[]; the port's array substrate is Eve vectors (PORTING.md S)
         avet-arr    (arrays/asort avet-arr cmp-datoms-avet-quick)
-        avet        (set/from-sorted-array :datascript.db/cmp-avet avet-arr (arrays/alength avet-arr) opts)
+        avet        (set/from-sorted-array :eve.db.ds.db/cmp-avet avet-arr (arrays/alength avet-arr) opts)
         max-eid     (init-max-eid rschema eavt avet)
         max-tx      (transduce (map (fn [^Datom d] (datom-tx d))) max tx0 eavt)]
     (map->DB
@@ -2020,7 +2020,7 @@
 
 #?(:cljs
    (defn+ pr-db [db w opts]
-     (-write w "#datascript/DB {")
+     (-write w "#eve.db.ds/DB {")
      (-write w ":schema ")
      (pr-writer (-schema db) w opts)
      (-write w ", :datoms ")
@@ -2045,7 +2045,7 @@
 ;; and reader contract unchanged.
 #?(:lpy
    (defn+ pr-db [db w opts]
-     (.write w (str "#datascript/DB {"))
+     (.write w (str "#eve.db.ds/DB {"))
      (.write w ":schema ")
      (binding [*out* w]
        (pr (-schema db))
@@ -2056,7 +2056,7 @@
 #?(:clj
    (do
      (defn pr-db [db, ^java.io.Writer w]
-       (.write w (str "#datascript/DB {"))
+       (.write w (str "#eve.db.ds/DB {"))
        (.write w ":schema ")
        (binding [*out* w]
          (pr (-schema db))
@@ -2067,7 +2067,7 @@
      (defmethod print-method DB [db w] (pr-db db w))
      (defmethod print-method FilteredDB [db w] (pr-db db w))) :cljr (do
      (defn pr-db [db, ^System.IO.TextWriter w]
-       (.Write w (str "#datascript/DB {"))
+       (.Write w (str "#eve.db.ds/DB {"))
        (.Write w ":schema ")
        (binding [*out* w]
          (pr (-schema db))
@@ -2140,7 +2140,7 @@
                    ;; check below casts its result to Number and dies).
                    ;; The :bb arm names the comparator directly: every
                    ;; index set in a DB stores its comparator NAME
-                   ;; (:datascript.db/cmp-eavt etc., see the registry
+                   ;; (:eve.db.ds.db/cmp-eavt etc., see the registry
                    ;; block at empty-db), and cmp-of resolves the name
                    ;; to exactly this index's cmp-datoms-* fn -- the
                    ;; same fn the JVM seat's Sorted adapter wraps, with
@@ -2372,29 +2372,29 @@
   #?@(:cljs
       [IPrintWithWriter
        (-pr-writer [d writer opts]
-         (pr-sequential-writer writer pr-writer "#datascript/AutoTempid [" " " "]" opts [id]))]
+         (pr-sequential-writer writer pr-writer "#eve.db.ds/AutoTempid [" " " "]" opts [id]))]
       :clj
       [Object
        (toString [d]
-         (str "#datascript/AutoTempid [" id "]"))]
+         (str "#eve.db.ds/AutoTempid [" id "]"))]
       :cljr
       [Object
        (ToString [d]
-         (str "#datascript/AutoTempid [" id "]"))]
+         (str "#eve.db.ds/AutoTempid [" id "]"))]
       ;; F-LPY-ENTITY family: no :lpy arm -> AutoTempid carried no
       ;; impls on basilisp (print fidelity only — tempid resolution
       ;; reads the type and field, not Object methods). Mirror :clj.
       :lpy
       [Object
        (toString [d]
-         (str "#datascript/AutoTempid [" id "]"))]))
+         (str "#eve.db.ds/AutoTempid [" id "]"))]))
 
 #?(:clj
    (defmethod print-method AutoTempid [^AutoTempid id, ^java.io.Writer w]
-     (.write w (str "#datascript/AutoTempid "))
+     (.write w (str "#eve.db.ds/AutoTempid "))
      (binding [*out* w]
        (pr [(.-id id)]))) :cljr (defmethod print-method AutoTempid [^AutoTempid id, ^System.IO.TextWriter w]
-     (.Write w (str "#datascript/AutoTempid "))
+     (.Write w (str "#eve.db.ds/AutoTempid "))
      (binding [*out* w]
        (pr [(.-id id)]))))
 
@@ -2467,9 +2467,9 @@
 (do #?@(:clj [(defn- ^Boolean tx-id?
      [e]
      (or (identical? :db/current-tx e)
-       (.equals ":db/current-tx" e) ;; for datascript.js interop
+       (.equals ":db/current-tx" e) ;; for JS interop
        (.equals "datomic.tx" e)
-       (.equals "datascript.tx" e)))] ;; PORT DELTA (F-CLJR-TXID-EQUALS): the :cljr arm's (.Equals lit e)
+       (.equals "eve.db.ds.tx" e)))] ;; PORT DELTA (F-CLJR-TXID-EQUALS): the :cljr arm's (.Equals lit e)
  ;; dies at runtime when e is not a String ("No matching member equals
  ;; taking 1 args for String" -- the DLR callsite will not bind
  ;; Object.Equals for a Keyword/long receiver arg the way JVM's
@@ -2478,28 +2478,28 @@
  :cljr [(defn- ^Boolean tx-id?
      [e]
      (or (identical? :db/current-tx e)
-       (= ":db/current-tx" e) ;; for datascript.js interop
+       (= ":db/current-tx" e) ;; for JS interop
        (= "datomic.tx" e)
-       (= "datascript.tx" e)))]
+       (= "eve.db.ds.tx" e)))]
  :lpy  [(defn- tx-id?
      [e]
      (or (identical? :db/current-tx e)
-       (= e ":db/current-tx") ;; for datascript.js interop
+       (= e ":db/current-tx") ;; for JS interop
        (= e "datomic.tx")
-       (= e "datascript.tx")))]
+       (= e "eve.db.ds.tx")))]
  :cljs [(defn- ^boolean tx-id?
      [e]
      (or (= e :db/current-tx)
-       (= e ":db/current-tx") ;; for datascript.js interop
+       (= e ":db/current-tx") ;; for JS interop
        (= e "datomic.tx")
-       (= e "datascript.tx")))]))
+       (= e "eve.db.ds.tx")))]))
 
 #?(:clje (defn- tx-id?
            [e]
            (or (= e :db/current-tx)
-             (= e ":db/current-tx") ;; for datascript.js interop
+             (= e ":db/current-tx") ;; for JS interop
              (= e "datomic.tx")
-             (= e "datascript.tx"))))
+             (= e "eve.db.ds.tx"))))
 
 (do #?@(:clj [(defn-  ^Boolean tempid? [x] (or
     (and (number? x) (neg? x))

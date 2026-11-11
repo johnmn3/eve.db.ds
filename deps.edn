@@ -1,7 +1,18 @@
-;; datascript.cljc — the whole library in one dep.
-;; Consume this repository's root and the DataScript port (lib-ds/),
-;; the persistent-sorted-set port (lib/) and extend-clj (lib-ds-deps/)
-;; resolve transitively. The pieces can also be consumed separately:
-;; point :deps/root at "lib-ds" for exactly the arrangement the Eve
-;; example shipped.
-{:deps {datascript-on-eve/datascript-on-eve {:local/root "lib-ds"}}}
+;; eve.db.ds — the library (derived from DataScript, tonsky/DataScript, EPL-1.0).
+;;
+;; This repository root IS the library: src/eve/db/ds/* and
+;; src/data_readers.cljc. Home repo: johnmn3/eve.db.ds — ONE codebase
+;; spanning both host sets: every Clojure-like Eve supports (directly on
+;; Eve) and every Clojure-like cohost supports (through cohost bodies
+;; over the Eve backend).
+;;
+;; Eve is a git dependency on the Eve repository (SeniorCareMarket/eve),
+;; pinned to the shipped 0.9.3.1 tree. Never a path into an Eve checkout.
+;; The sibling libraries (persistent-sorted-set port, extend-clj) are
+;; :local/root deps inside this repository.
+{:paths ["src"]
+ :deps {org.clojure/clojure {:mvn/version "1.12.0"}
+        eve/eve {:git/url "https://github.com/SeniorCareMarket/eve"
+                 :git/sha "4a921298168080c2af9f57fcfcdee2db570dec4c"}
+        me.tonsky/persistent-sorted-set {:local/root "lib"}
+        extend-clj/extend-clj {:local/root "lib-ds-deps"}}}

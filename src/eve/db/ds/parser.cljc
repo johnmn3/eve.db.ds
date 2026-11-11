@@ -1,10 +1,10 @@
-(ns ^:no-doc datascript.parser
+(ns ^:no-doc eve.db.ds.parser
   (:refer-clojure :exclude [distinct?])
-  #?(:cljs (:require-macros [datascript.parser :refer [deftrecord]]))
+  #?(:cljs (:require-macros [eve.db.ds.parser :refer [deftrecord]]))
   (:require
     [clojure.set :as set]
-    [datascript.db :as db]
-    [datascript.util :as util]))
+    [eve.db.ds.db :as db]
+    [eve.db.ds.util :as util]))
 
 ;; utils
 
@@ -16,7 +16,7 @@
   (-postwalk     [_ f]))
 
 #?(:jank (defmacro deftrecord
-     "Augment all datascript.parser/ records with default implementation of ITraversable"
+     "Augment all eve.db.ds.parser/ records with default implementation of ITraversable"
      [tagname fields & rest]
      (let [f    (gensym "f")
            pred (gensym "pred")
@@ -24,17 +24,17 @@
        `(defrecord ~tagname ~fields
           ITraversable
           (~'-postwalk [this# ~f]
-            (let [new# (~(symbol (str "->" (name tagname))) ~@(map #(list 'datascript.parser/postwalk % f) fields))]
+            (let [new# (~(symbol (str "->" (name tagname))) ~@(map #(list 'eve.db.ds.parser/postwalk % f) fields))]
               (if-let [meta# (meta this#)]
                 (with-meta new# meta#)
                 new#)))
           (~'-collect [_# ~pred ~acc]
-            ~(reduce #(list 'datascript.parser/collect pred %2 %1) acc fields))
+            ~(reduce #(list 'eve.db.ds.parser/collect pred %2 %1) acc fields))
           (~'-collect-vars [_# ~acc]
-            ~(reduce #(list 'datascript.parser/collect-vars-acc %1 %2) acc fields))
+            ~(reduce #(list 'eve.db.ds.parser/collect-vars-acc %1 %2) acc fields))
           ~@rest)))
    :clj (defmacro deftrecord
-     "Augment all datascript.parser/ records with default implementation of ITraversable"
+     "Augment all eve.db.ds.parser/ records with default implementation of ITraversable"
      [tagname fields & rest]
      (let [f    (gensym "f")
            pred (gensym "pred")
@@ -42,18 +42,18 @@
        `(defrecord ~tagname ~fields
           ITraversable
           (~'-postwalk [this# ~f]
-            (let [new# (new ~tagname ~@(map #(list 'datascript.parser/postwalk % f) fields))]
+            (let [new# (new ~tagname ~@(map #(list 'eve.db.ds.parser/postwalk % f) fields))]
               (if-let [meta# (meta this#)]
                 (with-meta new# meta#)
                 new#)))
           (~'-collect [_# ~pred ~acc]
             ;; [x y z] -> (collect pred z (collect pred y (collect pred x acc)))
-            ~(reduce #(list 'datascript.parser/collect pred %2 %1) acc fields))
+            ~(reduce #(list 'eve.db.ds.parser/collect pred %2 %1) acc fields))
           (~'-collect-vars [_# ~acc]
             ;; [x y z] -> (collect-vars-acc (collect-vars-acc (collect-vars-acc acc x) y) z)
-            ~(reduce #(list 'datascript.parser/collect-vars-acc %1 %2) acc fields))
+            ~(reduce #(list 'eve.db.ds.parser/collect-vars-acc %1 %2) acc fields))
           ~@rest))) :cljr (defmacro deftrecord
-     "Augment all datascript.parser/ records with default implementation of ITraversable"
+     "Augment all eve.db.ds.parser/ records with default implementation of ITraversable"
      [tagname fields & rest]
      (let [f    (gensym "f")
            pred (gensym "pred")
@@ -61,23 +61,23 @@
        `(defrecord ~tagname ~fields
           ITraversable
           (~'-postwalk [this# ~f]
-            (let [new# (new ~tagname ~@(map #(list 'datascript.parser/postwalk % f) fields))]
+            (let [new# (new ~tagname ~@(map #(list 'eve.db.ds.parser/postwalk % f) fields))]
               (if-let [meta# (meta this#)]
                 (with-meta new# meta#)
                 new#)))
           (~'-collect [_# ~pred ~acc]
             ;; [x y z] -> (collect pred z (collect pred y (collect pred x acc)))
-            ~(reduce #(list 'datascript.parser/collect pred %2 %1) acc fields))
+            ~(reduce #(list 'eve.db.ds.parser/collect pred %2 %1) acc fields))
           (~'-collect-vars [_# ~acc]
             ;; [x y z] -> (collect-vars-acc (collect-vars-acc (collect-vars-acc acc x) y) z)
-            ~(reduce #(list 'datascript.parser/collect-vars-acc %1 %2) acc fields))
+            ~(reduce #(list 'eve.db.ds.parser/collect-vars-acc %1 %2) acc fields))
           ~@rest)))
    ;; PORT DELTA (F-LPY-DEFTRECORD): basilisp is a macro seat like
    ;; :clj (no :cljs-style require-macros split); without an :lpy arm
    ;; deftrecord was unresolvable and every parser record failed to
    ;; define. The body is the :clj body verbatim.
    :lpy (defmacro deftrecord
-     "Augment all datascript.parser/ records with default implementation of ITraversable"
+     "Augment all eve.db.ds.parser/ records with default implementation of ITraversable"
      [tagname fields & rest]
      (let [f    (gensym "f")
            pred (gensym "pred")
@@ -85,19 +85,19 @@
        `(defrecord ~tagname ~fields
           ITraversable
           (~'-postwalk [this# ~f]
-            (let [new# (new ~tagname ~@(map #(list 'datascript.parser/postwalk % f) fields))]
+            (let [new# (new ~tagname ~@(map #(list 'eve.db.ds.parser/postwalk % f) fields))]
               (if-let [meta# (meta this#)]
                 (with-meta new# meta#)
                 new#)))
           (~'-collect [_# ~pred ~acc]
             ;; [x y z] -> (collect pred z (collect pred y (collect pred x acc)))
-            ~(reduce #(list 'datascript.parser/collect pred %2 %1) acc fields))
+            ~(reduce #(list 'eve.db.ds.parser/collect pred %2 %1) acc fields))
           (~'-collect-vars [_# ~acc]
             ;; [x y z] -> (collect-vars-acc (collect-vars-acc (collect-vars-acc acc x) y) z)
-            ~(reduce #(list 'datascript.parser/collect-vars-acc %1 %2) acc fields))
+            ~(reduce #(list 'eve.db.ds.parser/collect-vars-acc %1 %2) acc fields))
           ~@rest)))
    :cljs (defmacro deftrecord
-     "Augment all datascript.parser/ records with default implementation of ITraversable"
+     "Augment all eve.db.ds.parser/ records with default implementation of ITraversable"
      [tagname fields & rest]
      (let [f    (gensym "f")
            pred (gensym "pred")
@@ -105,22 +105,22 @@
        `(defrecord ~tagname ~fields
           ITraversable
           (~'-postwalk [this# ~f]
-            (let [new# (new ~tagname ~@(map #(list 'datascript.parser/postwalk % f) fields))]
+            (let [new# (new ~tagname ~@(map #(list 'eve.db.ds.parser/postwalk % f) fields))]
               (if-let [meta# (meta this#)]
                 (with-meta new# meta#)
                 new#)))
           (~'-collect [_# ~pred ~acc]
             ;; [x y z] -> (collect pred z (collect pred y (collect pred x acc)))
-            ~(reduce #(list 'datascript.parser/collect pred %2 %1) acc fields))
+            ~(reduce #(list 'eve.db.ds.parser/collect pred %2 %1) acc fields))
           (~'-collect-vars [_# ~acc]
             ;; [x y z] -> (collect-vars-acc (collect-vars-acc (collect-vars-acc acc x) y) z)
-            ~(reduce #(list 'datascript.parser/collect-vars-acc %1 %2) acc fields))
+            ~(reduce #(list 'eve.db.ds.parser/collect-vars-acc %1 %2) acc fields))
           ~@rest))))
 
 ;; PORT DELTA (F-CLJE-DEFTRECORD): deftrecord had :clj/:cljs arms only
 ;; (identical text); the :clje twin is the same expansion
 #?(:clje (defmacro deftrecord
-           "Augment all datascript.parser/ records with default implementation of ITraversable"
+           "Augment all eve.db.ds.parser/ records with default implementation of ITraversable"
            [tagname fields & rest]
            (let [f    (gensym "f")
                  pred (gensym "pred")
@@ -128,14 +128,14 @@
              `(defrecord ~tagname ~fields
                 ITraversable
                 (~'-postwalk [this# ~f]
-                  (let [new# (new ~tagname ~@(map #(list 'datascript.parser/postwalk % f) fields))]
+                  (let [new# (new ~tagname ~@(map #(list 'eve.db.ds.parser/postwalk % f) fields))]
                     (if-let [meta# (meta this#)]
                       (with-meta new# meta#)
                       new#)))
                 (~'-collect [_# ~pred ~acc]
-                  ~(reduce #(list 'datascript.parser/collect pred %2 %1) acc fields))
+                  ~(reduce #(list 'eve.db.ds.parser/collect pred %2 %1) acc fields))
                 (~'-collect-vars [_# ~acc]
-                  ~(reduce #(list 'datascript.parser/collect-vars-acc %1 %2) acc fields))
+                  ~(reduce #(list 'eve.db.ds.parser/collect-vars-acc %1 %2) acc fields))
                 ~@rest))))
 
 (defn of-size? [form size]

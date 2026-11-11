@@ -1,4 +1,4 @@
-(ns datascript.core
+(ns eve.db.ds.core
   (:refer-clojure :exclude [filter])
   (:require
     ;; PORT DELTA (F-JANK-READER-LIBSPEC): vanilla's reader-conditional
@@ -9,25 +9,25 @@
     #?(:cljs [cljs.reader :as edn]
        :clj  [clojure.edn :as edn] :cljr [clojure.edn :as edn]
        :lpy  [clojure.edn :as edn] :clje [clojure.edn :as edn])
-    [datascript.conn :as conn]
-    ;; PORT DELTA (F-NBB-MACROS round): as in datascript.conn — no
+    [eve.db.ds.conn :as conn]
+    ;; PORT DELTA (F-NBB-MACROS round): as in eve.db.ds.conn — no
     ;; :cljs type refers; the types are named qualified at their uses
-    [datascript.db :as db]
-    #?(:clj [datascript.pprint])
-    [datascript.pull-api :as dp]
-    [datascript.serialize :as ds]
-    [datascript.storage :as storage]
-    [datascript.query :as dq]
-    [datascript.impl.entity :as de]
-    [datascript.util :as util]
+    [eve.db.ds.db :as db]
+    #?(:clj [eve.db.ds.pprint])
+    [eve.db.ds.pull-api :as dp]
+    [eve.db.ds.serialize :as ds]
+    [eve.db.ds.storage :as storage]
+    [eve.db.ds.query :as dq]
+    [eve.db.ds.impl.entity :as de]
+    [eve.db.ds.util :as util]
     [me.tonsky.persistent-sorted-set :as set])
   #?(:clj
      (:import
-       [datascript.db Datom DB FilteredDB]
-       [datascript.impl.entity Entity]
+       [eve.db.ds.db Datom DB FilteredDB]
+       [eve.db.ds.impl.entity Entity]
        [java.util UUID]) :cljr (:import
-       [datascript.db Datom DB FilteredDB]
-       [datascript.impl.entity Entity]
+       [eve.db.ds.db Datom DB FilteredDB]
+       [eve.db.ds.impl.entity Entity]
        [System Guid])))
 
 (def ^:const ^:no-doc tx0 
@@ -166,10 +166,10 @@
    Usage:
    
    ```
-   (empty-db) ; => #datascript/DB {:schema {}, :datoms []}
+   (empty-db) ; => #eve.db.ds/DB {:schema {}, :datoms []}
 
    (empty-db {:likes {:db/cardinality :db.cardinality/many}})
-   ; => #datascript/DB {:schema {:likes {:db/cardinality :db.cardinality/many}}
+   ; => #eve.db.ds/DB {:schema {:likes {:db/cardinality :db.cardinality/many}}
    ;                    :datoms []}
    ```
    
@@ -309,35 +309,35 @@
        ; find all datoms for entity id == 1 (any attrs and values)
        ; sort by attribute, then value
        (datoms db :eavt 1)
-       ; => (#datascript/Datom [1 :friends 2]
-       ;     #datascript/Datom [1 :likes \"fries\"]
-       ;     #datascript/Datom [1 :likes \"pizza\"]
-       ;     #datascript/Datom [1 :name \"Ivan\"])
+       ; => (#eve.db.ds/Datom [1 :friends 2]
+       ;     #eve.db.ds/Datom [1 :likes \"fries\"]
+       ;     #eve.db.ds/Datom [1 :likes \"pizza\"]
+       ;     #eve.db.ds/Datom [1 :name \"Ivan\"])
   
        ; find all datoms for entity id == 1 and attribute == :likes (any values)
        ; sorted by value
        (datoms db :eavt 1 :likes)
-       ; => (#datascript/Datom [1 :likes \"fries\"]
-       ;     #datascript/Datom [1 :likes \"pizza\"])
+       ; => (#eve.db.ds/Datom [1 :likes \"fries\"]
+       ;     #eve.db.ds/Datom [1 :likes \"pizza\"])
        
        ; find all datoms for entity id == 1, attribute == :likes and value == \"pizza\"
        (datoms db :eavt 1 :likes \"pizza\")
-       ; => (#datascript/Datom [1 :likes \"pizza\"])
+       ; => (#eve.db.ds/Datom [1 :likes \"pizza\"])
   
        ; find all datoms for attribute == :likes (any entity ids and values)
        ; sorted by entity id, then value
        (datoms db :aevt :likes)
-       ; => (#datascript/Datom [1 :likes \"fries\"]
-       ;     #datascript/Datom [1 :likes \"pizza\"]
-       ;     #datascript/Datom [2 :likes \"candy\"]
-       ;     #datascript/Datom [2 :likes \"pie\"]
-       ;     #datascript/Datom [2 :likes \"pizza\"])
+       ; => (#eve.db.ds/Datom [1 :likes \"fries\"]
+       ;     #eve.db.ds/Datom [1 :likes \"pizza\"]
+       ;     #eve.db.ds/Datom [2 :likes \"candy\"]
+       ;     #eve.db.ds/Datom [2 :likes \"pie\"]
+       ;     #eve.db.ds/Datom [2 :likes \"pizza\"])
   
        ; find all datoms that have attribute == `:likes` and value == `\"pizza\"` (any entity id)
        ; `:likes` must be a unique attr, reference or marked as `:db/index true`
        (datoms db :avet :likes \"pizza\")
-       ; => (#datascript/Datom [1 :likes \"pizza\"]
-       ;     #datascript/Datom [2 :likes \"pizza\"])
+       ; => (#eve.db.ds/Datom [1 :likes \"pizza\"]
+       ;     #eve.db.ds/Datom [2 :likes \"pizza\"])
   
        ; find all datoms sorted by entity id, then attribute, then value
        (datoms db :eavt) ; => (...)
@@ -392,29 +392,29 @@
    Usage:
 
        (seek-datoms db :eavt 1)
-       ; => (#datascript/Datom [1 :friends 2]
-       ;     #datascript/Datom [1 :likes \"fries\"]
-       ;     #datascript/Datom [1 :likes \"pizza\"]
-       ;     #datascript/Datom [1 :name \"Ivan\"]
-       ;     #datascript/Datom [2 :likes \"candy\"]
-       ;     #datascript/Datom [2 :likes \"pie\"]
-       ;     #datascript/Datom [2 :likes \"pizza\"])
+       ; => (#eve.db.ds/Datom [1 :friends 2]
+       ;     #eve.db.ds/Datom [1 :likes \"fries\"]
+       ;     #eve.db.ds/Datom [1 :likes \"pizza\"]
+       ;     #eve.db.ds/Datom [1 :name \"Ivan\"]
+       ;     #eve.db.ds/Datom [2 :likes \"candy\"]
+       ;     #eve.db.ds/Datom [2 :likes \"pie\"]
+       ;     #eve.db.ds/Datom [2 :likes \"pizza\"])
 
        (seek-datoms db :eavt 1 :name)
-       ; => (#datascript/Datom [1 :name \"Ivan\"]
-       ;     #datascript/Datom [2 :likes \"candy\"]
-       ;     #datascript/Datom [2 :likes \"pie\"]
-       ;     #datascript/Datom [2 :likes \"pizza\"])
+       ; => (#eve.db.ds/Datom [1 :name \"Ivan\"]
+       ;     #eve.db.ds/Datom [2 :likes \"candy\"]
+       ;     #eve.db.ds/Datom [2 :likes \"pie\"]
+       ;     #eve.db.ds/Datom [2 :likes \"pizza\"])
   
        (seek-datoms db :eavt 2) 
-       ; => (#datascript/Datom [2 :likes \"candy\"]
-       ;     #datascript/Datom [2 :likes \"pie\"]
-       ;     #datascript/Datom [2 :likes \"pizza\"])
+       ; => (#eve.db.ds/Datom [2 :likes \"candy\"]
+       ;     #eve.db.ds/Datom [2 :likes \"pie\"]
+       ;     #eve.db.ds/Datom [2 :likes \"pizza\"])
   
        ; no datom [2 :likes \"fish\"], so starts with one immediately following such in index
        (seek-datoms db :eavt 2 :likes \"fish\")
-       ; => (#datascript/Datom [2 :likes \"pie\"]
-       ;     #datascript/Datom [2 :likes \"pizza\"])"
+       ; => (#eve.db.ds/Datom [2 :likes \"pie\"]
+       ;     #eve.db.ds/Datom [2 :likes \"pizza\"])"
   ([db index]             {:pre [(db/db? db)]} (db/-seek-datoms db index nil nil nil nil))
   ([db index c0]          {:pre [(db/db? db)]} (db/-seek-datoms db index c0  nil nil nil))
   ([db index c0 c1]       {:pre [(db/db? db)]} (db/-seek-datoms db index c0  c1  nil nil))
@@ -439,15 +439,15 @@
    Usage:
 
        (index-range db :likes \"a\" \"zzzzzzzzz\")
-       ; => (#datascript/Datom [2 :likes \"candy\"]
-       ;     #datascript/Datom [1 :likes \"fries\"]
-       ;     #datascript/Datom [2 :likes \"pie\"]
-       ;     #datascript/Datom [1 :likes \"pizza\"]
-       ;     #datascript/Datom [2 :likes \"pizza\"])
+       ; => (#eve.db.ds/Datom [2 :likes \"candy\"]
+       ;     #eve.db.ds/Datom [1 :likes \"fries\"]
+       ;     #eve.db.ds/Datom [2 :likes \"pie\"]
+       ;     #eve.db.ds/Datom [1 :likes \"pizza\"]
+       ;     #eve.db.ds/Datom [2 :likes \"pizza\"])
         
        (index-range db :likes \"egg\" \"pineapple\")
-       ; => (#datascript/Datom [1 :likes \"fries\"]
-       ;     #datascript/Datom [2 :likes \"pie\"])
+       ; => (#eve.db.ds/Datom [1 :likes \"fries\"]
+       ;     #eve.db.ds/Datom [2 :likes \"pie\"])
            
    Useful patterns:
      
@@ -531,7 +531,7 @@
       (:tempids report) ; => {-1 296}
   
       ; check actual datoms inserted
-      (:tx-data report) ; => [#datascript/Datom [296 :name \"Ivan\"]]
+      (:tx-data report) ; => [#eve.db.ds/Datom [296 :name \"Ivan\"]]
   
       ; tempid can also be a string
       (transact! conn [[:db/add \"ivan\" :name \"Ivan\"]])
@@ -607,8 +607,8 @@
              ```
              (clojure.edn/read-string {:readers data-readers} \"...\")
              ```"}
-  data-readers {'datascript/Datom db/datom-from-reader
-                'datascript/DB    db/db-from-reader})
+  data-readers {'eve.db.ds/Datom db/datom-from-reader
+                'eve.db.ds/DB    db/db-from-reader})
 
 #?(:cljs
    (doseq [[tag cb] data-readers] (edn/register-tag-parser! tag cb)))
@@ -619,9 +619,9 @@
 ;; `basilisp run -p ...` staging's roots are on sys.path, the tags
 ;; never register: measured in DISPATCH #58, where read-string of a
 ;; printed DB still threw "No data reader found for tag
-;; #datascript/DB" with data_readers.cljc present at the lib-ds root
+;; #eve.db.ds/DB" with data_readers.cljc present at the src root
 ;; (that file, added at f44d99ff7844, still serves the JVM RT route).
-;; datascript.db is loaded by now, so data-readers' values are the
+;; eve.db.ds.db is loaded by now, so data-readers' values are the
 ;; reader fns themselves.
 #?(:lpy
    (alter-var-root #'*data-readers* (fn [m] (merge m data-readers))))

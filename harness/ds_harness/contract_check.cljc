@@ -1,5 +1,5 @@
 (ns ds-harness.contract-check
-  "The lib's contract proof driver (datascript.cljc repo, harness/).
+  "The lib's contract proof driver (eve.db.ds repo, harness/).
 
    One fixed dataset in ONE persistent Eve atom (a disk domain, journaled
    by default — the runner verifies the journal artifact exists in the
@@ -19,7 +19,7 @@
    [eve.host :refer [swap!]]
    [eve.atom :as atom]
    [eve.core :as e]
-   [datascript.core :as d]))
+   [eve.db.ds.core :as d]))
 
 (def ^:private atom-name "ds-harness/contract-db")
 

@@ -1,5 +1,5 @@
 (ns ds-harness.perf
-  "people-1k runtime perf harness (datascript.cljc repo, harness/).
+  "people-1k runtime perf harness (eve.db.ds repo, harness/).
 
    Deterministic people-1k workload (no RNG): person i in 1..1000 is
    {:db/id i :name \"person-<i>\" :age (mod (+ (* i 37) 11) 90)
@@ -19,7 +19,7 @@
    [eve.host :refer [swap!]]
    [eve.atom :as atom]
    [eve.core :as e]
-   [datascript.core :as d]))
+   [eve.db.ds.core :as d]))
 
 (def ^:private atom-name "ds-harness/perf-people-1k")
 (def ^:private schema

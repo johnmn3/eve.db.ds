@@ -1,4 +1,4 @@
-(ns datascript.inline
+(ns eve.db.ds.inline
   (:refer-clojure :exclude [assoc update]))
 
 (defn assoc

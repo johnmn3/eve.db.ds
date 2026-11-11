@@ -1,11 +1,11 @@
 (ns contract.ds-behave
-  "First-light driver for the DataScript port (lib-ds/): load
-   datascript.core, create a conn, transact, query, and print one EDN
+  "First-light driver for the DataScript port (src/): load
+   eve.db.ds.core, create a conn, transact, query, and print one EDN
    row per aspect. The JVM run is the semantic reference; later host
    runs compare against it row by row, like the PSS behave driver."
   (:require [eve.host]
             [eve.atom]
-            [datascript.core :as d]))
+            [eve.db.ds.core :as d]))
 
 (defn -main [& _]
   (println {:aspect :load :value :ok})

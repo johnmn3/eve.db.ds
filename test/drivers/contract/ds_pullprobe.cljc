@@ -1,5 +1,5 @@
 (ns contract.ds-pullprobe
-  (:require [eve.host] [eve.atom] [datascript.core :as d]))
+  (:require [eve.host] [eve.atom] [eve.db.ds.core :as d]))
 (def schema
   {:name   {:db/unique :db.unique/identity}
    :aka    {:db/cardinality :db.cardinality/many}

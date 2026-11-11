@@ -1,6 +1,6 @@
 # PORTING-DS — every DataScript delta from vanilla, categorized
 
-The port: `lib-ds/datascript/*.cljc` — DataScript 1.8.1 (PROVENANCE-DS.md)
+The port: `src/eve/db/ds/*.cljc` (before the eve.db.ds rename) — DataScript 1.8.1 (PROVENANCE-DS.md)
 ported near-vanilla onto this lane's persistent-sorted-set Eve port.
 Upstream 1.8.1 already requires `me.tonsky.persistent-sorted-set` in
 db/conn/core/pull_api, so the lane's BTSet port is the index substrate
@@ -14,14 +14,14 @@ surface forces a delta, recorded here in the same style as PORTING.md
 (category: Eve-surface adaptation / host-quirk workaround / NONE).
 
 ## D1 — storage: vanilla's storage layer replaced by Eve-atom semantics
-`datascript/storage.cljc` — NEW file, no vanilla counterpart in the
+`eve/db/ds/storage.cljc` — NEW file, no vanilla counterpart in the
 staged set (vanilla's storage rides PSS 0.3.x's storage-capable sets: a
 StorageAdapter inside each index set, the JVM form's classes doing the
 work). On Eve that layer has no counterpart and needs none: a DB is an
 Eve value, and storing it IS placing it in an Eve atom — a disk atom
 for durability, a shared disk atom for cross-process/cross-host access.
 The port keeps vanilla's IStorage protocol and the entry points
-datascript.core touches, with Eve semantics: maybe-adapt-storage is
+eve.db.ds.core touches, with Eve semantics: maybe-adapt-storage is
 the identity when no :storage opt is given (the common path, inside
 empty-db/init-db); an explicit :storage opt raises with the Eve
 guidance rather than being silently ignored; storage/storage-adapter
@@ -33,7 +33,7 @@ Category: Eve-surface adaptation (the project's headline shape: the
 whole DB as a user value in one shared Eve atom).
 
 ## D2 — query: tuple arrays are Eve vectors; writes thread functionally
-`datascript/query.cljc`, two sites (join-tuples, -collect-tuples).
+`eve/db/ds/query.cljc`, two sites (join-tuples, -collect-tuples).
 Vanilla's tuples are host Object[] arrays, mutated in place. Here a
 tuple is a substrate array — an Eve vector, via
 `me.tonsky.persistent-sorted-set.arrays` (required as `da`, the same
@@ -43,22 +43,22 @@ thread it; reads go through `da/aget` / `da/array?`. No semantic
 change: same tuples, same joins, same results.
 Category: Eve-surface adaptation (substrate swap, as PORTING.md S).
 Addendum (multi-host lane, from upstream pull-api's 62 errors):
-`datascript/db.cljc` init-db built the avet index array with
+`eve/db/ds/db.cljc` init-db built the avet index array with
 clojure.core `to-array` — a host Object[] fed into the substrate,
 where `arrays/aslice` (subvec) threw ClassCastException. Vanilla's
 line is identical and consistent there (host arrays throughout); in
 the port it is `arrays/into-array`. Same category, one site.
 
 ## D3 — serialize: the JVM form's class import dropped
-`datascript/serialize.cljc`: vanilla imports
+`eve/db/ds/serialize.cljc`: vanilla imports
 `[me.tonsky.persistent_sorted_set PersistentSortedSet]` — the JVM
 form's class, which does not exist in the Eve world (the port's type
 is me.tonsky.persistent_sorted_set.BTSet) and is never referenced in
-the file. Dropped; the `[datascript.db Datom]` import stays.
+the file. Dropped; the `[eve.db.ds.db Datom]` import stays.
 Category: host-quirk workaround (a name that cannot resolve on Eve).
 
 ## D4 — comparators: core `compare`, not a host `compareTo` method call
-`datascript/db.cljc`, four sites — every `.compareTo` call in the
+`eve/db/ds/db.cljc`, four sites — every `.compareTo` call in the
 port, plus the one static host compare the same value path depends on
 (F-JOLT-CMP, the 0.9.3.1 jolt lane's finding):
 - `value-compare`'s `:clj` Comparable clause: `(.compareTo ^Comparable x y)` → `(compare x y)`.
@@ -118,7 +118,7 @@ fail against the actual trees:
 - The prescribed def is illegal where it was prescribed: in the
   class's home namespace the name is mapped to the class, and
   `(def FilteredDB FilteredDB)` throws "Expecting var, but
-  FilteredDB is mapped to class datascript.db.FilteredDB"
+  FilteredDB is mapped to class eve.db.ds.db.FilteredDB"
   (measured directly — the def broke this lane's clean JVM run at
   db.cljc:1069 until removed; the run's remaining namespaces then
   proceeded). The Datom precedent does not exist either: Datom is
@@ -126,10 +126,10 @@ fail against the actual trees:
   every seat — no manual def was ever written for it.
 Disposition: the delta is REMOVED (a comment at the site records
 this). Verification, honestly scoped: with the def removed,
-datascript.db and datascript.conn now COMPILE on the JVM seat
+eve.db.ds.db and eve.db.ds.conn now COMPILE on the JVM seat
 against eve-release-0931 (the def's throw is gone); the load then
 reaches the NEXT, older defect (below), so a full
-datascript.core load is not yet claimed. The flagship lane should
+eve.db.ds.core load is not yet claimed. The flagship lane should
 regenerate its classpaths against the 0.9.3.1 tree + this
 branch's tip and re-run its smoke; if the "No such var" error
 recurs there with a verified-current classpath, it reopens here
@@ -137,8 +137,8 @@ with that evidence.
 
 ## D8 — pull_api's spliced hint in binding-vector position does not read on the JVM (successor lane, 2026-11-06; the db.cljc:707-family throw, found by the clean JVM run)
 With D5's illegal def removed, the standalone JVM load of
-datascript.core (probe contract.ds-loadprobe) dies READING
-datascript/pull_api.cljc:65:35: "Metadata can only be applied to
+eve.db.ds.core (probe contract.ds-loadprobe) dies READING
+eve/db/ds/pull_api.cljc:65:35: "Metadata can only be applied to
 IMetas" at the binding form `:let [#?(:clj ^Datom :cljs
 ^db/Datom) datom (first-seq datoms)]`. A non-splicing #? in a
 binding vector returns the hinted symbol only if the hint can
@@ -152,7 +152,7 @@ core:261's let. (pull_api:19/24/29's arg hints are VANILLA's own
 forms — vanilla has them identically and they read; they are not
 sites.) This is the same family as the suite-context deftype*
 throw the STATUS carried as "db.cljc:707" (the parser/parser-find
-namespaces load pull_api through datascript.core; in-suite the
+namespaces load pull_api through eve.db.ds.core; in-suite the
 throw surfaced downstream of macroexpansion, misattributed to
 db.cljc). Fix shape: rewrite each binding site as
 `#?@(:clj [^Datom datom] :cljs [^db/Datom datom])` spliced into the
@@ -161,13 +161,13 @@ sites — pull_api:65/73/97/105/144/296, serialize:99 (×2 in one
 vector)/186/193/194, core:261 (FilteredDB) and core:89 (Entity —
 found by iterating the load probe past each fix; the probe is the
 measurement loop: pull_api:65 → core:89 → load OK).
-**datascript.core now LOADS on the JVM seat** against
+**eve.db.ds.core now LOADS on the JVM seat** against
 eve-release-0931 (probe contract.ds-loadprobe:
 `{:load :ok, :filtereddb-var false}` — the false is D5's point:
 no FilteredDB var exists or is needed).
 
 ## D6 — F-IFNOOL: the IFn$OOL import and defcomp's invokePrim arm dropped (successor lane, 2026-11-06)
-`datascript/db.cljc`: vanilla's ns form carries
+`eve/db/ds/db.cljc`: vanilla's ns form carries
 `(:import clojure.lang.IFn$OOL)` and defcomp's reify carries an
 `IFn$OOL (invokePrim ...)` arm — the import's only use in the file.
 Babashka's SCI cannot register that class (it exists in bb's image
@@ -185,11 +185,11 @@ implementation; host quirk NOT absorbed — Eve's bb adapter layer
 cannot register a class into SCI, so the port must not name it).
 
 ## D7 — patch-tag's primitive tag quoted (successor lane, 2026-11-06; found by the bb proof)
-`datascript/db.cljc` patch-tag: vanilla stores the bare symbol
+`eve/db/ds/db.cljc` patch-tag: vanilla stores the bare symbol
 `clojure.core$long` as a defn+ :tag value. That resolves on the JVM
 only incidentally — clojure.core's compiled `long` fn class makes
 the name a loadable class — and SCI (bb 1.13.226, Eve's bb seat)
-cannot resolve it at analysis, so datascript.db fails to load on bb
+cannot resolve it at analysis, so eve.db.ds.db fails to load on bb
 even after D6 (measured: logs/proofs/bb-ds-behave.log, analysis
 error at db.cljc:100). Fix: quote it — `(assoc meta :tag
 'clojure.core$long)`. A :tag is a name the analyzer resolves at the
@@ -258,13 +258,13 @@ green — q #{[Bo] [Ada]}, pred q #{[41]}, entity, datoms 4.
   PSS E2 pattern); `idx` fixed at construction — `datom-set-idx`
   throws, and its one caller (serialize's freeze) uses a
   datom→position side table. All vanilla protocol groups carried;
-  prints in the vanilla `#datascript/Datom [...]` form.
+  prints in the vanilla `#eve.db.ds/Datom [...]` form.
 - **T2 DB → eve-deftype [schema eavt aevt avet max-eid max-tx
   rschema]**: the three unencodable fields are gone — `:hash` (host
   atom cache; `hash-db` now computes vanilla's combine-hashes formula
   on demand, and the transact loop's two `(assoc :hash (atom 0))`
   reset sites are deleted) and `:pull-patterns`/`:pull-attrs` (LRU
-  caches, now namespace-level vars in datascript.db — pure
+  caches, now namespace-level vars in eve.db.ds.db — pure
   memoization; pull_api's two read sites rewired). Record semantics
   as groups: ILookup (via a `db-lookup` helper — Eve's deftype cannot
   self-call valAt across arities), Associative (assoc =
@@ -276,14 +276,14 @@ green — q #{[Bo] [Ada]}, pred q #{[41]}, entity, datoms 4.
   one `(assoc db …)` site, reconstructs via `->DB`. FilteredDB stays
   a host defrecord (ephemeral query view holding a host fn).
 - **T3 comparators**: cmp-datoms-eavt/aevt/avet registered as
-  `:datascript.db/cmp-eavt` / `cmp-aevt` / `cmp-avet` in the PSS
+  `:eve.db.ds.db/cmp-eavt` / `cmp-aevt` / `cmp-avet` in the PSS
   registry at db.cljc load; every index construction (empty-db,
   init-db, serialize thaw) passes the keyword. Verified:
-  `(.-comparator (:eavt db))` = `:datascript.db/cmp-eavt`.
+  `(.-comparator (:eavt db))` = `:eve.db.ds.db/cmp-eavt`.
 - **Measured after conversion (JVM)**: full smoke green (q, pred q,
   entity, pull, hash, keyword field reads). **Residence PROVEN**:
   a whole DB built inside a swap lives in a shared disk Eve atom; a
-  second process derefs a real datascript.db.DB, queries it
+  second process derefs a real eve.db.ds.db.DB, queries it
   identically, its seal matches the writer's exactly (72 blocks),
   and it transacts a third entity against the resident DB.
 
@@ -309,7 +309,7 @@ green — q #{[Bo] [Ada]}, pred q #{[41]}, entity, datoms 4.
 - **T3 — index comparators as registered keywords**: db.cljc builds
   every index via (set/sorted-set* {:cmp cmp-datoms-*}); host fns cannot
   cross the codec. The port registers the three datom comparators in the
-  PSS registry (:datascript.db/cmp-eavt, /cmp-aevt, /cmp-avet) and
+  PSS registry (:eve.db.ds.db/cmp-eavt, /cmp-aevt, /cmp-avet) and
   passes keywords. Heap behavior unchanged; the DB then encodes, and
   DBs built on different hosts have field-identical indexes, so
   hash/equiv/seal can agree — the property the Phase-2 drivers test.
@@ -340,7 +340,7 @@ text edit because the installed `vs src` is a stale build whose src
 verb routes to a deleted JS leg — recorded here so the deviation from
 the repo's structural-edit rule is explicit, not silent.
 
-## Multi-host lane addenda (2026-11-06, lane-m/datascript-multihost)
+## Multi-host lane addenda (2026-11-06, lane-m/…-multihost)
 
 The `vs src` deviation above covers this lane's edits too — same stale
 build. All edits below were plain text edits under that recorded
@@ -396,14 +396,14 @@ NBB's interpreter harvests a .cljc's macros with the :cljs feature
 set only, so the port's macro definitions sitting under :clj (the
 copied layout) were invisible to it. The fix re-homes the PORT's
 macro definitions where the :cljs read sees them. Deltas, all in
-the port tree (lib-ds/, lib-ds-deps/) unless marked Eve-side:
+the port tree (src/, lib-ds-deps/) unless marked Eve-side:
 
 - **Macro definitions duplicated into :cljs arms** (the :clj arm is
-  untouched): datascript.db's if-cljs, defn+, defrecord-updatable,
+  untouched): eve.db.ds.db's if-cljs, defn+, defrecord-updatable,
   combine-cmp, case-tree, int-compare, defcomp, validate-attr,
-  validate-val; datascript.util's log, raise, if+, cond+, some-of
-  and the if+ helper defs; datascript.parser's deftrecord;
-  datascript.serialize's array, dict; extend-clj.core's
+  validate-val; eve.db.ds.util's log, raise, if+, cond+, some-of
+  and the if+ helper defs; eve.db.ds.parser's deftrecord;
+  eve.db.ds.serialize's array, dict; extend-clj.core's
   deftype-atom. Where a macro body is JVM machinery, the :cljs arm
   carries the cljs computation instead: defrecord-updatable's
   :cljs body computes only make-record-updatable-cljs (the clj

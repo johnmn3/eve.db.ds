@@ -3,7 +3,7 @@
    (d/datoms with a constant) from the query layer's use of it."
   (:require [eve.host]
             [eve.atom]
-            [datascript.core :as d]))
+            [eve.db.ds.core :as d]))
 
 (defn -main [& _]
   (let [conn (d/create-conn)]

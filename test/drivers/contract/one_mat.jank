@@ -10,7 +10,7 @@
    over /proc); the AOT entry dispatches here on `--mat`.
 
      target/one --mat <fresh-db-dir>"
-  (:require [eve.atom :as atom] [datascript.core :as d] [eve.core :as e]
+  (:require [eve.atom :as atom] [eve.db.ds.core :as d] [eve.core :as e]
             [eve.process :as proc]))
 
 (cpp/raw "

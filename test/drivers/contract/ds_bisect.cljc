@@ -1,6 +1,6 @@
 (ns contract.ds-bisect
   (:require [eve.host] [eve.atom]
-            [datascript.core :as d] [datascript.db :as db]
+            [eve.db.ds.core :as d] [eve.db.ds.db :as db]
             [me.tonsky.persistent-sorted-set :as pss]))
 (defn attempt [label f]
   (let [fut (future (try {:ok (f)} (catch Throwable t {:threw (str (type t) " " (.getMessage t))})) )
