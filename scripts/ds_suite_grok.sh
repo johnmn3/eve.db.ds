@@ -22,7 +22,12 @@ echo EVE-DEV-PIN "$EVESHA"
 timeout 1500 clojure -A:dev:ds-suite -Spath > "$J/jvm.cp" < /dev/null
 rc=$?; echo RESOLVE-RC=$rc
 [ "$rc" -eq 0 ] || exit "$rc"
-GL="$HOME/.gitlibs/libs/eve/eve/$EVESHA/eve"
+# Runner GITLIBS may not live below HOME. Use the actual :dev classpath,
+# not an assumed cache location (#482 used a non-default gitlibs layout).
+GL=$(tr ':' '\n' < "$J/jvm.cp" | awk -v suffix="/$EVESHA/eve/src" '
+  length($0) >= length(suffix) && substr($0, length($0)-length(suffix)+1) == suffix {
+    sub(/\/src$/, ""); print; exit
+  }')
 [ -f "$GL/hosts.edn" ] || { echo EVE-PIN-RESOLUTION-FAIL; exit 1; }
 cp -a "$GL" "$J/eve" || exit 1
 export EVE_ROOT="$J/eve"
