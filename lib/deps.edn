@@ -1,6 +1,9 @@
 ;; me.tonsky.persistent-sorted-set, the Eve port — a library for Eve.
 ;; Its B-tree runs on Eve's own types, so it depends on Eve itself.
-;; Eve is pinned to the shipped 0.9.3.1 tree (see ../deps.edn).
+;; Release pin: the published 0.9.3.1 tree, same sha as ../deps.edn.
+;; Dev/test gates launched from the repo root with -A:dev override this
+;; via :override-deps (see ../deps.edn). Do not retarget this default
+;; pin to an unreleased work branch.
 {:paths ["."]
  :deps {org.clojure/clojure {:mvn/version "1.12.0"}
         eve/eve {:git/url "https://github.com/SeniorCareMarket/eve"

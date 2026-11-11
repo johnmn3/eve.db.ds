@@ -68,3 +68,20 @@ All eight gates below were run against the same local Eve checkout `/workspace/d
 | nbb 1.6.214 | FAIL after analysis fix | PASS `LRU-PORTABLE-OK` | with the JS `unsupported` overlay, FilteredDB analysis succeeds; `db-with` then fails in Eve `adapters/slab/module/src/eve/process_slab.cljs` `alloc-from-slab` at `mem/load-i32` (`No implementation of method: :-load-i32 of protocol: #'eve.mem/IMemRegion found for:` — empty type, consistent with a nil `:region` from `wasm/get-slab-instance`). Eve-worker follow-up; not fixed in eve.db.ds. |
 
 Do not commit those overlays into this repo.
+
+## Dev/test Eve pin (atom.broker `lane-m/eve-db-ds-gaps-eve` @ `7840ffe529`)
+
+**Release pin (unchanged):** the default `eve/eve` dep in `deps.edn` and `lib/deps.edn` stays on the published SeniorCareMarket/eve tree `4a921298168080c2af9f57fcfcdee2db570dec4c`. That default is not retargeted to an unreleased work branch. Collating a later Eve release is a separate decision.
+
+**Dev/test pin:** alias `:dev` overrides `eve/eve` to `{:git/url "https://github.com/johnmn3/atom.broker" :git/sha "7840ffe52928f82784ff164e92666620f794f34d" :deps/root "eve"}` — the Eve work branch that lands the bb SciMap/`lookup-ns?` overlays, JS `enc/unsupported`, and process-slab auto-init. JVM gates: `clojure -A:dev:test -M -m contract.only-core` (and `contract.lru-portable`) — both proven from this alias after tools.deps cloned atom.broker @ 7840ffe529. bb/nbb/lpy: `scripts/eve_dev_cp.sh <host>` expands that tree's `hosts.edn` (or `EVE_ROOT` if already checked out). No local adapter overlays are required.
+
+### Four-host matrix against this pin
+
+| Host | only-core | lru-portable |
+|------|-----------|--------------|
+| JVM (Java 21, Clojure 1.12.6) | PASS `ONLY-CORE-OK #{["Ivan"] ["Petr"]} 5` | PASS `LRU-PORTABLE-OK` |
+| basilisp 0.5.1 | PASS `ONLY-CORE-OK #{["Ivan"] ["Petr"]} 5` | PASS `LRU-PORTABLE-OK` |
+| bb 1.13.226 | PASS `ONLY-CORE-OK #{["Ivan"] ["Petr"]} 5` | PASS `LRU-PORTABLE-OK` |
+| nbb 1.6.214 | PASS `ONLY-CORE-OK #{["Ivan"] ["Petr"]} 5` | PASS `LRU-PORTABLE-OK` |
+
+Counts unchanged: **342/376** host branches, **0/20** plain types. open-other (~230) and vm's data/memory rows are still open.

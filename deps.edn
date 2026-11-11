@@ -6,13 +6,27 @@
 ;; Eve) and every Clojure-like cohost supports (through cohost bodies
 ;; over the Eve backend).
 ;;
-;; Eve is a git dependency on the Eve repository (SeniorCareMarket/eve),
-;; pinned to the shipped 0.9.3.1 tree. Never a path into an Eve checkout.
-;; The sibling libraries (persistent-sorted-set port, extend-clj) are
-;; :local/root deps inside this repository.
+;; Release pin: eve/eve below stays on the published SeniorCareMarket/eve
+;; 0.9.3.1 tree (4a921298…). Do not retarget that default dep to an
+;; unreleased work branch. Collation onto a later Eve release is a
+;; separate, explicit decision.
+;;
+;; Dev/test pin: alias :dev overrides eve/eve to johnmn3/atom.broker
+;; lane-m/eve-db-ds-gaps-eve (the eve/ subdir) @ 7840ffe529, the work
+;; branch that carries the bb SciMap/lookup-ns? overlays, JS
+;; enc/unsupported, and process-slab auto-init. Four-host gates use
+;; :dev (or scripts/eve_dev_cp.sh for bb/nbb/lpy). The sibling
+;; libraries (persistent-sorted-set port, extend-clj) are :local/root
+;; deps inside this repository.
 {:paths ["src"]
  :deps {org.clojure/clojure {:mvn/version "1.12.0"}
         eve/eve {:git/url "https://github.com/SeniorCareMarket/eve"
                  :git/sha "4a921298168080c2af9f57fcfcdee2db570dec4c"}
         me.tonsky/persistent-sorted-set {:local/root "lib"}
-        extend-clj/extend-clj {:local/root "lib-ds-deps"}}}
+        extend-clj/extend-clj {:local/root "lib-ds-deps"}}
+ :aliases
+ {:dev {:override-deps
+        {eve/eve {:git/url "https://github.com/johnmn3/atom.broker"
+                  :git/sha "7840ffe52928f82784ff164e92666620f794f34d"
+                  :deps/root "eve"}}}
+  :test {:extra-paths ["test/drivers"]}}}
