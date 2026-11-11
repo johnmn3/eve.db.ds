@@ -101,3 +101,7 @@ Dropped host `:tag` reader branches on `entity`, `entity-touch`, `from-serializa
 ## Open-other batch 4 — core.cljc defn name/arg hints
 
 Unhinted `defn` for `entity-db`, `empty-db`, `init-db`, `with-schema`, `find-datom`, and `db`, and an unhinted `entity` arg on `entity-db`. Audit #16, #17, #19, #21, #28, #29, #33 REMOVED. Counts **325 → 318** / **0**. These rows were previously listed as glue type-hints; they are gone rather than kept as glue.
+
+## Open-other batch 5 — pull_api Datom/DB type hints
+
+Unhinted Datom bindings, `fn [d]`, `(.-e (first-seq datoms))`, and `(.-eavt db)` / `(.-avet db)` slice targets. Left in place: `instance?` DB class-name branches and the data-owned `.-default` field branches (#225, #230). Audit #217, #218, #220, #221, #224, #229, #232, #238, #242, #243 REMOVED. Counts **318 → 308** / **0**.

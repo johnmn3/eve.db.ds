@@ -1,6 +1,6 @@
-# Remaining 318 host branches — classification for vm
+# Remaining 308 host branches — classification for vm
 
-Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–4 removed 24 branches; 342→318). Comments/strings excluded, nested counted once.
+Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–5 removed 34 branches; 342→308). Comments/strings excluded, nested counted once.
 
 **Glue** = loader/require-macros/import/refer/type-hint/instance?-class-name/warn-on-reflection/export wiring that does not itself implement data, memory, threading, or HTTP.
 
@@ -76,7 +76,7 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 
 **HTTP count for vm: 0.**
 
-## glue (47)
+## glue (37)
 
 - #2 `eve/db/ds/conn.cljc:8` — `#?(:lpy [eve.deftype :refer [deftype]])`
 - #6 `eve/db/ds/conn.cljc:41` — `(if (instance? #?(:jank db/FilteredDB :clj FilteredDB :cljr FilteredDB :cljs db/`
@@ -93,19 +93,9 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 - #84 `eve/db/ds/db.cljc:607` — `#?(:cljs (goog/exportSymbol "eve.db.ds.db.Datom" Datom))`
 - #147 `eve/db/ds/db.cljc:1767` — `(defn #?@(:clj [^DB unfiltered-db] :cljr [^DB unfiltered-db] :cljs [^DB unfilter`
 - #205 `eve/db/ds/pull_api.cljc:12` — `#?(:clje [eve.host :refer [transient persistent! conj! assoc! volatile!]]))`
-- #217 `eve/db/ds/pull_api.cljc:100` — `:let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs`
-- #218 `eve/db/ds/pull_api.cljc:108` — `(let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs`
-- #220 `eve/db/ds/pull_api.cljc:132` — `:let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs`
-- #221 `eve/db/ds/pull_api.cljc:140` — `(let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs`
-- #224 `eve/db/ds/pull_api.cljc:179` — `:let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs`
 - #228 `eve/db/ds/pull_api.cljc:258` — `datoms (if (instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :l`
-- #229 `eve/db/ds/pull_api.cljc:259` — `(set/slice (.-avet #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db`
-- #232 `eve/db/ds/pull_api.cljc:272` — `(ref-frame context seen recursion-limits pattern attr (.-e #?@(:clj [^Datom (fir`
 - #237 `eve/db/ds/pull_api.cljc:313` — `(and (.-wildcard? pattern) (instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/D`
-- #238 `eve/db/ds/pull_api.cljc:314` — `(set/slice (.-eavt #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db`
 - #241 `eve/db/ds/pull_api.cljc:325` — `(instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :lpy db/DB) d`
-- #242 `eve/db/ds/pull_api.cljc:326` — `(set/slice (.-eavt #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db`
-- #243 `eve/db/ds/pull_api.cljc:331` — `(fn [#?@(:jank [^db/Datom d] :clj [^Datom d] :cljr [^Datom d] :cljs [^db/Datom d`
 - #245 `eve/db/ds/pull_parser.cljc:8` — `#?(:clje [eve.host :refer [volatile!]])))`
 - #248 `eve/db/ds/query.cljc:6` — `#?@(:cljs [[cljs.reader :as edn]]`
 - #249 `eve/db/ds/query.cljc:25` — `#?(:clje [eve.host :refer [transient persistent! conj! assoc! volatile! to-array`

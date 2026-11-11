@@ -11,6 +11,7 @@ After open-other batch 1 (pull_api first/next/conj-seq): **336** / **0**.
 After open-other batch 2 (pull_api PullAttr/PullPattern hints): **329** / **0**.
 After open-other batch 3 (core.cljc Entity/DB :tag): **325** / **0**.
 After open-other batch 4 (core.cljc defn name/arg hints): **318** / **0**.
+After open-other batch 5 (pull_api Datom/DB type hints): **308** / **0**.
 
 Plain type sites (deftype/defrecord/defrecord-updatable that are not eve-deftype / eve.deftype/deftype) are **0**. Remaining `(deftype …)` forms in source are eve.deftype/deftype (LRU, Entity, AutoTempid, FilteredDB, ArrayRelation, CollRelation, SingletonRelation) or evicted through `def-eve-record` / `deftrecord`.
 
@@ -236,33 +237,33 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 214 | `eve/db/ds/pull_api.cljc` | 89 | `#?(:lpy (-run [this context] (throw (ex-info "ResultFrame does not implement -ru` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 215 | `eve/db/ds/pull_api.cljc` | 93 | `(defrecord MultivalAttrFrame [acc #?@(:clj [^PullAttr attr] :cljr [^PullAttr att` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
 | 216 | `eve/db/ds/pull_api.cljc` | 95 | `#?(:lpy (-merge [this result] (throw (ex-info "MultivalAttrFrame does not implem` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 217 | `eve/db/ds/pull_api.cljc` | 100 | `:let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 218 | `eve/db/ds/pull_api.cljc` | 108 | `(let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 217 | `eve/db/ds/pull_api.cljc` | 100 | `:let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs` | REMOVED | dropped Datom/DB type hints; field and binding reads are unhinted |
+| 218 | `eve/db/ds/pull_api.cljc` | 108 | `(let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs` | REMOVED | dropped Datom/DB type hints; field and binding reads are unhinted |
 | 219 | `eve/db/ds/pull_api.cljc` | 119 | `(defrecord MultivalRefAttrFrame [seen recursion-limits acc pattern #?@(:clj [^Pu` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
-| 220 | `eve/db/ds/pull_api.cljc` | 132 | `:let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 221 | `eve/db/ds/pull_api.cljc` | 140 | `(let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 220 | `eve/db/ds/pull_api.cljc` | 132 | `:let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs` | REMOVED | dropped Datom/DB type hints; field and binding reads are unhinted |
+| 221 | `eve/db/ds/pull_api.cljc` | 140 | `(let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs` | REMOVED | dropped Datom/DB type hints; field and binding reads are unhinted |
 | 222 | `eve/db/ds/pull_api.cljc` | 153 | `(defrecord AttrsFrame [seen recursion-limits acc #?@(:clj [^PullPattern pattern]` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
 | 223 | `eve/db/ds/pull_api.cljc` | 153 | `(defrecord AttrsFrame [seen recursion-limits acc #?@(:clj [^PullPattern pattern]` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
-| 224 | `eve/db/ds/pull_api.cljc` | 179 | `:let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 224 | `eve/db/ds/pull_api.cljc` | 179 | `:let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs` | REMOVED | dropped Datom/DB type hints; field and binding reads are unhinted |
 | 225 | `eve/db/ds/pull_api.cljc` | 204 | `(and datom-ahead? (some? (#?(:clj .-default :cljr .-default :cljs :default :clje` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 226 | `eve/db/ds/pull_api.cljc` | 205 | `(recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 227 | `eve/db/ds/pull_api.cljc` | 236 | `(defrecord ReverseAttrsFrame [seen recursion-limits acc pattern #?@(:clj [^PullA` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
 | 228 | `eve/db/ds/pull_api.cljc` | 258 | `datoms (if (instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :l` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 229 | `eve/db/ds/pull_api.cljc` | 259 | `(set/slice (.-avet #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 229 | `eve/db/ds/pull_api.cljc` | 259 | `(set/slice (.-avet #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db` | REMOVED | dropped Datom/DB type hints; field and binding reads are unhinted |
 | 230 | `eve/db/ds/pull_api.cljc` | 264 | `(and (empty? datoms) (some? (#?(:clj .-default :cljr .-default :cljs :default :c` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 231 | `eve/db/ds/pull_api.cljc` | 265 | `(recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 232 | `eve/db/ds/pull_api.cljc` | 272 | `(ref-frame context seen recursion-limits pattern attr (.-e #?@(:clj [^Datom (fir` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 232 | `eve/db/ds/pull_api.cljc` | 272 | `(ref-frame context seen recursion-limits pattern attr (.-e #?@(:clj [^Datom (fir` | REMOVED | dropped Datom/DB type hints; field and binding reads are unhinted |
 | 233 | `eve/db/ds/pull_api.cljc` | 281 | `(defn- auto-expanding? [#?@(:clj [^PullAttr attr] :cljr [^PullAttr attr] :cljs [` | REMOVED | dropped host type hints; field reads use portable (.-pattern)/(.-name)/(.-first-attr) |
 | 234 | `eve/db/ds/pull_api.cljc` | 286 | `(.-wildcard? #?(:clj ^PullPattern (.-pattern attr) :cljr ^PullPattern (.-pattern` | REMOVED | dropped host type hints; field reads use portable (.-pattern)/(.-name)/(.-first-attr) |
 | 235 | `eve/db/ds/pull_api.cljc` | 288 | `(defn ref-frame [context seen recursion-limits pattern #?@(:clj [^PullAttr attr]` | REMOVED | dropped host type hints; field reads use portable (.-pattern)/(.-name)/(.-first-attr) |
 | 236 | `eve/db/ds/pull_api.cljc` | 310 | `(defn attrs-frame [^Context context seen recursion-limits #?@(:clj [^PullPattern` | REMOVED | dropped host type hints; field reads use portable (.-pattern)/(.-name)/(.-first-attr) |
 | 237 | `eve/db/ds/pull_api.cljc` | 313 | `(and (.-wildcard? pattern) (instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/D` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 238 | `eve/db/ds/pull_api.cljc` | 314 | `(set/slice (.-eavt #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 238 | `eve/db/ds/pull_api.cljc` | 314 | `(set/slice (.-eavt #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db` | REMOVED | dropped Datom/DB type hints; field and binding reads are unhinted |
 | 239 | `eve/db/ds/pull_api.cljc` | 322 | `:let [from (.-name #?(:clj ^PullAttr (.-first-attr pattern) :cljr ^PullAttr (.-f` | REMOVED | dropped host type hints; field reads use portable (.-pattern)/(.-name)/(.-first-attr) |
 | 240 | `eve/db/ds/pull_api.cljc` | 323 | `to   (.-name #?(:clj ^PullAttr (.-last-attr pattern) :cljr ^PullAttr (.-last-att` | REMOVED | dropped host type hints; field reads use portable (.-pattern)/(.-name)/(.-first-attr) |
 | 241 | `eve/db/ds/pull_api.cljc` | 325 | `(instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :lpy db/DB) d` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 242 | `eve/db/ds/pull_api.cljc` | 326 | `(set/slice (.-eavt #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 243 | `eve/db/ds/pull_api.cljc` | 331 | `(fn [#?@(:jank [^db/Datom d] :clj [^Datom d] :cljr [^Datom d] :cljs [^db/Datom d` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 242 | `eve/db/ds/pull_api.cljc` | 326 | `(set/slice (.-eavt #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db` | REMOVED | dropped Datom/DB type hints; field and binding reads are unhinted |
+| 243 | `eve/db/ds/pull_api.cljc` | 331 | `(fn [#?@(:jank [^db/Datom d] :clj [^Datom d] :cljr [^Datom d] :cljs [^db/Datom d` | REMOVED | dropped Datom/DB type hints; field and binding reads are unhinted |
 | 244 | `eve/db/ds/pull_api.cljc` | 349 | `#?@(:clj [^PullPattern pattern :pattern] :cljr [^PullPattern pattern :pattern] :` | REMOVED | dropped host type hints; field reads use portable (.-pattern)/(.-name)/(.-first-attr) |
 | 245 | `eve/db/ds/pull_parser.cljc` | 8 | `#?(:clje [eve.host :refer [volatile!]])))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 246 | `eve/db/ds/pull_parser.cljc` | 73 | `#?(:clj (when (namespace sym-or-fn)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |

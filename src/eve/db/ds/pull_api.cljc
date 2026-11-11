@@ -92,7 +92,7 @@
     (loop [acc acc
            datoms datoms]
       (util/cond+
-        :let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs [^db/Datom datom] :clje [datom] :lpy [datom]) (first-seq datoms)]
+        :let [datom (first-seq datoms)]
 
         (or (nil? datom) (not= (.-a datom) (.-name attr)))
         [(->ResultFrame (not-empty (persistent! acc)) (or datoms ()))]
@@ -100,7 +100,7 @@
         ; got limit, skip rest of the datoms
         (and (.-limit attr) (>= (count acc) (.-limit attr)))
         (loop [datoms datoms]
-          (let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs [^db/Datom datom] :clje [datom] :lpy [datom]) (first-seq datoms)]
+          (let [datom (first-seq datoms)]
             (if (or (nil? datom) (not= (.-a datom) (.-name attr)))
               [(->ResultFrame (persistent! acc) (or datoms ()))]
               (recur (next-seq datoms)))))
@@ -124,7 +124,7 @@
   
   (-run [this context]
     (util/cond+
-      :let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs [^db/Datom datom] :clje [datom] :lpy [datom]) (first-seq datoms)]
+      :let [datom (first-seq datoms)]
 
       (or (nil? datom) (not= (.-a datom) (.-name attr)))
       [(->ResultFrame (not-empty (persistent! acc)) (or datoms ()))]
@@ -132,7 +132,7 @@
       ; got limit, skip rest of the datoms
       (and (.-limit attr) (>= (count acc) (.-limit attr)))
       (loop [datoms datoms]
-        (let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs [^db/Datom datom] :clje [datom] :lpy [datom]) (first-seq datoms)]
+        (let [datom (first-seq datoms)]
           (if (or (nil? datom) (not= (.-a datom) (.-name attr)))
             [(->ResultFrame (persistent! acc) (or datoms ()))]
             (recur (next-seq datoms)))))
@@ -171,7 +171,7 @@
         (and (some? attr) (= :db/id (.-name attr)))
         (recur (assoc! acc (.-as attr) ((.-xform attr) id)) (first-seq attrs) (next-seq attrs) datoms)
 
-        :let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs [^db/Datom datom] :clje [datom] :lpy [datom]) (first-seq datoms)
+        :let [datom (first-seq datoms)
               cmp          (when (and datom attr)
                              (compare (.-name attr) (.-a datom)))
               attr-ahead?  (or (nil? attr) (and cmp (pos? cmp)))
@@ -251,7 +251,7 @@
         :let [name   (.-name attr)
               db     (.-db ^Context context)
               datoms (if (instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :lpy db/DB) db)
-                       (set/slice (.-avet #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db/DB db] :clje [db] :lpy [db])) (db/datom db/e0 name id db/tx0) (db/datom db/emax name id db/txmax))
+                       (set/slice (.-avet db) (db/datom db/e0 name id db/tx0) (db/datom db/emax name id db/txmax))
                        (db/-search db [nil name id]))]
 
         :do (visit context :db.pull/reverse nil name id)
@@ -264,7 +264,7 @@
 
         (.-component? attr)
         [(->ReverseAttrsFrame seen recursion-limits acc pattern attr attrs id)
-         (ref-frame context seen recursion-limits pattern attr (.-e #?@(:clj [^Datom (first-seq datoms)] :cljr [^Datom (first-seq datoms)] :cljs [^db/Datom (first-seq datoms)] :clje [(first-seq datoms)] :lpy [(first-seq datoms)])))]
+         (ref-frame context seen recursion-limits pattern attr (.-e (first-seq datoms)))]
 
         :else
         [(->ReverseAttrsFrame seen recursion-limits acc pattern attr attrs id)
@@ -306,7 +306,7 @@
   (let [db (.-db context)
         datoms (util/cond+
                  (and (.-wildcard? pattern) (instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :lpy db/DB) db))
-                 (set/slice (.-eavt #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db/DB db] :clje [db] :lpy [db])) (db/datom id nil nil db/tx0) (db/datom id nil nil db/txmax))
+                 (set/slice (.-eavt db) (db/datom id nil nil db/tx0) (db/datom id nil nil db/txmax))
                  
                  (.-wildcard? pattern)
                  (db/-search db [id])
@@ -318,12 +318,12 @@
                        to   (.-name (.-last-attr pattern))]
                  
                  (instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :lpy db/DB) db)
-                 (set/slice (.-eavt #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db/DB db] :clje [db] :lpy [db])) (db/datom id from nil db/tx0) (db/datom id to nil db/txmax))
+                 (set/slice (.-eavt db) (db/datom id from nil db/tx0) (db/datom id to nil db/txmax))
 
                  :else
                  (->> (db/-seek-datoms db :eavt id nil nil nil))
                  (take-while
-                   (fn [#?@(:jank [^db/Datom d] :clj [^Datom d] :cljr [^Datom d] :cljs [^db/Datom d] :clje [d] :lpy [d])]
+                   (fn [d]
                      (and
                        (= (.-e d) id)
                        (<= (compare (.-a d) to) 0)))))]
