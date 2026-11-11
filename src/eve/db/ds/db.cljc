@@ -1618,38 +1618,9 @@
 
 
 (defn db? [x]
-  #?@(:jank [(and (satisfies? ISearch x)
-              (satisfies? IIndexAccess x)
-              (satisfies? IDB x))]
-   :clj [(or
-       (and x
-         (instance? eve.db.ds.db.ISearch x)
-         (instance? eve.db.ds.db.IIndexAccess x)
-         (instance? eve.db.ds.db.IDB x))
-       (and (satisfies? ISearch x)
-         (satisfies? IIndexAccess x)
-         (satisfies? IDB x)))] :cljr [(or
-       (and x
-         (instance? eve.db.ds.db.ISearch x)
-         (instance? eve.db.ds.db.IIndexAccess x)
-         (instance? eve.db.ds.db.IDB x))
-       (and (satisfies? ISearch x)
-         (satisfies? IIndexAccess x)
-         (satisfies? IDB x)))]
-   :lpy  [(or
-       (and x
-         (instance? (:interface ISearch) x)
-         (instance? (:interface IIndexAccess) x)
-         (instance? (:interface IDB) x))
-       (and (satisfies? ISearch x)
-         (satisfies? IIndexAccess x)
-         (satisfies? IDB x)))]
-   :cljs [(and (satisfies? ISearch x)
-       (satisfies? IIndexAccess x)
-       (satisfies? IDB x))]
-   :clje [(and (satisfies? ISearch x)
-       (satisfies? IIndexAccess x)
-       (satisfies? IDB x))]))
+  (and (satisfies? ISearch x)
+    (satisfies? IIndexAccess x)
+    (satisfies? IDB x)))
 
 ;; ----------------------------------------------------------------------------
 (deftype FilteredDB [unfiltered-db pred hash]

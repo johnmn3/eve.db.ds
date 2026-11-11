@@ -158,3 +158,7 @@ Design calls for John: (1) squuid should use an Eve clock/uuid facility rather t
 ## Open-other batch 16 — portable ihash + tx-id?
 
 Folded `ihash` (#102, #103) to one portable `(defn ihash ^long [x] (hash x))` and `tx-id?` (#170, #171) to one portable `defn-` using `=`. No vm rows touched. Counts **288** → **284** / **0**. Four-host only-core + lru-portable vs `:dev` Eve `7840ffe529`: JVM, bb, nbb, basilisp all PASS.
+
+## Open-other batch 17 — portable db?
+
+Folded `db?` (#145) to one portable `satisfies?` of ISearch, IIndexAccess and IDB. No vm rows touched. Counts **284** → **283** / **0**. Four-host only-core + lru-portable vs `:dev` Eve `7840ffe529`: JVM, bb, nbb, basilisp all PASS.

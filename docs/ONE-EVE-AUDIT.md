@@ -23,6 +23,7 @@ After open-other batch 13 (portable hash-join get + leftover glue): **290** / **
 After open-other batch 14 (portable join-tuples + tuple-key-fn glue): **288** / **0**.
 After glue re-derive (batches 6/8/12/13/14 reviewed; 58 reclassified data/memory/threading, 0 folded, counts unchanged): **288** / **0**.
 After open-other batch 16 (portable ihash + tx-id?): **284** / **0**.
+After open-other batch 17 (portable db?): **283** / **0**.
 
 Plain type sites (deftype/defrecord/defrecord-updatable that are not eve-deftype / eve.deftype/deftype) are **0**. Remaining `(deftype …)` forms in source are eve.deftype/deftype (LRU, Entity, AutoTempid, FilteredDB, ArrayRelation, CollRelation, SingletonRelation) or evicted through `def-eve-record` / `deftrecord`.
 
@@ -176,7 +177,7 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 142 | `eve/db/ds/db.cljc` | 1508 | `pred       #?(:clj  (vpred v)` | KEPT | data: -search value predicate (vpred vs =); data-path. Foldable to = if four hosts pass |
 | 143 | `eve/db/ds/db.cljc` | 1566 | `#?(:bb  (seq (set/slice (get db index)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 144 | `eve/db/ds/db.cljc` | 1630 | `#?(:clje` | KEPT | data: clje extend-type of IAssociative on DB so assoc/update work in transact; data-path |
-| 145 | `eve/db/ds/db.cljc` | 1643 | `#?@(:jank [(and (satisfies? ISearch x)` | KEPT | data: db? type test of a DB value; foldable to portable satisfies? if four hosts pass |
+| 145 | `eve/db/ds/db.cljc` | 1643 | `#?@(:jank [(and (satisfies? ISearch x)` | REMOVED | portable satisfies? of ISearch/IIndexAccess/IDB; dropped host instance? arms |
 | 146 | `eve/db/ds/db.cljc` | 1678 | `#?@(:cljs` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
 | 147 | `eve/db/ds/db.cljc` | 1767 | `(defn #?@(:clj [^DB unfiltered-db] :cljr [^DB unfiltered-db] :cljs [^DB unfilter` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 148 | `eve/db/ds/db.cljc` | 2031 | `#?(:cljs` | KEPT | glue: host print-method / pr-db for DB and FilteredDB |
