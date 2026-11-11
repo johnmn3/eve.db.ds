@@ -11,7 +11,10 @@
     ;; :cljs type refers; parser types are named qualified (dp/...)
     ;; at their uses in this file
     [eve.db.ds.parser :as dp]
-    [eve.db.ds.util :as util])
+    [eve.db.ds.util :as util]
+    ;; UNIT3 (#56): the relation types are ONE eve.deftype/deftype each.
+    [eve.deftype :refer [deftype]])
+  (:refer-clojure :exclude [deftype]))
   #?(:clj
      (:import 
        [eve.db.ds.parser
@@ -300,8 +303,8 @@
       (da/aset target (da/aget target-idxs i) (da/aget tuple (da/aget idxs i)))))
   (-union [_ rel]
     (assert (instance? ArrayRelation rel))
-    (assert (= offset-map (:offset-map rel)))
-    (ArrayRelation. offset-map (concat coll (:coll rel)))))
+    (assert (= offset-map (.-offset-map rel)))
+    (ArrayRelation. offset-map (concat coll (.-coll rel)))))
 
 #?(:clj
    (defmethod print-method ArrayRelation [rel w]
@@ -335,8 +338,8 @@
       (da/aset target (da/aget target-idxs i) (nth tuple (da/aget idxs i)))))
   (-union [_ rel]
     (assert (instance? CollRelation rel))
-    (assert (= offset-map (:offset-map rel)))
-    (CollRelation. offset-map (concat coll (:coll rel)))))
+    (assert (= offset-map (.-offset-map rel)))
+    (CollRelation. offset-map (concat coll (.-coll rel)))))
 
 (defn coll-rel [symbols coll]
   (let [offset-map (reduce-kv

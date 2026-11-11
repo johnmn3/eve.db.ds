@@ -1666,60 +1666,26 @@
        (satisfies? IDB x))]))
 
 ;; ----------------------------------------------------------------------------
-(defrecord-updatable FilteredDB [unfiltered-db pred hash]
-  #?@(:cljs
-      [IHash                (-hash  [db]        (hash-fdb db))
-       IEquiv               (-equiv [db other]  (equiv-db db other))
-       ICounted             (-count [db]        (count (-datoms db :eavt nil nil nil nil)))
-       IPrintWithWriter     (-pr-writer [db w opts] (pr-db db w opts))
+(deftype FilteredDB [unfiltered-db pred hash]
+  ;; UNIT3 (#56): ONE definition, eve.deftype/deftype. The per-host arm
+  ;; splices (cljs IHash/IEquiv/ICounted/IPrintWithWriter/... and the JVM
+  ;; Object/IHashEq/IPersistentCollection/ILookup and the CLR arms) are
+  ;; Eve's types-layer translations of these groups; the un-filterable
+  ;; operations throw through eve.encoding/unsupported (adapter edge).
+  IHash                (-hash  [db]        (hash-fdb db))
+  IEquiv               (-equiv [db other]  (equiv-db db other))
+  ICounted             (-count [db]        (count (-datoms db :eavt nil nil nil nil)))
+  IPrintWithWriter     (-pr-writer [db w opts] (pr-db db w opts))
 
-       IEmptyableCollection (-empty [_]         (throw (js/Error. "-empty is not supported on FilteredDB")))
+  IEmptyableCollection (-empty [_]         (throw (enc/unsupported "empty is not supported on FilteredDB")))
 
-       ILookup              (-lookup ([_ _]     (throw (js/Error. "-lookup is not supported on FilteredDB")))
-                              ([_ _ _]   (throw (js/Error. "-lookup is not supported on FilteredDB"))))
+  ILookup              (-lookup [_ _]      (throw (enc/unsupported "-lookup is not supported on FilteredDB")))
+                       (-lookup [_ _ _]    (throw (enc/unsupported "-lookup is not supported on FilteredDB")))
 
+  IAssociative         (-contains-key? [_ _] (throw (enc/unsupported "-contains-key? is not supported on FilteredDB")))
+                       (-assoc [_ _ _]       (throw (enc/unsupported "-assoc is not supported on FilteredDB")))
 
-       IAssociative         (-contains-key? [_ _] (throw (js/Error. "-contains-key? is not supported on FilteredDB")))
-       (-assoc [_ _ _]       (throw (js/Error. "-assoc is not supported on FilteredDB")))]
-
-      :clj
-      [Object               (hashCode [db]      (hash-fdb db))
-
-       clojure.lang.IHashEq (hasheq [db]        (hash-fdb db))
-
-       clojure.lang.IPersistentCollection
-       (count [db]         (count (-datoms db :eavt nil nil nil nil)))
-       (equiv [db o]       (equiv-db db o))
-       (cons [db [k v]]    (throw (UnsupportedOperationException. "cons is not supported on FilteredDB")))
-       (empty [db]         (throw (UnsupportedOperationException. "empty is not supported on FilteredDB")))
-
-       clojure.lang.ILookup (valAt [db k]       (throw (UnsupportedOperationException. "valAt/2 is not supported on FilteredDB")))
-       (valAt [db k nf]    (throw (UnsupportedOperationException. "valAt/3 is not supported on FilteredDB")))
-       clojure.lang.IKeywordLookup (getLookupThunk [db k]
-                                     (throw (UnsupportedOperationException. "getLookupThunk is not supported on FilteredDB")))
-
-       clojure.lang.Associative
-       (containsKey [e k]  (throw (UnsupportedOperationException. "containsKey is not supported on FilteredDB")))
-       (entryAt [db k]     (throw (UnsupportedOperationException. "entryAt is not supported on FilteredDB")))
-       (assoc [db k v]     (throw (UnsupportedOperationException. "assoc is not supported on FilteredDB")))] :cljr [Object               (GetHashCode [db]      (hash-fdb db))
-
-       clojure.lang.IHashEq (hasheq [db]        (hash-fdb db))
-
-       clojure.lang.IPersistentCollection
-       (count [db]         (count (-datoms db :eavt nil nil nil nil)))
-       (equiv [db o]       (equiv-db db o))
-       (cons [db [k v]]    (throw (System.NotSupportedException. "cons is not supported on FilteredDB")))
-       (empty [db]         (throw (System.NotSupportedException. "empty is not supported on FilteredDB")))
-
-       clojure.lang.ILookup (valAt [db k]       (throw (System.NotSupportedException. "valAt/2 is not supported on FilteredDB")))
-       (valAt [db k nf]    (throw (System.NotSupportedException. "valAt/3 is not supported on FilteredDB")))
-       clojure.lang.IKeywordLookup (getLookupThunk [db k]
-                                     (throw (System.NotSupportedException. "getLookupThunk is not supported on FilteredDB")))
-
-       clojure.lang.Associative
-       (containsKey [e k]  (throw (System.NotSupportedException. "containsKey is not supported on FilteredDB")))
-       (entryAt [db k]     (throw (System.NotSupportedException. "entryAt is not supported on FilteredDB")))
-       (^clojure.lang.Associative assoc [db k v] (throw (System.NotSupportedException. "assoc is not supported on FilteredDB")))])
+  ICollection          (-conj [db o]       (throw (enc/unsupported "cons is not supported on FilteredDB")))
 
   IDB
   (-schema [db]
