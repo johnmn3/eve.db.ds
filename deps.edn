@@ -12,9 +12,10 @@
 ;; separate, explicit decision.
 ;;
 ;; Dev/test pin: alias :dev overrides eve/eve to johnmn3/atom.broker
-;; lane-m/eve-db-ds-gaps-eve (the eve/ subdir) @ 07644bea15, which
+;; lane-m/eve-db-ds-gaps-eve (the eve/ subdir) @ 8415101189, which
 ;; adds IPending on eve.thread Promise/Future (so clojure.core/realized?
-;; works), the #460 test fix, and the jank satisfies? load order, on
+;; works), the bb MapEntry presentation and nbb pending test (8415101189),
+;; the #460 test fix, and the jank satisfies? load order, on
 ;; top of the earlier bb SciMap/lookup-ns? overlays, JS enc/unsupported,
 ;; and process-slab auto-init. Four-host gates use
 ;; :dev (or scripts/eve_dev_cp.sh for bb/nbb/lpy). The sibling
@@ -29,6 +30,6 @@
  :aliases
  {:dev {:override-deps
         {eve/eve {:git/url "https://github.com/johnmn3/atom.broker"
-                  :git/sha "07644bea1540546c516c3a43c331778a2c5d9f52"
+                  :git/sha "8415101189fe10df88ec555af81d7e2926b55125"
                   :deps/root "eve"}}}
   :test {:extra-paths ["test/drivers"]}}}
