@@ -873,29 +873,11 @@
 ;; fast versions without nil checks
 
 (defn- cmp-attr-quick
-  #?(:clj
-     {:inline
-      (fn [a1 a2]
-        `(long (compare ~a1 ~a2)))} :cljr {:inline
-      (fn [a1 a2]
-        `(long (compare ~a1 ~a2)))})
   ^long [a1 a2]
-  ;; either both are keywords or both are strings
-  #?@(:clj [(long (compare a1 a2))] :cljr [(long (compare a1 a2))]
-   :lpy  [(long (compare a1 a2))]
-   ;; PORT DELTA (F-CLJE-ATTR-CMP): the :clje arm was missing, and an
-   ;; in-form #?@ with no matching arm leaves the defn BODY EMPTY --
-   ;; cmp-attr-quick returned nil for every attr pair, so every
-   ;; cmp-datoms-*-quick comparator returned nil at its attr step
-   ;; (combine-cmp's (== 0 nil) is false on this seat) and PSS
-   ;; insertions/seeks under the quick comparators mis-ordered the
-   ;; index trees (stage-46: name scans truncated to the first
-   ;; datom, entity nil, join rows lost). Attrs are keywords or
-   ;; strings; clojerl compare orders both as the JVM does here.
-   :clje [(long (compare a1 a2))]
-   :cljs [(if (keyword? a1)
-       (-compare a1 a2)
-       (garray/defaultCompare a1 a2))]))
+  ;; either both are keywords or both are strings. Portable
+  ;; clojure.core/compare covers both on every host (the old cljs
+  ;; arm used -compare / garray/defaultCompare for the same order).
+  (long (compare a1 a2)))
 
 (defcomp cmp-datoms-eav-quick ^long [^Datom d1, ^Datom d2]
   (combine-cmp
@@ -961,123 +943,24 @@
 
 ;; ----------------------------------------------------------------------------
 
-(do #?@(:clj [(declare hash-db pr-db)] :cljr [(declare hash-db pr-db)]
- :lpy  [(declare hash-db pr-db)]
- :cljs [(defn ^number hash-db [db])]))
-
-;; PORT DELTA (F-CLJE-DECLARE): the remaining forward-declare
-;; blocks get plain #? declare twins, same as the Datom six —
-;; a matching top-level #?@ arm is reader-refused on this seat.
-#?(:clje (declare hash-db pr-db))
-
-(do #?@(:clj [(declare hash-fdb)] :cljr [(declare hash-fdb)]
- :lpy  [(declare hash-fdb)]
- :cljs [(defn ^number hash-fdb [db])]))
-
-#?(:clje (declare hash-fdb))
-
-(do #?@(:clj [(declare equiv-db)] :cljr [(declare equiv-db)]
- :lpy  [(declare equiv-db)]
- :cljs [(defn ^boolean equiv-db [db other])]))
-
-#?(:clje (declare equiv-db))
-
-(do #?@(:clj [(declare restore-db)] :cljr [(declare restore-db)]
- :lpy  [(declare restore-db)]
- :cljs [(defn restore-db [keys])]))
-
-#?(:clje (declare restore-db))
-
-(do #?@(:clj [(declare indexing?)] :cljr [(declare indexing?)]
- :lpy  [(declare indexing?)]
- :cljs [(defn ^boolean indexing? [db attr])]))
-
-#?(:clje (declare indexing?))
-
-#?(:cljs (defn pr-db [db w opts]))
-
-(do #?@(:clj [(declare resolve-datom)] :cljr [(declare resolve-datom)]
- :lpy  [(declare resolve-datom)]
- :cljs [(defn resolve-datom [db e a v t default-e default-tx])]))
-
-#?(:clje (declare resolve-datom))
-
-(do #?@(:clj [(declare components->pattern)] :cljr [(declare components->pattern)]
- :lpy  [(declare components->pattern)]
- :cljs [(defn components->pattern [db index c0 c1 c2 c3 default-e default-tx])]))
-
-#?(:clje (declare components->pattern))
+(declare hash-db pr-db hash-fdb equiv-db restore-db indexing? resolve-datom components->pattern)
 
 ;;;;;;;;;; Fast validation
 
-(do #?@(:clj [(defmacro validate-attr [attr at]
-     `(let [attr# ~attr]
-        (when-not (or
-                    (keyword? attr#)
-                    (string? attr#))
-          (let [at# ~at]
-            (util/raise "Bad entity attribute " attr# " at " at# ", expected keyword or string"
-              {:error :transact/syntax, :attribute attr#, :context at#})))))] :cljr [(defmacro validate-attr [attr at]
-     `(let [attr# ~attr]
-        (when-not (or
-                    (keyword? attr#)
-                    (string? attr#))
-          (let [at# ~at]
-            (util/raise "Bad entity attribute " attr# " at " at# ", expected keyword or string"
-              {:error :transact/syntax, :attribute attr#, :context at#})))))]
- :lpy  [(defmacro validate-attr [attr at]
-     `(let [attr# ~attr]
-        (when-not (or
-                    (keyword? attr#)
-                    (string? attr#))
-          (let [at# ~at]
-            (util/raise "Bad entity attribute " attr# " at " at# ", expected keyword or string"
-              {:error :transact/syntax, :attribute attr#, :context at#})))))]
- :cljs [(defmacro validate-attr [attr at]
-     `(let [attr# ~attr]
-        (when-not (or
-                    (keyword? attr#)
-                    (string? attr#))
-          (let [at# ~at]
-            (util/raise "Bad entity attribute " attr# " at " at# ", expected keyword or string"
-              {:error :transact/syntax, :attribute attr#, :context at#})))))]))
+(defmacro validate-attr [attr at]
+  `(let [attr# ~attr]
+     (when-not (or
+                 (keyword? attr#)
+                 (string? attr#))
+       (let [at# ~at]
+         (util/raise "Bad entity attribute " attr# " at " at# ", expected keyword or string"
+           {:error :transact/syntax, :attribute attr#, :context at#})))))
 
-;; PORT DELTA (F-CLJE-MACROS): validate-attr/validate-val expand to
-;; util/raise only — identical on every seat; twins verbatim.
-#?(:clje (defmacro validate-attr [attr at]
-           `(let [attr# ~attr]
-              (when-not (or
-                          (keyword? attr#)
-                          (string? attr#))
-                (let [at# ~at]
-                  (util/raise "Bad entity attribute " attr# " at " at# ", expected keyword or string"
-                    {:error :transact/syntax, :attribute attr#, :context at#}))))))
-
-(do #?@(:clj [(defmacro validate-val [v at]
-     `(when (nil? ~v)
-        (let [at# ~at]
-          (util/raise "Cannot store nil as a value at " at#
-            {:error :transact/syntax, :value nil, :context at#}))))] :cljr [(defmacro validate-val [v at]
-     `(when (nil? ~v)
-        (let [at# ~at]
-          (util/raise "Cannot store nil as a value at " at#
-            {:error :transact/syntax, :value nil, :context at#}))))]
- :lpy  [(defmacro validate-val [v at]
-     `(when (nil? ~v)
-        (let [at# ~at]
-          (util/raise "Cannot store nil as a value at " at#
-            {:error :transact/syntax, :value nil, :context at#}))))]
- :cljs [(defmacro validate-val [v at]
-     `(when (nil? ~v)
-        (let [at# ~at]
-          (util/raise "Cannot store nil as a value at " at#
-            {:error :transact/syntax, :value nil, :context at#}))))]))
-
-#?(:clje (defmacro validate-val [v at]
-           `(when (nil? ~v)
-              (let [at# ~at]
-                (util/raise "Cannot store nil as a value at " at#
-                  {:error :transact/syntax, :value nil, :context at#})))))
+(defmacro validate-val [v at]
+  `(when (nil? ~v)
+     (let [at# ~at]
+       (util/raise "Cannot store nil as a value at " at#
+         {:error :transact/syntax, :value nil, :context at#}))))
 
 ;;;;;;;;;; Searching
 
@@ -1149,13 +1032,10 @@
     nf))
 
 (declare db-assoc)
-#?(:lpy (declare -schema -attrs-by -search -datoms -seek-datoms -rseek-datoms -index-range hash-fdb equiv-db pr-db))
-
-;; basilisp resolves deftype method bodies at analysis; this helper is
-;; defined below the DB spec (line ~1550) on every seat's read, so it is
-;; declared here for the :lpy read only (the :clj/:cljs reads are
-;; untouched: their compilers resolve the later defn themselves).
-#?(:lpy (declare multival?))
+;; basilisp resolves deftype method bodies at analysis, so these are
+;; declared for that seat; a portable declare is harmless on the others.
+(declare -schema -attrs-by -search -datoms -seek-datoms -rseek-datoms -index-range hash-fdb equiv-db pr-db)
+(declare multival?)
 
 
 (defn- db-entries [db]
@@ -1193,7 +1073,11 @@
   -rseek-datoms and -index-range still return Iters on bb (their
   in-port consumers are seq-only today)."
   [x]
-  #?(:bb (seq x) :default x))
+  ;; Always seq: under bb/SCI a PSS Iter (eve.deftype / SciType) is
+  ;; not vec-able ("Unable to convert SciType to Object[]"). Every
+  ;; -search consumer walks with seq machinery or (vec ...), and
+  ;; (seq x) is the same datoms in the same order on every host.
+  (seq x))
 
 (eve-deftype DB [schema eavt aevt avet max-eid max-tx rschema meta]
   Object
@@ -1261,19 +1145,11 @@
   (-pr-writer [db w opts] (pr-db db w opts))
 
   IDB
-  ;; PORT DELTA (F-CLJE-SCHEMA): on clojerl a field read (.-schema db)
-  ;; and this protocol method are one module function
-  ;; ('eve.db.ds.db.DB':'-schema'/1) -- the method shadows the
-  ;; generated field accessor, so the dot spelling in this body
-  ;; recursed without bound (live backtrace, hang27: 7.5e9 reductions,
-  ;; DB:-schema/1 -> clj_rt:type_module -> erlang:make_fun). The :clje
-  ;; arm reads the field as the method-body local it is on every seat;
-  ;; every other (.-schema db) site in this file now terminates
-  ;; through this method with the field's value.
-  (-schema [db] #?(:clje schema
-                   :clj  (.-schema db) :cljr (.-schema db)
-                   :cljs (.-schema db)
-                   :lpy  (.-schema db)))
+  ;; The method-body field local, not (.-schema db): on clojerl the
+  ;; method and the generated accessor are one module function, so
+  ;; the dot spelling recursed without bound. The field local is
+  ;; valid on every seat.
+  (-schema [db] schema)
   (-attrs-by [db property] ((.-rschema db) property))
 
   ISearch
@@ -1320,22 +1196,13 @@
   IIndexAccess
   (-datoms [db index c0 c1 c2 c3]
     (validate-indexed db index c0 c1 c2 c3)
-    ;; PORT DELTA (F-BB-DATOMS-SEQ): the slice is a PSS Iter -- an
-    ;; eve.deftype value, and under bb/SCI such values are invisible
-    ;; to the host-interface dispatches inside SCI's own mapv/vec
-    ;; (instance?/IReduceInit checks), so a consumer's (mapv f
-    ;; (datoms db ...)) dies with "Don't know how to create ISeq
-    ;; from sci.impl.deftype.SciType" (RESULTS-BB wall 3). The :bb
-    ;; arm returns the slice's seq instead: same datoms, same order,
-    ;; still lazy -- every -datoms consumer in the port walks it
-    ;; with seq machinery (first/map/filter/count/reduce), which
-    ;; SCI does serve for these types. Other seats keep the Iter.
-    #?(:bb  (seq (set/slice (get db index)
-                   (components->pattern db index c0 c1 c2 c3 e0 tx0)
-                   (components->pattern db index c0 c1 c2 c3 emax txmax)))
-       :default (set/slice (get db index)
-                  (components->pattern db index c0 c1 c2 c3 e0 tx0)
-                  (components->pattern db index c0 c1 c2 c3 emax txmax))))
+    ;; Always seq the slice: under bb/SCI a PSS Iter is not a host
+    ;; ISeq (mapv/vec die on SciType). Every -datoms consumer walks
+    ;; with seq machinery; (seq (set/slice ...)) is the same datoms
+    ;; in the same order on every host.
+    (seq (set/slice (get db index)
+           (components->pattern db index c0 c1 c2 c3 e0 tx0)
+           (components->pattern db index c0 c1 c2 c3 emax txmax))))
 
   (-seek-datoms [db index c0 c1 c2 c3]
     (validate-indexed db index c0 c1 c2 c3)
@@ -1461,7 +1328,7 @@
 ;; the F-NBB-MACROS round established for exactly these names. No
 ;; form belongs here; D5's entry records the full diagnosis.
 
-(defn #?@(:clj [^DB unfiltered-db] :cljr [^DB unfiltered-db] :cljs [^DB unfiltered-db] :clje [unfiltered-db] :lpy [unfiltered-db]) [db]
+(defn unfiltered-db [db]
   (if (instance? FilteredDB db)
     (.-unfiltered-db ^FilteredDB db)
     db))
@@ -1725,94 +1592,28 @@
     (= (-schema db) (-schema other))
     (equiv-db-index (-datoms db :eavt nil nil nil nil) (-datoms other :eavt nil nil nil nil))))
 
-#?(:cljs
-   (defn+ pr-db [db w opts]
-     (-write w "#eve.db.ds/DB {")
-     (-write w ":schema ")
-     (pr-writer (-schema db) w opts)
-     (-write w ", :datoms ")
-     (pr-sequential-writer w
-       (fn [d w opts]
-         (pr-sequential-writer w pr-writer "[" " " "]" opts [(.-e d) (.-a d) (.-v d) (datom-tx d)]))
-       "[" " " "]" opts (-datoms db :eavt nil nil nil nil))
-     (-write w "}")))
-
-;; PORT DELTA (F-LPY-SERIALIZE-PRSTR-UNBOUND): pr-db was
-;; defined only for :clj and :cljs; on :lpy the declared var
-;; stayed Unbound and printing a DB threw via -pr-writer.
-;; A first :lpy arm twinned the :cljs body verbatim and did
-;; not compile (Mac RESULT #53): -write / pr-writer /
-;; pr-sequential-writer are cljs.core names with no basilisp
-;; counterpart -- the in-file AutoTempid -pr-writer that
-;; uses them is :cljs-guarded -- and the only -write on
-;; this seat is e/-write (Datom's -pr-writer). The :lpy
-;; definition below twins the :clj body instead: its
-;; writer surface (.write w, *out*, pr) is the
-;; print-method style basilisp implements. Printed shape
-;; and reader contract unchanged.
-#?(:lpy
-   (defn+ pr-db [db w opts]
-     (.write w (str "#eve.db.ds/DB {"))
-     (.write w ":schema ")
-     (binding [*out* w]
-       (pr (-schema db))
-       (.write w ", :datoms [")
-       (apply pr (map (fn [d] [(.-e d) (.-a d) (.-v d) (datom-tx d)]) (-datoms db :eavt nil nil nil nil))))
-     (.write w "]}")))
-
-#?(:clj
-   (do
-     (defn pr-db [db, ^java.io.Writer w]
-       (.write w (str "#eve.db.ds/DB {"))
-       (.write w ":schema ")
-       (binding [*out* w]
-         (pr (-schema db))
-         (.write w ", :datoms [")
-         (apply pr (map (fn [^Datom d] [(.-e d) (.-a d) (.-v d) (datom-tx d)]) (-datoms db :eavt nil nil nil nil))))
-       (.write w "]}"))
-
-     (defmethod print-method DB [db w] (pr-db db w))
-     (defmethod print-method FilteredDB [db w] (pr-db db w))) :cljr (do
-     (defn pr-db [db, ^System.IO.TextWriter w]
-       (.Write w (str "#eve.db.ds/DB {"))
-       (.Write w ":schema ")
-       (binding [*out* w]
-         (pr (-schema db))
-         (.Write w ", :datoms [")
-         (apply pr (map (fn [^Datom d] [(.-e d) (.-a d) (.-v d) (datom-tx d)]) (-datoms db :eavt nil nil nil nil))))
-       (.Write w "]}"))
-
-     (defmethod print-method DB [db w] (pr-db db w))
-     (defmethod print-method FilteredDB [db w] (pr-db db w))))
+(defn pr-db
+  "Print a DB (or FilteredDB) as #eve.db.ds/DB {:schema ... :datoms [...]}.
+   One writer surface (eve.core/-write) on every host. eve.deftype
+   turns the type's IPrintWithWriter into the host print-method, so
+   the old clj/cljr defmethod print-method twins are gone. The
+   printed shape and db-from-reader contract are unchanged."
+  ([db w] (pr-db db w nil))
+  ([db w _opts]
+   (e/-write w "#eve.db.ds/DB {")
+   (e/-write w ":schema ")
+   (e/-write w (pr-str (-schema db)))
+   (e/-write w ", :datoms ")
+   (e/-write w (pr-str (mapv (fn [d] [(.-e d) (.-a d) (.-v d) (datom-tx d)])
+                             (-datoms db :eavt nil nil nil nil))))
+   (e/-write w "}")))
 
 (defn db-from-reader [{:keys [schema datoms]}]
   (init-db (map (fn [[e a v tx]] (datom e a v tx)) datoms) schema {}))
 
 ;; ----------------------------------------------------------------------------
 
-(do #?@(:clj [(declare entid-strict)] :cljr [(declare entid-strict)]
- :lpy  [(declare entid-strict)]
- :cljs [(defn ^number entid-strict [db eid])]))
-
-#?(:clje (declare entid-strict))
-
-(do #?@(:clj [(declare ref?)] :cljr [(declare ref?)]
- :lpy  [(declare ref?)]
- :cljs [(defn ^boolean ref? [db attr])]))
-
-#?(:clje (declare ref?))
-
-(do #?@(:clj [(declare tuple?)] :cljr [(declare tuple?)]
- :lpy  [(declare tuple?)]
- :cljs [(defn ^boolean tuple? [db attr])]))
-
-#?(:clje (declare tuple?))
-
-(do #?@(:clj [(declare resolve-tuple-refs)] :cljr [(declare resolve-tuple-refs)]
- :lpy  [(declare resolve-tuple-refs)]
- :cljs [(defn resolve-tuple-refs [db a vs context])]))
-
-#?(:clje (declare resolve-tuple-refs))
+(declare entid-strict ref? tuple? resolve-tuple-refs)
 
 (defn+ resolve-datom [db e a v t default-e default-tx]
   (when (some? a)
@@ -1836,45 +1637,18 @@
 (defn find-datom [db index c0 c1 c2 c3]
   (validate-indexed db index c0 c1 c2 c3)
   (let [set     (get db index)
-        cmp     #?(:bb (case index
-                         :eavt cmp-datoms-eavt
-                         :aevt cmp-datoms-aevt
-                         :avet cmp-datoms-avet)
-                   ;; PORT DELTA (F-BB-SEEK-SLICE, cmp half): bb reads
-                   ;; the :clj arm's (.comparator set) interop on an
-                   ;; eve.deftype value, which does not yield a working
-                   ;; comparator under SCI (the (<= 0 (cmp to datom))
-                   ;; check below casts its result to Number and dies).
-                   ;; The :bb arm names the comparator directly: every
-                   ;; index set in a DB stores its comparator NAME
-                   ;; (:eve.db.ds.db/cmp-eavt etc., see the registry
-                   ;; block at empty-db), and cmp-of resolves the name
-                   ;; to exactly this index's cmp-datoms-* fn -- the
-                   ;; same fn the JVM seat's Sorted adapter wraps, with
-                   ;; the same sign convention for the <= 0 check.
-                   :jank (set/comparator set) :clj (.comparator ^clojure.lang.Sorted set) :cljr (.comparator ^clojure.lang.Sorted set)
-                   ;; PORT DELTA (F-CLJE-CMP): the field spelling,
-                   ;; exactly how PSS's own cmp-of reads it; db index
-                   ;; sets always carry an explicit comparator fn.
-                   ;; The arm must exist — a vanished binding value
-                   ;; misaligns the whole let (stage-15/16 class).
-                   :clje (.-comparator set)
-                   :lpy (fn [a b] (compare a b))
-                   :cljs (.-comparator set))
+        ;; Index sets store a registered comparator name; name the
+        ;; cmp-datoms-* fn directly. (first (set/slice set from to))
+        ;; is the first element >= from, bounded by to — the same
+        ;; window the old seek form used, and it works under SCI
+        ;; where (seq btset) is a plain LazySeq with no ISeek.
+        cmp     (case index
+                  :eavt cmp-datoms-eavt
+                  :aevt cmp-datoms-aevt
+                  :avet cmp-datoms-avet)
         from    (components->pattern db index c0 c1 c2 c3 e0 tx0)
         to      (components->pattern db index c0 c1 c2 c3 emax txmax)
-        ;; PORT DELTA (F-BB-SEEK-SLICE): PSS's seek contract takes the
-        ;; set's seq (an Iter, which implements ISeek). Under bb/SCI,
-        ;; (seq btset) degrades to a plain LazySeq -- SCI's core seq
-        ;; cannot see eve.deftype's Seqable presentation -- and ISeek
-        ;; has no LazySeq impl, so the shared form dies on bb
-        ;; (RESULTS-BB wall 1). The :bb arm takes the same window
-        ;; through slice: (first (slice set from to)) is the seek's
-        ;; first element >= from, bounded by to under the set's own
-        ;; comparator -- exactly what the seek form then re-checks
-        ;; with (cmp to datom) below. Other seats keep the seek form.
-        datom   #?(:bb (first (set/slice set from to))
-                   :default (some-> set seq (set/seek from) first))]
+        datom   (first (set/slice set from to))]
     (when (and (some? datom) (<= 0 (cmp to datom)))
       datom)))
 
@@ -2118,12 +1892,10 @@
          :datom datom}))))
 
 (defn- current-tx
-  #?(:clj {:inline (fn [report] `(-> ~report :db-before :max-tx long inc))} :cljr {:inline (fn [report] `(-> ~report :db-before :max-tx long inc))})
   ^long [report]
   (-> report :db-before :max-tx long inc))
 
 (defn- next-eid
-  #?(:clj {:inline (fn [db] `(inc (long (:max-eid ~db))))} :cljr {:inline (fn [db] `(inc (long (:max-eid ~db))))})
   ^long [db]
   (inc (long (:max-eid db))))
 
@@ -2437,11 +2209,7 @@
               (filter (fn [^Datom d] (component? db (.-a d))))
               (map (fn [^Datom d] [:db.fn/retractEntity (.-v d)]))) datoms))
 
-(do #?@(:clj [(declare transact-tx-data-impl)] :cljr [(declare transact-tx-data-impl)]
- :lpy  [(declare transact-tx-data-impl)]
- :cljs [(defn transact-tx-data-impl [initial-report initial-es])]))
-
-#?(:clje (declare transact-tx-data-impl))
+(declare transact-tx-data-impl)
 
 (defn- retry-with-tempid [initial-report report es tempid upserted-eid]
   (if-some [eid (get (::upserted-tempids initial-report) tempid)]
