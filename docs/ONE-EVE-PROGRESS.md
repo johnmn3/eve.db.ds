@@ -125,3 +125,7 @@ No source change. Marked the remaining open-other host `:import` rows in query.c
 ## Open-other batch 10 — portable tuple-get + serialize nth/get
 
 Lifted `tuple-get` off the cljs-only defn (#254) to a portable helper (`da/aget` on arrays, `get` otherwise) and folded getter-fn sites #266–#269. Left vm-owned data rows #274, #275, #277, #278 on their host arms. `array-get`/`dict-get` are portable `nth`/`get` (#332, #333). Marked serialize `array?` (#334) glue: host collection type test (java.util.List / IList / JS array / vector). Counts **306→299** / **0**. open-other 145→137; glue 106→107. Four-host only-core + lru against :dev Eve 7840ffe529 all PASS, including nbb.
+
+## Open-other batch 11 — unhinted identical predicate defns
+
+Collapsed `tuple-ref-slot?`, `resolved-eid?`, `tempid?`, and `tuple-has-tempids?` to a single unhinted `defn-` each (#161–#164, #172–#175). Bodies were identical across hosts; only the type-hint name splice and F-CLJE-PREDS twins differed. Left `tx-id?` (#170/#171) because host arms are not the same (`String.equals` / `identical?` vs `=`). Noted vm-owned data rows #274, #275, #277, #278 in the audit as foldable by the portable `tuple-get` once vm reclassifies them; those rows were not edited. Counts **299→291** / **0**. open-other 137→129. Four-host only-core + lru against :dev Eve 7840ffe529.

@@ -17,6 +17,7 @@ After open-other batch 7 (pull_parser parse-pattern + query fn arg hints): **306
 After open-other batch 8 (mark instance? class-name rows glue): **306** / **0** (no src change).
 After open-other batch 9 (leftover require/import glue): **306** / **0** (no src change).
 After open-other batch 10 (portable tuple-get + serialize nth/get): **299** / **0**.
+After open-other batch 11 (unhinted identical predicate defns): **291** / **0**.
 
 Plain type sites (deftype/defrecord/defrecord-updatable that are not eve-deftype / eve.deftype/deftype) are **0**. Remaining `(deftype …)` forms in source are eve.deftype/deftype (LRU, Entity, AutoTempid, FilteredDB, ArrayRelation, CollRelation, SingletonRelation) or evicted through `def-eve-record` / `deftrecord`.
 
@@ -186,10 +187,10 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 158 | `eve/db/ds/db.cljc` | 2118 | `#?(:clje (declare resolve-tuple-refs))` | KEPT | glue: forward-declare twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
 | 159 | `eve/db/ds/db.cljc` | 2142 | `cmp     #?(:bb (case index` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 160 | `eve/db/ds/db.cljc` | 2179 | `datom   #?(:bb (first (set/slice set from to))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 161 | `eve/db/ds/db.cljc` | 2265 | `(do #?@(:clj [(defn-  ^Boolean tuple-ref-slot? [db schema-a idx] (cond` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 162 | `eve/db/ds/db.cljc` | 2284 | `#?(:clje (defn- tuple-ref-slot? [db schema-a idx] (cond` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 163 | `eve/db/ds/db.cljc` | 2289 | `(do #?@(:clj [(defn-  ^Boolean resolved-eid? [x] (or` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 164 | `eve/db/ds/db.cljc` | 2301 | `#?(:clje (defn- resolved-eid? [x] (or` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 161 | `eve/db/ds/db.cljc` | 2265 | `(do #?@(:clj [(defn-  ^Boolean tuple-ref-slot? [db schema-a idx] (cond` | REMOVED | unhinted clojure.core defn-; predicate body was identical on every host |
+| 162 | `eve/db/ds/db.cljc` | 2284 | `#?(:clje (defn- tuple-ref-slot? [db schema-a idx] (cond` | REMOVED | unhinted clojure.core defn-; dropped F-CLJE-PREDS twin (same body) |
+| 163 | `eve/db/ds/db.cljc` | 2289 | `(do #?@(:clj [(defn-  ^Boolean resolved-eid? [x] (or` | REMOVED | unhinted clojure.core defn-; predicate body was identical on every host |
+| 164 | `eve/db/ds/db.cljc` | 2301 | `#?(:clje (defn- resolved-eid? [x] (or` | REMOVED | unhinted clojure.core defn-; dropped F-CLJE-PREDS twin (same body) |
 | 165 | `eve/db/ds/db.cljc` | 2353 | `#?@(:cljs [(array? eid) (recur db (array-seq eid))])` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 166 | `eve/db/ds/db.cljc` | 2382 | `#?@(:cljs` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
 | 167 | `eve/db/ds/db.cljc` | 2402 | `#?(:clj` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
@@ -197,10 +198,10 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 169 | `eve/db/ds/db.cljc` | 2473 | `#?(:clj {:inline (fn [db] `(inc (long (:max-eid ~db))))} :cljr {:inline (fn [db]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 170 | `eve/db/ds/db.cljc` | 2477 | `(do #?@(:clj [(defn- ^Boolean tx-id?` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 171 | `eve/db/ds/db.cljc` | 2507 | `#?(:clje (defn- tx-id?` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 172 | `eve/db/ds/db.cljc` | 2514 | `(do #?@(:clj [(defn-  ^Boolean tempid? [x] (or` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 173 | `eve/db/ds/db.cljc` | 2530 | `#?(:clje (defn- tempid? [x] (or` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 174 | `eve/db/ds/db.cljc` | 2654 | `(do #?@(:clj [(defn-  ^Boolean tuple-has-tempids? [db a vs] (and` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 175 | `eve/db/ds/db.cljc` | 2714 | `#?(:clje (defn- tuple-has-tempids? [db a vs] (and` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 172 | `eve/db/ds/db.cljc` | 2514 | `(do #?@(:clj [(defn-  ^Boolean tempid? [x] (or` | REMOVED | unhinted clojure.core defn-; predicate body was identical on every host |
+| 173 | `eve/db/ds/db.cljc` | 2530 | `#?(:clje (defn- tempid? [x] (or` | REMOVED | unhinted clojure.core defn-; dropped F-CLJE-PREDS twin (same body) |
+| 174 | `eve/db/ds/db.cljc` | 2654 | `(do #?@(:clj [(defn-  ^Boolean tuple-has-tempids? [db a vs] (and` | REMOVED | unhinted clojure.core defn-; predicate body was identical on every host |
+| 175 | `eve/db/ds/db.cljc` | 2714 | `#?(:clje (defn- tuple-has-tempids? [db a vs] (and` | REMOVED | unhinted clojure.core defn-; dropped F-CLJE-PREDS twin (same body) |
 | 176 | `eve/db/ds/db.cljc` | 2891 | `(do #?@(:clj [(declare transact-tx-data-impl)] :cljr [(declare transact-tx-data-` | KEPT | glue: forward-declare twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
 | 177 | `eve/db/ds/db.cljc` | 2895 | `#?(:clje (declare transact-tx-data-impl))` | KEPT | glue: forward-declare twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
 | 178 | `eve/db/ds/impl/entity.cljc` | 15 | `#?@(:cljs [[cljs.core :as c]]` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
@@ -299,11 +300,11 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 271 | `eve/db/ds/query.cljc` | 434 | `(let [^objects getters-arr #?(:clj (into-array Object common-attrs) :cljr (into-` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 272 | `eve/db/ds/query.cljc` | 441 | `#?(:jank` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 273 | `eve/db/ds/query.cljc` | 504 | `(if-some [tuples1 #?(:clj (hash key) :cljr (hash key) :cljs (get hash key) :clje` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 274 | `eve/db/ds/query.cljc` | 533 | `(#?(:cljs tuple-get :clj get :cljr get :clje da/aget :lpy get) tuple idx)))))))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 275 | `eve/db/ds/query.cljc` | 617 | `(#?(:cljs tuple-get :clj get :cljr get :clje da/aget :lpy get) tuple ((:attrs re` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 274 | `eve/db/ds/query.cljc` | 533 | `(#?(:cljs tuple-get :clj get :cljr get :clje da/aget :lpy get) tuple idx)))))))` | KEPT | open: vm-owned data row; foldable by the portable tuple-get once vm reclassifies it |
+| 275 | `eve/db/ds/query.cljc` | 617 | `(#?(:cljs tuple-get :clj get :cljr get :clje da/aget :lpy get) tuple ((:attrs re` | KEPT | open: vm-owned data row; foldable by the portable tuple-get once vm reclassifies it |
 | 276 | `eve/db/ds/query.cljc` | 649 | `(if #?(:clj  false :cljr false` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 277 | `eve/db/ds/query.cljc` | 661 | `(da/aset a i #?(:cljs (tuple-get tuple tuple-idx)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 278 | `eve/db/ds/query.cljc` | 677 | `(da/aset a i #?(:cljs (tuple-get tuple tuple-idx)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 277 | `eve/db/ds/query.cljc` | 661 | `(da/aset a i #?(:cljs (tuple-get tuple tuple-idx)` | KEPT | open: vm-owned data row; foldable by the portable tuple-get once vm reclassifies it |
+| 278 | `eve/db/ds/query.cljc` | 677 | `(da/aset a i #?(:cljs (tuple-get tuple tuple-idx)` | KEPT | open: vm-owned data row; foldable by the portable tuple-get once vm reclassifies it |
 | 279 | `eve/db/ds/query.cljc` | 687 | `#?(:cljs nil` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 280 | `eve/db/ds/query.cljc` | 1032 | `(fn [#?(:cljs t1` | REMOVED | dropped host :tag metadata on fn arg; unhinted parameter |
 | 281 | `eve/db/ds/query.cljc` | 1082 | `#?(:jank dp/Variable :clj Variable :cljr Variable :cljs dp/Variable :clje dp/Var` | KEPT | glue: instance? class-name dispatch (imported short name on JVM/CLR vs qualified parser type on other hosts) |

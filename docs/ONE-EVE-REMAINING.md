@@ -1,6 +1,6 @@
-# Remaining 299 host branches — classification for vm
+# Remaining 291 host branches — classification for vm
 
-Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–5, 7 and 10 removed 43 branches; 342→299; batches 6, 8 and 9 marked 69 as glue plus batch 10 #334, open-other 216→137). Comments/strings excluded, nested counted once.
+Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–5, 7, 10 and 11 removed 51 branches; 342→291; batches 6, 8 and 9 marked 69 as glue plus batch 10 #334, open-other 216→129). Comments/strings excluded, nested counted once.
 
 **Glue** = loader/require-macros/import/refer/type-hint/instance?-class-name/warn-on-reflection/export wiring that does not itself implement data, memory, threading, or HTTP.
 
@@ -37,10 +37,10 @@ Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–5
 - #225 `eve/db/ds/pull_api.cljc:204` — `(and datom-ahead? (some? (#?(:clj .-default :cljr .-default :cljs :default :clje`
 - #230 `eve/db/ds/pull_api.cljc:264` — `(and (empty? datoms) (some? (#?(:clj .-default :cljr .-default :cljs :default :c`
 - #271 `eve/db/ds/query.cljc:434` — `(let [^objects getters-arr #?(:clj (into-array Object common-attrs) :cljr (into-`
-- #274 `eve/db/ds/query.cljc:533` — `(#?(:cljs tuple-get :clj get :cljr get :clje da/aget :lpy get) tuple idx)))))))`
-- #275 `eve/db/ds/query.cljc:617` — `(#?(:cljs tuple-get :clj get :cljr get :clje da/aget :lpy get) tuple ((:attrs re`
-- #277 `eve/db/ds/query.cljc:661` — `(da/aset a i #?(:cljs (tuple-get tuple tuple-idx)`
-- #278 `eve/db/ds/query.cljc:677` — `(da/aset a i #?(:cljs (tuple-get tuple tuple-idx)`
+- #274 `eve/db/ds/query.cljc:533` — `(#?(:cljs tuple-get :clj get :cljr get :clje da/aget :lpy get) tuple idx)))))))` — foldable by the portable tuple-get once vm reclassifies it
+- #275 `eve/db/ds/query.cljc:617` — `(#?(:cljs tuple-get :clj get :cljr get :clje da/aget :lpy get) tuple ((:attrs re` — foldable by the portable tuple-get once vm reclassifies it
+- #277 `eve/db/ds/query.cljc:661` — `(da/aset a i #?(:cljs (tuple-get tuple tuple-idx)` — foldable by the portable tuple-get once vm reclassifies it
+- #278 `eve/db/ds/query.cljc:677` — `(da/aset a i #?(:cljs (tuple-get tuple tuple-idx)` — foldable by the portable tuple-get once vm reclassifies it
 - #325 `eve/db/ds/serialize.cljc:41` — `(def ^:private pos-inf #?(:jank (/ 1.0 0.0) :clj Double/POSITIVE_INFINITY :cljr `
 - #326 `eve/db/ds/serialize.cljc:42` — `(def ^:private neg-inf #?(:jank (/ -1.0 0.0) :clj Double/NEGATIVE_INFINITY :cljr`
 - #327 `eve/db/ds/serialize.cljc:43` — `(def ^:private nan-val #?(:jank (/ 0.0 0.0) :clj Double/NaN :cljr Double/NaN :cl`
@@ -193,7 +193,7 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 ## glue-candidate (0)
 
 
-## open-other (137)
+## open-other (129)
 
 - #9 `eve/db/ds/conn.cljc:87` — `#?(:clj`
 - #10 `eve/db/ds/conn.cljc:114` — `#?(:clj`
@@ -269,18 +269,10 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 - #149 `eve/db/ds/db.cljc:2056` — `#?(:lpy`
 - #150 `eve/db/ds/db.cljc:2066` — `#?(:clj`
 - #159 `eve/db/ds/db.cljc:2142` — `cmp     #?(:bb (case index`
-- #161 `eve/db/ds/db.cljc:2265` — `(do #?@(:clj [(defn-  ^Boolean tuple-ref-slot? [db schema-a idx] (cond`
-- #162 `eve/db/ds/db.cljc:2284` — `#?(:clje (defn- tuple-ref-slot? [db schema-a idx] (cond`
-- #163 `eve/db/ds/db.cljc:2289` — `(do #?@(:clj [(defn-  ^Boolean resolved-eid? [x] (or`
-- #164 `eve/db/ds/db.cljc:2301` — `#?(:clje (defn- resolved-eid? [x] (or`
 - #168 `eve/db/ds/db.cljc:2468` — `#?(:clj {:inline (fn [report] `(-> ~report :db-before :max-tx long inc))} :cljr `
 - #169 `eve/db/ds/db.cljc:2473` — `#?(:clj {:inline (fn [db] `(inc (long (:max-eid ~db))))} :cljr {:inline (fn [db]`
 - #170 `eve/db/ds/db.cljc:2477` — `(do #?@(:clj [(defn- ^Boolean tx-id?`
 - #171 `eve/db/ds/db.cljc:2507` — `#?(:clje (defn- tx-id?`
-- #172 `eve/db/ds/db.cljc:2514` — `(do #?@(:clj [(defn-  ^Boolean tempid? [x] (or`
-- #173 `eve/db/ds/db.cljc:2530` — `#?(:clje (defn- tempid? [x] (or`
-- #174 `eve/db/ds/db.cljc:2654` — `(do #?@(:clj [(defn-  ^Boolean tuple-has-tempids? [db a vs] (and`
-- #175 `eve/db/ds/db.cljc:2714` — `#?(:clje (defn- tuple-has-tempids? [db a vs] (and`
 - #226 `eve/db/ds/pull_api.cljc:205` — `(recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default`
 - #231 `eve/db/ds/pull_api.cljc:265` — `(recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default`
 - #246 `eve/db/ds/pull_parser.cljc:73` — `#?(:clj (when (namespace sym-or-fn)`

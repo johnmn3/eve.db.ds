@@ -2216,45 +2216,16 @@
          (util/raise "Attribute " a " expected a vector, got: " v " in " context
            {:error :transact/syntax, :attribute a, :value v, :context context}))))))
 
-(do #?@(:clj [(defn-  ^Boolean tuple-ref-slot? [db schema-a idx] (cond
+(defn- tuple-ref-slot? [db schema-a idx]
+  (cond
     (:db/tupleAttrs schema-a) (ref? db (nth (:db/tupleAttrs schema-a) idx nil))
     (:db/tupleTypes schema-a) (= :db.type/ref (nth (:db/tupleTypes schema-a) idx nil))
-    :else                     (= :db.type/ref (:db/tupleType schema-a))))] :cljr [(defn-  ^Boolean tuple-ref-slot? [db schema-a idx] (cond
-    (:db/tupleAttrs schema-a) (ref? db (nth (:db/tupleAttrs schema-a) idx nil))
-    (:db/tupleTypes schema-a) (= :db.type/ref (nth (:db/tupleTypes schema-a) idx nil))
-    :else                     (= :db.type/ref (:db/tupleType schema-a))))]
- :lpy  [(defn- tuple-ref-slot? [db schema-a idx] (cond
-    (:db/tupleAttrs schema-a) (ref? db (nth (:db/tupleAttrs schema-a) idx nil))
-    (:db/tupleTypes schema-a) (= :db.type/ref (nth (:db/tupleTypes schema-a) idx nil))
-    :else                     (= :db.type/ref (:db/tupleType schema-a))))]
- :cljs [(defn- ^boolean tuple-ref-slot? [db schema-a idx] (cond
-    (:db/tupleAttrs schema-a) (ref? db (nth (:db/tupleAttrs schema-a) idx nil))
-    (:db/tupleTypes schema-a) (= :db.type/ref (nth (:db/tupleTypes schema-a) idx nil))
-    :else                     (= :db.type/ref (:db/tupleType schema-a))))]))
+    :else                     (= :db.type/ref (:db/tupleType schema-a))))
 
-;; PORT DELTA (F-CLJE-PREDS): :clje twins for this family of small
-;; predicate defns — the :lpy arms (tag-free, portable bodies),
-;; appended after each untouched block as with F-CLJE-MACROS.
-#?(:clje (defn- tuple-ref-slot? [db schema-a idx] (cond
-           (:db/tupleAttrs schema-a) (ref? db (nth (:db/tupleAttrs schema-a) idx nil))
-           (:db/tupleTypes schema-a) (= :db.type/ref (nth (:db/tupleTypes schema-a) idx nil))
-           :else                     (= :db.type/ref (:db/tupleType schema-a)))))
-
-(do #?@(:clj [(defn-  ^Boolean resolved-eid? [x] (or
+(defn- resolved-eid? [x]
+  (or
     (nil? x)
-    (and (number? x) (not (neg? x)))))] :cljr [(defn-  ^Boolean resolved-eid? [x] (or
-    (nil? x)
-    (and (number? x) (not (neg? x)))))]
- :lpy  [(defn- resolved-eid? [x] (or
-    (nil? x)
-    (and (number? x) (not (neg? x)))))]
- :cljs [(defn- ^boolean resolved-eid? [x] (or
-    (nil? x)
-    (and (number? x) (not (neg? x)))))]))
-
-#?(:clje (defn- resolved-eid? [x] (or
-           (nil? x)
-           (and (number? x) (not (neg? x))))))
+    (and (number? x) (not (neg? x)))))
 
 
 (defn+ resolve-tuple-refs
@@ -2450,26 +2421,11 @@
              (= e "datomic.tx")
              (= e "eve.db.ds.tx"))))
 
-(do #?@(:clj [(defn-  ^Boolean tempid? [x] (or
+(defn- tempid? [x]
+  (or
     (and (number? x) (neg? x))
     (string? x)
-    (auto-tempid? x)))] :cljr [(defn-  ^Boolean tempid? [x] (or
-    (and (number? x) (neg? x))
-    (string? x)
-    (auto-tempid? x)))]
- :lpy  [(defn- tempid? [x] (or
-    (and (number? x) (neg? x))
-    (string? x)
-    (auto-tempid? x)))]
- :cljs [(defn- ^boolean tempid? [x] (or
-    (and (number? x) (neg? x))
-    (string? x)
-    (auto-tempid? x)))]))
-
-#?(:clje (defn- tempid? [x] (or
-           (and (number? x) (neg? x))
-           (string? x)
-           (auto-tempid? x))))
+    (auto-tempid? x)))
 
 (defn- new-eid? [db eid]
   (and
@@ -2590,7 +2546,8 @@
         (update report' ::queued-tuples assoc e queue'))
       report')))
 
-(do #?@(:clj [(defn-  ^Boolean tuple-has-tempids? [db a vs] (and
+(defn- tuple-has-tempids? [db a vs]
+  (and
     (sequential? vs)
     (let [schema-a (-> db -schema (get a))]
       (loop [idx 0]
@@ -2604,67 +2561,7 @@
           true
 
           :else
-          (recur (inc idx)))))))] :cljr [(defn-  ^Boolean tuple-has-tempids? [db a vs] (and
-    (sequential? vs)
-    (let [schema-a (-> db -schema (get a))]
-      (loop [idx 0]
-        (cond
-          (>= idx (count vs))
-          false
-
-          (and
-            (tuple-ref-slot? db schema-a idx)
-            (tempid? (nth vs idx)))
-          true
-
-          :else
-          (recur (inc idx)))))))]
- :lpy  [(defn- tuple-has-tempids? [db a vs] (and
-    (sequential? vs)
-    (let [schema-a (-> db -schema (get a))]
-      (loop [idx 0]
-        (cond
-          (>= idx (count vs))
-          false
-
-          (and
-            (tuple-ref-slot? db schema-a idx)
-            (tempid? (nth vs idx)))
-          true
-
-          :else
-          (recur (inc idx)))))))]
- :cljs [(defn- ^boolean tuple-has-tempids? [db a vs] (and
-    (sequential? vs)
-    (let [schema-a (-> db -schema (get a))]
-      (loop [idx 0]
-        (cond
-          (>= idx (count vs))
-          false
-
-          (and
-            (tuple-ref-slot? db schema-a idx)
-            (tempid? (nth vs idx)))
-          true
-
-          :else
-          (recur (inc idx)))))))]))
-
-#?(:clje (defn- tuple-has-tempids? [db a vs] (and
-           (sequential? vs)
-           (let [schema-a (-> db -schema (get a))]
-             (loop [idx 0]
-               (cond
-                 (>= idx (count vs))
-                 false
-
-                 (and
-                   (tuple-ref-slot? db schema-a idx)
-                   (tempid? (nth vs idx)))
-                 true
-
-                 :else
-                 (recur (inc idx))))))))
+          (recur (inc idx)))))))
 
 (defn- resolve-upserts
   "Returns [entity' upserts]. Upsert attributes that resolve to existing entities
