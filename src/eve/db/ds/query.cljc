@@ -27,11 +27,9 @@
     #?(:clje [eve.host :refer [transient persistent! conj! assoc! volatile! to-array into-array long]]))
   #?(:clj
      (:import
-       [clojure.lang ILookup LazilyPersistentVector]
        [eve.db.ds.parser BindColl BindIgnore BindScalar BindTuple
         Constant FindColl FindRel FindScalar FindTuple PlainSymbol
         RulesVar SrcVar Variable]) :cljr (:import
-       [clojure.lang ILookup LazilyPersistentVector]
        [eve.db.ds.parser BindColl BindIgnore BindScalar BindTuple
         Constant FindColl FindRel FindScalar FindTuple PlainSymbol
         RulesVar SrcVar Variable])))
@@ -133,8 +131,8 @@
 ;; PORT DELTA (F-NBB-PRED-TUPLE): read a port array (Eve vector) by
 ;; index via da/aget and anything else (a Datom, or a JS array on cljs)
 ;; via get. Lifted off the :cljs-only defn so the getter-fn call sites
-;; can share one portable helper. vm-owned data rows #274/#275/#277/#278
-;; are left on their host arms.
+;; can share one portable helper. #274/#275/#277/#278 also read through
+;; this helper (array by index, Datom by get).
 (defn- tuple-get [t i]
   (if (da/array? t)
     (da/aget t i)
@@ -342,52 +340,13 @@
   (let [n (count common-attrs)]
     (if (== n 1)
       (getter-fn attrs (first common-attrs))
-      ;; PORT DELTA (F-CLJE-TUPLE-KEY): no Object arrays on BEAM; the
-      ;; getters are precomputed into a vector and applied with mapv
-      ;; (the :clj seat's result is a vector too)
-      #?(:clje (let [getters (mapv #(getter-fn attrs %) common-attrs)]
-                 (fn [tuple] (mapv #(% tuple) getters)))
-         ;; PORT DELTA (F-LPY-SPLICE): the :lpy arm keys a tuple by the
-         ;; vector of its common attrs' values, built functionally —
-         ;; this port's arrays are Eve vectors (da/aset returns a new
-         ;; array), so the JVM in-place getters array cannot transplant.
-         :lpy (let [getters (mapv #(getter-fn attrs %) common-attrs)]
-                (fn [tuple] (mapv #(% tuple) getters)))
-         :default
-         (let [^objects getters-arr #?(:clj (into-array Object common-attrs) :cljr (into-array Object common-attrs)
-                                       :cljs (into-array common-attrs))]
-           (loop [i 0]
-             (if (< i n)
-               (do
-                 (aset getters-arr i (getter-fn attrs (aget getters-arr i)))
-                 (recur (unchecked-inc i)))
-               #?(:jank
-                  (fn [tuple]
-                    (let [^objects arr (make-array Object n)]
-                      (loop [i 0]
-                        (if (< i n)
-                          (do
-                            (aset arr i ((aget getters-arr i) tuple))
-                            (recur (unchecked-inc i)))
-                          (vec arr)))))
-                  :clj
-                  (fn [tuple]
-                    (let [^objects arr (make-array Object n)]
-                      (loop [i 0]
-                        (if (< i n)
-                          (do
-                            (aset arr i ((aget getters-arr i) tuple))
-                            (recur (unchecked-inc i)))
-                          (LazilyPersistentVector/createOwning arr))))) :cljr (fn [tuple]
-                    (let [^objects arr (make-array Object n)]
-                      (loop [i 0]
-                        (if (< i n)
-                          (do
-                            (aset arr i ((aget getters-arr i) tuple))
-                            (recur (unchecked-inc i)))
-                          (LazilyPersistentVector/createOwning arr)))))
-                  :cljs (fn [tuple]
-                          (list* (.map getters-arr #(% tuple))))))))))))
+      ;; Multi-attr join keys are a vector of the common attrs' values.
+      ;; :clje/:lpy already used mapv; the JVM/cljs/jank arms built a
+      ;; host Object[] and wrapped it (LazilyPersistentVector, list*,
+      ;; vec). mapv is the portable equivalent (hasheq-equal to those
+      ;; wrappers) and matches this port's functional arrays.
+      (let [getters (mapv #(getter-fn attrs %) common-attrs)]
+        (fn [tuple] (mapv #(% tuple) getters))))))
 
 (defn -group-by
   [f init coll]
@@ -453,7 +412,7 @@
       (when-some [tuple (first (:tuples rel))]
         (when (nil? (fnext (:tuples rel)))
           (let [idx (get (:attrs rel) pattern-el)]
-            (#?(:cljs tuple-get :clj get :cljr get :clje da/aget :lpy get) tuple idx)))))))
+            (tuple-get tuple idx)))))))
 
 (defn substitute-constants [context pattern]
   (mapv #(or (substitute-constant context %) %) pattern))
@@ -537,7 +496,7 @@
 (defn- context-resolve-val [context sym]
   (when-some [rel (rel-with-attr context sym)]
     (when-some [tuple (first (:tuples rel))]
-      (#?(:cljs tuple-get :clj get :cljr get :clje da/aget :lpy get) tuple ((:attrs rel) sym)))))
+      (tuple-get tuple ((:attrs rel) sym)))))
 
 (defn- rel-contains-attrs? [rel attrs]
   (some #(contains? (:attrs rel) %) attrs))
@@ -567,44 +526,21 @@
                 [(da/aset sa i arg) ta])))
           [(da/make-array len) (da/make-array len)]
           (range len))]
-    ;; CLJS `apply` + `vector` will hold onto mutable array of arguments directly
-    ;; issue-262
-    (if #?(:clj  false :cljr false
-           :cljs (identical? f vector)
-           :lpy  false
-           :clje false)
-      (fn [tuple]
-        ;; TODO raise if not all args are bound
-        (let [args (reduce
-                     (fn [a i]
-                       (if-some [tuple-idx (da/aget tuples-args i)]
-                         ;; vanilla reads via `get`: tuple may be a Datom
-                         ;; whose attrs are field names, not indexes.
-                         ;; :cljs: tuple-get (F-NBB-PRED-TUPLE).
-                         (da/aset a i #?(:cljs (tuple-get tuple tuple-idx)
-                                         :clj (get tuple tuple-idx) :cljr (get tuple tuple-idx)
-                                         :clje (da/aget tuple tuple-idx)
-                                         :lpy (get tuple tuple-idx)))
-                         a))
-                     (da/aclone static-args)
-                     (range len))]
-          (apply f args)))
-      (fn [tuple]
-        ;; TODO raise if not all args are bound
-        (let [args (reduce
-                     (fn [a i]
-                       (if-some [tuple-idx (da/aget tuples-args i)]
-                         ;; vanilla reads via `get`: tuple may be a Datom
-                         ;; whose attrs are field names, not indexes.
-                         ;; :cljs: tuple-get (F-NBB-PRED-TUPLE).
-                         (da/aset a i #?(:cljs (tuple-get tuple tuple-idx)
-                                         :clj (get tuple tuple-idx) :cljr (get tuple tuple-idx)
-                                         :clje (da/aget tuple tuple-idx)
-                                         :lpy (get tuple tuple-idx)))
-                         a))
-                     static-args
-                     (range len))]
-          (apply f args))))))
+    ;; issue-262 (cljs apply+vector aliasing a mutable args array) does
+    ;; not apply: da arrays are persistent Eve vectors (da/aset is assoc,
+    ;; da/aclone is identity), so one portable body is enough.
+    (fn [tuple]
+      ;; TODO raise if not all args are bound
+      (let [args (reduce
+                   (fn [a i]
+                     (if-some [tuple-idx (da/aget tuples-args i)]
+                       ;; vanilla reads via `get`: tuple may be a Datom
+                       ;; whose attrs are field names, not indexes.
+                       (da/aset a i (tuple-get tuple tuple-idx))
+                       a))
+                   static-args
+                   (range len))]
+        (apply f args)))))
 
 (defn- resolve-sym [sym]
   #?(:cljs nil
