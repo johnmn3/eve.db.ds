@@ -25,6 +25,7 @@ After glue re-derive (batches 6/8/12/13/14 reviewed; 58 reclassified data/memory
 After open-other batch 16 (portable ihash + tx-id?): **284** / **0**.
 After open-other batch 17 (portable db?): **283** / **0**.
 After open-other batch 18 (portable vpred / -search pred): **281** / **0**.
+After open-other batch 19 (portable seqable?): **276** / **0**.
 
 Plain type sites (deftype/defrecord/defrecord-updatable that are not eve-deftype / eve.deftype/deftype) are **0**. Remaining `(deftype …)` forms in source are eve.deftype/deftype (LRU, Entity, AutoTempid, FilteredDB, ArrayRelation, CollRelation, SingletonRelation) or evicted through `def-eve-record` / `deftrecord`.
 
@@ -84,11 +85,11 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 48 | `eve/db/ds/db.cljc` | 30 | `(:refer-clojure :exclude [seqable? #?(:clj update)]))` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
 | 49 | `eve/db/ds/db.cljc` | 32 | `#?(:clj (set! *warn-on-reflection* true) :cljr (set! *warn-on-reflection* true))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 50 | `eve/db/ds/db.cljc` | 36 | `#?(:cljs` | KEPT | glue: cljs :require-macros for this file's macros |
-| 51 | `eve/db/ds/db.cljc` | 59 | `(do #?@(:clj [(defn ^Boolean seqable? [x] (and (not (string? x))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 52 | `eve/db/ds/db.cljc` | 60 | `#?@(:clj [(or (seq? x)` | KEPT | data: seqable? is the collection test used by query/transact; host instance? arms, not loader glue. Foldable to (and (not (string? x)) (or (clojure.core/seqable? x) (arrays/array? x))) if four hosts pass |
-| 53 | `eve/db/ds/db.cljc` | 79 | `#?@(:clj [(or (seq? x)` | KEPT | data: seqable? host collection test (nested arm of the same defn) |
-| 54 | `eve/db/ds/db.cljc` | 105 | `#?@(:clj [(or (seq? x)` | KEPT | data: seqable? host collection test (nested arm of the same defn) |
-| 55 | `eve/db/ds/db.cljc` | 128 | `#?(:clje (defn seqable? [x] (and (not (string? x))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 51 | `eve/db/ds/db.cljc` | 59 | `(do #?@(:clj [(defn ^Boolean seqable? [x] (and (not (string? x))` | REMOVED | portable seqable?: not-string, plus nil/seq?/coll?/arrays/array?; dropped host instance? arms |
+| 52 | `eve/db/ds/db.cljc` | 60 | `#?@(:clj [(or (seq? x)` | REMOVED | portable seqable?; dropped nested host collection test |
+| 53 | `eve/db/ds/db.cljc` | 79 | `#?@(:clj [(or (seq? x)` | REMOVED | portable seqable?; dropped nested host collection test |
+| 54 | `eve/db/ds/db.cljc` | 105 | `#?@(:clj [(or (seq? x)` | REMOVED | portable seqable?; dropped nested host collection test |
+| 55 | `eve/db/ds/db.cljc` | 128 | `#?(:clje (defn seqable? [x] (and (not (string? x))` | REMOVED | portable seqable?; dropped F-CLJE-SEQABLE twin |
 | 56 | `eve/db/ds/db.cljc` | 141 | `(do #?@(:clj [(defn- cljs-env?` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
 | 57 | `eve/db/ds/db.cljc` | 164 | `#?(:clje (defn- cljs-env?` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
 | 58 | `eve/db/ds/db.cljc` | 168 | `(do #?@(:clj [(defmacro if-cljs` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |

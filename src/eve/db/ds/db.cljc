@@ -63,80 +63,16 @@
 
 ;; ----------------------------------------------------------------------------
 
-(do #?@(:clj [(defn ^Boolean seqable? [x] (and (not (string? x))
-    #?@(:clj [(or (seq? x)
-               (instance? clojure.lang.Seqable x)
-               (nil? x)
-               (instance? Iterable x)
-               (arrays/array? x)
-               (instance? java.util.Map x))] :cljr [(or (seq? x)
-               (instance? clojure.lang.Seqable x)
-               (nil? x)
-               (instance? System.Collections.IEnumerable x)
-               (arrays/array? x)
-               (instance? System.Collections.IDictionary x))]
-     :lpy  [(or (seq? x)
-               (instance? clojure.lang.Seqable x)
-               (nil? x)
-               (instance? Iterable x)
-               (arrays/array? x)
-               (instance? java.util.Map x))]
-     :cljs [(or (cljs.core/seqable? x)
-               (arrays/array? x))])))] :cljr [(defn ^Boolean seqable? [x] (and (not (string? x))
-    #?@(:clj [(or (seq? x)
-               (instance? clojure.lang.Seqable x)
-               (nil? x)
-               (instance? System.Collections.IEnumerable x)
-               (arrays/array? x)
-               (instance? System.Collections.IDictionary x))] :cljr [(or (seq? x)
-               (instance? clojure.lang.Seqable x)
-               (nil? x)
-               (instance? System.Collections.IEnumerable x)
-               (arrays/array? x)
-               (instance? System.Collections.IDictionary x))]
-     :lpy  [(or (seq? x)
-               (instance? clojure.lang.Seqable x)
-               (nil? x)
-               (instance? System.Collections.IEnumerable x)
-               (arrays/array? x)
-               (instance? System.Collections.IDictionary x))]
-     :cljs [(or (cljs.core/seqable? x)
-               (arrays/array? x))])))]
- :lpy  [(defn seqable? [x] (and (not (string? x))
-    (or (seq? x)
-        (instance? clojure.lang.Seqable x)
-        (nil? x)
-        (arrays/array? x)
-        (instance? python/dict x))))]
- :cljs [(defn ^boolean seqable? [x] (and (not (string? x))
-    #?@(:clj [(or (seq? x)
-               (instance? clojure.lang.Seqable x)
-               (nil? x)
-               (instance? Iterable x)
-               (arrays/array? x)
-               (instance? java.util.Map x))] :cljr [(or (seq? x)
-               (instance? clojure.lang.Seqable x)
-               (nil? x)
-               (instance? System.Collections.IEnumerable x)
-               (arrays/array? x)
-               (instance? System.Collections.IDictionary x))]
-     :lpy  [(or (seq? x)
-               (instance? clojure.lang.Seqable x)
-               (nil? x)
-               (instance? Iterable x)
-               (arrays/array? x)
-               (instance? java.util.Map x))]
-     :cljs [(or (cljs.core/seqable? x)
-               (arrays/array? x))])))]))
-;; PORT DELTA (F-CLJE-SEQABLE): the seqable? defn lives in a top-level
-;; #?@ with :clj/:lpy/:cljs arms only — undefined on clojerl (the
-;; stage-37 load's only Erlang-fallback warning, 3 call sites in
-;; query). Twin below; coll? covers the Seqable/Iterable/Map cases
-#?(:clje (defn seqable? [x] (and (not (string? x))
-                              (or (seq? x)
-                                  (nil? x)
-                                  (coll? x)
-                                  (arrays/array? x)))))
+(defn seqable? [x]
+  ;; Portable: exclude strings (clojure.core/seqable? is true for them)
+  ;; and accept nil, seqs, collections, and host arrays. basilisp has
+  ;; seqable? only as basilisp.core/seqable?, not clojure.core/seqable?,
+  ;; so this body does not call a qualified core seqable?.
+  (and (not (string? x))
+    (or (nil? x)
+      (seq? x)
+      (coll? x)
+      (arrays/array? x))))
 
 ;; ----------------------------------------------------------------------------
 ;; macros and funcs to support writing defrecords and updating

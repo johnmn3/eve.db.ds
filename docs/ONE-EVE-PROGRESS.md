@@ -166,3 +166,7 @@ Folded `db?` (#145) to one portable `satisfies?` of ISearch, IIndexAccess and ID
 ## Open-other batch 18 — portable vpred / -search pred
 
 Folded `vpred` (#135) to one portable `defn` using `=` (same string?/int? guards as the JVM body) and `-search` pred (#142) to `(vpred v)` on every host. No vm rows touched. Counts **283** → **281** / **0**. Four-host only-core + lru-portable vs `:dev` Eve `7840ffe529`: JVM, bb, nbb, basilisp all PASS.
+
+## Open-other batch 19 — portable seqable?
+
+Folded `seqable?` (#51–#55) to one portable `defn`: not a string, and `nil?` / `seq?` / `coll?` / `arrays/array?`. Does not call `clojure.core/seqable?` (basilisp has the name only as `basilisp.core/seqable?`). No vm rows touched. Counts **281** → **276** / **0**. Four-host only-core + lru-portable vs `:dev` Eve `7840ffe529`: JVM, bb, nbb, basilisp all PASS.
