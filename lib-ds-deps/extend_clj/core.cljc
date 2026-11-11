@@ -867,12 +867,17 @@
                    (concat (mapcat (fn [f] [(keyword (str f)) f]) fields)
                            ['else]))))]
             extra)))
+         ;; the seed atoms are clojure.core/atom, qualified: a field
+         ;; named atom (eve.db.ds.conn's Conn) shadows the core fn
+         ;; inside the factory body — (atom nil) then called the
+         ;; field's value (measured 2026-11-08, probe3 run3:
+         ;; 'Atom' object is not callable at ->Conn)
          (list 'defn ->name
            (list fields
-             (list* 'new name (concat fields ['(atom nil) '(atom {}) '(atom {})])))
+             (list* 'new name (concat fields ['(clojure.core/atom nil) '(clojure.core/atom {}) '(clojure.core/atom {})])))
            (list (into fields '[& rest])
-             (list 'let ['opts '(apply array-map rest)
-                         'ref (list* 'new name (concat fields ['(atom nil) '(atom {}) '(atom {})]))]
+             (list 'let ['opts '(apply clojure.core/hash-map rest)
+                         'ref (list* 'new name (concat fields ['(clojure.core/atom nil) '(clojure.core/atom {}) '(clojure.core/atom {})]))]
                '(when-some [validator (:validator opts)]
                   (.setValidator ref validator))
                '(when-some [meta (:meta opts)]

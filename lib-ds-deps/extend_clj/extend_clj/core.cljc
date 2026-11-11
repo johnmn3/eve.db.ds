@@ -24,7 +24,121 @@
    :cljs (defn- cljs-env? [_env]
      true))
 
-#?(:clj (defmacro deftype-atom
+#?(:jank (defmacro deftype-atom
+     "jank form: the :clj expansion is JVM-shaped (a syntax-quoted
+      deftype* whose special-form head this seat's syntax quote
+      ns-qualifies away). This arm builds the expansion as data (no
+      syntax quote): an eve.deftype whose clojure.lang groups the
+      types adapter realizes (IDeref/IAtom/IAtom2/IMeta/IReference/
+      IRef/ILookup — the MmapAtom shape), IAtom3 carried as the
+      protocol group it is, deref-impl/compare-and-set-impl routed
+      there from the use site, and every internal call a protocol-fn
+      call (no (.m this) anywhere). __validator/__watches/__meta are
+      atom-valued fields seeded by the factory, so no field
+      mutability is needed."
+     [name fields & methods]
+     (let [deref-impl (first (filter #(= 'deref-impl (first %)) methods))
+           cas-impl   (first (filter #(= 'compare-and-set-impl (first %)) methods))
+           extra      (remove #(contains? #{'deref-impl 'compare-and-set-impl} (first %)) methods)
+           ->name     (symbol (str "->" name))
+           all-fields (into fields '[__validator __watches __meta])]
+       (list 'do
+         (list* 'eve.deftype/deftype name all-fields
+           ;; eve.deftype's spec grammar is FLAT (a protocol symbol, then its
+           ;; method lists, then the next symbol): the groups below are built
+           ;; as (head method...) lists and spliced flat by the mapcat -
+           ;; nested, the spec parser drops every group and the type
+           ;; registers no protocols at all (F-JANK-DEFTYPE-ATOM-FLAT)
+           (concat
+            (mapcat (fn [g] (cons (first g) (rest g)))
+             [(list 'extend-clj.core/IAtom3
+               deref-impl
+               cas-impl
+               '(validate [this vf value]
+                  (when (some? vf)
+                    (when-not (vf value)
+                      (throw (ex-info "Invalid reference state" {:value value})))))
+               '(notify-watches [this oldv newv]
+                  (doseq [[k w] @__watches]
+                    (w k this oldv newv)))
+               '(swap* [this f args]
+                  (loop []
+                    (let [oldv (extend-clj.core/deref-impl this)
+                          newv (apply f oldv args)]
+                      (extend-clj.core/validate this @__validator newv)
+                      (if (extend-clj.core/compare-and-set-impl this oldv newv)
+                        (do (extend-clj.core/notify-watches this oldv newv) [oldv newv])
+                        (recur))))))
+             (list 'clojure.lang.IDeref
+               '(deref [this] (extend-clj.core/deref-impl this)))
+             (list 'clojure.lang.IAtom
+               '(swap [this f] (nth (extend-clj.core/swap* this f ()) 1))
+               '(swap [this f a] (nth (extend-clj.core/swap* this f (list a)) 1))
+               '(swap [this f a b] (nth (extend-clj.core/swap* this f (list a b)) 1))
+               '(swap [this f a b xs] (nth (extend-clj.core/swap* this f (cons a (cons b xs))) 1))
+               '(compareAndSet [this oldv newv]
+                  (extend-clj.core/validate this @__validator newv)
+                  (if (extend-clj.core/compare-and-set-impl this oldv newv)
+                    (do (extend-clj.core/notify-watches this oldv newv) true)
+                    false))
+               '(reset [this newv] (nth (extend-clj.core/swap* this (constantly newv) ()) 1)))
+             (list 'clojure.lang.IAtom2
+               '(swapVals [this f] (extend-clj.core/swap* this f ()))
+               '(swapVals [this f a] (extend-clj.core/swap* this f (list a)))
+               '(swapVals [this f a b] (extend-clj.core/swap* this f (list a b)))
+               '(swapVals [this f a b xs] (extend-clj.core/swap* this f (cons a (cons b xs))))
+               '(resetVals [this newv]
+                  (extend-clj.core/validate this @__validator newv)
+                  (loop []
+                    (let [oldv (extend-clj.core/deref-impl this)]
+                      (if (extend-clj.core/compare-and-set-impl this oldv newv)
+                        (do (extend-clj.core/notify-watches this oldv newv) [oldv newv])
+                        (recur))))))
+             (list 'clojure.lang.IMeta
+               '(meta [this] @__meta))
+             (list 'clojure.lang.IReference
+               '(alterMeta [this alter args]
+                  (let [m (apply alter @__meta args)]
+                    (reset! __meta m)
+                    m))
+               '(resetMeta [this m]
+                  (reset! __meta m)
+                  m))
+             (list 'clojure.lang.IRef
+               '(setValidator [this vf]
+                  (extend-clj.core/validate this vf (extend-clj.core/deref-impl this))
+                  (reset! __validator vf))
+               '(getValidator [this] @__validator)
+               '(getWatches [this] @__watches)
+               '(addWatch [this key callback]
+                  (swap! __watches assoc key callback)
+                  this)
+               '(removeWatch [this key]
+                  (swap! __watches dissoc key)
+                  this))
+             (list 'clojure.lang.ILookup
+               (list 'valAt '[this key]
+                 (list* 'case 'key
+                   (concat (mapcat (fn [f] [(keyword (str f)) f]) fields)
+                           ['nil])))
+               (list 'valAt '[this key else]
+                 (list* 'case 'key
+                   (concat (mapcat (fn [f] [(keyword (str f)) f]) fields)
+                           ['else]))))])
+            extra))
+         (list 'defn ->name
+           (list fields
+             (list* (symbol (str name ".")) (concat fields ['(clojure.core/atom nil) '(clojure.core/atom {}) '(clojure.core/atom {})])))
+           (list (into fields '[& rest])
+             (list 'let ['opts '(apply array-map rest)
+                         'ref (list* (symbol (str name ".")) (concat fields ['(clojure.core/atom nil) '(clojure.core/atom {}) '(clojure.core/atom {})]))]
+               '(when-some [validator (:validator opts)]
+                  (extend-clj.core/validate ref validator (extend-clj.core/deref-impl ref))
+                  (reset! (.-__validator ref) validator))
+               '(when-some [meta (:meta opts)]
+                  (reset! (.-__meta ref) meta))
+               'ref))))))
+   :clj (defmacro deftype-atom
      "Allows you to declare new type that will behave like native Clojure Atom,
       but with custom `deref` and `compare-and-set` behaviors. Rest of swap!/reset!/
       swap-vals!/reset-vals! will be implemented through these two.
@@ -753,12 +867,17 @@
                    (concat (mapcat (fn [f] [(keyword (str f)) f]) fields)
                            ['else]))))]
             extra)))
+         ;; the seed atoms are clojure.core/atom, qualified: a field
+         ;; named atom (eve.db.ds.conn's Conn) shadows the core fn
+         ;; inside the factory body — (atom nil) then called the
+         ;; field's value (measured 2026-11-08, probe3 run3:
+         ;; 'Atom' object is not callable at ->Conn)
          (list 'defn ->name
            (list fields
-             (list* 'new name (concat fields ['(atom nil) '(atom {}) '(atom {})])))
+             (list* 'new name (concat fields ['(clojure.core/atom nil) '(clojure.core/atom {}) '(clojure.core/atom {})])))
            (list (into fields '[& rest])
-             (list 'let ['opts '(apply array-map rest)
-                         'ref (list* 'new name (concat fields ['(atom nil) '(atom {}) '(atom {})]))]
+             (list 'let ['opts '(apply clojure.core/hash-map rest)
+                         'ref (list* 'new name (concat fields ['(clojure.core/atom nil) '(clojure.core/atom {}) '(clojure.core/atom {})]))]
                '(when-some [validator (:validator opts)]
                   (.setValidator ref validator))
                '(when-some [meta (:meta opts)]
@@ -1087,3 +1206,83 @@
                  ref#)))
 
             ~class)))))
+
+;; PORT DELTA (F-CLJE-DEFTYPE-ATOM): deftype-atom had :clj/:cljs arms
+;; only; on clojerl the macro did not exist and eve.db.ds.conn's
+;; (extend/deftype-atom Conn ...) analyzed Conn as a value. The :clje
+;; arm below expands to a plain clojerl deftype with clojerl protocol
+;; spellings: clojerl.IDeref for deref, clojerl.ILookup for field
+;; lookup, this file's IAtom3 for the atom machinery (user methods
+;; splice into it, as in the :cljs arm), and eve.host/IAtom so
+;; eve.host/swap!, reset! and compare-and-set! (which dispatch
+;; clojerl.Atom vs IAtom) reach the type. swap* follows the :clj arm's
+;; CAS loop (the :cljs arm is single-attempt). Validator/watches/meta
+;; are plain fields set at construction: clojerl core add-watch throws
+;; "unimplemented watches", so watch mutation is a named seat gap.
+#?(:clje (defmacro deftype-atom
+           [name fields & methods]
+           (let [->name   (symbol (str "->" name))
+                  validator 'validator
+                  watches   'watches
+                  meta      'meta]
+             `(do
+                (deftype ~name [~@fields ~validator ~watches ~meta]
+                  clojerl.IDeref
+                  (deref [this#]
+                    (deref-impl this#))
+
+                  clojerl.ILookup
+                  (get [this# k#]
+                    (case k#
+                      ~@(mapcat identity
+                          (for [field fields]
+                            [(keyword (str field)) field]))
+                      nil))
+                  (get [this# k# not-found#]
+                    (case k#
+                      ~@(mapcat identity
+                          (for [field fields]
+                            [(keyword (str field)) field]))
+                      not-found#))
+
+                  extend-clj.core/IAtom3
+                  (validate [this# validator# value#]
+                    (when (some? validator#)
+                      (when-not (validator# value#)
+                        (throw (ex-info "Invalid reference state" {:value value#})))))
+
+                  (notify-watches [this# oldv# newv#]
+                    (doseq [[k# w#] ~watches]
+                      (w# k# this# oldv# newv#)))
+
+                  (swap* [this# f# args#]
+                    (loop []
+                      (let [oldv# (deref this#)
+                            newv# (apply f# oldv# args#)]
+                        (validate this# ~validator newv#)
+                        (if (compare-and-set-impl this# oldv# newv#)
+                          (do (notify-watches this# oldv# newv#)
+                              [oldv# newv#])
+                          (recur)))))
+
+                  ~@methods
+
+                  eve.host/IAtom
+                  (-swap [this# f# args#]
+                    (nth (swap* this# f# args#) 1))
+                  (-reset [this# v#]
+                    (nth (swap* this# (constantly v#) ()) 1))
+                  (-compare-and-set [this# oldv# newv#]
+                    (compare-and-set-impl this# oldv# newv#)))
+
+                (defn ~->name
+                  ([~@fields]
+                   (new ~name ~@fields nil {} nil))
+                  ([~@fields & rest#]
+                   (let [opts# (apply array-map rest#)
+                         ref#  (new ~name ~@fields (:validator opts#) {} (:meta opts#))]
+                     (when-some [validator# (:validator opts#)]
+                       (validate ref# validator# @ref#))
+                     ref#)))
+
+                ~name))))

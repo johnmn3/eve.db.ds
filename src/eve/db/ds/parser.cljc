@@ -96,6 +96,10 @@
             ;; [x y z] -> (collect-vars-acc (collect-vars-acc (collect-vars-acc acc x) y) z)
             ~(reduce #(list 'eve.db.ds.parser/collect-vars-acc %1 %2) acc fields))
           ~@rest)))
+   ;; PORT DELTA (F-LPY-DEFTRECORD): basilisp is a macro seat like
+   ;; :clj (no :cljs-style require-macros split); without an :lpy arm
+   ;; deftrecord was unresolvable and every parser record failed to
+   ;; define. The body is the :clj body verbatim.
    :cljs (defmacro deftrecord
      "Augment all eve.db.ds.parser/ records with default implementation of ITraversable"
      [tagname fields & rest]
