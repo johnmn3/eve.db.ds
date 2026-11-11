@@ -130,11 +130,15 @@
 ;; on nbb for every predicate / fn-binding clause and every join over a
 ;; Datom relation. tuple-get reads a port array (vector) or a JS array by
 ;; index and anything else (a Datom) by get, the :clj arm's read.
-#?(:cljs
-   (defn- tuple-get [t i]
-     (cond (da/array? t)     (da/aget t i)
-           (cljs.core/array? t) (aget t i)
-           :else             (get t i))))
+;; PORT DELTA (F-NBB-PRED-TUPLE): read a port array (Eve vector) by
+;; index via da/aget and anything else (a Datom, or a JS array on cljs)
+;; via get. Lifted off the :cljs-only defn so the getter-fn call sites
+;; can share one portable helper. vm-owned data rows #274/#275/#277/#278
+;; are left on their host arms.
+(defn- tuple-get [t i]
+  (if (da/array? t)
+    (da/aget t i)
+    (get t i)))
 
 #?(:clj
    ;; PORT (PORTING-DS.md): tuples are da arrays — Eve vectors in this
@@ -368,10 +372,7 @@
       (if (int? idx)
         (let [idx (int idx)]
           (fn contained-int-getter-fn [tuple]
-            (let [eid #?(:cljs (tuple-get tuple idx)
-                         :clj (da/aget tuple idx) :cljr (da/aget tuple idx)
-                         :lpy (da/aget tuple idx)
-                         :clje (da/aget tuple idx))]
+            (let [eid (tuple-get tuple idx)]
               (cond
                 (number? eid)     eid ;; quick path to avoid fn call
                 (sequential? eid) (resolve-fn eid)
@@ -379,13 +380,9 @@
                 :else             eid))))
         ;; If the index is not an int?, the target can never be an array
         (fn contained-getter-fn [tuple]
-          (let [eid #?(:cljs (tuple-get tuple idx)
-                       :clj (.valAt ^ILookup tuple idx) :cljr (.valAt ^ILookup tuple idx)
-                       ;; PORT DELTA (F-CLJE-GETTER-VALAT): see the
-                       ;; plain getter below -- a non-int idx here is
-                       ;; a datom component name, read via ILookup
-                       :lpy (get tuple idx)
-                       :clje (get tuple idx))]
+          (let [eid (tuple-get tuple idx)]
+            ;; PORT DELTA (F-CLJE-GETTER-VALAT): a non-int idx is a
+            ;; datom component name, read via get (ILookup on clj).
             (cond
               (number? eid)     eid ;; quick path to avoid fn call
               (sequential? eid) (resolve-fn eid)
@@ -394,26 +391,13 @@
       (if (int? idx)
         (let [idx (int idx)]
           (fn int-getter [tuple]
-            #?(:cljs (tuple-get tuple idx)
-               :clj (da/aget tuple idx) :cljr (da/aget tuple idx)
-                         :lpy (da/aget tuple idx)
-               :clje (da/aget tuple idx))))
+            (tuple-get tuple idx)))
         ;; If the index is not an int?, the target can never be an array
         (fn getter [tuple]
-          ;; PORT DELTA (F-CLJE-GETTER-VALAT): a non-int idx is a
-          ;; datom component NAME ("e"/"a"/"v"/"tx" -- lookup-pattern-db
-          ;; keys pattern attrs by name, and val-at-datom cases on the
-          ;; strings). The :clj arm reads it via ILookup .valAt; the
-          ;; :cljs arm's da/aget works only because a cljs aget is a JS
-          ;; property read and Datom's fields are named e/a/v/tx. On
-          ;; clojerl da/aget is nth, and Datom's nth is integer-only
-          ;; (nth-datom) -- stage-45 threw "Index out of bounds: e" in
-          ;; the hash-join group-by. The :clje arm does the ILookup
-          ;; read, as :clj does.
-          #?(:cljs (tuple-get tuple idx)
-             :clj (.valAt ^ILookup tuple idx) :cljr (.valAt ^ILookup tuple idx)
-             :lpy (get tuple idx)
-             :clje (get tuple idx)))))))
+          ;; PORT DELTA (F-CLJE-GETTER-VALAT): a non-int idx is a datom
+          ;; component name ("e"/"a"/"v"/"tx"); tuple-get uses get, the
+          ;; ILookup read, not nth.
+          (tuple-get tuple idx))))))
 
 (defn tuple-key-fn
   [attrs common-attrs]

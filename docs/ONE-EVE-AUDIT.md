@@ -16,6 +16,7 @@ After open-other batch 6 (mark 35 declare/import/flag/stub rows glue): **308** /
 After open-other batch 7 (pull_parser parse-pattern + query fn arg hints): **306** / **0**.
 After open-other batch 8 (mark instance? class-name rows glue): **306** / **0** (no src change).
 After open-other batch 9 (leftover require/import glue): **306** / **0** (no src change).
+After open-other batch 10 (portable tuple-get + serialize nth/get): **299** / **0**.
 
 Plain type sites (deftype/defrecord/defrecord-updatable that are not eve-deftype / eve.deftype/deftype) are **0**. Remaining `(deftype …)` forms in source are eve.deftype/deftype (LRU, Entity, AutoTempid, FilteredDB, ArrayRelation, CollRelation, SingletonRelation) or evicted through `def-eve-record` / `deftrecord`.
 
@@ -278,7 +279,7 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 251 | `eve/db/ds/query.cljc` | 37 | `#?(:clj (set! *warn-on-reflection* true) :cljr (set! *warn-on-reflection* true))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 252 | `eve/db/ds/query.cljc` | 57 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 253 | `eve/db/ds/query.cljc` | 121 | `#?(:clj (set! *unchecked-math* true) :cljr (set! *unchecked-math* true))` | KEPT | glue: compiler flag set! *unchecked-math* true |
-| 254 | `eve/db/ds/query.cljc` | 131 | `#?(:cljs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 254 | `eve/db/ds/query.cljc` | 131 | `#?(:cljs` | REMOVED | portable tuple-get (da/aget on arrays, get otherwise); dropped cljs-only defn wrapper |
 | 255 | `eve/db/ds/query.cljc` | 137 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 256 | `eve/db/ds/query.cljc` | 199 | `#?(:clje` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 257 | `eve/db/ds/query.cljc` | 213 | `#?(:clj (set! *unchecked-math* false) :cljr (set! *unchecked-math* false))` | KEPT | glue: compiler flag set! *unchecked-math* false |
@@ -290,10 +291,10 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 263 | `eve/db/ds/query.cljc` | 330 | `(instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar :clje dp/` | KEPT | glue: instance? class-name dispatch (imported short name on JVM/CLR vs qualified parser type on other hosts) |
 | 264 | `eve/db/ds/query.cljc` | 332 | `(and (instance? #?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp` | KEPT | glue: instance? class-name dispatch (imported short name on JVM/CLR vs qualified parser type on other hosts) |
 | 265 | `eve/db/ds/query.cljc` | 333 | `(instance? #?(:jank dp/RulesVar :clj RulesVar :cljr RulesVar :cljs dp/RulesVar :` | KEPT | glue: instance? class-name dispatch (imported short name on JVM/CLR vs qualified parser type on other hosts) |
-| 266 | `eve/db/ds/query.cljc` | 370 | `(let [eid #?(:cljs (tuple-get tuple idx)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 267 | `eve/db/ds/query.cljc` | 381 | `(let [eid #?(:cljs (tuple-get tuple idx)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 268 | `eve/db/ds/query.cljc` | 396 | `#?(:cljs (tuple-get tuple idx)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 269 | `eve/db/ds/query.cljc` | 412 | `#?(:cljs (tuple-get tuple idx)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 266 | `eve/db/ds/query.cljc` | 370 | `(let [eid #?(:cljs (tuple-get tuple idx)` | REMOVED | getter-fn uses portable tuple-get |
+| 267 | `eve/db/ds/query.cljc` | 381 | `(let [eid #?(:cljs (tuple-get tuple idx)` | REMOVED | getter-fn uses portable tuple-get |
+| 268 | `eve/db/ds/query.cljc` | 396 | `#?(:cljs (tuple-get tuple idx)` | REMOVED | getter-fn uses portable tuple-get |
+| 269 | `eve/db/ds/query.cljc` | 412 | `#?(:cljs (tuple-get tuple idx)` | REMOVED | getter-fn uses portable tuple-get |
 | 270 | `eve/db/ds/query.cljc` | 425 | `#?(:clje (let [getters (mapv #(getter-fn attrs %) common-attrs)]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 271 | `eve/db/ds/query.cljc` | 434 | `(let [^objects getters-arr #?(:clj (into-array Object common-attrs) :cljr (into-` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 272 | `eve/db/ds/query.cljc` | 441 | `#?(:jank` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
@@ -356,9 +357,9 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 329 | `eve/db/ds/serialize.cljc` | 81 | `#?(:clje` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 330 | `eve/db/ds/serialize.cljc` | 87 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 331 | `eve/db/ds/serialize.cljc` | 117 | `#?(:clje` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 332 | `eve/db/ds/serialize.cljc` | 127 | `#?(:clj  (.get ^java.util.List d (int i)) :cljr (nth d i)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 333 | `eve/db/ds/serialize.cljc` | 133 | `#?(:clj  (.get ^java.util.Map d k) :cljr (get d k)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 334 | `eve/db/ds/serialize.cljc` | 139 | `#?(:clj  (instance? java.util.List a) :cljr (instance? System.Collections.IList ` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 332 | `eve/db/ds/serialize.cljc` | 127 | `#?(:clj  (.get ^java.util.List d (int i)) :cljr (nth d i)` | REMOVED | array-get is portable nth |
+| 333 | `eve/db/ds/serialize.cljc` | 133 | `#?(:clj  (.get ^java.util.Map d k) :cljr (get d k)` | REMOVED | dict-get is portable get |
+| 334 | `eve/db/ds/serialize.cljc` | 139 | `#?(:clj  (instance? java.util.List a) :cljr (instance? System.Collections.IList ` | KEPT | glue: host collection type test (java.util.List / IList / JS array / vector) |
 | 335 | `eve/db/ds/serialize.cljc` | 145 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 336 | `eve/db/ds/serialize.cljc` | 161 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 337 | `eve/db/ds/serialize.cljc` | 178 | `[#?@(:jank [^db/Datom d1] :clj [^Datom d1] :cljr [^Datom d1] :cljs [^db/Datom d1` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |

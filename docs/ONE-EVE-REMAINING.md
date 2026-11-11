@@ -1,6 +1,6 @@
-# Remaining 306 host branches — classification for vm
+# Remaining 299 host branches — classification for vm
 
-Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–5 and 7 removed 36 branches; 342→306; batches 6, 8 and 9 marked 69 as glue, open-other 216→145). Comments/strings excluded, nested counted once.
+Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–5, 7 and 10 removed 43 branches; 342→299; batches 6, 8 and 9 marked 69 as glue plus batch 10 #334, open-other 216→137). Comments/strings excluded, nested counted once.
 
 **Glue** = loader/require-macros/import/refer/type-hint/instance?-class-name/warn-on-reflection/export wiring that does not itself implement data, memory, threading, or HTTP.
 
@@ -76,7 +76,7 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 
 **HTTP count for vm: 0.**
 
-## glue (106)
+## glue (107)
 
 - #2 `eve/db/ds/conn.cljc:8` — `#?(:lpy [eve.deftype :refer [deftype]])`
 - #6 `eve/db/ds/conn.cljc:41` — `(if (instance? #?(:jank db/FilteredDB :clj FilteredDB :cljr FilteredDB :cljs db/`
@@ -187,11 +187,13 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 - #250 `eve/db/ds/query.cljc:26` — `#?(:clj`
 - #289 `eve/db/ds/query_v3.cljc:15` — `#?(:clj`
 
+- #334 `eve/db/ds/serialize.cljc:139` — `#?(:clj  (instance? java.util.List a) :cljr (instance? System.Collections.IList `
+
 
 ## glue-candidate (0)
 
 
-## open-other (145)
+## open-other (137)
 
 - #9 `eve/db/ds/conn.cljc:87` — `#?(:clj`
 - #10 `eve/db/ds/conn.cljc:114` — `#?(:clj`
@@ -283,13 +285,8 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 - #231 `eve/db/ds/pull_api.cljc:265` — `(recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default`
 - #246 `eve/db/ds/pull_parser.cljc:73` — `#?(:clj (when (namespace sym-or-fn)`
 - #252 `eve/db/ds/query.cljc:57` — `#?(:clj`
-- #254 `eve/db/ds/query.cljc:131` — `#?(:cljs`
 - #255 `eve/db/ds/query.cljc:137` — `#?(:clj`
 - #256 `eve/db/ds/query.cljc:199` — `#?(:clje`
-- #266 `eve/db/ds/query.cljc:370` — `(let [eid #?(:cljs (tuple-get tuple idx)`
-- #267 `eve/db/ds/query.cljc:381` — `(let [eid #?(:cljs (tuple-get tuple idx)`
-- #268 `eve/db/ds/query.cljc:396` — `#?(:cljs (tuple-get tuple idx)`
-- #269 `eve/db/ds/query.cljc:412` — `#?(:cljs (tuple-get tuple idx)`
 - #270 `eve/db/ds/query.cljc:425` — `#?(:clje (let [getters (mapv #(getter-fn attrs %) common-attrs)]`
 - #272 `eve/db/ds/query.cljc:441` — `#?(:jank`
 - #273 `eve/db/ds/query.cljc:504` — `(if-some [tuples1 #?(:clj (hash key) :cljr (hash key) :cljs (get hash key) :clje`
@@ -305,9 +302,6 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 - #329 `eve/db/ds/serialize.cljc:81` — `#?(:clje`
 - #330 `eve/db/ds/serialize.cljc:87` — `#?(:clj`
 - #331 `eve/db/ds/serialize.cljc:117` — `#?(:clje`
-- #332 `eve/db/ds/serialize.cljc:127` — `#?(:clj  (.get ^java.util.List d (int i)) :cljr (nth d i)`
-- #333 `eve/db/ds/serialize.cljc:133` — `#?(:clj  (.get ^java.util.Map d k) :cljr (get d k)`
-- #334 `eve/db/ds/serialize.cljc:139` — `#?(:clj  (instance? java.util.List a) :cljr (instance? System.Collections.IList `
 - #335 `eve/db/ds/serialize.cljc:145` — `#?(:clj`
 - #336 `eve/db/ds/serialize.cljc:161` — `#?(:clj`
 - #339 `eve/db/ds/serialize.cljc:242` — `#?@(:clj [(or`

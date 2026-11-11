@@ -121,3 +121,7 @@ No source change. Audit reasons for parser `instance?` class-name dispatch (impo
 ## Open-other batch 9 — leftover require/import rows
 
 No source change. Marked the remaining open-other host `:import` rows in query.cljc (#250) and query_v3.cljc (#289) as glue. Recorded glue reasons on leftover require/refer/require-macros rows already listed under glue or threading refers: #2, #3, #12, #13, #43, #44, #45, #205, #245, #248, #249, #322. Counts unchanged **306** / **0**. open-other 147→145; glue 104→106.
+
+## Open-other batch 10 — portable tuple-get + serialize nth/get
+
+Lifted `tuple-get` off the cljs-only defn (#254) to a portable helper (`da/aget` on arrays, `get` otherwise) and folded getter-fn sites #266–#269. Left vm-owned data rows #274, #275, #277, #278 on their host arms. `array-get`/`dict-get` are portable `nth`/`get` (#332, #333). Marked serialize `array?` (#334) glue: host collection type test (java.util.List / IList / JS array / vector). Counts **306→299** / **0**. open-other 145→137; glue 106→107. Four-host only-core + lru against :dev Eve 7840ffe529 all PASS, including nbb.

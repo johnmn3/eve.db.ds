@@ -124,16 +124,10 @@
 ;; expansion is a vector (as on :clj) and dict an array-map, so the
 ;; accessors are the portable ones and amap builds vectors.
 (defn- array-get [d i]
-  #?(:clj  (.get ^java.util.List d (int i)) :cljr (nth d i)
-     :cljs (if (cljs.core/array? d) (arrays/aget d i) (nth d i))
-     :lpy  (nth d i)
-     :clje (nth d i)))
+  (nth d i))
 
 (defn- dict-get [d k]
-  #?(:clj  (.get ^java.util.Map d k) :cljr (get d k)
-     :cljs (if (map? d) (d k) (arrays/aget d k))
-     :lpy  (get d k)
-     :clje (get d k)))
+  (get d k))
 
 (defn- array? [a]
   #?(:clj  (instance? java.util.List a) :cljr (instance? System.Collections.IList a)
