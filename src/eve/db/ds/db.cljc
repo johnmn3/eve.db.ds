@@ -9,6 +9,15 @@
     [eve.db.ds.lru :as lru]
     [eve.db.ds.util :as util]
     [eve.core :as e]
+    ;; F-DS-EVE-WRITERS: the Eve value namespaces whose codec writers a DB
+    ;; needs (value+sio->eve-bytes finds the :map/:set/:vec/:list writers
+    ;; only once these have loaded). Required here so that requiring
+    ;; eve.db.ds.core alone is enough, on every host arm.
+    [eve.atom]
+    [eve.map]
+    [eve.set]
+    [eve.vec]
+    [eve.list]
     [eve.deftype :refer [eve-deftype]]
     #?(:lpy [eve.deftype :refer [deftype]])
     [me.tonsky.persistent-sorted-set :as set]
