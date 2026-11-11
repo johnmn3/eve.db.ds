@@ -40,25 +40,18 @@
 ;; fns call the same ISeq methods (RT.first/RT.next on an ISeq are
 ;; .first/.next, and RT.conj on an ISeq is .cons), so the values are
 ;; unchanged there.
-;; PORT DELTA (F-LPY-SPLICE): the arg hints and bodies below had
-;; :clj/:cljs arms only — on basilisp the hint select dropped the
-;; argument itself from the arg vector (xs unbound) and the body
-;; select dropped the value form (silently always nil). The :lpy
-;; arms use the portable core spellings.
-(defn- first-seq [#?(:bb xs :clj ^ISeq xs :cljs ^seq xs :clje xs :cljr xs :lpy xs)]
-  (if (nil? xs)
-    nil
-    #?(:bb (first xs) :clj (first xs) :cljr (first xs) :cljs (-first xs) :clje (first xs) :lpy (first xs))))
+;; Portable clojure.core first/next/cons (covers jolt ArraySeq and basilisp;
+;; host type hints and per-host ISeq methods were reader branches).
+(defn- first-seq [xs]
+  (first xs))
 
-(defn- next-seq [#?(:bb xs :clj ^ISeq xs :cljs ^seq xs :clje xs :cljr xs :lpy xs)]
-  (if (nil? xs)
-    nil
-    #?(:bb (next xs) :clj (next xs) :cljr (next xs) :cljs (-next xs) :clje (next xs) :lpy (next xs))))
+(defn- next-seq [xs]
+  (next xs))
 
-(defn- conj-seq [#?(:bb xs :clj ^ISeq xs :cljs ^seq xs :clje xs :cljr xs :lpy xs) x]
+(defn- conj-seq [xs x]
   (if (nil? xs)
     (list x)
-    #?(:bb (cons x xs) :clj (conj xs x) :cljr (conj xs x) :cljs (-conj xs x) :clje (conj xs x) :lpy (conj xs x))))
+    (cons x xs)))
 
 (defn- assoc-some! [m k v]
   (if (nil? v) m (assoc! m k v)))

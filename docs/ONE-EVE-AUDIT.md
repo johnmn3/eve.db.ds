@@ -7,6 +7,7 @@ After unit 1 (ab142948): 349 / 15.
 After unit 2 (584e364): 346 / 15.
 After LRU Counted (30f1d19): 346 / 15.
 After unit 3 (this commit, working tree): **342** / **0**.
+After open-other batch 1 (pull_api first/next/conj-seq): **336** / **0**.
 
 Plain type sites (deftype/defrecord/defrecord-updatable that are not eve-deftype / eve.deftype/deftype) are **0**. Remaining `(deftype …)` forms in source are eve.deftype/deftype (LRU, Entity, AutoTempid, FilteredDB, ArrayRelation, CollRelation, SingletonRelation) or evicted through `def-eve-record` / `deftrecord`.
 
@@ -222,12 +223,12 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 204 | `eve/db/ds/parser.cljc` | 126 | `#?(:clje (defmacro deftrecord` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
 | 205 | `eve/db/ds/pull_api.cljc` | 12 | `#?(:clje [eve.host :refer [transient persistent! conj! assoc! volatile!]]))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 206 | `eve/db/ds/pull_api.cljc` | 13 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 207 | `eve/db/ds/pull_api.cljc` | 46 | `(defn- first-seq [#?(:bb xs :clj ^ISeq xs :cljs ^seq xs :clje xs :cljr xs :lpy x` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 208 | `eve/db/ds/pull_api.cljc` | 49 | `#?(:bb (first xs) :clj (first xs) :cljr (first xs) :cljs (-first xs) :clje (firs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 209 | `eve/db/ds/pull_api.cljc` | 51 | `(defn- next-seq [#?(:bb xs :clj ^ISeq xs :cljs ^seq xs :clje xs :cljr xs :lpy xs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 210 | `eve/db/ds/pull_api.cljc` | 54 | `#?(:bb (next xs) :clj (next xs) :cljr (next xs) :cljs (-next xs) :clje (next xs)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 211 | `eve/db/ds/pull_api.cljc` | 56 | `(defn- conj-seq [#?(:bb xs :clj ^ISeq xs :cljs ^seq xs :clje xs :cljr xs :lpy xs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 212 | `eve/db/ds/pull_api.cljc` | 59 | `#?(:bb (cons x xs) :clj (conj xs x) :cljr (conj xs x) :cljs (-conj xs x) :clje (` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 207 | `eve/db/ds/pull_api.cljc` | 46 | `(defn- first-seq [#?(:bb xs :clj ^ISeq xs :cljs ^seq xs :clje xs :cljr xs :lpy x` | REMOVED | collapsed to portable clojure.core first/next/cons; host type hints dropped |
+| 208 | `eve/db/ds/pull_api.cljc` | 49 | `#?(:bb (first xs) :clj (first xs) :cljr (first xs) :cljs (-first xs) :clje (firs` | REMOVED | collapsed to portable clojure.core first/next/cons; host type hints dropped |
+| 209 | `eve/db/ds/pull_api.cljc` | 51 | `(defn- next-seq [#?(:bb xs :clj ^ISeq xs :cljs ^seq xs :clje xs :cljr xs :lpy xs` | REMOVED | collapsed to portable clojure.core first/next/cons; host type hints dropped |
+| 210 | `eve/db/ds/pull_api.cljc` | 54 | `#?(:bb (next xs) :clj (next xs) :cljr (next xs) :cljs (-next xs) :clje (next xs)` | REMOVED | collapsed to portable clojure.core first/next/cons; host type hints dropped |
+| 211 | `eve/db/ds/pull_api.cljc` | 56 | `(defn- conj-seq [#?(:bb xs :clj ^ISeq xs :cljs ^seq xs :clje xs :cljr xs :lpy xs` | REMOVED | collapsed to portable clojure.core first/next/cons; host type hints dropped |
+| 212 | `eve/db/ds/pull_api.cljc` | 59 | `#?(:bb (cons x xs) :clj (conj xs x) :cljr (conj xs x) :cljs (-conj xs x) :clje (` | REMOVED | collapsed to portable clojure.core first/next/cons; host type hints dropped |
 | 213 | `eve/db/ds/pull_api.cljc` | 88 | `#?(:lpy (-merge [this result] (throw (ex-info "ResultFrame does not implement -m` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 214 | `eve/db/ds/pull_api.cljc` | 89 | `#?(:lpy (-run [this context] (throw (ex-info "ResultFrame does not implement -ru` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 215 | `eve/db/ds/pull_api.cljc` | 93 | `(defrecord MultivalAttrFrame [acc #?@(:clj [^PullAttr attr] :cljr [^PullAttr att` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |

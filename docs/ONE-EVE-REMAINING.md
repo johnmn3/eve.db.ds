@@ -1,6 +1,6 @@
-# Remaining 342 host branches — classification for vm
+# Remaining 336 host branches — classification for vm
 
-Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (still 342 after this work; no new src branches). Comments/strings excluded, nested counted once.
+Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batch 1 removed 6 pull_api seq-helper branches; 342→336). Comments/strings excluded, nested counted once.
 
 **Glue** = loader/require-macros/import/refer/type-hint/instance?-class-name/warn-on-reflection/export wiring that does not itself implement data, memory, threading, or HTTP.
 
@@ -76,7 +76,7 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 
 **HTTP count for vm: 0.**
 
-## glue (57)
+## glue (54)
 
 - #2 `eve/db/ds/conn.cljc:8` — `#?(:lpy [eve.deftype :refer [deftype]])`
 - #6 `eve/db/ds/conn.cljc:41` — `(if (instance? #?(:jank db/FilteredDB :clj FilteredDB :cljr FilteredDB :cljs db/`
@@ -100,9 +100,6 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 - #84 `eve/db/ds/db.cljc:607` — `#?(:cljs (goog/exportSymbol "eve.db.ds.db.Datom" Datom))`
 - #147 `eve/db/ds/db.cljc:1767` — `(defn #?@(:clj [^DB unfiltered-db] :cljr [^DB unfiltered-db] :cljs [^DB unfilter`
 - #205 `eve/db/ds/pull_api.cljc:12` — `#?(:clje [eve.host :refer [transient persistent! conj! assoc! volatile!]]))`
-- #207 `eve/db/ds/pull_api.cljc:46` — `(defn- first-seq [#?(:bb xs :clj ^ISeq xs :cljs ^seq xs :clje xs :cljr xs :lpy x`
-- #209 `eve/db/ds/pull_api.cljc:51` — `(defn- next-seq [#?(:bb xs :clj ^ISeq xs :cljs ^seq xs :clje xs :cljr xs :lpy xs`
-- #211 `eve/db/ds/pull_api.cljc:56` — `(defn- conj-seq [#?(:bb xs :clj ^ISeq xs :cljs ^seq xs :clje xs :cljr xs :lpy xs`
 - #217 `eve/db/ds/pull_api.cljc:100` — `:let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs`
 - #218 `eve/db/ds/pull_api.cljc:108` — `(let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs`
 - #220 `eve/db/ds/pull_api.cljc:132` — `:let [#?@(:jank [^db/Datom datom] :clj [^Datom datom] :cljr [^Datom datom] :cljs`
@@ -139,7 +136,7 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 ## glue-candidate (0)
 
 
-## open-other (230)
+## open-other (227)
 
 - #4 `eve/db/ds/conn.cljc:14` — `#?(:clj`
 - #9 `eve/db/ds/conn.cljc:87` — `#?(:clj`
@@ -259,9 +256,6 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 - #176 `eve/db/ds/db.cljc:2891` — `(do #?@(:clj [(declare transact-tx-data-impl)] :cljr [(declare transact-tx-data-`
 - #177 `eve/db/ds/db.cljc:2895` — `#?(:clje (declare transact-tx-data-impl))`
 - #206 `eve/db/ds/pull_api.cljc:13` — `#?(:clj`
-- #208 `eve/db/ds/pull_api.cljc:49` — `#?(:bb (first xs) :clj (first xs) :cljr (first xs) :cljs (-first xs) :clje (firs`
-- #210 `eve/db/ds/pull_api.cljc:54` — `#?(:bb (next xs) :clj (next xs) :cljr (next xs) :cljs (-next xs) :clje (next xs)`
-- #212 `eve/db/ds/pull_api.cljc:59` — `#?(:bb (cons x xs) :clj (conj xs x) :cljr (conj xs x) :cljs (-conj xs x) :clje (`
 - #213 `eve/db/ds/pull_api.cljc:88` — `#?(:lpy (-merge [this result] (throw (ex-info "ResultFrame does not implement -m`
 - #214 `eve/db/ds/pull_api.cljc:89` — `#?(:lpy (-run [this context] (throw (ex-info "ResultFrame does not implement -ru`
 - #216 `eve/db/ds/pull_api.cljc:95` — `#?(:lpy (-merge [this result] (throw (ex-info "MultivalAttrFrame does not implem`

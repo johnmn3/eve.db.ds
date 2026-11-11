@@ -85,3 +85,7 @@ Do not commit those overlays into this repo.
 | nbb 1.6.214 | PASS `ONLY-CORE-OK #{["Ivan"] ["Petr"]} 5` | PASS `LRU-PORTABLE-OK` |
 
 Counts unchanged: **342/376** host branches, **0/20** plain types. open-other (~230) and vm's data/memory rows are still open.
+
+## Open-other batch 1 — pull_api seq helpers
+
+Collapsed `first-seq` / `next-seq` / `conj-seq` to portable `clojure.core` `first` / `next` / `cons` (no host type hints). Audit rows #207–#212 REMOVED. Counts **342 → 336** / **0**. vm data/memory rows untouched. Parse LRU left in place.
