@@ -5,7 +5,7 @@
 ;; Dev/test pin is alias :dev (atom.broker :deps/root "eve" @ 7840ffe529).
 ;; From the library root: clojure -A:dev:test -M -m contract.only-core
 ;; Offline/local override remains -Sdeps {:deps {eve/eve {:local/root <eve-tree>}}}.
-{:paths ["drivers" "../harness"]
+{:paths ["drivers" "../harness" "upstream-ds/test"]
  :deps {eve.db.ds/eve.db.ds {:local/root ".."}
         org.clojure/clojure {:mvn/version "1.12.0"}
         org.clojure/test.check {:mvn/version "1.1.1"}}

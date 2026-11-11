@@ -16,7 +16,6 @@
     [eve.db.ds.util :as util]
     ;; UNIT3 (#56): the relation types are ONE eve.deftype/deftype each.
     [eve.deftype :refer [deftype]])
-  (:refer-clojure :exclude [deftype]))
   #?(:clj
      (:import 
        [eve.db.ds.parser
@@ -32,7 +31,7 @@
        [clojure.lang     IReduceInit Counted]
        [eve.db.ds.db  Datom])))
 
-(declare resolve-clauses collect-rel-xf collect-to)
+(declare resolve-clauses collect-rel-xf collect-to -resolve-clause)
 
 (def ^:const lru-cache-size 100)
 
@@ -670,7 +669,7 @@
                 ;; PORT DELTA (F-NBB-MACROS round): as in
                 ;; eve.db.ds.core's FilteredDB — class constructor
                 ;; on :clj, factory var on :cljs
-                #?(:clj (->Constant subs) :cljr (->Constant subs) :cljs (dp/->Constant subs))
+                #?(:clj (dp/->Constant subs) :cljr (dp/->Constant subs) :cljs (dp/->Constant subs))
                 form))
             form)))
       clause)))
