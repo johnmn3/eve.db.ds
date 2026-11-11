@@ -85,24 +85,17 @@
   ([schema opts]
    (conn-from-db (db/empty-db schema (storage/maybe-adapt-storage opts)))))
 
-#?(:clj
-   (defn restore-conn
-     ([storage]
-      (restore-conn storage {}))
-     ([storage opts]
-      (when-some [[db tail] (storage/restore-impl storage opts)]
-        (make-conn
-          {:db (storage/db-with-tail db tail)
-           :tx-tail tail
-           :db-last-stored db})))) :cljr (defn restore-conn
-     ([storage]
-      (restore-conn storage {}))
-     ([storage opts]
-      (when-some [[db tail] (storage/restore-impl storage opts)]
-        (make-conn
-          {:db (storage/db-with-tail db tail)
-           :tx-tail tail
-           :db-last-stored db})))))
+(defn restore-conn
+  "On Eve, a DB lives in an Eve atom; there is no separate IStorage.
+   storage/restore-impl raises that guidance."
+  ([storage]
+   (restore-conn storage {}))
+  ([storage opts]
+   (when-some [[db tail] (storage/restore-impl storage opts)]
+     (make-conn
+       {:db (storage/db-with-tail db tail)
+        :tx-tail tail
+        :db-last-stored db}))))
 
 (defn ^:no-doc -transact! [conn tx-data tx-meta]
   {:pre [(conn? conn)]}
@@ -112,38 +105,9 @@
         (let [r (with db tx-data tx-meta)]
           (vreset! *report r)
           (:db-after r))))
-    #?(:clj
-       (when (storage/storage @conn)
-         (let [{db :db-after
-                datoms :tx-data} @*report]
-           (when-not (empty? datoms)
-             (let [settings (set/settings (:eavt db))
-                   *atom    (:atom conn)
-                   tx-tail' (:tx-tail (swap! *atom update :tx-tail conj datoms))]
-               (if (> (transduce (map count) + 0 tx-tail') (:branching-factor settings))
-                 ;; overflow tail
-                 (do
-                   (storage/store-impl! db (storage/storage-adapter db) false)
-                   (swap! *atom assoc
-                     :tx-tail        []
-                     :db-last-stored db))
-                 ;; just update tail
-                 (storage/store-tail db tx-tail')))))) :cljr (when (storage/storage @conn)
-         (let [{db :db-after
-                datoms :tx-data} @*report]
-           (when-not (empty? datoms)
-             (let [settings (set/settings (:eavt db))
-                   *atom    (:atom conn)
-                   tx-tail' (:tx-tail (swap! *atom update :tx-tail conj datoms))]
-               (if (> (transduce (map count) + 0 tx-tail') (:branching-factor settings))
-                 ;; overflow tail
-                 (do
-                   (storage/store-impl! db (storage/storage-adapter db) false)
-                   (swap! *atom assoc
-                     :tx-tail        []
-                     :db-last-stored db))
-                 ;; just update tail
-                 (storage/store-tail db tx-tail')))))))
+    ;; Persistence is the Eve atom that holds the DB. storage/storage is
+    ;; always nil here (no separate IStorage adapter), so the vanilla
+    ;; tail-store side channel is gone.
     @*report))
 
 (defn transact!
@@ -187,16 +151,7 @@
 (defn reset-schema! [conn schema]
   {:pre [(conn? conn)]}
   (let [db (swap! conn db/with-schema schema)]
-    #?(:clj
-       (when-some [storage (storage/storage @conn)]
-         (storage/store-impl! db (storage/storage-adapter db) true)
-         (swap! (:atom conn) assoc
-           :tx-tail []
-           :db-last-stored db)) :cljr (when-some [storage (storage/storage @conn)]
-         (storage/store-impl! db (storage/storage-adapter db) true)
-         (swap! (:atom conn) assoc
-           :tx-tail []
-           :db-last-stored db)))
+    ;; Persistence is the Eve atom that holds the DB; no IStorage side channel.
     db))
 
 (defn listen!

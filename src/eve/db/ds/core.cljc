@@ -482,14 +482,10 @@
    If you specify `:storage` option, conn will be stored automatically after each transaction"
   conn/create-conn)
 
-#?(:clj
-   (def ^{:arglists '([storage] [storage opts])} restore-conn
-     "Lazy-load database from storage and make conn out of it.
-      Returns nil if there’s no database yet in storage"
-     conn/restore-conn) :cljr (def ^{:arglists '([storage] [storage opts])} restore-conn
-     "Lazy-load database from storage and make conn out of it.
-      Returns nil if there’s no database yet in storage"
-     conn/restore-conn))
+(def ^{:arglists '([storage] [storage opts])} restore-conn
+  "On Eve, a DB lives in an Eve atom; there is no separate IStorage.
+   Calling this raises that guidance."
+  conn/restore-conn)
 
 (def ^{:arglists '([conn tx-data] [conn tx-data tx-meta])} transact!
   "Applies transaction the underlying database value and atomically updates connection reference to point to the result of that transaction, new db value.
@@ -753,86 +749,33 @@
   util/squuid-time-millis)
 
 
-;; Storage
-#?(:clj
-   (def ^{:arglists '([db])} storage
-     "Returns IStorage used by DB instance"
-     storage/storage) :cljr (def ^{:arglists '([db])} storage
-     "Returns IStorage used by DB instance"
-     storage/storage))
+;; Storage. On Eve a DB lives in an Eve atom; these entry points exist
+;; so the vanilla names still resolve, and raise that guidance.
+(def ^{:arglists '([db])} storage
+  "On Eve, a DB carries no IStorage adapter; this always returns nil.
+   The DB's residence is whichever Eve atom holds it."
+  storage/storage)
 
-#?(:clj
-   (def ^{:arglists '([db] [db storage])} store
-     "Stores databases to provided storage. If database was created
-      with :storage option or restored from storage, use single-argument version.
-      
-      Subsequent stores are incremental, i.e. only newly added nodes will be actually stored.
-      
-      Storing already stored dbs into another storage is not supported (may change)."
-     storage/store) :cljr (def ^{:arglists '([db] [db storage])} store
-     "Stores databases to provided storage. If database was created
-      with :storage option or restored from storage, use single-argument version.
-      
-      Subsequent stores are incremental, i.e. only newly added nodes will be actually stored.
-      
-      Storing already stored dbs into another storage is not supported (may change)."
-     storage/store))
+(def ^{:arglists '([db] [db storage])} store
+  "On Eve, storing a DB is placing it in an Eve atom; this raises that guidance."
+  storage/store)
 
-#?(:clj 
-   (def ^{:arglists '([storage] [storage opts])} restore
-     "Lazy-loads database from storage. Ultra-fast, fetches the rest as it’s needed"
-     storage/restore) :cljr (def ^{:arglists '([storage] [storage opts])} restore
-     "Lazy-loads database from storage. Ultra-fast, fetches the rest as it’s needed"
-     storage/restore))
+(def ^{:arglists '([storage] [storage opts])} restore
+  "On Eve, a DB lives in an Eve atom; this raises that guidance."
+  storage/restore)
 
-#?(:clj
-   (defn addresses
-     "Returns all addresses in use by current db (as java.util.HashSet).
-      Anything that is not in the return set is safe to be deleted"
-     [& dbs]
-     (storage/addresses dbs)) :cljr (defn addresses
-     "Returns all addresses in use by current db (as java.util.HashSet).
-      Anything that is not in the return set is safe to be deleted"
-     [& dbs]
-     (storage/addresses dbs)))
+(defn addresses
+  "On Eve, a DB lives in an Eve atom; this raises that guidance."
+  [& dbs]
+  (storage/addresses dbs))
 
-#?(:clj
-   (def ^{:arglists '([storage])} collect-garbage
-     "Deletes all keys from storage that are not referenced by any of the currently alive db refs.
-      Has a side-effect of fully loading databases fully into memory, so, can be slow"
-     storage/collect-garbage) :cljr (def ^{:arglists '([storage])} collect-garbage
-     "Deletes all keys from storage that are not referenced by any of the currently alive db refs.
-      Has a side-effect of fully loading databases fully into memory, so, can be slow"
-     storage/collect-garbage))
+(def ^{:arglists '([storage])} collect-garbage
+  "On Eve, a DB lives in an Eve atom; this raises that guidance."
+  storage/collect-garbage)
 
-#?(:clj
-   (def ^{:arglists '([dir] [dir opts])} file-storage
-     "Default implementation that stores data in files in a dir.
-   
-   Options are:
-   
-   :freeze-fn :: (data)   -> String. A serialization function
-   :thaw-fn   :: (String) -> data. A deserialization function
-   :write-fn  :: (OutputStream data) -> void. Implement your own writer to FileOutputStream
-   :read-fn   :: (InputStream) -> Object. Implement your own reader from FileInputStream
-   :addr->filename-fn :: (UUID) -> String. Construct file name from address
-   :filename->addr-fn :: (String) -> UUID. Reconstruct address from file name
-   
-   All options are optional."
-     storage/file-storage) :cljr (def ^{:arglists '([dir] [dir opts])} file-storage
-     "Default implementation that stores data in files in a dir.
-   
-   Options are:
-   
-   :freeze-fn :: (data)   -> String. A serialization function
-   :thaw-fn   :: (String) -> data. A deserialization function
-   :write-fn  :: (OutputStream data) -> void. Implement your own writer to FileOutputStream
-   :read-fn   :: (InputStream) -> Object. Implement your own reader from FileInputStream
-   :addr->filename-fn :: (UUID) -> String. Construct file name from address
-   :filename->addr-fn :: (String) -> UUID. Reconstruct address from file name
-   
-   All options are optional."
-     storage/file-storage))
+(def ^{:arglists '([dir] [dir opts])} file-storage
+  "On Eve, a DB lives in an Eve atom; this raises that guidance."
+  storage/file-storage)
 
 (defn settings [db]
   (set/settings (:eavt db)))

@@ -26,6 +26,7 @@ After open-other batch 16 (portable ihash + tx-id?): **284** / **0**.
 After open-other batch 17 (portable db?): **283** / **0**.
 After open-other batch 18 (portable vpred / -search pred): **281** / **0**.
 After open-other batch 19 (portable seqable?): **276** / **0**.
+After open-other batch 20 (storage API through Eve atoms): **266** / **0**.
 
 Plain type sites (deftype/defrecord/defrecord-updatable that are not eve-deftype / eve.deftype/deftype) are **0**. Remaining `(deftype …)` forms in source are eve.deftype/deftype (LRU, Entity, AutoTempid, FilteredDB, ArrayRelation, CollRelation, SingletonRelation) or evicted through `def-eve-record` / `deftrecord`.
 
@@ -43,9 +44,9 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 6 | `eve/db/ds/conn.cljc` | 41 | `(if (instance? #?(:jank db/FilteredDB :clj FilteredDB :cljr FilteredDB :cljs db/` | KEPT | data: type test of FilteredDB in transact; should go through an Eve protocol, not instance? class-name glue |
 | 7 | `eve/db/ds/conn.cljc` | 45 | `(defn #?@(:jank [^db/DB db-with] :clj [^DB db-with] :cljr [^DB db-with] :cljs [^` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 8 | `eve/db/ds/conn.cljc` | 53 | `#?(:clj  (instance? clojure.lang.IDeref conn) :cljr (instance? clojure.lang.IDer` | KEPT | data: conn? tests a connection value via host IDeref; should be an Eve protocol/conn? rather than host IDeref |
-| 9 | `eve/db/ds/conn.cljc` | 87 | `#?(:clj` | KEPT | memory: conn restore-conn is vanilla storage I/O; on Eve, persistence is an Eve atom (see eve.db.ds.storage docstring) |
-| 10 | `eve/db/ds/conn.cljc` | 114 | `#?(:clj` | KEPT | memory: transact! stores a tail through vanilla storage; on Eve, persistence is an Eve atom |
-| 11 | `eve/db/ds/conn.cljc` | 189 | `#?(:clj` | KEPT | memory: reset-schema! stores through vanilla storage; on Eve, persistence is an Eve atom |
+| 9 | `eve/db/ds/conn.cljc` | 87 | `#?(:clj` | REMOVED | storage is an Eve atom; dropped vanilla IStorage host wrappers / dead tail-store side channel |
+| 10 | `eve/db/ds/conn.cljc` | 114 | `#?(:clj` | REMOVED | storage is an Eve atom; dropped vanilla IStorage host wrappers / dead tail-store side channel |
+| 11 | `eve/db/ds/conn.cljc` | 189 | `#?(:clj` | REMOVED | storage is an Eve atom; dropped vanilla IStorage host wrappers / dead tail-store side channel |
 | 12 | `eve/db/ds/core.cljc` | 9 | `#?(:cljs [cljs.reader :as edn]` | KEPT | glue: host edn reader libspec (cljs.reader vs clojure.edn) |
 | 13 | `eve/db/ds/core.cljc` | 16 | `#?(:clj [eve.db.ds.pprint])` | KEPT | glue: clj-only pprint require |
 | 14 | `eve/db/ds/core.cljc` | 24 | `#?(:clj` | KEPT | glue: host :import of library or JVM types |
@@ -64,19 +65,19 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 27 | `eve/db/ds/core.cljc` | 293 | `(def ^{:arglists '([db tx-data]) :tag #?(:jank db/DB :clj DB :cljr DB :cljs db/D` | REMOVED | dropped host :tag metadata; Entity/DB return hints were reader branches only |
 | 28 | `eve/db/ds/core.cljc` | 297 | `(defn #?@(:jank [^db/DB with-schema] :clj [^DB with-schema] :cljr [^DB with-sche` | REMOVED | dropped host type hints on defn name/args; unhinted clojure.core defn |
 | 29 | `eve/db/ds/core.cljc` | 381 | `(defn #?@(:jank [^db/Datom find-datom] :clj [^Datom find-datom] :cljr [^Datom fi` | REMOVED | dropped host type hints on defn name/args; unhinted clojure.core defn |
-| 30 | `eve/db/ds/core.cljc` | 488 | `#?(:clj` | KEPT | memory: core restore-conn wrapper around vanilla storage; should be Eve atoms |
+| 30 | `eve/db/ds/core.cljc` | 488 | `#?(:clj` | REMOVED | storage is an Eve atom; dropped vanilla IStorage host wrappers / dead tail-store side channel |
 | 31 | `eve/db/ds/core.cljc` | 615 | `#?(:cljs` | KEPT | glue: cljs EDN tag-parser registration for data-readers |
 | 32 | `eve/db/ds/core.cljc` | 628 | `#?(:lpy` | KEPT | glue: basilisp programmatic *data-readers* merge (file route runs too early) |
 | 33 | `eve/db/ds/core.cljc` | 656 | `(defn #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db/DB db] :clje` | REMOVED | dropped host type hints on defn name/args; unhinted clojure.core defn |
 | 34 | `eve/db/ds/core.cljc` | 672 | `#?(:cljs` | KEPT | threading: transact realized-future reify of host IDeref/IPending; jank already uses eve.host-completion — should go through Eve, not glue |
 | 35 | `eve/db/ds/core.cljc` | 714 | `#?(:clje` | KEPT | threading: clje future-call is a synchronous IDeref reify; should go through Eve host-completion |
 | 36 | `eve/db/ds/core.cljc` | 723 | `#?(:cljs` | KEPT | threading: cljs future-call uses js/setTimeout plus IDeref reify; should go through Eve host-completion |
-| 37 | `eve/db/ds/core.cljc` | 760 | `#?(:clj` | KEPT | memory: core storage accessor is vanilla IStorage; should be Eve atoms |
-| 38 | `eve/db/ds/core.cljc` | 767 | `#?(:clj` | KEPT | memory: core store! wrapper around vanilla storage; should be Eve atoms |
-| 39 | `eve/db/ds/core.cljc` | 784 | `#?(:clj` | KEPT | memory: core restore wrapper around vanilla storage; should be Eve atoms |
-| 40 | `eve/db/ds/core.cljc` | 791 | `#?(:clj` | KEPT | memory: core addresses wrapper around vanilla storage; should be Eve atoms |
-| 41 | `eve/db/ds/core.cljc` | 802 | `#?(:clj` | KEPT | memory: core collect-garbage wrapper around vanilla storage; should be Eve atoms |
-| 42 | `eve/db/ds/core.cljc` | 811 | `#?(:clj` | KEPT | memory: core file-storage constructor is vanilla filesystem I/O; should be Eve atoms |
+| 37 | `eve/db/ds/core.cljc` | 760 | `#?(:clj` | REMOVED | storage is an Eve atom; dropped vanilla IStorage host wrappers / dead tail-store side channel |
+| 38 | `eve/db/ds/core.cljc` | 767 | `#?(:clj` | REMOVED | storage is an Eve atom; dropped vanilla IStorage host wrappers / dead tail-store side channel |
+| 39 | `eve/db/ds/core.cljc` | 784 | `#?(:clj` | REMOVED | storage is an Eve atom; dropped vanilla IStorage host wrappers / dead tail-store side channel |
+| 40 | `eve/db/ds/core.cljc` | 791 | `#?(:clj` | REMOVED | storage is an Eve atom; dropped vanilla IStorage host wrappers / dead tail-store side channel |
+| 41 | `eve/db/ds/core.cljc` | 802 | `#?(:clj` | REMOVED | storage is an Eve atom; dropped vanilla IStorage host wrappers / dead tail-store side channel |
+| 42 | `eve/db/ds/core.cljc` | 811 | `#?(:clj` | REMOVED | storage is an Eve atom; dropped vanilla IStorage host wrappers / dead tail-store side channel |
 | 43 | `eve/db/ds/db.cljc` | 3 | `#?(:cljs [goog.array :as garray])` | KEPT | glue: cljs goog.array require |
 | 44 | `eve/db/ds/db.cljc` | 6 | `#?(:clj [eve.db.ds.inline :refer [update]])` | KEPT | glue: clj-only inline/update require |
 | 45 | `eve/db/ds/db.cljc` | 8 | `#?(:clje [eve.host :refer [transient persistent! conj! dissoc! long volatile!]])` | KEPT | glue: clje eve.host :refer for host primitives |

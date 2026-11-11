@@ -170,3 +170,7 @@ Folded `vpred` (#135) to one portable `defn` using `=` (same string?/int? guards
 ## Open-other batch 19 — portable seqable?
 
 Folded `seqable?` (#51–#55) to one portable `defn`: not a string, and `nil?` / `seq?` / `coll?` / `arrays/array?`. Does not call `clojure.core/seqable?` (basilisp has the name only as `basilisp.core/seqable?`). No vm rows touched. Counts **281** → **276** / **0**. Four-host only-core + lru-portable vs `:dev` Eve `7840ffe529`: JVM, bb, nbb, basilisp all PASS.
+
+## Open-other batch 20 — storage API through Eve atoms
+
+Un-branched `restore-conn` / `storage` / `store` / `restore` / `addresses` / `collect-garbage` / `file-storage` to one portable body each (they raise the Eve-atom guidance). Deleted the dead `#?(:clj/:cljr)` tail-store side channel in `-transact!` and `reset-schema!` (`storage/storage` is always nil). No vm rows touched. Counts **276** → **266** / **0**. Four-host only-core + lru-portable vs `:dev` Eve `7840ffe529`: JVM, bb, nbb, basilisp all PASS.
