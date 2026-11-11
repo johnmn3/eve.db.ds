@@ -2,6 +2,7 @@
   (:refer-clojure :exclude [deftype])
   (:require
     [clojure.set :as set]
+    [eve.core :as e]
     [eve.deftype :refer [deftype]]
     [eve.db.ds.built-ins :as built-ins]
     [eve.db.ds.core :as d]
@@ -9,27 +10,31 @@
     [eve.db.ds.query :as dq]
     [eve.db.ds.lru :as lru]
     [me.tonsky.persistent-sorted-set.arrays :as da]
-    ;; PORT DELTA (F-NBB-MACROS round): as in eve.db.ds.conn — no
-    ;; :cljs type refers; parser types are named qualified (dp/...)
-    ;; at their uses in this file
+    ;; Parser AST types have no var at dp/BindScalar (eve.deftype
+    ;; interned the class, not the var). Type tokens below use
+    ;; (type (dp/->Type ...)); factories stay qualified.
     [eve.db.ds.parser :as dp]
-    [eve.db.ds.util :as util]
-    ;; UNIT3 (#56): the relation types are ONE eve.deftype/deftype each.
-    [eve.deftype :refer [deftype]])
-  #?(:clj
-     (:import 
-       [eve.db.ds.parser
-        BindColl BindIgnore BindScalar BindTuple
-        Constant DefaultSrc Pattern RulesVar SrcVar Variable
-        Not Or And Predicate PlainSymbol]
-       [clojure.lang     IReduceInit Counted]
-       [eve.db.ds.db  Datom]) :cljr (:import 
-       [eve.db.ds.parser
-        BindColl BindIgnore BindScalar BindTuple
-        Constant DefaultSrc Pattern RulesVar SrcVar Variable
-        Not Or And Predicate PlainSymbol]
-       [clojure.lang     IReduceInit Counted]
-       [eve.db.ds.db  Datom])))
+    [eve.db.ds.util :as util]))
+
+;; Type tokens for parser AST types. eve.deftype interned the class
+;; but not a var at eve.db.ds.parser/BindScalar, so instance? cannot
+;; use dp/BindScalar on the JVM. (type (factory ...)) is the class
+;; on JVM/CLR, the constructor on cljs/nbb, and bb's stamped :type
+;; token (host_completion rewrites type/instance? for SciMap).
+(def BindIgnore  (type (dp/->BindIgnore)))
+(def BindScalar  (type (dp/->BindScalar nil)))
+(def BindColl    (type (dp/->BindColl nil)))
+(def BindTuple   (type (dp/->BindTuple nil)))
+(def Variable    (type (dp/->Variable nil)))
+(def SrcVar      (type (dp/->SrcVar nil)))
+(def DefaultSrc  (type (dp/->DefaultSrc)))
+(def Constant    (type (dp/->Constant nil)))
+(def PlainSymbol (type (dp/->PlainSymbol nil)))
+(def Pattern     (type (dp/->Pattern nil nil)))
+(def Not         (type (dp/->Not nil nil nil)))
+(def Or          (type (dp/->Or nil nil nil)))
+(def And         (type (dp/->And nil)))
+(def Predicate   (type (dp/->Predicate nil nil)))
 
 (declare resolve-clauses collect-rel-xf collect-to -resolve-clause)
 
@@ -272,16 +277,11 @@
 
 ;;; ArrayRelation
 
-(defn pr-rel [rel ^java.io.Writer w]
-  (doto w
-    (.write "#")
-    (.write #?(:clj  (.getSimpleName ^Class (class rel)) :cljr (.getSimpleName ^Class (class rel))
-               :cljs (str (type rel))))
-    (.write "{:symbols ")
-    (.write (pr-str (-symbols rel)))
-    (.write ", :coll ")
-    (.write (pr-str (persistent! (-fold rel #(conj! %1 (seq %2)) (transient [])))))
-    (.write "}")))
+(defn- pr-rel-str [type-name rel]
+  (str "#" type-name
+       "{:symbols " (pr-str (-symbols rel))
+       ", :coll " (pr-str (persistent! (-fold rel #(conj! %1 (seq %2)) (transient []))))
+       "}"))
 
 (deftype ArrayRelation [offset-map coll]
   clojure.lang.ILookup
@@ -308,12 +308,12 @@
   (-union [_ rel]
     (assert (instance? ArrayRelation rel))
     (assert (= offset-map (.-offset-map rel)))
-    (ArrayRelation. offset-map (concat coll (.-coll rel)))))
-
-#?(:clj
-   (defmethod print-method ArrayRelation [rel w]
-     (pr-rel rel w)) :cljr (defmethod print-method ArrayRelation [rel w]
-     (pr-rel rel w)))
+    (ArrayRelation. offset-map (concat coll (.-coll rel))))
+  Object
+  (toString [rel] (pr-rel-str "ArrayRelation" rel))
+  IPrintWithWriter
+  (-pr-writer [rel writer _opts]
+    (e/-write writer (pr-rel-str "ArrayRelation" rel))))
 
 (defn ->ArrayRelation [offset-map coll]
   (ArrayRelation. offset-map coll))
@@ -349,7 +349,12 @@
   (-union [_ rel]
     (assert (instance? CollRelation rel))
     (assert (= offset-map (.-offset-map rel)))
-    (CollRelation. offset-map (concat coll (.-coll rel)))))
+    (CollRelation. offset-map (concat coll (.-coll rel))))
+  Object
+  (toString [rel] (pr-rel-str "CollRelation" rel))
+  IPrintWithWriter
+  (-pr-writer [rel writer _opts]
+    (e/-write writer (pr-rel-str "CollRelation" rel))))
 
 (defn ->CollRelation [offset-map coll]
   (CollRelation. offset-map coll))
@@ -358,9 +363,9 @@
   (let [offset-map (reduce-kv
                      (fn [acc e i]
                        (cond
-                         (instance? #?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/BindScalar) e)
+                         (instance? BindScalar e)
                          (assoc acc (get-in e [:variable :symbol]) i)
-                         (instance? #?(:jank dp/Variable :clj Variable :cljr Variable :cljs dp/Variable) e)
+                         (instance? Variable e)
                          (assoc acc (:symbol e) i)
                          (and (symbol? e)
                            (not= '_ e))
@@ -370,10 +375,6 @@
                      (zipmap symbols (range)))]
     (->CollRelation offset-map coll)))
 
-#?(:clj
-   (defmethod print-method CollRelation [rel w]
-     (pr-rel rel w)) :cljr (defmethod print-method CollRelation [rel w]
-     (pr-rel rel w)))
 
 
 ;;; ProdRelation
@@ -421,12 +422,19 @@
 
 (deftype SingletonRelation []
   IRelation
+  ;; basilisp requires every protocol method at compile time. The
+  ;; original type only named the methods its call sites used; the
+  ;; four stubs keep the empty-symbol singleton semantics.
+  (-project    [_ _] (SingletonRelation.))
+  (-alter-coll [_ _] (SingletonRelation.))
   (-symbols    [_] [])
   (-arity      [_] 0)
   (-fold       [_ f init] (f init (to-array [])))
   (-size       [_] 1)
+  (-getter     [_ _] (fn [_]))
   (-indexes    [_ _] (to-array []))
-  (-copy-tuple [_ _ _ _ _]))
+  (-copy-tuple [_ _ _ _ _])
+  (-union      [_ _] (SingletonRelation.)))
 
 (defn ->SingletonRelation []
   (SingletonRelation.))
@@ -532,16 +540,16 @@
 (defn- bind! [tuples binding source indexes]
   (condp instance? binding
 
-    #?(:jank dp/BindIgnore :clj BindIgnore :cljr BindIgnore :cljs dp/BindIgnore)
+    BindIgnore
     tuples
 
-    #?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/BindScalar)
+    BindScalar
     (let [symbol (get-in binding [:variable :symbol])
           idx    (get indexes symbol)]
       (run! #(da/aset % idx source) tuples)
       tuples)
 
-    #?(:jank dp/BindColl :clj BindColl :cljr BindColl :cljs dp/BindColl)
+    BindColl
     (if (not (db/seqable? source))
       (util/raise "Cannot bind value " source " to collection " (dp/source binding)
         {:error :query/binding, :value source, :binding (dp/source binding)})
@@ -555,7 +563,7 @@
               (map da/aclone))
             source))))
 
-    #?(:jank dp/BindTuple :clj BindTuple :cljr BindTuple :cljs dp/BindTuple)
+    BindTuple
     (let [bindings (:bindings binding)]
       (when-not (db/seqable? source)
         (util/raise "Cannot bind value " source " to tuple " (dp/source binding)
@@ -586,10 +594,10 @@
 
 (defn- resolve-in [context [binding value]]
   (cond
-    (and (instance? #?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/BindScalar) binding)
-      (instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar) (:variable binding)))
+    (and (instance? BindScalar binding)
+      (instance? SrcVar (:variable binding)))
     (update-in context [:sources] assoc (get-in binding [:variable :symbol]) value)
-    ;;     (and (instance? #?(:jank dp/BindScalar :clj BindScalar :cljs dp/BindScalar) binding)
+    ;;     (and (instance? #?(:jank BindScalar :clj BindScalar :cljs BindScalar) binding)
     ;;          (instance? #?(:jank dp/RulesVar :clj RulesVar :cljs dp/RulesVar) (:variable binding)))
     ;;       (assoc context :rules (parse-rules value))
     :else
@@ -610,8 +618,8 @@
 
 (defn get-source [context source]
   (let [symbol (cond
-                 (instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar) source)     (:symbol source)
-                 (instance? #?(:jank dp/DefaultSrc :clj DefaultSrc :cljr DefaultSrc :cljs dp/DefaultSrc) source) (:default-source-symbol context)
+                 (instance? SrcVar source)     (:symbol source)
+                 (instance? DefaultSrc source) (:default-source-symbol context)
                  :else (util/raise "Source expected, got " source))]
     (or (get (:sources context) symbol)
       (util/raise "Source " symbol " is not defined"
@@ -623,7 +631,7 @@
 (defn resolve-pattern-db [db clause]
   ;; TODO optimize with bound attrs min/max values here
   (let [pattern        (:pattern clause)
-        search-pattern (mapv #(when (instance? #?(:jank dp/Constant :clj Constant :cljr Constant :cljs dp/Constant) %) (:value %)) pattern)
+        search-pattern (mapv #(when (instance? Constant %) (:value %)) pattern)
         datoms         (db/-search db search-pattern)]
     (coll-rel (:pattern clause) datoms)))
 
@@ -647,14 +655,14 @@
     (util/raise "Cannot match by pattern " (dp/source clause) " because source is not a collection: " coll
       {:error :query/where, :value coll, :binding (dp/source clause)}))
   (let [pattern (:pattern clause)
-        idxs    (->> (map #(when (instance? #?(:jank dp/Constant :clj Constant :cljr Constant :cljs dp/Constant) %1) [%2 (:value %1)]) pattern (range))
+        idxs    (->> (map #(when (instance? Constant %1) [%2 (:value %1)]) pattern (range))
                   (remove nil?)
                   (into {}))
         data    (filter #(matches-pattern? idxs %) coll)]
     (coll-rel pattern data)))
 
 (defn clause-syms [clause]
-  (into #{} (map :symbol) (dp/collect #(instance? #?(:jank dp/Variable :clj Variable :cljr Variable :cljs dp/Variable) %) clause #{})))
+  (into #{} (map :symbol) (dp/collect #(instance? Variable %) clause #{})))
 
 (defn substitute-constants [clause context]
   (let [syms   (clause-syms clause)
@@ -663,13 +671,13 @@
       (dp/postwalk
         clause
         (fn [form]
-          (if (instance? #?(:jank dp/Variable :clj Variable :cljr Variable :cljs dp/Variable) form)
+          (if (instance? Variable form)
             (let [sym (:symbol form)]
               (if-let [subs (get (:consts context) (:symbol form))]
                 ;; PORT DELTA (F-NBB-MACROS round): as in
                 ;; eve.db.ds.core's FilteredDB — class constructor
                 ;; on :clj, factory var on :cljs
-                #?(:clj (dp/->Constant subs) :cljr (dp/->Constant subs) :cljs (dp/->Constant subs))
+                (dp/->Constant subs)
                 form))
             form)))
       clause)))
@@ -771,7 +779,7 @@
 
 (defn upd-default-source [context clause]
   (let [source (:source clause)]
-    (if (instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar) source)
+    (if (instance? SrcVar source)
       (assoc context :default-source-symbol (:symbol source))
       context)))
 
@@ -824,20 +832,20 @@
     (doseq [[arg i] (zip args (range))
             :let [sym (:symbol arg)]]
       (cond
-        (instance? #?(:jank dp/Variable :clj Variable :cljr Variable :cljs dp/Variable) arg)
+        (instance? Variable arg)
         (when (contains? consts sym)
           (da/aset target i (get consts sym)))
-        (instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar) arg)
+        (instance? SrcVar arg)
         (if (contains? sources sym)
           (da/aset target i (get sources sym))
           (throw (ex-info (str "Unbound source variable: " sym " in " form)
                    { :error :query/where, :form form, :var sym})))
-        (instance? #?(:jank dp/Constant :clj Constant :cljr Constant :cljs dp/Constant) arg)
+        (instance? Constant arg)
         (da/aset target i (:value arg))))))
 
 (defn get-f [context fun form]
   (let [sym (:symbol fun)]
-    (if (instance? #?(:jank dp/PlainSymbol :clj PlainSymbol :cljr PlainSymbol :cljs dp/PlainSymbol) fun)
+    (if (instance? PlainSymbol fun)
       (or (get built-ins/query-fns sym)
         (throw (ex-info (str "Unknown built-in " sym " in " form)
                  {:error :query/where, :form form, :var sym})))
@@ -853,7 +861,7 @@
         _         (collect-args! context args args-arr form)
         consts    (:consts context)
         sym+idx   (for [[arg i] (zip args (range))
-                        :when   (instance? #?(:jank dp/Variable :clj Variable :cljr Variable :cljs dp/Variable) arg)
+                        :when   (instance? Variable arg)
                         :let    [sym (:symbol arg)]
                         :when   (not (contains? consts sym))]
                     [sym i])
@@ -892,15 +900,15 @@
 
 (defn -resolve-clause [clause context]
   (cond
-    (instance? #?(:jank dp/Pattern :clj Pattern :cljr Pattern :cljs dp/Pattern) clause)
+    (instance? Pattern clause)
     (resolve-pattern context clause)
-    (instance? #?(:jank dp/Not :clj Not :cljr Not :cljs dp/Not) clause)
+    (instance? Not clause)
     (resolve-not context clause)
-    (instance? #?(:jank dp/Or :clj Or :cljr Or :cljs dp/Or) clause)
+    (instance? Or clause)
     (resolve-or context clause)
-    (instance? #?(:jank dp/And :clj And :cljr And :cljs dp/And) clause)
+    (instance? And clause)
     (resolve-clauses context (:clauses clause))
-    (instance? #?(:jank dp/Predicate :clj Predicate :cljr Predicate :cljs dp/Predicate) clause)
+    (instance? Predicate clause)
     (resolve-predicate context clause)
     :else
     (throw (ex-info (str "No -resolve-clause impl for " (pr-str (type clause))) {:clause clause}))))
