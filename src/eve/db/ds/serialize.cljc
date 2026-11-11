@@ -38,9 +38,9 @@
 ;; have no infinity/NaN term, so on :clje these are nil and the
 ;; write-side tests below are seat-conditionalized to false (a clje
 ;; db cannot contain an infinite value in the first place).
-(def ^:private pos-inf #?(:jank (/ 1.0 0.0) :clj Double/POSITIVE_INFINITY :cljr Double/PositiveInfinity :cljs js/Infinity :clje nil))
-(def ^:private neg-inf #?(:jank (/ -1.0 0.0) :clj Double/NEGATIVE_INFINITY :cljr Double/NegativeInfinity :cljs (- js/Infinity) :clje nil))
-(def ^:private nan-val #?(:jank (/ 0.0 0.0) :clj Double/NaN :cljr Double/NaN :cljs js/NaN :clje nil))
+(def ^:private pos-inf #?(:jank (/ 1.0 0.0) :clj Double/POSITIVE_INFINITY :cljr Double/PositiveInfinity :cljs js/Infinity :clje nil :lpy ##Inf))
+(def ^:private neg-inf #?(:jank (/ -1.0 0.0) :clj Double/NEGATIVE_INFINITY :cljr Double/NegativeInfinity :cljs (- js/Infinity) :clje nil :lpy ##-Inf))
+(def ^:private nan-val #?(:jank (/ 0.0 0.0) :clj Double/NaN :cljr Double/NaN :cljs js/NaN :clje nil :lpy ##NaN))
 
 (defn- if-cljs [env then else]
   (if (:ns env) then else))
@@ -59,6 +59,16 @@
        (vec args)))
    ;; PORT DELTA (F-NBB-MACROS): visible to the :cljs macro read
    :cljs
+(defmacro array
+     "Platform-native array representation (java.util.List on JVM, Array on JS)"
+     [& args]
+     (if-cljs &env
+       (list* 'js* (str "[" (str/join "," (repeat (count args) "~{}")) "]") args)
+       (vec args)))
+   ;; PORT DELTA (F-LPY-SERIALIZE): visible to the :lpy macro read;
+   ;; basilisp is a macro seat like :clj, and the expansion here is
+   ;; the non-cljs one (a vector)
+   :lpy
 (defmacro array
      "Platform-native array representation (java.util.List on JVM, Array on JS)"
      [& args]
@@ -93,6 +103,14 @@
      [& args]
      (if-cljs &env
        (list* 'js* (str "{" (str/join "," (repeat (/ (count args) 2) "~{}:~{}")) "}") args)
+       `(array-map ~@args)))
+   ;; PORT DELTA (F-LPY-SERIALIZE): visible to the :lpy macro read
+   :lpy
+(defmacro dict
+     "Platform-native dictionary representation (java.util.Map on JVM, Object on JS)"
+     [& args]
+     (if-cljs &env
+       (list* 'js* (str "{" (str/join "," (repeat (/ (count args) 2) "~{}:~{}")) "}") args)
        `(array-map ~@args))))
 
 ;; PORT DELTA (F-CLJE-SERIALIZE): :clje twin of dict (array-map branch)
@@ -102,19 +120,25 @@
      [& args]
      `(array-map ~@args)))
 
+;; PORT DELTA (F-LPY-SERIALIZE): on this seat the array macro's
+;; expansion is a vector (as on :clj) and dict an array-map, so the
+;; accessors are the portable ones and amap builds vectors.
 (defn- array-get [d i]
   #?(:clj  (.get ^java.util.List d (int i)) :cljr (nth d i)
      :cljs (if (cljs.core/array? d) (arrays/aget d i) (nth d i))
+     :lpy  (nth d i)
      :clje (nth d i)))
 
 (defn- dict-get [d k]
   #?(:clj  (.get ^java.util.Map d k) :cljr (get d k)
      :cljs (if (map? d) (d k) (arrays/aget d k))
+     :lpy  (get d k)
      :clje (get d k)))
 
 (defn- array? [a]
   #?(:clj  (instance? java.util.List a) :cljr (instance? System.Collections.IList a)
      :cljs (or (cljs.core/array? a) (vector? a))
+     :lpy  (vector? a)
      :clje (vector? a)))
 
 (defn- amap [f xs]
@@ -128,6 +152,8 @@
      (let [arr (js/Array. (count xs))]
        (reduce (fn [idx x] (arrays/aset arr idx (f x)) (inc idx)) 0 xs)
        arr)
+     :lpy
+     (reduce (fn [arr x] (conj arr (f x))) [] xs)
      :clje
      (vec (map f xs))))
 
@@ -142,12 +168,14 @@
      (let [arr (js/Array. (count xs))]
        (reduce (fn [idx x] (arrays/aset arr idx (f idx x)) (inc idx)) 0 xs)
        arr)
+     :lpy
+     (reduce (fn [arr x] (conj arr (f (count arr) x))) [] xs)
      :clje
      (vec (map-indexed f xs))))
 
 (defn- attr-comparator
   "Looks for a datom with attribute exactly bigger than the given one"
-  [#?@(:jank [^db/Datom d1] :clj [^Datom d1] :cljr [^Datom d1] :cljs [^db/Datom d1] :clje [d1] :lpy [d1]) #?@(:jank [^db/Datom d2] :clj [^Datom d2] :cljr [^Datom d2] :cljs [^db/Datom d2] :clje [d2])]
+  [#?@(:jank [^db/Datom d1] :clj [^Datom d1] :cljr [^Datom d1] :cljs [^db/Datom d1] :clje [d1] :lpy [d1]) #?@(:jank [^db/Datom d2] :clj [^Datom d2] :cljr [^Datom d2] :cljs [^db/Datom d2] :clje [d2] :lpy [d2])]
   (cond 
     (nil? (.-a d2)) -1
     (<= (compare (.-a d1) (.-a d2)) 0) -1
@@ -227,7 +255,7 @@
                         (cond
                           #?(:clje false :default (== pos-inf v)) (array marker-inf)
                           #?(:clje false :default (== neg-inf v)) (array marker-minus-inf)
-                          #?(:jank (not (== v v)) :clj (Double/isNaN v) :cljr (Double/IsNaN v) :cljs (js/isNaN v) :clje (not (== v v))) (array marker-nan)
+                          #?(:jank (not (== v v)) :clj (Double/isNaN v) :cljr (Double/IsNaN v) :cljs (js/isNaN v) :clje (not (== v v)) :lpy (not= v v)) (array marker-nan)
                           :else v)
 
                         (boolean? v) v
@@ -288,6 +316,11 @@
    ;; PORT DELTA (F-CLJE-SERIALIZE): no Object lock on BEAM; the
    ;; :cljs (unlocked) shape
    :clje
+   (defn serializable
+     ([db] (serializable-impl db {}))
+     ([db opts] (serializable-impl db opts)))
+   ;; PORT DELTA (F-LPY-SERIALIZE): as :cljs (no lock object)
+   :lpy
    (defn serializable
      ([db] (serializable-impl db {}))
      ([db opts] (serializable-impl db opts))))

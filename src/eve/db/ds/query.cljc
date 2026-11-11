@@ -175,6 +175,22 @@
                         (da/make-array (+ l1 l2)) (range l1))
            res  (reduce (fn [r i] (da/aset r (+ l1 i) (pick t2 idxs2 i)))
                         res (range l2))]
+       res))
+   ;; PORT DELTA (F-LPY-SPLICE): no :lpy arm -- join-tuples was
+   ;; unresolvable on basilisp. The :lpy body is the :clj body
+   ;; verbatim (this port's tuples are Eve arrays on both seats).
+   :lpy
+   (defn join-tuples [t1 idxs1
+                      t2 idxs2]
+     (let [l1   (da/alength idxs1)
+           l2   (da/alength idxs2)
+           pick (fn [t idxs i]
+                  (let [idx (da/aget idxs i)]
+                    (if (da/array? t) (da/aget t idx) (get t idx))))
+           res  (reduce (fn [r i] (da/aset r i (pick t1 idxs1 i)))
+                        (da/make-array (+ l1 l2)) (range l1))
+           res  (reduce (fn [r i] (da/aset r (+ l1 i) (pick t2 idxs2 i)))
+                        res (range l2))]
        res)))
 
 ;; PORT DELTA (F-CLJE-JOIN-TUPLES): the :clj arm is already written
@@ -274,15 +290,15 @@
   (in->rel [binding value]))
 
 (extend-protocol IBinding
-  #?(:jank dp/BindIgnore :clj BindIgnore :cljr BindIgnore :cljs dp/BindIgnore :clje dp/BindIgnore)
+  #?(:jank dp/BindIgnore :clj BindIgnore :cljr BindIgnore :cljs dp/BindIgnore :clje dp/BindIgnore :lpy dp/BindIgnore)
   (in->rel [_ _]
     (prod-rel))
   
-  #?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/BindScalar :clje dp/BindScalar)
+  #?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/BindScalar :clje dp/BindScalar :lpy dp/BindScalar)
   (in->rel [binding value]
     (Relation. {(get-in binding [:variable :symbol]) 0} [(into-array [value])]))
   
-  #?(:jank dp/BindColl :clj BindColl :cljr BindColl :cljs dp/BindColl :clje dp/BindColl)
+  #?(:jank dp/BindColl :clj BindColl :cljr BindColl :cljs dp/BindColl :clje dp/BindColl :lpy dp/BindColl)
   (in->rel [binding coll]
     (cond
       (not (db/seqable? coll))
@@ -295,7 +311,7 @@
         (map #(in->rel (:binding binding) %))
         (reduce sum-rel))))
   
-  #?(:jank dp/BindTuple :clj BindTuple :cljr BindTuple :cljs dp/BindTuple :clje dp/BindTuple)
+  #?(:jank dp/BindTuple :clj BindTuple :cljr BindTuple :cljs dp/BindTuple :clje dp/BindTuple :lpy dp/BindTuple)
   (in->rel [binding coll]
     (cond
       (not (db/seqable? coll))
@@ -310,11 +326,11 @@
 
 (defn resolve-in [context [binding value]]
   (cond
-    (and (instance? #?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/BindScalar :clje dp/BindScalar) binding)
-      (instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar :clje dp/SrcVar) (:variable binding)))
+    (and (instance? #?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/BindScalar :clje dp/BindScalar :lpy dp/BindScalar) binding)
+      (instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar :clje dp/SrcVar :lpy dp/SrcVar) (:variable binding)))
     (update context :sources assoc (get-in binding [:variable :symbol]) value)
-    (and (instance? #?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/BindScalar :clje dp/BindScalar) binding)
-      (instance? #?(:jank dp/RulesVar :clj RulesVar :cljr RulesVar :cljs dp/RulesVar :clje dp/RulesVar) (:variable binding)))
+    (and (instance? #?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/BindScalar :clje dp/BindScalar :lpy dp/BindScalar) binding)
+      (instance? #?(:jank dp/RulesVar :clj RulesVar :cljr RulesVar :cljs dp/RulesVar :clje dp/RulesVar :lpy dp/RulesVar) (:variable binding)))
     (assoc context :rules (parse-rules value))
     :else
     (update context :rels conj (in->rel binding value))))
@@ -353,6 +369,7 @@
           (fn contained-int-getter-fn [tuple]
             (let [eid #?(:cljs (tuple-get tuple idx)
                          :clj (da/aget tuple idx) :cljr (da/aget tuple idx)
+                         :lpy (da/aget tuple idx)
                          :clje (da/aget tuple idx))]
               (cond
                 (number? eid)     eid ;; quick path to avoid fn call
@@ -366,6 +383,7 @@
                        ;; PORT DELTA (F-CLJE-GETTER-VALAT): see the
                        ;; plain getter below -- a non-int idx here is
                        ;; a datom component name, read via ILookup
+                       :lpy (get tuple idx)
                        :clje (get tuple idx))]
             (cond
               (number? eid)     eid ;; quick path to avoid fn call
@@ -377,6 +395,7 @@
           (fn int-getter [tuple]
             #?(:cljs (tuple-get tuple idx)
                :clj (da/aget tuple idx) :cljr (da/aget tuple idx)
+                         :lpy (da/aget tuple idx)
                :clje (da/aget tuple idx))))
         ;; If the index is not an int?, the target can never be an array
         (fn getter [tuple]
@@ -392,6 +411,7 @@
           ;; read, as :clj does.
           #?(:cljs (tuple-get tuple idx)
              :clj (.valAt ^ILookup tuple idx) :cljr (.valAt ^ILookup tuple idx)
+             :lpy (get tuple idx)
              :clje (get tuple idx)))))))
 
 (defn tuple-key-fn
@@ -404,6 +424,12 @@
       ;; (the :clj seat's result is a vector too)
       #?(:clje (let [getters (mapv #(getter-fn attrs %) common-attrs)]
                  (fn [tuple] (mapv #(% tuple) getters)))
+         ;; PORT DELTA (F-LPY-SPLICE): the :lpy arm keys a tuple by the
+         ;; vector of its common attrs' values, built functionally —
+         ;; this port's arrays are Eve vectors (da/aset returns a new
+         ;; array), so the JVM in-place getters array cannot transplant.
+         :lpy (let [getters (mapv #(getter-fn attrs %) common-attrs)]
+                (fn [tuple] (mapv #(% tuple) getters)))
          :default
          (let [^objects getters-arr #?(:clj (into-array Object common-attrs) :cljr (into-array Object common-attrs)
                                        :cljs (into-array common-attrs))]
@@ -475,7 +501,7 @@
                         tuples2
                         (reduce (fn outer [acc tuple2]
                                   (let [key (key-fn2 tuple2)]
-                                    (if-some [tuples1 #?(:clj (hash key) :cljr (hash key) :cljs (get hash key) :clje (get hash key))]
+                                    (if-some [tuples1 #?(:clj (hash key) :cljr (hash key) :cljs (get hash key) :clje (get hash key) :lpy (get hash key))]
                                       (reduce (fn inner [acc tuple1]
                                                 (conj! acc (join-tuples tuple1 keep-idxs1 tuple2 keep-idxs2)))
                                         acc tuples1)
@@ -504,7 +530,7 @@
       (when-some [tuple (first (:tuples rel))]
         (when (nil? (fnext (:tuples rel)))
           (let [idx (get (:attrs rel) pattern-el)]
-            (#?(:cljs tuple-get :clj get :cljr get :clje da/aget) tuple idx)))))))
+            (#?(:cljs tuple-get :clj get :cljr get :clje da/aget :lpy get) tuple idx)))))))
 
 (defn substitute-constants [context pattern]
   (mapv #(or (substitute-constant context %) %) pattern))
@@ -588,7 +614,7 @@
 (defn- context-resolve-val [context sym]
   (when-some [rel (rel-with-attr context sym)]
     (when-some [tuple (first (:tuples rel))]
-      (#?(:cljs tuple-get :clj get :cljr get :clje da/aget) tuple ((:attrs rel) sym)))))
+      (#?(:cljs tuple-get :clj get :cljr get :clje da/aget :lpy get) tuple ((:attrs rel) sym)))))
 
 (defn- rel-contains-attrs? [rel attrs]
   (some #(contains? (:attrs rel) %) attrs))
@@ -622,6 +648,7 @@
     ;; issue-262
     (if #?(:clj  false :cljr false
            :cljs (identical? f vector)
+           :lpy  false
            :clje false)
       (fn [tuple]
         ;; TODO raise if not all args are bound
@@ -633,7 +660,8 @@
                          ;; :cljs: tuple-get (F-NBB-PRED-TUPLE).
                          (da/aset a i #?(:cljs (tuple-get tuple tuple-idx)
                                          :clj (get tuple tuple-idx) :cljr (get tuple tuple-idx)
-                                         :clje (da/aget tuple tuple-idx)))
+                                         :clje (da/aget tuple tuple-idx)
+                                         :lpy (get tuple tuple-idx)))
                          a))
                      (da/aclone static-args)
                      (range len))]
@@ -648,7 +676,8 @@
                          ;; :cljs: tuple-get (F-NBB-PRED-TUPLE).
                          (da/aset a i #?(:cljs (tuple-get tuple tuple-idx)
                                          :clj (get tuple tuple-idx) :cljr (get tuple tuple-idx)
-                                         :clje (da/aget tuple tuple-idx)))
+                                         :clje (da/aget tuple tuple-idx)
+                                         :lpy (get tuple tuple-idx)))
                          a))
                      static-args
                      (range len))]
@@ -658,6 +687,8 @@
   #?(:cljs nil
      :clj (when (namespace sym)
             (when-some [v (resolve sym)] @v)) :cljr (when (namespace sym)
+            (when-some [v (resolve sym)] @v))
+     :lpy (when (namespace sym)
             (when-some [v (resolve sym)] @v))
      :clje (when (namespace sym)
              (when-some [v (resolve sym)] @v))))
@@ -1000,7 +1031,7 @@
       (map
         (fn [#?(:cljs t1
                 :clj ^{:tag "[[Ljava.lang.Object;"} t1
-                :clje t1
+                :clje t1 :lpy t1
                 :cljr t1)]
           (->Eduction
             (map
@@ -1048,17 +1079,17 @@
   (-context-resolve [var context]))
 
 (extend-protocol IContextResolve
-  #?(:jank dp/Variable :clj Variable :cljr Variable :cljs dp/Variable :clje dp/Variable)
+  #?(:jank dp/Variable :clj Variable :cljr Variable :cljs dp/Variable :clje dp/Variable :lpy dp/Variable)
   (-context-resolve [var context]
     (context-resolve-val context (.-symbol var)))
-  #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar :clje dp/SrcVar)
+  #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar :clje dp/SrcVar :lpy dp/SrcVar)
   (-context-resolve [var context]
     (get-in context [:sources (.-symbol var)]))
-  #?(:jank dp/PlainSymbol :clj PlainSymbol :cljr PlainSymbol :cljs dp/PlainSymbol :clje dp/PlainSymbol)
+  #?(:jank dp/PlainSymbol :clj PlainSymbol :cljr PlainSymbol :cljs dp/PlainSymbol :clje dp/PlainSymbol :lpy dp/PlainSymbol)
   (-context-resolve [var _]
     (or (get built-ins/aggregates (.-symbol var))
       (resolve-sym (.-symbol var))))
-  #?(:jank dp/Constant :clj Constant :cljr Constant :cljs dp/Constant :clje dp/Constant)
+  #?(:jank dp/Constant :clj Constant :cljr Constant :cljs dp/Constant :clje dp/Constant :lpy dp/Constant)
   (-context-resolve [var _]
     (.-value var)))
 
@@ -1103,21 +1134,21 @@
   (-post-process [find return-map tuples]))
 
 (extend-protocol IPostProcess
-  #?(:jank dp/FindRel :clj FindRel :cljr FindRel :cljs dp/FindRel :clje dp/FindRel)
+  #?(:jank dp/FindRel :clj FindRel :cljr FindRel :cljs dp/FindRel :clje dp/FindRel :lpy dp/FindRel)
   (-post-process [_ return-map tuples]
     (if (nil? return-map)
       tuples
       (tuples->return-map return-map tuples)))
 
-  #?(:jank dp/FindColl :clj FindColl :cljr FindColl :cljs dp/FindColl :clje dp/FindColl)
+  #?(:jank dp/FindColl :clj FindColl :cljr FindColl :cljs dp/FindColl :clje dp/FindColl :lpy dp/FindColl)
   (-post-process [_ return-map tuples]
     (into [] (map first) tuples))
 
-  #?(:jank dp/FindScalar :clj FindScalar :cljr FindScalar :cljs dp/FindScalar :clje dp/FindScalar)
+  #?(:jank dp/FindScalar :clj FindScalar :cljr FindScalar :cljs dp/FindScalar :clje dp/FindScalar :lpy dp/FindScalar)
   (-post-process [_ return-map tuples]
     (ffirst tuples))
 
-  #?(:jank dp/FindTuple :clj FindTuple :cljr FindTuple :cljs dp/FindTuple :clje dp/FindTuple)
+  #?(:jank dp/FindTuple :clj FindTuple :cljr FindTuple :cljs dp/FindTuple :clje dp/FindTuple :lpy dp/FindTuple)
   (-post-process [_ return-map tuples]
     (if (some? return-map)
       (first (tuples->return-map return-map [(first tuples)]))

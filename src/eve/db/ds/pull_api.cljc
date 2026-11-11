@@ -38,20 +38,25 @@
 ;; fns call the same ISeq methods (RT.first/RT.next on an ISeq are
 ;; .first/.next, and RT.conj on an ISeq is .cons), so the values are
 ;; unchanged there.
-(defn- first-seq [#?(:bb xs :clj ^ISeq xs :cljs ^seq xs :clje xs :cljr xs)]
+;; PORT DELTA (F-LPY-SPLICE): the arg hints and bodies below had
+;; :clj/:cljs arms only — on basilisp the hint select dropped the
+;; argument itself from the arg vector (xs unbound) and the body
+;; select dropped the value form (silently always nil). The :lpy
+;; arms use the portable core spellings.
+(defn- first-seq [#?(:bb xs :clj ^ISeq xs :cljs ^seq xs :clje xs :cljr xs :lpy xs)]
   (if (nil? xs)
     nil
-    #?(:bb (first xs) :clj (first xs) :cljr (first xs) :cljs (-first xs) :clje (first xs))))
+    #?(:bb (first xs) :clj (first xs) :cljr (first xs) :cljs (-first xs) :clje (first xs) :lpy (first xs))))
 
-(defn- next-seq [#?(:bb xs :clj ^ISeq xs :cljs ^seq xs :clje xs :cljr xs)]
+(defn- next-seq [#?(:bb xs :clj ^ISeq xs :cljs ^seq xs :clje xs :cljr xs :lpy xs)]
   (if (nil? xs)
     nil
-    #?(:bb (next xs) :clj (next xs) :cljr (next xs) :cljs (-next xs) :clje (next xs))))
+    #?(:bb (next xs) :clj (next xs) :cljr (next xs) :cljs (-next xs) :clje (next xs) :lpy (next xs))))
 
-(defn- conj-seq [#?(:bb xs :clj ^ISeq xs :cljs ^seq xs :clje xs :cljr xs) x]
+(defn- conj-seq [#?(:bb xs :clj ^ISeq xs :cljs ^seq xs :clje xs :cljr xs :lpy xs) x]
   (if (nil? xs)
     (list x)
-    #?(:bb (cons x xs) :clj (conj xs x) :cljr (conj xs x) :cljs (-conj xs x) :clje (conj xs x))))
+    #?(:bb (cons x xs) :clj (conj xs x) :cljr (conj xs x) :cljs (-conj xs x) :clje (conj xs x) :lpy (conj xs x))))
 
 (defn- assoc-some! [m k v]
   (if (nil? v) m (assoc! m k v)))
@@ -75,11 +80,19 @@
 
 (defrecord ResultFrame [value datoms]
   IFrame
+  ;; PORT DELTA (F-LPY-FRAME-STUBS): basilisp's deftype* requires
+  ;; every method of a protocol's interface in the class body;
+  ;; Clojure seats take partial protocol implementations (a call to
+  ;; a missing one throws "no implementation"). These :lpy-only
+  ;; stubs throw, preserving that contract on this seat.
+  #?(:lpy (-merge [this result] (throw (ex-info "ResultFrame does not implement -merge" {}))))
+  #?(:lpy (-run [this context] (throw (ex-info "ResultFrame does not implement -run" {}))))
   (-str [this]
     (str "ResultFrame<value=" value ">")))
 
 (defrecord MultivalAttrFrame [acc #?@(:clj [^PullAttr attr] :cljr [^PullAttr attr] :cljs [^PullAttr attr] :clje [attr] :lpy [attr]) datoms]
   IFrame
+  #?(:lpy (-merge [this result] (throw (ex-info "MultivalAttrFrame does not implement -merge" {}))))
   (-run [this context]
     (loop [acc acc
            datoms datoms]
@@ -137,7 +150,7 @@
   (-str [this]
     (str "MultivalAttrFrame<attr=" (attr-str attr) ">")))
 
-(defrecord AttrsFrame [seen recursion-limits acc #?@(:clj [^PullPattern pattern] :cljr [^PullPattern pattern] :cljs [^PullPattern pattern] :clje [pattern] :lpy [pattern]) #?@(:clj [^PullAttr attr] :cljr [^PullAttr attr] :cljs [^PullAttr attr] :clje [attr]) attrs datoms id]
+(defrecord AttrsFrame [seen recursion-limits acc #?@(:clj [^PullPattern pattern] :cljr [^PullPattern pattern] :cljs [^PullPattern pattern] :clje [pattern] :lpy [pattern]) #?@(:clj [^PullAttr attr] :cljr [^PullAttr attr] :cljs [^PullAttr attr] :clje [attr] :lpy [^dpp/PullAttr attr]) attrs datoms id]
   IFrame
   (-merge [this result]
     (AttrsFrame.
@@ -188,8 +201,8 @@
         (recur acc (first-seq attrs) (next-seq attrs) datoms)
 
         ;; default
-        (and datom-ahead? (some? (#?(:clj .-default :cljr .-default :cljs :default :clje .-default) attr)))
-        (recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default :clje .-default) attr)) (first-seq attrs) (next-seq attrs) datoms)
+        (and datom-ahead? (some? (#?(:clj .-default :cljr .-default :cljs :default :clje .-default :lpy .-default) attr)))
+        (recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default :clje .-default :lpy .-default) attr)) (first-seq attrs) (next-seq attrs) datoms)
 
         ;; xform
         datom-ahead?
@@ -242,14 +255,14 @@
 
         :let [name   (.-name attr)
               db     (.-db ^Context context)
-              datoms (if (instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB) db)
+              datoms (if (instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :lpy db/DB) db)
                        (set/slice (.-avet #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db/DB db] :clje [db] :lpy [db])) (db/datom db/e0 name id db/tx0) (db/datom db/emax name id db/txmax))
                        (db/-search db [nil name id]))]
 
         :do (visit context :db.pull/reverse nil name id)
 
-        (and (empty? datoms) (some? (#?(:clj .-default :cljr .-default :cljs :default :clje .-default) attr)))
-        (recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default :clje .-default) attr)) (first-seq attrs) (next-seq attrs))
+        (and (empty? datoms) (some? (#?(:clj .-default :cljr .-default :cljs :default :clje .-default :lpy .-default) attr)))
+        (recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default :clje .-default :lpy .-default) attr)) (first-seq attrs) (next-seq attrs))
 
         (empty? datoms)
         (recur acc (first-seq attrs) (next-seq attrs))
@@ -270,7 +283,7 @@
     (.-recursive? attr)
     (and
       (.-component? attr)
-      (.-wildcard? #?(:clj ^PullPattern (.-pattern attr) :cljr ^PullPattern (.-pattern attr) :cljs ^PullPattern (.-pattern attr) :clje (.-pattern attr))))))
+      (.-wildcard? #?(:clj ^PullPattern (.-pattern attr) :cljr ^PullPattern (.-pattern attr) :cljs ^PullPattern (.-pattern attr) :clje (.-pattern attr) :lpy ^dpp/PullPattern (.-pattern attr))))))
 
 (defn ref-frame [context seen recursion-limits pattern #?@(:clj [^PullAttr attr] :cljr [^PullAttr attr] :cljs [^PullAttr attr] :clje [attr] :lpy [attr]) id]
   (util/cond+
@@ -297,7 +310,7 @@
 (defn attrs-frame [^Context context seen recursion-limits #?@(:clj [^PullPattern pattern] :cljr [^PullPattern pattern] :cljs [^PullPattern pattern] :clje [pattern] :lpy [pattern]) id]
   (let [db (.-db context)
         datoms (util/cond+
-                 (and (.-wildcard? pattern) (instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB) db))
+                 (and (.-wildcard? pattern) (instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :lpy db/DB) db))
                  (set/slice (.-eavt #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db/DB db] :clje [db] :lpy [db])) (db/datom id nil nil db/tx0) (db/datom id nil nil db/txmax))
                  
                  (.-wildcard? pattern)
@@ -306,10 +319,10 @@
                  (nil? (.-first-attr pattern))
                  nil
 
-                 :let [from (.-name #?(:clj ^PullAttr (.-first-attr pattern) :cljr ^PullAttr (.-first-attr pattern) :cljs ^PullAttr (.-first-attr pattern) :clje (.-first-attr pattern)))
-                       to   (.-name #?(:clj ^PullAttr (.-last-attr pattern) :cljr ^PullAttr (.-last-attr pattern) :cljs ^PullAttr (.-last-attr pattern) :clje (.-last-attr pattern)))]
+                 :let [from (.-name #?(:clj ^PullAttr (.-first-attr pattern) :cljr ^PullAttr (.-first-attr pattern) :cljs ^PullAttr (.-first-attr pattern) :clje (.-first-attr pattern) :lpy ^dpp/PullAttr (.-first-attr pattern)))
+                       to   (.-name #?(:clj ^PullAttr (.-last-attr pattern) :cljr ^PullAttr (.-last-attr pattern) :cljs ^PullAttr (.-last-attr pattern) :clje (.-last-attr pattern) :lpy ^dpp/PullAttr (.-last-attr pattern)))]
                  
-                 (instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB) db)
+                 (instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :lpy db/DB) db)
                  (set/slice (.-eavt #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db/DB db] :clje [db] :lpy [db])) (db/datom id from nil db/tx0) (db/datom id to nil db/txmax))
 
                  :else

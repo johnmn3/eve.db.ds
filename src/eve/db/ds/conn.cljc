@@ -5,6 +5,7 @@
     ;; name (a class entry, not a var), so the types are named
     ;; qualified (db/DB) at their uses in this file
     [eve.db.ds.db :as db]
+    #?(:lpy [eve.deftype :refer [deftype]])
     [eve.db.ds.storage :as storage]
     [extend-clj.core :as extend]
     [me.tonsky.persistent-sorted-set :as set]
@@ -37,7 +38,7 @@
   ([db tx-data] (with db tx-data nil))
   ([db tx-data tx-meta]
    {:pre [(db/db? db)]}
-   (if (instance? #?(:jank db/FilteredDB :clj FilteredDB :cljr FilteredDB :cljs db/FilteredDB :clje db/FilteredDB) db)
+   (if (instance? #?(:jank db/FilteredDB :clj FilteredDB :cljr FilteredDB :cljs db/FilteredDB :clje db/FilteredDB :lpy db/FilteredDB) db)
      (throw (ex-info "Filtered DB cannot be modified" {:error :transaction/filtered}))
      (db/transact-tx-data (db/->TxReport db db [] {} tx-meta) tx-data))))
 

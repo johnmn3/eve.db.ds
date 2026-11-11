@@ -856,7 +856,7 @@
            (if (nil? x#) x# (.getName (. x# (getClass))))))}
      ^String [^Object x] (if (nil? x) x (.getName (. x (getClass)))))]
  :lpy  [(defn class-name
-     ^String [^Object x] (if (nil? x) x (.-__name__ (type x))))]
+     [x] (if (nil? x) x (.-__name__ (type x))))]
  :cljs []))
 
 ;; PORT DELTA (F-CLJE-CLASSNAME): no JVM Class/getName on clojerl;
@@ -1514,6 +1514,7 @@
                         ;; binding value vanishes and the let misaligns.
                         :cljr (fn [x] (= v x))
                         :clje (fn [x] (= v x))
+                        :lpy  (fn [x] (= v x))
                         :cljs #(= v %))
           multival?  (contains? (-attrs-by db :db.cardinality/many) a)]
       (search-result (case-tree [e a (some? v) tx]
@@ -1589,7 +1590,7 @@
       (resolve-datom db nil attr end nil emax txmax)))
                 
   clojure.data/EqualityPartition
-  (equality-partition [x] :eve/db/ds/db)
+  (equality-partition [x] :eve.db.ds/db)
 
   clojure.data/Diff
   (diff-similar [a b]
@@ -1659,9 +1660,9 @@
          (satisfies? IDB x)))]
    :lpy  [(or
        (and x
-         (instance? eve.db.ds.db.ISearch x)
-         (instance? eve.db.ds.db.IIndexAccess x)
-         (instance? eve.db.ds.db.IDB x))
+         (instance? (:interface ISearch) x)
+         (instance? (:interface IIndexAccess) x)
+         (instance? (:interface IDB) x))
        (and (satisfies? ISearch x)
          (satisfies? IIndexAccess x)
          (satisfies? IDB x)))]

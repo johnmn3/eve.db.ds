@@ -36,7 +36,7 @@
 
 ; Entities
 
-(def ^{:tag #?(:jank de/Entity :clj Entity :cljr Entity :cljs de/Entity :clje de/Entity)
+(def ^{:tag #?(:jank de/Entity :clj Entity :cljr Entity :cljs de/Entity :clje de/Entity :lpy de/Entity)
        :arglists '([db eid])
        :doc "Retrieves an entity by its id from database. Entities are lazy map-like structures to navigate DataScript database content.
 
@@ -100,7 +100,7 @@
   {:pre [(de/entity? entity)]}
   (.-db entity))
 
-(def ^{:tag #?(:jank de/Entity :clj Entity :cljr Entity :cljs de/Entity :clje de/Entity)
+(def ^{:tag #?(:jank de/Entity :clj Entity :cljr Entity :cljs de/Entity :clje de/Entity :lpy de/Entity)
        :arglists '([e])
        :doc "Forces all entity attributes to be eagerly fetched and cached. Only usable for debug output.
 
@@ -191,7 +191,7 @@
        :doc "Returns `true` if the given value is an immutable database, `false` otherwise."}
   db? db/db?)
 
-(def ^{:tag #?(:jank db/Datom :clj Datom :cljr Datom :cljs db/Datom :clje db/Datom)
+(def ^{:tag #?(:jank db/Datom :clj Datom :cljr Datom :cljs db/Datom :clje db/Datom :lpy db/Datom)
        :arglists '([e a v] [e a v tx] [e a v tx added])
        :doc "Low-level fn to create raw datoms.
 
@@ -230,7 +230,7 @@
              `pr-str` by default."}
   serializable ds/serializable)
 
-(def ^{:tag #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB)
+(def ^{:tag #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :lpy db/DB)
        :arglists '([serializable] [serializable opts])
        :doc "Creates db from a data structure (not string!) produced by serializable.
 
@@ -254,7 +254,7 @@
 (defn is-filtered
   "Returns `true` if this database was filtered using [[filter]], `false` otherwise."
   [x]
-  (instance? #?(:jank db/FilteredDB :clj FilteredDB :cljr FilteredDB :cljs db/FilteredDB :clje db/FilteredDB) x))
+  (instance? #?(:jank db/FilteredDB :clj FilteredDB :cljr FilteredDB :cljs db/FilteredDB :clje db/FilteredDB :lpy db/FilteredDB) x))
 
 (defn filter
   "Returns a view over database that has same interface but only includes datoms for which the `(pred db datom)` is true. Can be applied multiple times.
@@ -276,10 +276,12 @@
       ;; qualified constructor name is neither seat's form
       #?(:jank (db/->FilteredDB orig-db #(and (orig-pred %) (pred orig-db %)) (atom 0))
          :clj  (FilteredDB. orig-db #(and (orig-pred %) (pred orig-db %)) (atom 0)) :cljr (FilteredDB. orig-db #(and (orig-pred %) (pred orig-db %)) (atom 0))
-         :cljs (db/->FilteredDB orig-db #(and (orig-pred %) (pred orig-db %)) (atom 0)) :clje (db/->FilteredDB orig-db #(and (orig-pred %) (pred orig-db %)) (atom 0))))
+         :cljs (db/->FilteredDB orig-db #(and (orig-pred %) (pred orig-db %)) (atom 0)) :clje (db/->FilteredDB orig-db #(and (orig-pred %) (pred orig-db %)) (atom 0))
+         :lpy  (db/->FilteredDB orig-db #(and (orig-pred %) (pred orig-db %)) (atom 0))))
     #?(:jank (db/->FilteredDB db #(pred db %) (atom 0))
        :clj  (FilteredDB. db #(pred db %) (atom 0)) :cljr (FilteredDB. db #(pred db %) (atom 0))
-       :cljs (db/->FilteredDB db #(pred db %) (atom 0)) :clje (db/->FilteredDB db #(pred db %) (atom 0)))))
+       :cljs (db/->FilteredDB db #(pred db %) (atom 0)) :clje (db/->FilteredDB db #(pred db %) (atom 0))
+       :lpy  (db/->FilteredDB db #(pred db %) (atom 0)))))
 
 
 ; Changing DB
@@ -288,7 +290,7 @@
   "Same as [[transact!]], but applies to an immutable database value. Returns transaction report (see [[transact!]])."
   conn/with)
 
-(def ^{:arglists '([db tx-data]) :tag #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB)} db-with
+(def ^{:arglists '([db tx-data]) :tag #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :lpy db/DB)} db-with
   "Applies transaction to an immutable db value, returning new immutable db value. Same as `(:db-after (with db tx-data))`."
   conn/db-with)
 

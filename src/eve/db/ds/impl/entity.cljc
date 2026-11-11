@@ -15,6 +15,11 @@
     #?@(:cljs [[cljs.core :as c]]
         :clj  [[clojure.core :as c]] :cljr [[clojure.core :as c]]
         :lpy  [[clojure.core :as c]])
+    ;; :lpy reads deftype as eve.deftype's (the db.cljc:11 precedent):
+    ;; the F-LPY-ENTITY arm below is written in JVM-interface groups,
+    ;; which only eve.deftype's translator consumes on this seat —
+    ;; basilisp core deftype cannot identify clojure.lang/IFn
+    #?(:lpy [eve.deftype :refer [deftype]])
     ;; PORT DELTA (F-CLJE-HOST-REFERS): see eve.db.ds.util
     #?(:clje [eve.host :refer [volatile!]])
     [eve.db.ds.db :as db]))
@@ -77,12 +82,12 @@
 #?(:cljs
   (unchecked-set (.-prototype ES6Iterator) cljs.core/ITER_SYMBOL
      (fn []
-       (this-as this# this#))))
+       (this-as this this))))
 
 #?(:cljs
   (unchecked-set (.-prototype ES6EntriesIterator) cljs.core/ITER_SYMBOL
      (fn []
-       (this-as this# this#))))
+       (this-as this this))))
 
 (deftype Entity [db eid touched cache]
   #?@(:cljs
@@ -289,7 +294,7 @@
   (when (.-prototype Entity)
     (unchecked-set (.-prototype Entity) cljs.core/ITER_SYMBOL
        (fn []
-         (this-as this# (.entries this#))))))
+         (this-as this (.entries this))))))
 
 #?(:clj
    (defmethod print-method Entity [e, ^java.io.Writer w]

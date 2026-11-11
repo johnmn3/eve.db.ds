@@ -1,17 +1,24 @@
 (ns flagship.lpy-entry-db
-  ;; Partial basilisp entry proof: eve.db.ds.db only (load +
-  ;; transact + datoms + entity). eve.db.ds.core is blocked on
-  ;; basilisp at its ns form (see STATUS) — conn/query wait on
-  ;; that finding's owners.
-  (:require [eve.db.ds.db :as db]))
+  ;; Partial basilisp entry proof: eve.db.ds.db (load + transact
+  ;; + datoms + entity). db-with lives in eve.db.ds.conn in this
+  ;; port (re-exported by eve.db.ds.core); there is no
+  ;; eve.db.ds.db/db-with on any seat, and the public datoms is
+  ;; core's — the db-level surface here is -datoms. The earlier "core blocked
+  ;; at its ns form" premise is stale — core/conn load and query
+  ;; on basilisp since the lpy-standing stage-1 fixes (see
+  ;; docs/lpy-standing/STATUS.md); the full entry is lpy_entry.lpy.
+  (:require [eve.atom]
+            [eve.db.ds.db :as db]
+            [eve.db.ds.conn :as conn]
+            [eve.db.ds.impl.entity :as de]))
 
 (def base-tx (mapv (fn [i] {:db/id i :name (str "base-" i) :age (+ 20 i)})
                    (range 1 11)))
 
 (defn -main [& args]
-  (let [d1 (db/db-with (db/empty-db) base-tx)
-        n (count (db/datoms d1 :eavt))
-        e5 (db/entity d1 5)]
+  (let [d1 (conn/db-with (db/empty-db nil {}) base-tx)
+        n (count (db/-datoms d1 :eavt nil nil nil nil))
+        e5 (de/entity d1 5)]
     (println :lpy-entry-db {:datoms n :e5-name (:name e5) :e5-age (:age e5)})
     (println :lpy-entry-db-ok
              (and (= 20 n) (= "base-5" (:name e5)) (= 25 (:age e5))))))
