@@ -28,15 +28,7 @@
     [eve.db.ds.impl.entity :as de]
     [eve.db.ds.util :as util]
     [eve.thread :as thread]
-    [me.tonsky.persistent-sorted-set :as set])
-  #?(:clj
-     (:import
-       [eve.db.ds.db Datom DB FilteredDB]
-       [eve.db.ds.impl.entity Entity]
-       [java.util UUID]) :cljr (:import
-       [eve.db.ds.db Datom DB FilteredDB]
-       [eve.db.ds.impl.entity Entity]
-       [System Guid])))
+    [me.tonsky.persistent-sorted-set :as set]))
 
 (def ^:const ^:no-doc tx0 
   db/tx0)
@@ -197,8 +189,7 @@
        :doc "Returns `true` if the given value is an immutable database, `false` otherwise."}
   db? db/db?)
 
-(def ^{:tag #?(:jank db/Datom :clj Datom :cljr Datom :cljs db/Datom :clje db/Datom :lpy db/Datom)
-       :arglists '([e a v] [e a v tx] [e a v tx added])
+(def ^{:arglists '([e a v] [e a v tx] [e a v tx added])
        :doc "Low-level fn to create raw datoms.
 
              Optionally with transaction id (number) and `added` flag (`true` for addition, `false` for retraction).
@@ -259,7 +250,7 @@
 (defn is-filtered
   "Returns `true` if this database was filtered using [[filter]], `false` otherwise."
   [x]
-  (instance? #?(:jank db/FilteredDB :clj FilteredDB :cljr FilteredDB :cljs db/FilteredDB :clje db/FilteredDB :lpy db/FilteredDB) x))
+  (not (identical? x (db/unfiltered-db x))))
 
 (defn filter
   "Returns a view over database that has same interface but only includes datoms for which the `(pred db datom)` is true. Can be applied multiple times.
@@ -273,20 +264,11 @@
   [db pred]
   {:pre [(db/db? db)]}
   (if (is-filtered db)
-    (let [#?@(:jank [^db/FilteredDB fdb] :clj [^FilteredDB fdb] :cljr [^FilteredDB fdb] :cljs [^db/FilteredDB fdb] :clje [fdb] :lpy [fdb]) db
+    (let [fdb       db
           orig-pred (.-pred fdb)
           orig-db   (.-unfiltered-db fdb)]
-      ;; PORT DELTA (F-NBB-MACROS round): the constructor is the
-      ;; imported class on :clj, the factory var on :cljs — a
-      ;; qualified constructor name is neither seat's form
-      #?(:jank (db/->FilteredDB orig-db #(and (orig-pred %) (pred orig-db %)) (atom 0))
-         :clj  (FilteredDB. orig-db #(and (orig-pred %) (pred orig-db %)) (atom 0)) :cljr (FilteredDB. orig-db #(and (orig-pred %) (pred orig-db %)) (atom 0))
-         :cljs (db/->FilteredDB orig-db #(and (orig-pred %) (pred orig-db %)) (atom 0)) :clje (db/->FilteredDB orig-db #(and (orig-pred %) (pred orig-db %)) (atom 0))
-         :lpy  (db/->FilteredDB orig-db #(and (orig-pred %) (pred orig-db %)) (atom 0))))
-    #?(:jank (db/->FilteredDB db #(pred db %) (atom 0))
-       :clj  (FilteredDB. db #(pred db %) (atom 0)) :cljr (FilteredDB. db #(pred db %) (atom 0))
-       :cljs (db/->FilteredDB db #(pred db %) (atom 0)) :clje (db/->FilteredDB db #(pred db %) (atom 0))
-       :lpy  (db/->FilteredDB db #(pred db %) (atom 0)))))
+      (db/->FilteredDB orig-db #(and (orig-pred %) (pred orig-db %)) (atom 0)))
+    (db/->FilteredDB db #(pred db %) (atom 0))))
 
 
 ; Changing DB
