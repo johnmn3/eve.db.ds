@@ -1,0 +1,5 @@
+(ns eve.db.ds.test
+  "Empty package anchor for namespace-isolated suite loads. The upstream
+   test.cljc at this name eagerly requires the ENTIRE suite. Never import
+   that aggregator when testing a single namespace. ds-suite/package-paths!
+   adds the vendored test directory to this package's search paths.")

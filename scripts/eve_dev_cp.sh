@@ -49,4 +49,11 @@ if ! command -v bb >/dev/null 2>&1; then
   echo "eve_dev_cp: bb is required to expand hosts.edn" >&2
   exit 1
 fi
-(cd "$EVE" && bb classpath "$HOST")
+CP="$(cd "$EVE" && bb classpath "$HOST")"
+# Test-only native-host support is explicit and never part of the public lib.
+# bb/nbb both ship real cognitect.transit; basilisp uses the helper's :lpy
+# branch and the suite driver counts its Transit-dependent tests as skipped.
+if [[ -d "$ROOT/test/host-support/$HOST" ]]; then
+  CP="$ROOT/test/host-support/$HOST:$CP"
+fi
+printf '%s\n' "$CP"

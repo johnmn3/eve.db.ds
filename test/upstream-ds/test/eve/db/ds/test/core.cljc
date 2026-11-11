@@ -3,14 +3,15 @@
     [clojure.edn :as edn]
     [clojure.test :as t :refer [is are deftest testing]]
     [clojure.string :as str]
-    [cognitect.transit :as transit]
+    [clojure.walk]
+    #?@(:lpy [] :default [[cognitect.transit :as transit]])
     [eve.db.ds.core :as d]
     [eve.db.ds.impl.entity :as de]
     [eve.db.ds.db :as db :refer [defrecord-updatable]]
     #?(:cljs [eve.db.ds.test.cljs])))
 
 #?(:cljs
-   (enable-console-print!))
+   (when-let [enable (resolve 'cljs.core/enable-console-print!)] (enable)))
 
 ;; Added special case for printing ex-data of ExceptionInfo
 #?(:cljs
@@ -69,7 +70,8 @@
      (binding [*print-namespace-maps* false]
        (t)))
    :cljs
-   (def no-namespace-maps {:before #(set! *print-namespace-maps* false)}))
+   (def no-namespace-maps {:before #(set! *print-namespace-maps* false)})
+   :lpy (defn no-namespace-maps [f] (f)))
 
 (defn transit-write [o type]
   #?(:clj
@@ -78,22 +80,26 @@
          (transit/write writer o)
          (.toByteArray os)))
      :cljs
-     (transit/write (transit/writer type) o)))
+     (transit/write (transit/writer type) o)
+     :lpy (throw (ex-info "Transit is unavailable on basilisp; driver must skip Transit tests" {}))))
 
 (defn transit-write-str [o]
   #?(:clj (String. ^bytes (transit-write o :json) "UTF-8")
-     :cljs (transit-write o :json)))
+     :cljs (transit-write o :json)
+     :lpy (transit-write o :json)))
 
 (defn transit-read [s type]
   #?(:clj
      (with-open [is (java.io.ByteArrayInputStream. s)]
        (transit/read (transit/reader is type)))
      :cljs
-     (transit/read (transit/reader type) s)))
+     (transit/read (transit/reader type) s)
+     :lpy (throw (ex-info "Transit is unavailable on basilisp; driver must skip Transit tests" {}))))
 
 (defn transit-read-str [s]
   #?(:clj  (transit-read (.getBytes ^String s "UTF-8") :json)
-     :cljs (transit-read s :json)))
+     :cljs (transit-read s :json)
+     :lpy (transit-read s :json)))
 
 ;; Core tests
 

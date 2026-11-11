@@ -10,10 +10,11 @@
    never a silent catch-and-continue. A test run that throws outside an
    assertion adds one ERROR too. Ends with one aggregate line
 
-     DS-SUITE-SUMMARY host=<h> nses=N loaded=L tests=T pass=P fail=F error=E
+     DS-SUITE-SUMMARY host=<h> nses=N loaded=L tests=T pass=P fail=F error=E skipped=S
 
    and exits non-zero on any fail, error or load failure.
-   Args: optional namespace symbols to run instead of the full list.
+   Args: --list, --load-only, or optional namespace symbols.
+   scripts/ds_suite.py is the process-isolated per-namespace timeout entry.
 
    Hosts: JVM and bb (:clj, clojure.test/test-ns), nbb (:cljs,
    cljs.test/test-vars + the env's report counters), basilisp (:lpy,
@@ -24,6 +25,14 @@
    eve.host-completion before this namespace, as the contract gates do."
   (:require [eve.host] [eve.atom] [clojure.test :as t] [clojure.string :as str])
   #?(:lpy (:import importlib os.path sys)))
+
+#?(:lpy
+   (defmethod t/gen-assert 'thrown-msg? [expr msg line-num]
+     (let [[_ expected & body] expr
+           actual (gensym "actual")]
+       `(let [~actual (try ~@body ::not-thrown
+                          (catch python/Exception e# (ex-message e#)))]
+          ~(t/gen-assert (list '= expected actual) msg line-num)))))
 
 (def host
   #?(:bb "bb" :clj "jvm" :org.babashka/nbb "nbb" :cljs "cljs"
@@ -63,6 +72,21 @@
      :lpy (sys/exit code)
      :default (when-not (zero? code)
                 (throw (ex-info "DS-SUITE-FAILED" {:exit code})))))
+
+(defn- skip-reason [n v]
+  (when (and (= n 'eve.db.ds.test.serialize)
+             (contains? #{'serialize 'test-nan} (:name (meta v))))
+    (case host
+      "basilisp" "No Transit implementation is supplied on the Basilisp test classpath"
+      nil)))
+
+(defn- test-vars-for [n]
+  (let [vs (->> (vals (ns-interns n))
+                (filter #(or (:test (meta %)) (:basilisp.test/test (meta %))))
+                (sort-by #(str (:name (meta %)))))]
+    (doseq [v vs :let [reason (skip-reason n v)] :when reason]
+      (println "SKIP" (str n "/" (:name (meta v))) reason))
+    (remove #(skip-reason n %) vs)))
 
 ;; ---- basilisp: count passes and run one namespace ------------------------
 
@@ -108,8 +132,7 @@
 
 #?(:lpy
    (defn- lpy-test-ns [n]
-     (let [tests (filter (fn [[_ v]] (:basilisp.test/test (meta v)))
-                         (sort-by (comp str key) (ns-interns (find-ns n))))
+     (let [tests (map (fn [v] [(:name (meta v)) v]) (test-vars-for n))
            m (meta (find-ns n))
            once (lpy-join-fixtures (:basilisp.test/once-fixtures m))
            each (lpy-join-fixtures (:basilisp.test/each-fixtures m))
@@ -138,9 +161,7 @@
 (defn- test-ns* [n]
   #?(:lpy (lpy-test-ns n)
      :cljs (do (t/set-env! (t/empty-env))
-               (t/test-vars (->> (vals (ns-interns n))
-                                 (filter (comp :test meta))
-                                 (sort-by #(str (:name (meta %))))))
+               (t/test-vars (test-vars-for n))
                (select-keys (:report-counters (t/get-current-env))
                             [:test :pass :fail :error]))
      :default (select-keys (t/test-ns n) [:test :pass :fail :error])))
@@ -148,7 +169,7 @@
 ;; nbb's runtime require answers a promise, so loading is async there; the
 ;; other hosts load synchronously. Either way a load failure is one ERROR.
 
-(def ^:private load-error {:loaded 0 :test 0 :pass 0 :fail 0 :error 1})
+(def ^:private load-error {:loaded 0 :test 0 :pass 0 :fail 0 :error 1 :skipped 0})
 
 (defn- load-failed [n e]
   (println "ERROR loading" n (describe e))
@@ -159,15 +180,17 @@
                   (recur (ex-cause c) (inc depth)))))
   load-error)
 
+(def load-only? (atom false))
+
 (defn- run-loaded
   "{:loaded 1 :test :pass :fail :error} for the already-loaded namespace n."
   [n]
-  (let [r (try (test-ns* n)
+  (let [r (try (if @load-only? {:test 0 :pass 0 :fail 0 :error 0} (test-ns* n))
                (catch #?(:clj Throwable :cljs :default :lpy python/Exception :default Exception) e
                  (println "ERROR running" n (describe e))
                  {:test 0 :pass 0 :fail 0 :error 1}))]
     (println {:suite-ns n :result r})
-    (assoc r :loaded 1)))
+    (assoc r :loaded 1 :skipped (if @load-only? 0 (count (filter #(skip-reason n %) (vals (ns-interns n))))))))
 
 #?(:cljs
    (defn- run-one
@@ -191,7 +214,7 @@
        (run-loaded n)
        load-error)))
 
-(def ^:private zero {:loaded 0 :test 0 :pass 0 :fail 0 :error 0})
+(def ^:private zero {:loaded 0 :test 0 :pass 0 :fail 0 :error 0 :skipped 0})
 
 (defn- summarize
   "Prints the summary line; answers the exit code."
@@ -199,7 +222,7 @@
   (let [n (count nses)]
     (println (str "DS-SUITE-SUMMARY host=" host " nses=" n " loaded=" (:loaded tot)
                   " tests=" (:test tot) " pass=" (:pass tot)
-                  " fail=" (:fail tot) " error=" (:error tot)))
+                  " fail=" (:fail tot) " error=" (:error tot) " skipped=" (:skipped tot)))
     (if (and (= n (:loaded tot)) (zero? (:fail tot)) (zero? (:error tot))) 0 1)))
 
 (defn run
@@ -213,8 +236,13 @@
      :default (summarize nses (reduce (fn [acc n] (merge-with + acc (run-one n))) zero nses))))
 
 (defn -main [& args]
-  (let [nses (if (seq args) (mapv symbol args) suite-nss)]
-    #?(:cljs (-> (run nses)
-                 (.then exit!)
-                 (.catch (fn [e] (println "ERROR driver" (describe e)) (exit! 1))))
-       :default (exit! (run nses)))))
+  (if (= "--list" (first args))
+    (do (doseq [n suite-nss] (println "DS-SUITE-NS" n)) (exit! 0))
+    (do
+      (reset! load-only? (= "--load-only" (first args)))
+      (let [args (if @load-only? (rest args) args)
+            nses (if (seq args) (mapv symbol args) suite-nss)]
+        #?(:cljs (-> (run nses)
+                     (.then exit!)
+                     (.catch (fn [e] (println "ERROR driver" (describe e)) (exit! 1))))
+           :default (exit! (run nses)))))))
