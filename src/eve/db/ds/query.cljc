@@ -140,81 +140,19 @@
     (da/aget t i)
     (get t i)))
 
-#?(:clj
-   ;; PORT (PORTING-DS.md): tuples are da arrays — Eve vectors in this
-   ;; port, not host Object[] — so the writes are functional (da/aset
-   ;; returns the new array) and reads go through da/aget / da/array?.
-   (defn join-tuples [t1 idxs1
-                      t2 idxs2]
-     (let [l1   (da/alength idxs1)
-           l2   (da/alength idxs2)
-           pick (fn [t idxs i]
-                  (let [idx (da/aget idxs i)]
-                    (if (da/array? t) (da/aget t idx) (get t idx))))
-           res  (reduce (fn [r i] (da/aset r i (pick t1 idxs1 i)))
-                        (da/make-array (+ l1 l2)) (range l1))
-           res  (reduce (fn [r i] (da/aset r (+ l1 i) (pick t2 idxs2 i)))
-                        res (range l2))]
-       res)) :cljr (defn join-tuples [t1 idxs1
-                      t2 idxs2]
-     (let [l1   (da/alength idxs1)
-           l2   (da/alength idxs2)
-           pick (fn [t idxs i]
-                  (let [idx (da/aget idxs i)]
-                    (if (da/array? t) (da/aget t idx) (get t idx))))
-           res  (reduce (fn [r i] (da/aset r i (pick t1 idxs1 i)))
-                        (da/make-array (+ l1 l2)) (range l1))
-           res  (reduce (fn [r i] (da/aset r (+ l1 i) (pick t2 idxs2 i)))
-                        res (range l2))]
-       res))
-   :cljs
-   ;; PORT DELTA (F-NBB-PRED-TUPLE): the :clj arm's functional shape.
-   ;; Vanilla's JS aset on a da/make-array result (an Eve vector here)
-   ;; set a JS property the port's readers never see (da/aget is nth),
-   ;; so joined tuples read back nil on nbb.
-   (defn join-tuples [t1 idxs1
-                      t2 idxs2]
-     (let [l1   (count idxs1)
-           l2   (count idxs2)
-           pick (fn [t idxs i] (tuple-get t (tuple-get idxs i)))
-           res  (reduce (fn [r i] (da/aset r i (pick t1 idxs1 i)))
-                        (da/make-array (+ l1 l2)) (range l1))
-           res  (reduce (fn [r i] (da/aset r (+ l1 i) (pick t2 idxs2 i)))
-                        res (range l2))]
-       res))
-   ;; PORT DELTA (F-LPY-SPLICE): no :lpy arm -- join-tuples was
-   ;; unresolvable on basilisp. The :lpy body is the :clj body
-   ;; verbatim (this port's tuples are Eve arrays on both seats).
-   :lpy
-   (defn join-tuples [t1 idxs1
-                      t2 idxs2]
-     (let [l1   (da/alength idxs1)
-           l2   (da/alength idxs2)
-           pick (fn [t idxs i]
-                  (let [idx (da/aget idxs i)]
-                    (if (da/array? t) (da/aget t idx) (get t idx))))
-           res  (reduce (fn [r i] (da/aset r i (pick t1 idxs1 i)))
-                        (da/make-array (+ l1 l2)) (range l1))
-           res  (reduce (fn [r i] (da/aset r (+ l1 i) (pick t2 idxs2 i)))
-                        res (range l2))]
-       res)))
-
-;; PORT DELTA (F-CLJE-JOIN-TUPLES): the :clj arm is already written
-;; against functional da arrays (see its PORT note); it is the :clje
-;; arm verbatim
-#?(:clje
-   (defn join-tuples [t1 idxs1
-                      t2 idxs2]
-     (let [l1   (da/alength idxs1)
-           l2   (da/alength idxs2)
-           pick (fn [t idxs i]
-                  (let [idx (da/aget idxs i)]
-                    (if (da/array? t) (da/aget t idx) (get t idx))))
-           res  (reduce (fn [r i] (da/aset r i (pick t1 idxs1 i)))
-                        (da/make-array (+ l1 l2)) (range l1))
-           res  (reduce (fn [r i] (da/aset r (+ l1 i) (pick t2 idxs2 i)))
-                        res (range l2))]
-       res)))
+;; PORT (PORTING-DS.md / F-NBB-PRED-TUPLE): tuples and idx arrays are
+;; da arrays (Eve vectors) in this port, not host Object[]; writes are
+;; functional (da/aset returns the new array). tuple-get reads a port
+;; array by index and a Datom by get.
+(defn join-tuples [t1 idxs1 t2 idxs2]
+  (let [l1   (count idxs1)
+        l2   (count idxs2)
+        pick (fn [t idxs i] (tuple-get t (tuple-get idxs i)))
+        res  (reduce (fn [r i] (da/aset r i (pick t1 idxs1 i)))
+                     (da/make-array (+ l1 l2)) (range l1))
+        res  (reduce (fn [r i] (da/aset r (+ l1 i) (pick t2 idxs2 i)))
+                     res (range l2))]
+    res))
 
 #?(:clj (set! *unchecked-math* false) :cljr (set! *unchecked-math* false))
 

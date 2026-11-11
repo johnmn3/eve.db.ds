@@ -1,6 +1,6 @@
-# Remaining 290 host branches — classification for vm
+# Remaining 288 host branches — classification for vm
 
-Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–5, 7, 10 and 11 removed 52 branches; 342→290; batches 6, 8, 9, 12 and 13 marked 191 as glue plus batch 10 #334, open-other 216→6). Comments/strings excluded, nested counted once.
+Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–5, 7, 10 and 11 removed 54 branches; 342→288; batches 6, 8, 9, 12 and 13 marked 193 as glue plus batch 10 #334, open-other 216→2). Comments/strings excluded, nested counted once.
 
 **Glue** = loader/require-macros/import/refer/type-hint/instance?-class-name/warn-on-reflection/export wiring that does not itself implement data, memory, threading, or HTTP.
 
@@ -76,7 +76,7 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 
 **HTTP count for vm: 0.**
 
-## glue (229)
+## glue (231)
 
 - #2 `eve/db/ds/conn.cljc:8` — `#?(:lpy [eve.deftype :refer [deftype]])`
 - #6 `eve/db/ds/conn.cljc:41` — `(if (instance? #?(:jank db/FilteredDB :clj FilteredDB :cljr FilteredDB :cljs db/`
@@ -313,15 +313,14 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 - #347 `eve/db/ds/serialize.cljc:295` — `#?@(:clj`
 - #348 `eve/db/ds/serialize.cljc:300` — `#?(:jank`
 
+- #270 `eve/db/ds/query.cljc:425` — `#?(:clje (let [getters (mapv #(getter-fn attrs %) common-attrs)]`
+- #272 `eve/db/ds/query.cljc:441` — `#?(:jank`
+
 
 ## glue-candidate (0)
 
 
-## open-other (6)
+## open-other (2)
 
 - #226 `eve/db/ds/pull_api.cljc:205` — `(recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default`
 - #231 `eve/db/ds/pull_api.cljc:265` — `(recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default`
-- #255 `eve/db/ds/query.cljc:137` — `#?(:clj`
-- #256 `eve/db/ds/query.cljc:199` — `#?(:clje`
-- #270 `eve/db/ds/query.cljc:425` — `#?(:clje (let [getters (mapv #(getter-fn attrs %) common-attrs)]`
-- #272 `eve/db/ds/query.cljc:441` — `#?(:jank`

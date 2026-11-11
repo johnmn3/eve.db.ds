@@ -137,3 +137,7 @@ No source change. Specific glue reasons for macro-layer host twins (F-CLJE-DECLA
 ## Open-other batch 13 — portable hash-join get + leftover glue
 
 hash-join looks up grouped tuples with portable `get` (#273); `hash-attrs` already returns a map. Marked 27 more leftover rows glue with specific reasons (seqable?, class-name/ihash, bb search-result, clje -schema, vpred, clje IAssociative, db?, leftover declares, find-datom comparator, tx-id? host equality, cljs issue-262, serialize amap/bigint/inf/settings/locking). Left #226/#231 (vm-adjacent `.-default`) and join-tuples / tuple-key-fn (#255, #256, #270, #272) for a later portable attempt. Counts **291→290** / **0**. open-other 34→6; glue 202→229.
+
+## Open-other batch 14 — portable join-tuples + tuple-key-fn glue
+
+Collapsed `join-tuples` to one portable `defn` using `count` and `tuple-get` (#255, #256). Marked tuple-key-fn multi-attr host object-array vs mapv arms (#270, #272) glue. Left #226/#231 (vm-adjacent `.-default`). Counts **290→288** / **0**. open-other 6→2; glue 229→231. Four-host only-core + lru against :dev Eve 7840ffe529.

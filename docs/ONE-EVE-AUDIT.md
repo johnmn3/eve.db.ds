@@ -20,6 +20,7 @@ After open-other batch 10 (portable tuple-get + serialize nth/get): **299** / **
 After open-other batch 11 (unhinted identical predicate defns): **291** / **0**.
 After open-other batch 12 (mark 95 leftover host-API/macro/print/storage rows glue): **291** / **0** (no src change).
 After open-other batch 13 (portable hash-join get + leftover glue): **290** / **0**.
+After open-other batch 14 (portable join-tuples + tuple-key-fn glue): **288** / **0**.
 
 Plain type sites (deftype/defrecord/defrecord-updatable that are not eve-deftype / eve.deftype/deftype) are **0**. Remaining `(deftype …)` forms in source are eve.deftype/deftype (LRU, Entity, AutoTempid, FilteredDB, ArrayRelation, CollRelation, SingletonRelation) or evicted through `def-eve-record` / `deftrecord`.
 
@@ -283,8 +284,8 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 252 | `eve/db/ds/query.cljc` | 57 | `#?(:clj` | KEPT | glue: host print-method for Relation |
 | 253 | `eve/db/ds/query.cljc` | 121 | `#?(:clj (set! *unchecked-math* true) :cljr (set! *unchecked-math* true))` | KEPT | glue: compiler flag set! *unchecked-math* true |
 | 254 | `eve/db/ds/query.cljc` | 131 | `#?(:cljs` | REMOVED | portable tuple-get (da/aget on arrays, get otherwise); dropped cljs-only defn wrapper |
-| 255 | `eve/db/ds/query.cljc` | 137 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 256 | `eve/db/ds/query.cljc` | 199 | `#?(:clje` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 255 | `eve/db/ds/query.cljc` | 137 | `#?(:clj` | REMOVED | portable join-tuples via tuple-get and count; dropped host twins |
+| 256 | `eve/db/ds/query.cljc` | 199 | `#?(:clje` | REMOVED | portable join-tuples; dropped F-CLJE-JOIN-TUPLES twin |
 | 257 | `eve/db/ds/query.cljc` | 213 | `#?(:clj (set! *unchecked-math* false) :cljr (set! *unchecked-math* false))` | KEPT | glue: compiler flag set! *unchecked-math* false |
 | 258 | `eve/db/ds/query.cljc` | 293 | `#?(:jank dp/BindIgnore :clj BindIgnore :cljr BindIgnore :cljs dp/BindIgnore :clj` | KEPT | glue: instance? class-name dispatch (imported short name on JVM/CLR vs qualified parser type on other hosts) |
 | 259 | `eve/db/ds/query.cljc` | 297 | `#?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/BindScalar :clj` | KEPT | glue: instance? class-name dispatch (imported short name on JVM/CLR vs qualified parser type on other hosts) |
@@ -298,9 +299,9 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 267 | `eve/db/ds/query.cljc` | 381 | `(let [eid #?(:cljs (tuple-get tuple idx)` | REMOVED | getter-fn uses portable tuple-get |
 | 268 | `eve/db/ds/query.cljc` | 396 | `#?(:cljs (tuple-get tuple idx)` | REMOVED | getter-fn uses portable tuple-get |
 | 269 | `eve/db/ds/query.cljc` | 412 | `#?(:cljs (tuple-get tuple idx)` | REMOVED | getter-fn uses portable tuple-get |
-| 270 | `eve/db/ds/query.cljc` | 425 | `#?(:clje (let [getters (mapv #(getter-fn attrs %) common-attrs)]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 270 | `eve/db/ds/query.cljc` | 425 | `#?(:clje (let [getters (mapv #(getter-fn attrs %) common-attrs)]` | KEPT | glue: tuple-key-fn multi-attr keys use host object arrays on jvm/cljs vs mapv on clje/lpy/jank |
 | 271 | `eve/db/ds/query.cljc` | 434 | `(let [^objects getters-arr #?(:clj (into-array Object common-attrs) :cljr (into-` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 272 | `eve/db/ds/query.cljc` | 441 | `#?(:jank` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 272 | `eve/db/ds/query.cljc` | 441 | `#?(:jank` | KEPT | glue: tuple-key-fn multi-attr keys use host object arrays on jvm/cljs vs mapv on clje/lpy/jank |
 | 273 | `eve/db/ds/query.cljc` | 504 | `(if-some [tuples1 #?(:clj (hash key) :cljr (hash key) :cljs (get hash key) :clje` | REMOVED | hash-join uses portable get; hash-attrs returns a map |
 | 274 | `eve/db/ds/query.cljc` | 533 | `(#?(:cljs tuple-get :clj get :cljr get :clje da/aget :lpy get) tuple idx)))))))` | KEPT | open: vm-owned data row; foldable by the portable tuple-get once vm reclassifies it |
 | 275 | `eve/db/ds/query.cljc` | 617 | `(#?(:cljs tuple-get :clj get :cljr get :clje da/aget :lpy get) tuple ((:attrs re` | KEPT | open: vm-owned data row; foldable by the portable tuple-get once vm reclassifies it |
