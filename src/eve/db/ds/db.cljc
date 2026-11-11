@@ -9,6 +9,7 @@
     [eve.db.ds.lru :as lru]
     [eve.db.ds.util :as util]
     [eve.core :as e]
+    [eve.encoding :as enc]
     ;; F-DS-EVE-WRITERS: the Eve value namespaces whose codec writers a DB
     ;; needs (value+sio->eve-bytes finds the :map/:set/:vec/:list writers
     ;; only once these have loaded). Required here so that requiring
@@ -590,16 +591,12 @@
   (valAt [d k nf] (val-at-datom d k nf))
 
   clojure.lang.Associative
-  ;; PORT DELTA (F-CLJE-MAPENTRY): clojerl has no clojure.lang.MapEntry
-  ;; class to construct — its map entry is a [k v] vector (the beam
-  ;; eve.types translates MapEntry/create to exactly that). The :clje
-  ;; arm threads into (vector k) instead of the constructor; the other
-  ;; seats keep the constructor spelling byte-for-byte.
+  ;; UNIT2 (#56): ONE Eve map-entry (enc/map-entry) on every host; the
+  ;; per-host MapEntry constructor branches delete (supersedes
+  ;; F-CLJE-MAPENTRY — the beam adapter's [k v] face is enc/map-entry's
+  ;; on that host, so the app never branches).
   (entryAt [d k] (some->> (val-at-datom d k nil)
-                   #?(:clje (vector k)
-                      :clj  (clojure.lang.MapEntry. k) :cljr (clojure.lang.MapEntry. k)
-                      :cljs (clojure.lang.MapEntry. k)
-                      :lpy  (clojure.lang.MapEntry. k))))
+                   (enc/map-entry k)))
   (containsKey [_ k] (#{:e :a :v :tx :added} k))
   (assoc [d k v] (assoc-datom d k v))
 
@@ -1385,13 +1382,8 @@
   ;; (keys db) differs from vanilla by exactly those three — recorded
   ;; divergence, not a defect.
   ;; PORT DELTA (F-NBB-MACROS round): the entry type is the host's —
-  ;; clojure.lang.MapEntry on the JVM face, cljs.core/MapEntry on the
-  ;; :cljs face (the unguarded JVM constructor does not resolve there)
-  (let [entry #?(:clj  (fn [k v] (clojure.lang.MapEntry. k v)) :cljr (fn [k v] (clojure.lang.MapEntry. k v))
-                 :lpy  (fn [k v] (map-entry k v))
-                 ;; PORT DELTA (F-CLJE-MAPENTRY): as for Datom above
-                 :clje (fn [k v] [k v])
-                 :cljs (fn [k v] (cljs.core/MapEntry. k v nil)))]
+  ;; UNIT2 (#56): ONE Eve map-entry (enc/map-entry) on every host.
+  (let [entry (fn [k v] (enc/map-entry k v))]
     [(entry :schema (.-schema db))
      (entry :eavt (.-eavt db))
      (entry :aevt (.-aevt db))
@@ -1452,11 +1444,8 @@
   (assoc [db k v] (db-assoc db k v))
   (entryAt [db k] (let [v (db-lookup db k ::absent)]
                      (when (not (identical? ::absent v))
-                       ;; PORT DELTA (F-CLJE-MAPENTRY): see Datom
-                       #?(:clje [k v]
-                          :clj  (clojure.lang.MapEntry. k v) :cljr (clojure.lang.MapEntry. k v)
-                          :cljs (clojure.lang.MapEntry. k v)
-                          :lpy  (clojure.lang.MapEntry. k v)))))
+                       ;; UNIT2 (#56): ONE Eve map-entry (enc/map-entry).
+                       (enc/map-entry k v))))
   (containsKey [db k] (boolean (#{:schema :eavt :aevt :avet :max-eid :max-tx :rschema} k)))
 
   clojure.lang.IPersistentCollection
