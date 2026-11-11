@@ -93,9 +93,9 @@
              If entity does not exist, returns `nil`."}
   entid db/entid)
 
-(defn #?@(:jank [^db/DB entity-db] :clj [^DB entity-db] :cljr [^DB entity-db] :cljs [^db/DB entity-db] :clje [entity-db] :lpy [entity-db])
+(defn entity-db
   "Returns a db that entity was created from."
-  [#?@(:jank [^de/Entity entity] :clj [^Entity entity] :cljr [^Entity entity] :cljs [^de/Entity entity] :clje [entity] :lpy [entity])]
+  [entity]
   {:pre [(de/entity? entity)]}
   (.-db entity))
 
@@ -158,7 +158,7 @@
 
 ; Creating DB
 
-(defn #?@(:jank [^db/DB empty-db] :clj [^DB empty-db] :cljr [^DB empty-db] :cljs [^db/DB empty-db] :clje [empty-db] :lpy [empty-db])
+(defn empty-db
   "Creates an empty database with an optional schema.
 
    Usage:
@@ -202,7 +202,7 @@
        :doc "Returns `true` if the given value is a datom, `false` otherwise."}
   datom? db/datom?)
 
-(defn #?@(:jank [^db/DB init-db] :clj [^DB init-db] :cljr [^DB init-db] :cljs [^db/DB init-db] :clje [init-db] :lpy [init-db])
+(defn init-db
   "Low-level fn for creating database quickly from a trusted sequence of datoms.
    Does no validation on inputs, so `datoms` must be well-formed and match schema.
    Used internally in db (de)serialization. See also [[datom]].
@@ -291,7 +291,7 @@
   "Applies transaction to an immutable db value, returning new immutable db value. Same as `(:db-after (with db tx-data))`."
   conn/db-with)
 
-(defn #?@(:jank [^db/DB with-schema] :clj [^DB with-schema] :cljr [^DB with-schema] :cljs [^db/DB with-schema] :clje [with-schema] :lpy [with-schema])
+(defn with-schema
   "Warning! No validation or conversion. Only change schema in a compatible way"
   [db schema]
   (db/with-schema db schema))
@@ -375,7 +375,7 @@
   ([db index c0 c1 c2]    {:pre [(db/db? db)]} (db/-datoms db index c0  c1  c2  nil))
   ([db index c0 c1 c2 c3] {:pre [(db/db? db)]} (db/-datoms db index c0  c1  c2  c3)))
 
-(defn #?@(:jank [^db/Datom find-datom] :clj [^Datom find-datom] :cljr [^Datom find-datom] :cljs [^db/Datom find-datom] :clje [find-datom] :lpy [find-datom])
+(defn find-datom
   "Same as [[datoms]], but only returns single datom. Faster than `(first (datoms ...))`"
   ([db index]             {:pre [(db/db? db)]} (db/find-datom db index nil nil nil nil))
   ([db index c0]          {:pre [(db/db? db)]} (db/find-datom db index c0  nil nil nil))
@@ -650,7 +650,7 @@
   [_db tempids tempid]
   (get tempids tempid))
 
-(defn #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db/DB db] :clje [db] :lpy [db])
+(defn db
   "Returns the underlying immutable database value from a connection.
    
    Exists for Datomic API compatibility. Prefer using `@conn` directly if possible."

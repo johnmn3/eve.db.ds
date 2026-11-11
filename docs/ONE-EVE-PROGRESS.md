@@ -97,3 +97,7 @@ Dropped host type-hint reader branches on `auto-expanding?`, `ref-frame`, `attrs
 ## Open-other batch 3 — core.cljc Entity/DB :tag
 
 Dropped host `:tag` reader branches on `entity`, `entity-touch`, `from-serializable`, and `db-with`. The data-owned Datom `:tag` (#20) was left in place. Audit #15, #18, #22, #27 REMOVED. Counts **329 → 325** / **0**.
+
+## Open-other batch 4 — core.cljc defn name/arg hints
+
+Unhinted `defn` for `entity-db`, `empty-db`, `init-db`, `with-schema`, `find-datom`, and `db`, and an unhinted `entity` arg on `entity-db`. Audit #16, #17, #19, #21, #28, #29, #33 REMOVED. Counts **325 → 318** / **0**. These rows were previously listed as glue type-hints; they are gone rather than kept as glue.

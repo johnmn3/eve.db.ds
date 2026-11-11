@@ -1,6 +1,6 @@
-# Remaining 325 host branches — classification for vm
+# Remaining 318 host branches — classification for vm
 
-Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–3 removed 17 branches; 342→325). Comments/strings excluded, nested counted once.
+Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–4 removed 24 branches; 342→318). Comments/strings excluded, nested counted once.
 
 **Glue** = loader/require-macros/import/refer/type-hint/instance?-class-name/warn-on-reflection/export wiring that does not itself implement data, memory, threading, or HTTP.
 
@@ -76,7 +76,7 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 
 **HTTP count for vm: 0.**
 
-## glue (54)
+## glue (47)
 
 - #2 `eve/db/ds/conn.cljc:8` — `#?(:lpy [eve.deftype :refer [deftype]])`
 - #6 `eve/db/ds/conn.cljc:41` — `(if (instance? #?(:jank db/FilteredDB :clj FilteredDB :cljr FilteredDB :cljs db/`
@@ -84,15 +84,8 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 - #8 `eve/db/ds/conn.cljc:53` — `#?(:clj  (instance? clojure.lang.IDeref conn) :cljr (instance? clojure.lang.IDer`
 - #12 `eve/db/ds/core.cljc:9` — `#?(:cljs [cljs.reader :as edn]`
 - #13 `eve/db/ds/core.cljc:16` — `#?(:clj [eve.db.ds.pprint])`
-- #16 `eve/db/ds/core.cljc:97` — `(defn #?@(:jank [^db/DB entity-db] :clj [^DB entity-db] :cljr [^DB entity-db] :c`
-- #17 `eve/db/ds/core.cljc:99` — `[#?@(:jank [^de/Entity entity] :clj [^Entity entity] :cljr [^Entity entity] :clj`
-- #19 `eve/db/ds/core.cljc:163` — `(defn #?@(:jank [^db/DB empty-db] :clj [^DB empty-db] :cljr [^DB empty-db] :cljs`
-- #21 `eve/db/ds/core.cljc:207` — `(defn #?@(:jank [^db/DB init-db] :clj [^DB init-db] :cljr [^DB init-db] :cljs [^`
 - #23 `eve/db/ds/core.cljc:257` — `(instance? #?(:jank db/FilteredDB :clj FilteredDB :cljr FilteredDB :cljs db/Filt`
 - #24 `eve/db/ds/core.cljc:271` — `(let [#?@(:jank [^db/FilteredDB fdb] :clj [^FilteredDB fdb] :cljr [^FilteredDB f`
-- #28 `eve/db/ds/core.cljc:297` — `(defn #?@(:jank [^db/DB with-schema] :clj [^DB with-schema] :cljr [^DB with-sche`
-- #29 `eve/db/ds/core.cljc:381` — `(defn #?@(:jank [^db/Datom find-datom] :clj [^Datom find-datom] :cljr [^Datom fi`
-- #33 `eve/db/ds/core.cljc:656` — `(defn #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db/DB db] :clje`
 - #43 `eve/db/ds/db.cljc:3` — `#?(:cljs [goog.array :as garray])`
 - #44 `eve/db/ds/db.cljc:6` — `#?(:clj [eve.db.ds.inline :refer [update]])`
 - #45 `eve/db/ds/db.cljc:8` — `#?(:clje [eve.host :refer [transient persistent! conj! dissoc! long volatile!]])`
