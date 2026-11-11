@@ -10,4 +10,5 @@
                                     {:db/id 2 :name "Petr" :age 7 :friends [1]}])
         names (d/q '[:find ?n :where [?e :name ?n]] db)]
     (println "ONLY-CORE-OK" (pr-str (set names)) (count (d/datoms db :eavt)))
-    (System/exit (if (= #{["Ivan"] ["Petr"]} (set names)) 0 3))))
+    (when-not (= #{["Ivan"] ["Petr"]} (set names))
+      (throw (ex-info "ONLY-CORE-FAIL" {:names (set names)})))))

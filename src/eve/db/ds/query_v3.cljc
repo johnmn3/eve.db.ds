@@ -609,9 +609,6 @@
 
 ;;; Resolution
 
-(defprotocol IClause
-  (-resolve-clause [clause context]))
-
 (defn get-source [context source]
   (let [symbol (cond
                  (instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar) source)     (:symbol source)
@@ -894,22 +891,20 @@
             (join-unrelated context* prod-rel*)))))))
 
 
-(extend-protocol IClause
-  #?(:jank dp/Pattern :clj Pattern :cljr Pattern :cljs dp/Pattern)
-  (-resolve-clause [clause context]
-    (resolve-pattern context clause))
-  #?(:jank dp/Not :clj Not :cljr Not :cljs dp/Not)
-  (-resolve-clause [clause context]
-    (resolve-not context clause))
-  #?(:jank dp/Or :clj Or :cljr Or :cljs dp/Or)
-  (-resolve-clause [clause context]
-    (resolve-or context clause))
-  #?(:jank dp/And :clj And :cljr And :cljs dp/And)
-  (-resolve-clause [clause context]
-    (resolve-clauses context (:clauses clause)))
-  #?(:jank dp/Predicate :clj Predicate :cljr Predicate :cljs dp/Predicate)
-  (-resolve-clause [clause context]
-    (resolve-predicate context clause)))
+(defn -resolve-clause [clause context]
+  (cond
+    (instance? #?(:jank dp/Pattern :clj Pattern :cljr Pattern :cljs dp/Pattern) clause)
+    (resolve-pattern context clause)
+    (instance? #?(:jank dp/Not :clj Not :cljr Not :cljs dp/Not) clause)
+    (resolve-not context clause)
+    (instance? #?(:jank dp/Or :clj Or :cljr Or :cljs dp/Or) clause)
+    (resolve-or context clause)
+    (instance? #?(:jank dp/And :clj And :cljr And :cljs dp/And) clause)
+    (resolve-clauses context (:clauses clause))
+    (instance? #?(:jank dp/Predicate :clj Predicate :cljr Predicate :cljs dp/Predicate) clause)
+    (resolve-predicate context clause)
+    :else
+    (throw (ex-info (str "No -resolve-clause impl for " (pr-str (type clause))) {:clause clause}))))
 
 (defn println-context [context]
   (print "{:rels")

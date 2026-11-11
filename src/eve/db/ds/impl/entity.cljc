@@ -13,6 +13,7 @@
     [eve.deftype :refer [deftype]]
     [eve.host :refer [volatile!]]
     [eve.encoding :as enc]
+    [eve.map-entry :as me]
     [eve.process :as proc]
     [eve.db.ds.db :as db]))
 
@@ -57,7 +58,7 @@
   clojure.lang.Associative
   (equiv [this o]       (equiv-entity this o))
   (containsKey [this k] (not= ::nf (lookup-entity this k ::nf)))
-  (entryAt [this k]     (some->> (lookup-entity this k) (enc/map-entry k)))
+  (entryAt [this k]     (some->> (lookup-entity this k) (me/map-entry k)))
   (empty [this]         (throw (enc/unsupported "Entity empty is not supported")))
   (assoc [this k v]     (throw (enc/unsupported "Entity assoc is not supported")))
   (cons  [this [k v]]   (throw (enc/unsupported "Entity cons is not supported")))

@@ -288,43 +288,42 @@
                (map :symbol))]
     (->Relation (zipmap vars (range)) [])))
 
-(defprotocol IBinding
-  (in->rel [binding value]))
+;; Dispatch via instance?, not extend-protocol: parser types are SciMap
+;; on bb (see eve.db.ds.parser/-find-vars).
+(defn in->rel [binding value]
+  (cond
+    (instance? #?(:jank dp/BindIgnore :clj BindIgnore :cljr BindIgnore :cljs dp/BindIgnore :clje dp/BindIgnore :lpy dp/BindIgnore) binding)
+    (prod-rel)
 
-(extend-protocol IBinding
-  #?(:jank dp/BindIgnore :clj BindIgnore :cljr BindIgnore :cljs dp/BindIgnore :clje dp/BindIgnore :lpy dp/BindIgnore)
-  (in->rel [_ _]
-    (prod-rel))
-  
-  #?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/BindScalar :clje dp/BindScalar :lpy dp/BindScalar)
-  (in->rel [binding value]
-    (->Relation {(get-in binding [:variable :symbol]) 0} [(into-array [value])]))
-  
-  #?(:jank dp/BindColl :clj BindColl :cljr BindColl :cljs dp/BindColl :clje dp/BindColl :lpy dp/BindColl)
-  (in->rel [binding coll]
+    (instance? #?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/BindScalar :clje dp/BindScalar :lpy dp/BindScalar) binding)
+    (->Relation {(get-in binding [:variable :symbol]) 0} [(into-array [value])])
+
+    (instance? #?(:jank dp/BindColl :clj BindColl :cljr BindColl :cljs dp/BindColl :clje dp/BindColl :lpy dp/BindColl) binding)
     (cond
-      (not (db/seqable? coll))
-      (util/raise "Cannot bind value " coll " to collection " (dp/source binding)
-        {:error :query/binding, :value coll, :binding (dp/source binding)})
-      (empty? coll)
+      (not (db/seqable? value))
+      (util/raise "Cannot bind value " value " to collection " (dp/source binding)
+        {:error :query/binding, :value value, :binding (dp/source binding)})
+      (empty? value)
       (empty-rel binding)
       :else
-      (->> coll
+      (->> value
         (map #(in->rel (:binding binding) %))
-        (reduce sum-rel))))
-  
-  #?(:jank dp/BindTuple :clj BindTuple :cljr BindTuple :cljs dp/BindTuple :clje dp/BindTuple :lpy dp/BindTuple)
-  (in->rel [binding coll]
+        (reduce sum-rel)))
+
+    (instance? #?(:jank dp/BindTuple :clj BindTuple :cljr BindTuple :cljs dp/BindTuple :clje dp/BindTuple :lpy dp/BindTuple) binding)
     (cond
-      (not (db/seqable? coll))
-      (util/raise "Cannot bind value " coll " to tuple " (dp/source binding)
-        {:error :query/binding, :value coll, :binding (dp/source binding)})
-      (< (count coll) (count (:bindings binding)))
-      (util/raise "Not enough elements in a collection " coll " to bind tuple " (dp/source binding)
-        {:error :query/binding, :value coll, :binding (dp/source binding)})
+      (not (db/seqable? value))
+      (util/raise "Cannot bind value " value " to tuple " (dp/source binding)
+        {:error :query/binding, :value value, :binding (dp/source binding)})
+      (< (count value) (count (:bindings binding)))
+      (util/raise "Not enough elements in a collection " value " to bind tuple " (dp/source binding)
+        {:error :query/binding, :value value, :binding (dp/source binding)})
       :else
       (reduce prod-rel
-        (map #(in->rel %1 %2) (:bindings binding) coll)))))
+        (map #(in->rel %1 %2) (:bindings binding) value)))
+
+    :else
+    (throw (ex-info (str "No in->rel impl for " (pr-str (type binding))) {:binding binding}))))
 
 (defn resolve-in [context [binding value]]
   (cond
@@ -1077,23 +1076,19 @@
 (defn collect [context symbols]
   (into #{} (map vec) (-collect context symbols)))
 
-(defprotocol IContextResolve
-  (-context-resolve [var context]))
-
-(extend-protocol IContextResolve
-  #?(:jank dp/Variable :clj Variable :cljr Variable :cljs dp/Variable :clje dp/Variable :lpy dp/Variable)
-  (-context-resolve [var context]
-    (context-resolve-val context (.-symbol var)))
-  #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar :clje dp/SrcVar :lpy dp/SrcVar)
-  (-context-resolve [var context]
-    (get-in context [:sources (.-symbol var)]))
-  #?(:jank dp/PlainSymbol :clj PlainSymbol :cljr PlainSymbol :cljs dp/PlainSymbol :clje dp/PlainSymbol :lpy dp/PlainSymbol)
-  (-context-resolve [var _]
+(defn -context-resolve [var context]
+  (cond
+    (instance? #?(:jank dp/Variable :clj Variable :cljr Variable :cljs dp/Variable :clje dp/Variable :lpy dp/Variable) var)
+    (context-resolve-val context (.-symbol var))
+    (instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar :clje dp/SrcVar :lpy dp/SrcVar) var)
+    (get-in context [:sources (.-symbol var)])
+    (instance? #?(:jank dp/PlainSymbol :clj PlainSymbol :cljr PlainSymbol :cljs dp/PlainSymbol :clje dp/PlainSymbol :lpy dp/PlainSymbol) var)
     (or (get built-ins/aggregates (.-symbol var))
-      (resolve-sym (.-symbol var))))
-  #?(:jank dp/Constant :clj Constant :cljr Constant :cljs dp/Constant :clje dp/Constant :lpy dp/Constant)
-  (-context-resolve [var _]
-    (.-value var)))
+      (resolve-sym (.-symbol var)))
+    (instance? #?(:jank dp/Constant :clj Constant :cljr Constant :cljs dp/Constant :clje dp/Constant :lpy dp/Constant) var)
+    (.-value var)
+    :else
+    (throw (ex-info (str "No -context-resolve impl for " (pr-str (type var))) {:var var}))))
 
 (defn -aggregate [find-elements context tuples]
   (mapv (fn [element fixed-value i]
@@ -1132,29 +1127,26 @@
           {} idxs))
       tuples)))
 
-(defprotocol IPostProcess
-  (-post-process [find return-map tuples]))
-
-(extend-protocol IPostProcess
-  #?(:jank dp/FindRel :clj FindRel :cljr FindRel :cljs dp/FindRel :clje dp/FindRel :lpy dp/FindRel)
-  (-post-process [_ return-map tuples]
+(defn -post-process [find return-map tuples]
+  (cond
+    (instance? #?(:jank dp/FindRel :clj FindRel :cljr FindRel :cljs dp/FindRel :clje dp/FindRel :lpy dp/FindRel) find)
     (if (nil? return-map)
       tuples
-      (tuples->return-map return-map tuples)))
+      (tuples->return-map return-map tuples))
 
-  #?(:jank dp/FindColl :clj FindColl :cljr FindColl :cljs dp/FindColl :clje dp/FindColl :lpy dp/FindColl)
-  (-post-process [_ return-map tuples]
-    (into [] (map first) tuples))
+    (instance? #?(:jank dp/FindColl :clj FindColl :cljr FindColl :cljs dp/FindColl :clje dp/FindColl :lpy dp/FindColl) find)
+    (into [] (map first) tuples)
 
-  #?(:jank dp/FindScalar :clj FindScalar :cljr FindScalar :cljs dp/FindScalar :clje dp/FindScalar :lpy dp/FindScalar)
-  (-post-process [_ return-map tuples]
-    (ffirst tuples))
+    (instance? #?(:jank dp/FindScalar :clj FindScalar :cljr FindScalar :cljs dp/FindScalar :clje dp/FindScalar :lpy dp/FindScalar) find)
+    (ffirst tuples)
 
-  #?(:jank dp/FindTuple :clj FindTuple :cljr FindTuple :cljs dp/FindTuple :clje dp/FindTuple :lpy dp/FindTuple)
-  (-post-process [_ return-map tuples]
+    (instance? #?(:jank dp/FindTuple :clj FindTuple :cljr FindTuple :cljs dp/FindTuple :clje dp/FindTuple :lpy dp/FindTuple) find)
     (if (some? return-map)
       (first (tuples->return-map return-map [(first tuples)]))
-      (first tuples))))
+      (first tuples))
+
+    :else
+    (throw (ex-info (str "No -post-process impl for " (pr-str (type find))) {:find find}))))
 
 (defn- pull [find-elements context resultset]
   (let [resolved (for [find find-elements]

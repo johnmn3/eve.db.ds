@@ -240,18 +240,21 @@
 ;; aggregate-fn     = plain-symbol
 ;; custom-aggregate = [ 'aggregate' variable fn-arg+ ]
 
-(defprotocol IFindVars
-  (-find-vars [this]))
+(deftrecord Aggregate [fn args])
 
-(extend-protocol IFindVars
-  Variable
-  (-find-vars [this] [(.-symbol this)]))
+(deftrecord Pull [source variable pattern])
 
-(deftrecord Aggregate [fn args]
-  IFindVars (-find-vars [_] (-find-vars (last args))))
-
-(deftrecord Pull [source variable pattern]
-  IFindVars (-find-vars [_] (-find-vars variable)))
+;; IFindVars is a function, not a protocol: on bb, parser types are
+;; SciMap (map-mode eve.deftype) and extend-protocol dispatch misses
+;; because every instance shares babashka.impl.SciMap. instance? is
+;; rewritten to honor the stamped :type (host_completion).
+(defn -find-vars [this]
+  (cond
+    (instance? Variable this)  [(.-symbol this)]
+    (instance? Aggregate this) (-find-vars (last (.-args this)))
+    (instance? Pull this)      (-find-vars (.-variable this))
+    :else (throw (ex-info (str "No -find-vars impl for " (pr-str (type this)))
+                          {:value this}))))
 
 (defprotocol IFindElements
   (find-elements [this]))

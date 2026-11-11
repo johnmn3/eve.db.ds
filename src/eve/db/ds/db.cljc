@@ -10,6 +10,7 @@
     [eve.db.ds.util :as util]
     [eve.core :as e]
     [eve.encoding :as enc]
+    [eve.map-entry :as me]
     ;; F-DS-EVE-WRITERS: the Eve value namespaces whose codec writers a DB
     ;; needs (value+sio->eve-bytes finds the :map/:set/:vec/:list writers
     ;; only once these have loaded). Required here so that requiring
@@ -593,12 +594,12 @@
   (valAt [d k nf] (val-at-datom d k nf))
 
   clojure.lang.Associative
-  ;; UNIT2 (#56): ONE Eve map-entry (enc/map-entry) on every host; the
+  ;; UNIT2 (#56): ONE Eve map-entry (eve.map-entry/map-entry) on every host; the
   ;; per-host MapEntry constructor branches delete (supersedes
-  ;; F-CLJE-MAPENTRY — the beam adapter's [k v] face is enc/map-entry's
+  ;; F-CLJE-MAPENTRY — the beam adapter's [k v] face is eve.map-entry/map-entry's
   ;; on that host, so the app never branches).
   (entryAt [d k] (some->> (val-at-datom d k nil)
-                   (enc/map-entry k)))
+                   (me/map-entry k)))
   (containsKey [_ k] (#{:e :a :v :tx :added} k))
   (assoc [d k v] (assoc-datom d k v))
 
@@ -1384,8 +1385,8 @@
   ;; (keys db) differs from vanilla by exactly those three — recorded
   ;; divergence, not a defect.
   ;; PORT DELTA (F-NBB-MACROS round): the entry type is the host's —
-  ;; UNIT2 (#56): ONE Eve map-entry (enc/map-entry) on every host.
-  (let [entry (fn [k v] (enc/map-entry k v))]
+  ;; UNIT2 (#56): ONE Eve map-entry (eve.map-entry/map-entry) on every host.
+  (let [entry (fn [k v] (me/map-entry k v))]
     [(entry :schema (.-schema db))
      (entry :eavt (.-eavt db))
      (entry :aevt (.-aevt db))
@@ -1446,8 +1447,8 @@
   (assoc [db k v] (db-assoc db k v))
   (entryAt [db k] (let [v (db-lookup db k ::absent)]
                      (when (not (identical? ::absent v))
-                       ;; UNIT2 (#56): ONE Eve map-entry (enc/map-entry).
-                       (enc/map-entry k v))))
+                       ;; UNIT2 (#56): ONE Eve map-entry (eve.map-entry/map-entry).
+                       (me/map-entry k v))))
   (containsKey [db k] (boolean (#{:schema :eavt :aevt :avet :max-eid :max-tx :rschema} k)))
 
   clojure.lang.IPersistentCollection

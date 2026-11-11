@@ -5,7 +5,8 @@
     ;; name (a class entry, not a var), so the types are named
     ;; qualified (db/DB) at their uses in this file
     [eve.db.ds.db :as db]
-    #?(:lpy [eve.deftype :refer [deftype]])
+    #?(:bb [eve.deftype :refer [deftype]]
+       :lpy [eve.deftype :refer [deftype]])
     [eve.db.ds.storage :as storage]
     [extend-clj.core :as extend]
     [me.tonsky.persistent-sorted-set :as set]

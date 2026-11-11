@@ -24,3 +24,29 @@ Count with `python3 scripts/one_eve_counts.py [ref]`; excludes strings/comments,
 - nbb still blocked in Eve `mem.cljc:247` on `clojure.core/byte-array` (notes: `/workspace/ds-wt/56-nbb-blocker-for-eve-worker.txt`). Not edited in Eve from this checkout.
 - bb `contract.only-core` NPE producer: requiring `eve.db.ds.conn` runs `extend/deftype-atom` (lib-ds-deps `extend-clj`, `:clj` arm). SCI's `sci.impl.deftype/analyze-deftype*` at deftype.cljc:475 does `RT.intCast` on nil. Captured at `/tmp/bb-npe-chain.log`. Not fixed in this unit (Conn is still the extend-clj atom type; a `:bb` eve.deftype arm or a Conn rewrite is the likely fix). Command: `bb --classpath "$EVE_BB_CP:src:lib:lib-ds-deps:test/drivers" -m contract.only-core`.
 - Eve-owned MapEntry integration (eve.map-entry/map-entry @ c43ec015 on fix/eve-db-ds-gaps) is not in this commit; the library tests still run against a11a1820 adapter roots.
+
+## UNIT3b (#56) — bb only-core + Eve MapEntry wiring (this commit)
+
+Published Eve pin in `deps.edn` is unchanged: `4a921298168080c2af9f57fcfcdee2db570dec4c`.
+Tests in this unit used a **local Eve checkout** at `/workspace/ds-wt-eve` @ `1d5f146fd7` (plus two uncommitted bb adapter overlays used only for bb runs; write-up at `/workspace/ds-wt/56-bb-eve-adapter-notes.txt`): (1) `adapters/types/bb` keeps `IPersistentMap` methods + `Iterable` in SciMap mode so def-eve-record `assoc`/`dissoc`/`set` work; (2) `adapters/completion/bb` `lookup-ns?` carves out `eve.db.ds.*` so keyword/`get` on Datom rewrite to `eve.core/get`. Those overlays are for the Eve worker to land on the atom.broker work branch. This commit does not change the published pin.
+
+Counts after this commit: **342/376** host branches, **0/20** plain types (no new src reader-conditionals; the `:bb` `deftype-atom` arm lives in `lib-ds-deps`, not `src/`).
+
+### eve.db.ds fixes (bb only-core NPE and follow-ons)
+
+- `extend-clj` `:bb` arm of `deftype-atom` (before `:clj`): `eve.deftype` expansion, so SCI `analyze-deftype*` no longer NPEs (`RT.intCast` nil) when requiring `eve.db.ds.conn`.
+- `def-eve-record` keeps the full-arity factory as `Type-new` (SCI compiles `Type.` through `->Type`).
+- Map-like records keep IPersistentMap; parser protocol dispatch (`-find-vars`, `in->rel`, `-context-resolve`, `-post-process`, query-v3 `-resolve-clause`) is `instance?` cond, because extend-protocol misses SciMap instances.
+- `inline.clj` uses `clojure.core/assoc` instead of reflective `RT/assoc` (bb native image).
+- `contract.only-core` no longer calls `System/exit` (basilisp cannot resolve it).
+
+### MapEntry
+
+Call sites in `db.cljc`, `eve_record.cljc`, and `impl/entity.cljc` now use `eve.map-entry/map-entry` (Eve type `eve.map_entry.MapEntry` on JVM). Encoding adapters still construct host MapEntry; pointing `enc/map-entry` at the Eve type is an Eve-worker follow-up on the atom.broker work branch. bb native MapEntry remains RED (wakes #2).
+
+### Tests (local Eve checkout `/workspace/ds-wt-eve` @ `1d5f146fd7`; published pin `4a92129` unused by these runs)
+
+- JVM (Java 21, Clojure 1.12.6): `contract.only-core` ONLY-CORE-OK #{["Ivan"] ["Petr"]} 5; `contract.lru-portable` LRU-PORTABLE-OK. MapEntry class `eve.map_entry.MapEntry`.
+- bb 1.13.226: only-core ONLY-CORE-OK #{["Ivan"] ["Petr"]} 5; lru-portable LRU-PORTABLE-OK. (Needs the two local adapter overlays above.)
+- basilisp 0.5.1: lru-portable LRU-PORTABLE-OK. only-core was blocked on `System/exit` before the driver fix; re-run after this commit if needed.
+- nbb 1.6.214: lru-portable LRU-PORTABLE-OK (the earlier `clojure.core/byte-array` blocker at Eve `mem.cljc:247` is gone at this checkout). only-core still fails analysis: `enc/unsupported` unresolved in `FilteredDB` (`db.cljc:1685`).

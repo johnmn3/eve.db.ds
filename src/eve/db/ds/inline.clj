@@ -2,16 +2,19 @@
   (:refer-clojure :exclude [assoc update]))
 
 (defn assoc
+  ;; UNIT3b (#56): clojure.core/assoc, not RT/assoc. bb's native image
+  ;; forbids reflective RT.assoc (MissingReflectionRegistrationError)
+  ;; once Conn and def-eve-record types load far enough to transact.
   {:inline
    (fn
      ([m k v]
-      `(clojure.lang.RT/assoc ~m ~k ~v))
+      `(clojure.core/assoc ~m ~k ~v))
      ([m k v & kvs]
       (assert (even? (count kvs)))
       `(assoc (assoc ~m ~k ~v) ~@kvs)))}
-  ([map key val] (clojure.lang.RT/assoc map key val))
+  ([map key val] (clojure.core/assoc map key val))
   ([map key val & kvs]
-   (let [ret (clojure.lang.RT/assoc map key val)]
+   (let [ret (clojure.core/assoc map key val)]
      (if kvs
        (if (next kvs)
          (recur ret (first kvs) (second kvs) (nnext kvs))
