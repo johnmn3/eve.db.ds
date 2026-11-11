@@ -1,6 +1,6 @@
-# Remaining 329 host branches — classification for vm
+# Remaining 325 host branches — classification for vm
 
-Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–2 removed 13 pull_api seq-helper and type-hint branches; 342→329). Comments/strings excluded, nested counted once.
+Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–3 removed 17 branches; 342→325). Comments/strings excluded, nested counted once.
 
 **Glue** = loader/require-macros/import/refer/type-hint/instance?-class-name/warn-on-reflection/export wiring that does not itself implement data, memory, threading, or HTTP.
 
@@ -136,17 +136,13 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 ## glue-candidate (0)
 
 
-## open-other (220)
+## open-other (216)
 
 - #4 `eve/db/ds/conn.cljc:14` — `#?(:clj`
 - #9 `eve/db/ds/conn.cljc:87` — `#?(:clj`
 - #10 `eve/db/ds/conn.cljc:114` — `#?(:clj`
 - #11 `eve/db/ds/conn.cljc:189` — `#?(:clj`
 - #14 `eve/db/ds/core.cljc:24` — `#?(:clj`
-- #15 `eve/db/ds/core.cljc:39` — `(def ^{:tag #?(:jank de/Entity :clj Entity :cljr Entity :cljs de/Entity :clje de`
-- #18 `eve/db/ds/core.cljc:103` — `(def ^{:tag #?(:jank de/Entity :clj Entity :cljr Entity :cljs de/Entity :clje de`
-- #22 `eve/db/ds/core.cljc:233` — `(def ^{:tag #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :lpy db/DB)`
-- #27 `eve/db/ds/core.cljc:293` — `(def ^{:arglists '([db tx-data]) :tag #?(:jank db/DB :clj DB :cljr DB :cljs db/D`
 - #30 `eve/db/ds/core.cljc:488` — `#?(:clj`
 - #31 `eve/db/ds/core.cljc:615` — `#?(:cljs`
 - #32 `eve/db/ds/core.cljc:628` — `#?(:lpy`

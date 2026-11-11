@@ -9,6 +9,7 @@ After LRU Counted (30f1d19): 346 / 15.
 After unit 3 (this commit, working tree): **342** / **0**.
 After open-other batch 1 (pull_api first/next/conj-seq): **336** / **0**.
 After open-other batch 2 (pull_api PullAttr/PullPattern hints): **329** / **0**.
+After open-other batch 3 (core.cljc Entity/DB :tag): **325** / **0**.
 
 Plain type sites (deftype/defrecord/defrecord-updatable that are not eve-deftype / eve.deftype/deftype) are **0**. Remaining `(deftype …)` forms in source are eve.deftype/deftype (LRU, Entity, AutoTempid, FilteredDB, ArrayRelation, CollRelation, SingletonRelation) or evicted through `def-eve-record` / `deftrecord`.
 
@@ -32,19 +33,19 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 12 | `eve/db/ds/core.cljc` | 9 | `#?(:cljs [cljs.reader :as edn]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 13 | `eve/db/ds/core.cljc` | 16 | `#?(:clj [eve.db.ds.pprint])` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 14 | `eve/db/ds/core.cljc` | 24 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 15 | `eve/db/ds/core.cljc` | 39 | `(def ^{:tag #?(:jank de/Entity :clj Entity :cljr Entity :cljs de/Entity :clje de` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 15 | `eve/db/ds/core.cljc` | 39 | `(def ^{:tag #?(:jank de/Entity :clj Entity :cljr Entity :cljs de/Entity :clje de` | REMOVED | dropped host :tag metadata; Entity/DB return hints were reader branches only |
 | 16 | `eve/db/ds/core.cljc` | 97 | `(defn #?@(:jank [^db/DB entity-db] :clj [^DB entity-db] :cljr [^DB entity-db] :c` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 17 | `eve/db/ds/core.cljc` | 99 | `[#?@(:jank [^de/Entity entity] :clj [^Entity entity] :cljr [^Entity entity] :clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 18 | `eve/db/ds/core.cljc` | 103 | `(def ^{:tag #?(:jank de/Entity :clj Entity :cljr Entity :cljs de/Entity :clje de` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 18 | `eve/db/ds/core.cljc` | 103 | `(def ^{:tag #?(:jank de/Entity :clj Entity :cljr Entity :cljs de/Entity :clje de` | REMOVED | dropped host :tag metadata; Entity/DB return hints were reader branches only |
 | 19 | `eve/db/ds/core.cljc` | 163 | `(defn #?@(:jank [^db/DB empty-db] :clj [^DB empty-db] :cljr [^DB empty-db] :cljs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 20 | `eve/db/ds/core.cljc` | 194 | `(def ^{:tag #?(:jank db/Datom :clj Datom :cljr Datom :cljs db/Datom :clje db/Dat` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 21 | `eve/db/ds/core.cljc` | 207 | `(defn #?@(:jank [^db/DB init-db] :clj [^DB init-db] :cljr [^DB init-db] :cljs [^` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 22 | `eve/db/ds/core.cljc` | 233 | `(def ^{:tag #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :lpy db/DB)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 22 | `eve/db/ds/core.cljc` | 233 | `(def ^{:tag #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :lpy db/DB)` | REMOVED | dropped host :tag metadata; Entity/DB return hints were reader branches only |
 | 23 | `eve/db/ds/core.cljc` | 257 | `(instance? #?(:jank db/FilteredDB :clj FilteredDB :cljr FilteredDB :cljs db/Filt` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 24 | `eve/db/ds/core.cljc` | 271 | `(let [#?@(:jank [^db/FilteredDB fdb] :clj [^FilteredDB fdb] :cljr [^FilteredDB f` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 25 | `eve/db/ds/core.cljc` | 277 | `#?(:jank (db/->FilteredDB orig-db #(and (orig-pred %) (pred orig-db %)) (atom 0)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 26 | `eve/db/ds/core.cljc` | 281 | `#?(:jank (db/->FilteredDB db #(pred db %) (atom 0))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 27 | `eve/db/ds/core.cljc` | 293 | `(def ^{:arglists '([db tx-data]) :tag #?(:jank db/DB :clj DB :cljr DB :cljs db/D` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 27 | `eve/db/ds/core.cljc` | 293 | `(def ^{:arglists '([db tx-data]) :tag #?(:jank db/DB :clj DB :cljr DB :cljs db/D` | REMOVED | dropped host :tag metadata; Entity/DB return hints were reader branches only |
 | 28 | `eve/db/ds/core.cljc` | 297 | `(defn #?@(:jank [^db/DB with-schema] :clj [^DB with-schema] :cljr [^DB with-sche` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 29 | `eve/db/ds/core.cljc` | 381 | `(defn #?@(:jank [^db/Datom find-datom] :clj [^Datom find-datom] :cljr [^Datom fi` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 30 | `eve/db/ds/core.cljc` | 488 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |

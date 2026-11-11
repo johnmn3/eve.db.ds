@@ -36,8 +36,7 @@
 
 ; Entities
 
-(def ^{:tag #?(:jank de/Entity :clj Entity :cljr Entity :cljs de/Entity :clje de/Entity :lpy de/Entity)
-       :arglists '([db eid])
+(def ^{:arglists '([db eid])
        :doc "Retrieves an entity by its id from database. Entities are lazy map-like structures to navigate DataScript database content.
 
              For `eid` pass entity id or lookup attr:
@@ -100,8 +99,7 @@
   {:pre [(de/entity? entity)]}
   (.-db entity))
 
-(def ^{:tag #?(:jank de/Entity :clj Entity :cljr Entity :cljs de/Entity :clje de/Entity :lpy de/Entity)
-       :arglists '([e])
+(def ^{:arglists '([e])
        :doc "Forces all entity attributes to be eagerly fetched and cached. Only usable for debug output.
 
              Usage:
@@ -230,8 +228,7 @@
              `pr-str` by default."}
   serializable ds/serializable)
 
-(def ^{:tag #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :lpy db/DB)
-       :arglists '([serializable] [serializable opts])
+(def ^{:arglists '([serializable] [serializable opts])
        :doc "Creates db from a data structure (not string!) produced by serializable.
 
              Opts:
@@ -290,7 +287,7 @@
   "Same as [[transact!]], but applies to an immutable database value. Returns transaction report (see [[transact!]])."
   conn/with)
 
-(def ^{:arglists '([db tx-data]) :tag #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :lpy db/DB)} db-with
+(def ^{:arglists '([db tx-data])} db-with
   "Applies transaction to an immutable db value, returning new immutable db value. Same as `(:db-after (with db tx-data))`."
   conn/db-with)
 

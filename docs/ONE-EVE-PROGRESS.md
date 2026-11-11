@@ -93,3 +93,7 @@ Collapsed `first-seq` / `next-seq` / `conj-seq` to portable `clojure.core` `firs
 ## Open-other batch 2 — pull_api PullAttr/PullPattern hints
 
 Dropped host type-hint reader branches on `auto-expanding?`, `ref-frame`, `attrs-frame`, `pull-impl`, and `.-first-attr`/`.-last-attr`/`.-pattern` field reads. Audit rows #233–#236, #239, #240, #244 REMOVED. Counts **336 → 329** / **0**. vm data/memory rows (including #225/#230 `.-default`) untouched.
+
+## Open-other batch 3 — core.cljc Entity/DB :tag
+
+Dropped host `:tag` reader branches on `entity`, `entity-touch`, `from-serializable`, and `db-with`. The data-owned Datom `:tag` (#20) was left in place. Audit #15, #18, #22, #27 REMOVED. Counts **329 → 325** / **0**.
