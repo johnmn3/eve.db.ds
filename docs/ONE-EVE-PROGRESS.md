@@ -129,3 +129,7 @@ Lifted `tuple-get` off the cljs-only defn (#254) to a portable helper (`da/aget`
 ## Open-other batch 11 — unhinted identical predicate defns
 
 Collapsed `tuple-ref-slot?`, `resolved-eid?`, `tempid?`, and `tuple-has-tempids?` to a single unhinted `defn-` each (#161–#164, #172–#175). Bodies were identical across hosts; only the type-hint name splice and F-CLJE-PREDS twins differed. Left `tx-id?` (#170/#171) because host arms are not the same (`String.equals` / `identical?` vs `=`). Noted vm-owned data rows #274, #275, #277, #278 in the audit as foldable by the portable `tuple-get` once vm reclassifies them; those rows were not edited. Counts **299→291** / **0**. open-other 137→129. Four-host only-core + lru against :dev Eve 7840ffe529.
+
+## Open-other batch 12 — mark 95 leftover host-API/macro/print/storage rows glue
+
+No source change. Specific glue reasons for macro-layer host twins (F-CLJE-DECLARE) in db.cljc and util.cljc, serialize array/dict macros, print-method / pr-db, clj/cljr :inline metadata, the clj/cljr-only storage API, data-reader registration, requiring-resolve / resolve-sym, host exception classes, vpred, transact/future-call IDeref reify, query_v3 java.util fast collections, and squuid UUID/clock interop. Counts unchanged **291** / **0**. open-other 129→34; glue 107→202.

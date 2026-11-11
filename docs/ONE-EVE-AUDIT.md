@@ -18,6 +18,7 @@ After open-other batch 8 (mark instance? class-name rows glue): **306** / **0** 
 After open-other batch 9 (leftover require/import glue): **306** / **0** (no src change).
 After open-other batch 10 (portable tuple-get + serialize nth/get): **299** / **0**.
 After open-other batch 11 (unhinted identical predicate defns): **291** / **0**.
+After open-other batch 12 (mark 95 leftover host-API/macro/print/storage rows glue): **291** / **0** (no src change).
 
 Plain type sites (deftype/defrecord/defrecord-updatable that are not eve-deftype / eve.deftype/deftype) are **0**. Remaining `(deftype …)` forms in source are eve.deftype/deftype (LRU, Entity, AutoTempid, FilteredDB, ArrayRelation, CollRelation, SingletonRelation) or evicted through `def-eve-record` / `deftrecord`.
 
@@ -35,9 +36,9 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 6 | `eve/db/ds/conn.cljc` | 41 | `(if (instance? #?(:jank db/FilteredDB :clj FilteredDB :cljr FilteredDB :cljs db/` | KEPT | glue: instance? class-name dispatch on DB/FilteredDB (imported short name on JVM/CLR vs qualified type on other hosts) |
 | 7 | `eve/db/ds/conn.cljc` | 45 | `(defn #?@(:jank [^db/DB db-with] :clj [^DB db-with] :cljr [^DB db-with] :cljs [^` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 8 | `eve/db/ds/conn.cljc` | 53 | `#?(:clj  (instance? clojure.lang.IDeref conn) :cljr (instance? clojure.lang.IDer` | KEPT | glue: instance?/satisfies? of host IDeref |
-| 9 | `eve/db/ds/conn.cljc` | 87 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 10 | `eve/db/ds/conn.cljc` | 114 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 11 | `eve/db/ds/conn.cljc` | 189 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 9 | `eve/db/ds/conn.cljc` | 87 | `#?(:clj` | KEPT | glue: clj/cljr-only storage API (restore/store/addresses/collect-garbage/file-storage) |
+| 10 | `eve/db/ds/conn.cljc` | 114 | `#?(:clj` | KEPT | glue: clj/cljr-only storage API (restore/store/addresses/collect-garbage/file-storage) |
+| 11 | `eve/db/ds/conn.cljc` | 189 | `#?(:clj` | KEPT | glue: clj/cljr-only storage API (restore/store/addresses/collect-garbage/file-storage) |
 | 12 | `eve/db/ds/core.cljc` | 9 | `#?(:cljs [cljs.reader :as edn]` | KEPT | glue: host edn reader libspec (cljs.reader vs clojure.edn) |
 | 13 | `eve/db/ds/core.cljc` | 16 | `#?(:clj [eve.db.ds.pprint])` | KEPT | glue: clj-only pprint require |
 | 14 | `eve/db/ds/core.cljc` | 24 | `#?(:clj` | KEPT | glue: host :import of library or JVM types |
@@ -56,19 +57,19 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 27 | `eve/db/ds/core.cljc` | 293 | `(def ^{:arglists '([db tx-data]) :tag #?(:jank db/DB :clj DB :cljr DB :cljs db/D` | REMOVED | dropped host :tag metadata; Entity/DB return hints were reader branches only |
 | 28 | `eve/db/ds/core.cljc` | 297 | `(defn #?@(:jank [^db/DB with-schema] :clj [^DB with-schema] :cljr [^DB with-sche` | REMOVED | dropped host type hints on defn name/args; unhinted clojure.core defn |
 | 29 | `eve/db/ds/core.cljc` | 381 | `(defn #?@(:jank [^db/Datom find-datom] :clj [^Datom find-datom] :cljr [^Datom fi` | REMOVED | dropped host type hints on defn name/args; unhinted clojure.core defn |
-| 30 | `eve/db/ds/core.cljc` | 488 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 31 | `eve/db/ds/core.cljc` | 615 | `#?(:cljs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 32 | `eve/db/ds/core.cljc` | 628 | `#?(:lpy` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 30 | `eve/db/ds/core.cljc` | 488 | `#?(:clj` | KEPT | glue: clj/cljr-only storage API (restore/store/addresses/collect-garbage/file-storage) |
+| 31 | `eve/db/ds/core.cljc` | 615 | `#?(:cljs` | KEPT | glue: cljs EDN tag-parser registration for data-readers |
+| 32 | `eve/db/ds/core.cljc` | 628 | `#?(:lpy` | KEPT | glue: basilisp programmatic *data-readers* merge (file route runs too early) |
 | 33 | `eve/db/ds/core.cljc` | 656 | `(defn #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db/DB db] :clje` | REMOVED | dropped host type hints on defn name/args; unhinted clojure.core defn |
-| 34 | `eve/db/ds/core.cljc` | 672 | `#?(:cljs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 35 | `eve/db/ds/core.cljc` | 714 | `#?(:clje` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 36 | `eve/db/ds/core.cljc` | 723 | `#?(:cljs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 37 | `eve/db/ds/core.cljc` | 760 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 38 | `eve/db/ds/core.cljc` | 767 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 39 | `eve/db/ds/core.cljc` | 784 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 40 | `eve/db/ds/core.cljc` | 791 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 41 | `eve/db/ds/core.cljc` | 802 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 42 | `eve/db/ds/core.cljc` | 811 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 34 | `eve/db/ds/core.cljc` | 672 | `#?(:cljs` | KEPT | glue: host IDeref/IPending reify for transact/future-call API compatibility |
+| 35 | `eve/db/ds/core.cljc` | 714 | `#?(:clje` | KEPT | glue: host IDeref/IPending reify for transact/future-call API compatibility |
+| 36 | `eve/db/ds/core.cljc` | 723 | `#?(:cljs` | KEPT | glue: host IDeref/IPending reify for transact/future-call API compatibility |
+| 37 | `eve/db/ds/core.cljc` | 760 | `#?(:clj` | KEPT | glue: clj/cljr-only storage API (restore/store/addresses/collect-garbage/file-storage) |
+| 38 | `eve/db/ds/core.cljc` | 767 | `#?(:clj` | KEPT | glue: clj/cljr-only storage API (restore/store/addresses/collect-garbage/file-storage) |
+| 39 | `eve/db/ds/core.cljc` | 784 | `#?(:clj` | KEPT | glue: clj/cljr-only storage API (restore/store/addresses/collect-garbage/file-storage) |
+| 40 | `eve/db/ds/core.cljc` | 791 | `#?(:clj` | KEPT | glue: clj/cljr-only storage API (restore/store/addresses/collect-garbage/file-storage) |
+| 41 | `eve/db/ds/core.cljc` | 802 | `#?(:clj` | KEPT | glue: clj/cljr-only storage API (restore/store/addresses/collect-garbage/file-storage) |
+| 42 | `eve/db/ds/core.cljc` | 811 | `#?(:clj` | KEPT | glue: clj/cljr-only storage API (restore/store/addresses/collect-garbage/file-storage) |
 | 43 | `eve/db/ds/db.cljc` | 3 | `#?(:cljs [goog.array :as garray])` | KEPT | glue: cljs goog.array require |
 | 44 | `eve/db/ds/db.cljc` | 6 | `#?(:clj [eve.db.ds.inline :refer [update]])` | KEPT | glue: clj-only inline/update require |
 | 45 | `eve/db/ds/db.cljc` | 8 | `#?(:clje [eve.host :refer [transient persistent! conj! dissoc! long volatile!]])` | KEPT | glue: clje eve.host :refer for host primitives |
@@ -82,46 +83,46 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 53 | `eve/db/ds/db.cljc` | 79 | `#?@(:clj [(or (seq? x)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 54 | `eve/db/ds/db.cljc` | 105 | `#?@(:clj [(or (seq? x)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 55 | `eve/db/ds/db.cljc` | 128 | `#?(:clje (defn seqable? [x] (and (not (string? x))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 56 | `eve/db/ds/db.cljc` | 141 | `(do #?@(:clj [(defn- cljs-env?` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 57 | `eve/db/ds/db.cljc` | 164 | `#?(:clje (defn- cljs-env?` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 58 | `eve/db/ds/db.cljc` | 168 | `(do #?@(:clj [(defmacro if-cljs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 59 | `eve/db/ds/db.cljc` | 188 | `#?(:clje (defmacro if-cljs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 60 | `eve/db/ds/db.cljc` | 192 | `(do #?@(:clj [(defn patch-tag [meta cljs-env?]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 61 | `eve/db/ds/db.cljc` | 225 | `#?(:clje (defn patch-tag` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 62 | `eve/db/ds/db.cljc` | 238 | `(do #?@(:clj [(defmacro defn+` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 63 | `eve/db/ds/db.cljc` | 322 | `#?(:clje (defmacro defn+` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 64 | `eve/db/ds/db.cljc` | 348 | `#?(:clje (defn- hash-combine* [seed hash]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 65 | `eve/db/ds/db.cljc` | 358 | `#?@(:clj [(clojure.lang.Util/hashCombine x y)] :cljr [(clojure.lang.Util/hashCom` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 66 | `eve/db/ds/db.cljc` | 363 | `(do #?@(:clj [   (defn- get-sig [method]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 67 | `eve/db/ds/db.cljc` | 387 | `#?(:clje (defn- get-sig [& _args] nil))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 68 | `eve/db/ds/db.cljc` | 389 | `(do #?@(:clj [   (defn- dedupe-interfaces [deftype-form]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 69 | `eve/db/ds/db.cljc` | 407 | `#?(:clje (defn- dedupe-interfaces [& _args] nil))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 70 | `eve/db/ds/db.cljc` | 409 | `(do #?@(:clj [(defn- make-record-updatable-cljs [name fields & impls]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 71 | `eve/db/ds/db.cljc` | 431 | `#?(:clje (defn- make-record-updatable-cljs [name fields & impls]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 72 | `eve/db/ds/db.cljc` | 436 | `(do #?@(:clj [(defn- make-record-updatable-clj [name fields & impls]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 73 | `eve/db/ds/db.cljc` | 480 | `#?(:clje (defn- make-record-updatable-clj [name fields & impls]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 74 | `eve/db/ds/db.cljc` | 483 | `(do #?@(:clj [(defmacro defrecord-updatable [name fields & impls]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 75 | `eve/db/ds/db.cljc` | 497 | `#?(:clje (defmacro defrecord-updatable [name fields & impls]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 56 | `eve/db/ds/db.cljc` | 141 | `(do #?@(:clj [(defn- cljs-env?` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 57 | `eve/db/ds/db.cljc` | 164 | `#?(:clje (defn- cljs-env?` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 58 | `eve/db/ds/db.cljc` | 168 | `(do #?@(:clj [(defmacro if-cljs` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 59 | `eve/db/ds/db.cljc` | 188 | `#?(:clje (defmacro if-cljs` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 60 | `eve/db/ds/db.cljc` | 192 | `(do #?@(:clj [(defn patch-tag [meta cljs-env?]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 61 | `eve/db/ds/db.cljc` | 225 | `#?(:clje (defn patch-tag` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 62 | `eve/db/ds/db.cljc` | 238 | `(do #?@(:clj [(defmacro defn+` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 63 | `eve/db/ds/db.cljc` | 322 | `#?(:clje (defmacro defn+` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 64 | `eve/db/ds/db.cljc` | 348 | `#?(:clje (defn- hash-combine* [seed hash]` | KEPT | glue: clje portable mix for clojure.lang.Util/hashCombine |
+| 65 | `eve/db/ds/db.cljc` | 358 | `#?@(:clj [(clojure.lang.Util/hashCombine x y)] :cljr [(clojure.lang.Util/hashCom` | KEPT | glue: host hashCombine (clojure.lang.Util vs clje mix) |
+| 66 | `eve/db/ds/db.cljc` | 363 | `(do #?@(:clj [   (defn- get-sig [method]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 67 | `eve/db/ds/db.cljc` | 387 | `#?(:clje (defn- get-sig [& _args] nil))` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 68 | `eve/db/ds/db.cljc` | 389 | `(do #?@(:clj [   (defn- dedupe-interfaces [deftype-form]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 69 | `eve/db/ds/db.cljc` | 407 | `#?(:clje (defn- dedupe-interfaces [& _args] nil))` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 70 | `eve/db/ds/db.cljc` | 409 | `(do #?@(:clj [(defn- make-record-updatable-cljs [name fields & impls]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 71 | `eve/db/ds/db.cljc` | 431 | `#?(:clje (defn- make-record-updatable-cljs [name fields & impls]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 72 | `eve/db/ds/db.cljc` | 436 | `(do #?@(:clj [(defn- make-record-updatable-clj [name fields & impls]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 73 | `eve/db/ds/db.cljc` | 480 | `#?(:clje (defn- make-record-updatable-clj [name fields & impls]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 74 | `eve/db/ds/db.cljc` | 483 | `(do #?@(:clj [(defmacro defrecord-updatable [name fields & impls]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 75 | `eve/db/ds/db.cljc` | 497 | `#?(:clje (defmacro defrecord-updatable [name fields & impls]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
 | 76 | `eve/db/ds/db.cljc` | 515 | `#?(:clj  (declare hash-datom) :cljr (declare hash-datom)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 77 | `eve/db/ds/db.cljc` | 520 | `#?(:clj  (declare equiv-datom) :cljr (declare equiv-datom)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 78 | `eve/db/ds/db.cljc` | 525 | `#?(:clj  (declare seq-datom) :cljr (declare seq-datom)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 79 | `eve/db/ds/db.cljc` | 530 | `#?(:clj  (declare nth-datom) :cljr (declare nth-datom)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 80 | `eve/db/ds/db.cljc` | 535 | `#?(:clj  (declare assoc-datom) :cljr (declare assoc-datom)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 81 | `eve/db/ds/db.cljc` | 540 | `#?(:clj  (declare val-at-datom) :cljr (declare val-at-datom)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 82 | `eve/db/ds/db.cljc` | 577 | `(empty [d] (throw #?(:cljr (System.NotSupportedException. "empty is not supporte` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 82 | `eve/db/ds/db.cljc` | 577 | `(empty [d] (throw #?(:cljr (System.NotSupportedException. "empty is not supporte` | KEPT | glue: host exception class for unsupported empty on Datom |
 | 83 | `eve/db/ds/db.cljc` | 596 | `#?(:clje (vector k)` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
 | 84 | `eve/db/ds/db.cljc` | 607 | `#?(:cljs (goog/exportSymbol "eve.db.ds.db.Datom" Datom))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 85 | `eve/db/ds/db.cljc` | 662 | `#?@(:clj [(throw (IndexOutOfBoundsException.))] :cljr [(throw (System.IndexOutOf` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 85 | `eve/db/ds/db.cljc` | 662 | `#?@(:clj [(throw (IndexOutOfBoundsException.))] :cljr [(throw (System.IndexOutOf` | KEPT | glue: host IndexOutOfBounds / IndexOutOfRange exception class |
 | 86 | `eve/db/ds/db.cljc` | 686 | `(throw #?(:clje (ex-info (str "invalid key for #eve.db.ds/Datom: " k) {})` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 87 | `eve/db/ds/db.cljc` | 697 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 88 | `eve/db/ds/db.cljc` | 710 | `(do #?@(:clj [(defmacro combine-cmp [& comps]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 89 | `eve/db/ds/db.cljc` | 758 | `#?(:clje (defmacro combine-cmp [& comps]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 90 | `eve/db/ds/db.cljc` | 770 | `(do #?@(:clj [(defn- -case-tree [queries variants]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 91 | `eve/db/ds/db.cljc` | 805 | `#?(:clje (defn- -case-tree [queries variants]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 92 | `eve/db/ds/db.cljc` | 814 | `(do #?@(:clj [(defmacro case-tree [qs vs]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 93 | `eve/db/ds/db.cljc` | 822 | `#?(:clje (defmacro case-tree [qs vs]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 94 | `eve/db/ds/db.cljc` | 826 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 95 | `eve/db/ds/db.cljc` | 838 | `#?(:clj  {:inline (fn [x y] `(identical? (class ~x) (class ~y)))} :cljr {:inline` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 87 | `eve/db/ds/db.cljc` | 697 | `#?(:clj` | KEPT | glue: host print-method for Datom |
+| 88 | `eve/db/ds/db.cljc` | 710 | `(do #?@(:clj [(defmacro combine-cmp [& comps]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 89 | `eve/db/ds/db.cljc` | 758 | `#?(:clje (defmacro combine-cmp [& comps]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 90 | `eve/db/ds/db.cljc` | 770 | `(do #?@(:clj [(defn- -case-tree [queries variants]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 91 | `eve/db/ds/db.cljc` | 805 | `#?(:clje (defn- -case-tree [queries variants]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 92 | `eve/db/ds/db.cljc` | 814 | `(do #?@(:clj [(defmacro case-tree [qs vs]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 93 | `eve/db/ds/db.cljc` | 822 | `#?(:clje (defmacro case-tree [qs vs]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 94 | `eve/db/ds/db.cljc` | 826 | `#?(:clj` | KEPT | glue: clj/cljr :inline compiler metadata |
+| 95 | `eve/db/ds/db.cljc` | 838 | `#?(:clj  {:inline (fn [x y] `(identical? (class ~x) (class ~y)))} :cljr {:inline` | KEPT | glue: clj/cljr :inline compiler metadata |
 | 96 | `eve/db/ds/db.cljc` | 840 | `#?@(:clj [(identical? (class x) (class y))] :cljr [(identical? (class x) (class ` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 97 | `eve/db/ds/db.cljc` | 845 | `(do #?@(:jank [   (defn class-name` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 98 | `eve/db/ds/db.cljc` | 866 | `#?(:clje (defn class-name` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
@@ -135,13 +136,13 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 106 | `eve/db/ds/db.cljc` | 974 | `#?@(:clj  [(instance? Number x)       (compare x y)] :cljr [(number? x)         ` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 107 | `eve/db/ds/db.cljc` | 976 | `#?@(:clj  [(instance? Comparable x)   (compare x y)] :cljr [(instance? System.IC` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 108 | `eve/db/ds/db.cljc` | 980 | `#?@(:cljs [(or (number? x) (string? x) (array? x) (true? x) (false? x)) (garray/` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 109 | `eve/db/ds/db.cljc` | 982 | `(catch #?@(:clj [ClassCastException] :cljr [System.InvalidCastException]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 110 | `eve/db/ds/db.cljc` | 991 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 111 | `eve/db/ds/db.cljc` | 1009 | `(do #?@(:jank [(defmacro defcomp [sym [arg1 arg2] & body]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 112 | `eve/db/ds/db.cljc` | 1054 | `#?(:clje (defmacro defcomp [sym [arg1 arg2] & body]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 113 | `eve/db/ds/db.cljc` | 1084 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 109 | `eve/db/ds/db.cljc` | 982 | `(catch #?@(:clj [ClassCastException] :cljr [System.InvalidCastException]` | KEPT | glue: host catch class (ClassCastException / InvalidCastException / TypeError) |
+| 110 | `eve/db/ds/db.cljc` | 991 | `#?(:clj` | KEPT | glue: clj/cljr :inline compiler metadata |
+| 111 | `eve/db/ds/db.cljc` | 1009 | `(do #?@(:jank [(defmacro defcomp [sym [arg1 arg2] & body]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 112 | `eve/db/ds/db.cljc` | 1054 | `#?(:clje (defmacro defcomp [sym [arg1 arg2] & body]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 113 | `eve/db/ds/db.cljc` | 1084 | `#?(:clj` | KEPT | glue: clj/cljr :inline compiler metadata |
 | 114 | `eve/db/ds/db.cljc` | 1092 | `#?@(:clj [(long (compare a1 a2))] :cljr [(long (compare a1 a2))]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 115 | `eve/db/ds/db.cljc` | 1159 | `(catch #?@(:clj [ClassCastException] :cljr [System.InvalidCastException]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 115 | `eve/db/ds/db.cljc` | 1159 | `(catch #?@(:clj [ClassCastException] :cljr [System.InvalidCastException]` | KEPT | glue: host catch class (ClassCastException / InvalidCastException / TypeError) |
 | 116 | `eve/db/ds/db.cljc` | 1172 | `(do #?@(:clj [(declare hash-db pr-db)] :cljr [(declare hash-db pr-db)]` | KEPT | glue: forward-declare twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
 | 117 | `eve/db/ds/db.cljc` | 1179 | `#?(:clje (declare hash-db pr-db))` | KEPT | glue: forward-declare twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
 | 118 | `eve/db/ds/db.cljc` | 1181 | `(do #?@(:clj [(declare hash-fdb)] :cljr [(declare hash-fdb)]` | KEPT | glue: forward-declare twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
@@ -157,11 +158,11 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 128 | `eve/db/ds/db.cljc` | 1211 | `#?(:clje (declare resolve-datom))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 129 | `eve/db/ds/db.cljc` | 1213 | `(do #?@(:clj [(declare components->pattern)] :cljr [(declare components->pattern` | KEPT | glue: forward-declare twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
 | 130 | `eve/db/ds/db.cljc` | 1217 | `#?(:clje (declare components->pattern))` | KEPT | glue: forward-declare twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
-| 131 | `eve/db/ds/db.cljc` | 1221 | `(do #?@(:clj [(defmacro validate-attr [attr at]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 132 | `eve/db/ds/db.cljc` | 1255 | `#?(:clje (defmacro validate-attr [attr at]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 133 | `eve/db/ds/db.cljc` | 1264 | `(do #?@(:clj [(defmacro validate-val [v at]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 134 | `eve/db/ds/db.cljc` | 1284 | `#?(:clje (defmacro validate-val [v at]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 135 | `eve/db/ds/db.cljc` | 1329 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 131 | `eve/db/ds/db.cljc` | 1221 | `(do #?@(:clj [(defmacro validate-attr [attr at]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 132 | `eve/db/ds/db.cljc` | 1255 | `#?(:clje (defmacro validate-attr [attr at]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 133 | `eve/db/ds/db.cljc` | 1264 | `(do #?@(:clj [(defmacro validate-val [v at]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 134 | `eve/db/ds/db.cljc` | 1284 | `#?(:clje (defmacro validate-val [v at]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 135 | `eve/db/ds/db.cljc` | 1329 | `#?(:clj` | KEPT | glue: clj/cljr-only fast vpred using host .equals |
 | 136 | `eve/db/ds/db.cljc` | 1367 | `#?(:lpy (declare -schema -attrs-by -search -datoms -seek-datoms -rseek-datoms -i` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 137 | `eve/db/ds/db.cljc` | 1373 | `#?(:lpy (declare multival?))` | KEPT | glue: basilisp-only forward declare so deftype method bodies resolve at analysis |
 | 138 | `eve/db/ds/db.cljc` | 1387 | `(let [entry #?(:clj  (fn [k v] (clojure.lang.MapEntry. k v)) :cljr (fn [k v] (cl` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
@@ -174,7 +175,7 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 145 | `eve/db/ds/db.cljc` | 1643 | `#?@(:jank [(and (satisfies? ISearch x)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 146 | `eve/db/ds/db.cljc` | 1678 | `#?@(:cljs` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
 | 147 | `eve/db/ds/db.cljc` | 1767 | `(defn #?@(:clj [^DB unfiltered-db] :cljr [^DB unfiltered-db] :cljs [^DB unfilter` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 148 | `eve/db/ds/db.cljc` | 2031 | `#?(:cljs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 148 | `eve/db/ds/db.cljc` | 2031 | `#?(:cljs` | KEPT | glue: host print-method / pr-db for DB and FilteredDB |
 | 149 | `eve/db/ds/db.cljc` | 2056 | `#?(:lpy` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 150 | `eve/db/ds/db.cljc` | 2066 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 151 | `eve/db/ds/db.cljc` | 2096 | `(do #?@(:clj [(declare entid-strict)] :cljr [(declare entid-strict)]` | KEPT | glue: forward-declare twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
@@ -194,8 +195,8 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 165 | `eve/db/ds/db.cljc` | 2353 | `#?@(:cljs [(array? eid) (recur db (array-seq eid))])` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 166 | `eve/db/ds/db.cljc` | 2382 | `#?@(:cljs` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
 | 167 | `eve/db/ds/db.cljc` | 2402 | `#?(:clj` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
-| 168 | `eve/db/ds/db.cljc` | 2468 | `#?(:clj {:inline (fn [report] `(-> ~report :db-before :max-tx long inc))} :cljr ` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 169 | `eve/db/ds/db.cljc` | 2473 | `#?(:clj {:inline (fn [db] `(inc (long (:max-eid ~db))))} :cljr {:inline (fn [db]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 168 | `eve/db/ds/db.cljc` | 2468 | `#?(:clj {:inline (fn [report] `(-> ~report :db-before :max-tx long inc))} :cljr ` | KEPT | glue: clj/cljr :inline compiler metadata |
+| 169 | `eve/db/ds/db.cljc` | 2473 | `#?(:clj {:inline (fn [db] `(inc (long (:max-eid ~db))))} :cljr {:inline (fn [db]` | KEPT | glue: clj/cljr :inline compiler metadata |
 | 170 | `eve/db/ds/db.cljc` | 2477 | `(do #?@(:clj [(defn- ^Boolean tx-id?` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 171 | `eve/db/ds/db.cljc` | 2507 | `#?(:clje (defn- tx-id?` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 172 | `eve/db/ds/db.cljc` | 2514 | `(do #?@(:clj [(defn-  ^Boolean tempid? [x] (or` | REMOVED | unhinted clojure.core defn-; predicate body was identical on every host |
@@ -272,13 +273,13 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 243 | `eve/db/ds/pull_api.cljc` | 331 | `(fn [#?@(:jank [^db/Datom d] :clj [^Datom d] :cljr [^Datom d] :cljs [^db/Datom d` | REMOVED | dropped Datom/DB type hints; field and binding reads are unhinted |
 | 244 | `eve/db/ds/pull_api.cljc` | 349 | `#?@(:clj [^PullPattern pattern :pattern] :cljr [^PullPattern pattern :pattern] :` | REMOVED | dropped host type hints; field reads use portable (.-pattern)/(.-name)/(.-first-attr) |
 | 245 | `eve/db/ds/pull_parser.cljc` | 8 | `#?(:clje [eve.host :refer [volatile!]])))` | KEPT | glue: clje eve.host :refer for host primitives |
-| 246 | `eve/db/ds/pull_parser.cljc` | 73 | `#?(:clj (when (namespace sym-or-fn)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 246 | `eve/db/ds/pull_parser.cljc` | 73 | `#?(:clj (when (namespace sym-or-fn)` | KEPT | glue: clj/cljr requiring-resolve for pull xform symbols |
 | 247 | `eve/db/ds/pull_parser.cljc` | 156 | `(defn #?@(:clj [^PullPattern parse-pattern] :cljr [^PullPattern parse-pattern] :` | REMOVED | dropped host type hints on defn name; unhinted clojure.core defn |
 | 248 | `eve/db/ds/query.cljc` | 6 | `#?@(:cljs [[cljs.reader :as edn]]` | KEPT | glue: host edn reader libspec (cljs.reader vs clojure.edn) |
 | 249 | `eve/db/ds/query.cljc` | 25 | `#?(:clje [eve.host :refer [transient persistent! conj! assoc! volatile! to-array` | KEPT | glue: clje eve.host :refer for host primitives |
 | 250 | `eve/db/ds/query.cljc` | 26 | `#?(:clj` | KEPT | glue: host :import of library or JVM types |
 | 251 | `eve/db/ds/query.cljc` | 37 | `#?(:clj (set! *warn-on-reflection* true) :cljr (set! *warn-on-reflection* true))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 252 | `eve/db/ds/query.cljc` | 57 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 252 | `eve/db/ds/query.cljc` | 57 | `#?(:clj` | KEPT | glue: host print-method for Relation |
 | 253 | `eve/db/ds/query.cljc` | 121 | `#?(:clj (set! *unchecked-math* true) :cljr (set! *unchecked-math* true))` | KEPT | glue: compiler flag set! *unchecked-math* true |
 | 254 | `eve/db/ds/query.cljc` | 131 | `#?(:cljs` | REMOVED | portable tuple-get (da/aget on arrays, get otherwise); dropped cljs-only defn wrapper |
 | 255 | `eve/db/ds/query.cljc` | 137 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
@@ -305,7 +306,7 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 276 | `eve/db/ds/query.cljc` | 649 | `(if #?(:clj  false :cljr false` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 277 | `eve/db/ds/query.cljc` | 661 | `(da/aset a i #?(:cljs (tuple-get tuple tuple-idx)` | KEPT | open: vm-owned data row; foldable by the portable tuple-get once vm reclassifies it |
 | 278 | `eve/db/ds/query.cljc` | 677 | `(da/aset a i #?(:cljs (tuple-get tuple tuple-idx)` | KEPT | open: vm-owned data row; foldable by the portable tuple-get once vm reclassifies it |
-| 279 | `eve/db/ds/query.cljc` | 687 | `#?(:cljs nil` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 279 | `eve/db/ds/query.cljc` | 687 | `#?(:cljs nil` | KEPT | glue: resolve-sym is nil on cljs; host resolve elsewhere |
 | 280 | `eve/db/ds/query.cljc` | 1032 | `(fn [#?(:cljs t1` | REMOVED | dropped host :tag metadata on fn arg; unhinted parameter |
 | 281 | `eve/db/ds/query.cljc` | 1082 | `#?(:jank dp/Variable :clj Variable :cljr Variable :cljs dp/Variable :clje dp/Var` | KEPT | glue: instance? class-name dispatch (imported short name on JVM/CLR vs qualified parser type on other hosts) |
 | 282 | `eve/db/ds/query.cljc` | 1085 | `#?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar :clje dp/SrcVar :lpy` | KEPT | glue: instance? class-name dispatch (imported short name on JVM/CLR vs qualified parser type on other hosts) |
@@ -316,14 +317,14 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 287 | `eve/db/ds/query.cljc` | 1147 | `#?(:jank dp/FindScalar :clj FindScalar :cljr FindScalar :cljs dp/FindScalar :clj` | KEPT | glue: instance? class-name dispatch (imported short name on JVM/CLR vs qualified parser type on other hosts) |
 | 288 | `eve/db/ds/query.cljc` | 1151 | `#?(:jank dp/FindTuple :clj FindTuple :cljr FindTuple :cljs dp/FindTuple :clje dp` | KEPT | glue: instance? class-name dispatch (imported short name on JVM/CLR vs qualified parser type on other hosts) |
 | 289 | `eve/db/ds/query_v3.cljc` | 15 | `#?(:clj` | KEPT | glue: host :import of library or JVM types |
-| 290 | `eve/db/ds/query_v3.cljc` | 62 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 291 | `eve/db/ds/query_v3.cljc` | 107 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 292 | `eve/db/ds/query_v3.cljc` | 178 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 293 | `eve/db/ds/query_v3.cljc` | 274 | `(.write #?(:clj  (.getSimpleName ^Class (class rel)) :cljr (.getSimpleName ^Clas` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 294 | `eve/db/ds/query_v3.cljc` | 306 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 290 | `eve/db/ds/query_v3.cljc` | 62 | `#?(:clj` | KEPT | glue: clj java.util.HashMap/ArrayList/HashSet fast collections vs cljs maps/arrays |
+| 291 | `eve/db/ds/query_v3.cljc` | 107 | `#?(:clj` | KEPT | glue: clj java.util.HashMap/ArrayList/HashSet fast collections vs cljs maps/arrays |
+| 292 | `eve/db/ds/query_v3.cljc` | 178 | `#?(:clj` | KEPT | glue: clj java.util.HashMap/ArrayList/HashSet fast collections vs cljs maps/arrays |
+| 293 | `eve/db/ds/query_v3.cljc` | 274 | `(.write #?(:clj  (.getSimpleName ^Class (class rel)) :cljr (.getSimpleName ^Clas` | KEPT | glue: host class-name writing in query_v3 printer (.getSimpleName vs type) |
+| 294 | `eve/db/ds/query_v3.cljc` | 306 | `#?(:clj` | KEPT | glue: host print-method for ArrayRelation |
 | 295 | `eve/db/ds/query_v3.cljc` | 345 | `(instance? #?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/Bind` | KEPT | glue: instance? class-name dispatch (imported short name on JVM/CLR vs qualified parser type on other hosts) |
 | 296 | `eve/db/ds/query_v3.cljc` | 347 | `(instance? #?(:jank dp/Variable :clj Variable :cljr Variable :cljs dp/Variable) ` | KEPT | glue: instance? class-name dispatch (imported short name on JVM/CLR vs qualified parser type on other hosts) |
-| 297 | `eve/db/ds/query_v3.cljc` | 357 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 297 | `eve/db/ds/query_v3.cljc` | 357 | `#?(:clj` | KEPT | glue: host print-method for CollRelation |
 | 298 | `eve/db/ds/query_v3.cljc` | 516 | `#?(:jank dp/BindIgnore :clj BindIgnore :cljr BindIgnore :cljs dp/BindIgnore)` | KEPT | glue: instance? class-name dispatch (imported short name on JVM/CLR vs qualified parser type on other hosts) |
 | 299 | `eve/db/ds/query_v3.cljc` | 519 | `#?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/BindScalar)` | KEPT | glue: instance? class-name dispatch (imported short name on JVM/CLR vs qualified parser type on other hosts) |
 | 300 | `eve/db/ds/query_v3.cljc` | 525 | `#?(:jank dp/BindColl :clj BindColl :cljr BindColl :cljs dp/BindColl)` | KEPT | glue: instance? class-name dispatch (imported short name on JVM/CLR vs qualified parser type on other hosts) |
@@ -354,10 +355,10 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 325 | `eve/db/ds/serialize.cljc` | 41 | `(def ^:private pos-inf #?(:jank (/ 1.0 0.0) :clj Double/POSITIVE_INFINITY :cljr ` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 326 | `eve/db/ds/serialize.cljc` | 42 | `(def ^:private neg-inf #?(:jank (/ -1.0 0.0) :clj Double/NEGATIVE_INFINITY :cljr` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 327 | `eve/db/ds/serialize.cljc` | 43 | `(def ^:private nan-val #?(:jank (/ 0.0 0.0) :clj Double/NaN :cljr Double/NaN :cl` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 328 | `eve/db/ds/serialize.cljc` | 48 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 329 | `eve/db/ds/serialize.cljc` | 81 | `#?(:clje` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 330 | `eve/db/ds/serialize.cljc` | 87 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 331 | `eve/db/ds/serialize.cljc` | 117 | `#?(:clje` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 328 | `eve/db/ds/serialize.cljc` | 48 | `#?(:clj` | KEPT | glue: serialize array/dict macro host twins (JS literal vs vector/array-map; F-CLJE-SERIALIZE) |
+| 329 | `eve/db/ds/serialize.cljc` | 81 | `#?(:clje` | KEPT | glue: serialize array/dict macro host twins (JS literal vs vector/array-map; F-CLJE-SERIALIZE) |
+| 330 | `eve/db/ds/serialize.cljc` | 87 | `#?(:clj` | KEPT | glue: serialize array/dict macro host twins (JS literal vs vector/array-map; F-CLJE-SERIALIZE) |
+| 331 | `eve/db/ds/serialize.cljc` | 117 | `#?(:clje` | KEPT | glue: serialize array/dict macro host twins (JS literal vs vector/array-map; F-CLJE-SERIALIZE) |
 | 332 | `eve/db/ds/serialize.cljc` | 127 | `#?(:clj  (.get ^java.util.List d (int i)) :cljr (nth d i)` | REMOVED | array-get is portable nth |
 | 333 | `eve/db/ds/serialize.cljc` | 133 | `#?(:clj  (.get ^java.util.Map d k) :cljr (get d k)` | REMOVED | dict-get is portable get |
 | 334 | `eve/db/ds/serialize.cljc` | 139 | `#?(:clj  (instance? java.util.List a) :cljr (instance? System.Collections.IList ` | KEPT | glue: host collection type test (java.util.List / IList / JS array / vector) |
@@ -378,30 +379,30 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 349 | `eve/db/ds/serialize.cljc` | 362 | `#?(:clj arrays/into-array :cljr arrays/into-array))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 350 | `eve/db/ds/serialize.cljc` | 363 | `aevt     (some->> (dict-get from "aevt") (amap #(arrays/aget eavt %)) #?(:clj ar` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 351 | `eve/db/ds/serialize.cljc` | 364 | `avet     (some->> (dict-get from "avet") (amap #(arrays/aget eavt %)) #?(:clj ar` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 352 | `eve/db/ds/storage.cljc` | 21 | `#?(:lpy` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 352 | `eve/db/ds/storage.cljc` | 21 | `#?(:lpy` | KEPT | glue: basilisp defprotocol cannot take :extend-via-metadata; option omitted on that seat |
 | 353 | `eve/db/ds/util.cljc` | 10 | `#?(:clj` | KEPT | glue: host :import of library or JVM types |
-| 354 | `eve/db/ds/util.cljc` | 20 | `#?(:clj (defmacro log [& body]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 355 | `eve/db/ds/util.cljc` | 40 | `#?(:clje (defmacro log [& body]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 356 | `eve/db/ds/util.cljc` | 49 | `#?(:lpy (defmacro raise [& fragments]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 357 | `eve/db/ds/util.cljc` | 70 | `#?(:clje (defmacro raise [& fragments]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 358 | `eve/db/ds/util.cljc` | 75 | `#?(:clj (def ^:private ^:dynamic *if+-syms) :cljr (def ^:private ^:dynamic *if+-` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 359 | `eve/db/ds/util.cljc` | 79 | `#?(:clje (def ^:private ^:dynamic *if+-syms))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 360 | `eve/db/ds/util.cljc` | 81 | `#?(:clj (defn- if+-rewrite-cond-impl [cond]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 361 | `eve/db/ds/util.cljc` | 181 | `#?(:clje (defn- if+-rewrite-cond-impl [cond]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 362 | `eve/db/ds/util.cljc` | 207 | `#?(:clj (defn- if+-rewrite-cond [cond]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 363 | `eve/db/ds/util.cljc` | 219 | `#?(:clje (defn- if+-rewrite-cond [cond]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 364 | `eve/db/ds/util.cljc` | 223 | `#?(:clj (defn- flatten-1 [xs]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 365 | `eve/db/ds/util.cljc` | 235 | `#?(:clje (defn- flatten-1 [xs]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 366 | `eve/db/ds/util.cljc` | 239 | `#?(:clj (defmacro if+` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 367 | `eve/db/ds/util.cljc` | 384 | `#?(:clje (defmacro if+` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 368 | `eve/db/ds/util.cljc` | 403 | `#?(:clj (defmacro cond+ [& clauses]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 369 | `eve/db/ds/util.cljc` | 431 | `#?(:clje (defmacro cond+ [& clauses]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 370 | `eve/db/ds/util.cljc` | 439 | `#?(:clj (defmacro some-of` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 371 | `eve/db/ds/util.cljc` | 459 | `#?(:clje (defmacro some-of` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 372 | `eve/db/ds/util.cljc` | 468 | `#?(:cljr` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 373 | `eve/db/ds/util.cljc` | 477 | `#?(:cljs` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 354 | `eve/db/ds/util.cljc` | 20 | `#?(:clj (defmacro log [& body]` | KEPT | glue: util macro-layer host twins (log/raise/if+/cond+/some-of); clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 355 | `eve/db/ds/util.cljc` | 40 | `#?(:clje (defmacro log [& body]` | KEPT | glue: util macro-layer host twins (log/raise/if+/cond+/some-of); clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 356 | `eve/db/ds/util.cljc` | 49 | `#?(:lpy (defmacro raise [& fragments]` | KEPT | glue: util macro-layer host twins (log/raise/if+/cond+/some-of); clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 357 | `eve/db/ds/util.cljc` | 70 | `#?(:clje (defmacro raise [& fragments]` | KEPT | glue: util macro-layer host twins (log/raise/if+/cond+/some-of); clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 358 | `eve/db/ds/util.cljc` | 75 | `#?(:clj (def ^:private ^:dynamic *if+-syms) :cljr (def ^:private ^:dynamic *if+-` | KEPT | glue: util macro-layer host twins (log/raise/if+/cond+/some-of); clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 359 | `eve/db/ds/util.cljc` | 79 | `#?(:clje (def ^:private ^:dynamic *if+-syms))` | KEPT | glue: util macro-layer host twins (log/raise/if+/cond+/some-of); clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 360 | `eve/db/ds/util.cljc` | 81 | `#?(:clj (defn- if+-rewrite-cond-impl [cond]` | KEPT | glue: util macro-layer host twins (log/raise/if+/cond+/some-of); clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 361 | `eve/db/ds/util.cljc` | 181 | `#?(:clje (defn- if+-rewrite-cond-impl [cond]` | KEPT | glue: util macro-layer host twins (log/raise/if+/cond+/some-of); clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 362 | `eve/db/ds/util.cljc` | 207 | `#?(:clj (defn- if+-rewrite-cond [cond]` | KEPT | glue: util macro-layer host twins (log/raise/if+/cond+/some-of); clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 363 | `eve/db/ds/util.cljc` | 219 | `#?(:clje (defn- if+-rewrite-cond [cond]` | KEPT | glue: util macro-layer host twins (log/raise/if+/cond+/some-of); clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 364 | `eve/db/ds/util.cljc` | 223 | `#?(:clj (defn- flatten-1 [xs]` | KEPT | glue: util macro-layer host twins (log/raise/if+/cond+/some-of); clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 365 | `eve/db/ds/util.cljc` | 235 | `#?(:clje (defn- flatten-1 [xs]` | KEPT | glue: util macro-layer host twins (log/raise/if+/cond+/some-of); clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 366 | `eve/db/ds/util.cljc` | 239 | `#?(:clj (defmacro if+` | KEPT | glue: util macro-layer host twins (log/raise/if+/cond+/some-of); clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 367 | `eve/db/ds/util.cljc` | 384 | `#?(:clje (defmacro if+` | KEPT | glue: util macro-layer host twins (log/raise/if+/cond+/some-of); clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 368 | `eve/db/ds/util.cljc` | 403 | `#?(:clj (defmacro cond+ [& clauses]` | KEPT | glue: util macro-layer host twins (log/raise/if+/cond+/some-of); clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 369 | `eve/db/ds/util.cljc` | 431 | `#?(:clje (defmacro cond+ [& clauses]` | KEPT | glue: util macro-layer host twins (log/raise/if+/cond+/some-of); clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 370 | `eve/db/ds/util.cljc` | 439 | `#?(:clj (defmacro some-of` | KEPT | glue: util macro-layer host twins (log/raise/if+/cond+/some-of); clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 371 | `eve/db/ds/util.cljc` | 459 | `#?(:clje (defmacro some-of` | KEPT | glue: util macro-layer host twins (log/raise/if+/cond+/some-of); clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
+| 372 | `eve/db/ds/util.cljc` | 468 | `#?(:cljr` | KEPT | glue: host UUID and clock interop for squuid |
+| 373 | `eve/db/ds/util.cljc` | 477 | `#?(:cljs` | KEPT | glue: host UUID and clock interop for squuid |
 | 374 | `eve/db/ds/util.cljc` | 488 | `(squuid #?(:clj  (System/currentTimeMillis) :cljr (.ToUnixTimeMilliseconds (Syst` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 375 | `eve/db/ds/util.cljc` | 491 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 375 | `eve/db/ds/util.cljc` | 491 | `#?(:clj` | KEPT | glue: host UUID and clock interop for squuid |
 | 376 | `eve/db/ds/util.cljc` | 523 | `#?(:clj (-> (.getMostSignificantBits ^UUID uuid)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 
 ## Tally

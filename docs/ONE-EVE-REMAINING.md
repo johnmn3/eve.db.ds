@@ -1,6 +1,6 @@
 # Remaining 291 host branches — classification for vm
 
-Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–5, 7, 10 and 11 removed 51 branches; 342→291; batches 6, 8 and 9 marked 69 as glue plus batch 10 #334, open-other 216→129). Comments/strings excluded, nested counted once.
+Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–5, 7, 10 and 11 removed 51 branches; 342→291; batches 6, 8, 9 and 12 marked 164 as glue plus batch 10 #334, open-other 216→34). Comments/strings excluded, nested counted once.
 
 **Glue** = loader/require-macros/import/refer/type-hint/instance?-class-name/warn-on-reflection/export wiring that does not itself implement data, memory, threading, or HTTP.
 
@@ -76,7 +76,7 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 
 **HTTP count for vm: 0.**
 
-## glue (107)
+## glue (202)
 
 - #2 `eve/db/ds/conn.cljc:8` — `#?(:lpy [eve.deftype :refer [deftype]])`
 - #6 `eve/db/ds/conn.cljc:41` — `(if (instance? #?(:jank db/FilteredDB :clj FilteredDB :cljr FilteredDB :cljs db/`
@@ -189,12 +189,6 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 
 - #334 `eve/db/ds/serialize.cljc:139` — `#?(:clj  (instance? java.util.List a) :cljr (instance? System.Collections.IList `
 
-
-## glue-candidate (0)
-
-
-## open-other (129)
-
 - #9 `eve/db/ds/conn.cljc:87` — `#?(:clj`
 - #10 `eve/db/ds/conn.cljc:114` — `#?(:clj`
 - #11 `eve/db/ds/conn.cljc:189` — `#?(:clj`
@@ -210,9 +204,6 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 - #40 `eve/db/ds/core.cljc:791` — `#?(:clj`
 - #41 `eve/db/ds/core.cljc:802` — `#?(:clj`
 - #42 `eve/db/ds/core.cljc:811` — `#?(:clj`
-- #52 `eve/db/ds/db.cljc:60` — `#?@(:clj [(or (seq? x)`
-- #53 `eve/db/ds/db.cljc:79` — `#?@(:clj [(or (seq? x)`
-- #54 `eve/db/ds/db.cljc:105` — `#?@(:clj [(or (seq? x)`
 - #56 `eve/db/ds/db.cljc:141` — `(do #?@(:clj [(defn- cljs-env?`
 - #57 `eve/db/ds/db.cljc:164` — `#?(:clje (defn- cljs-env?`
 - #58 `eve/db/ds/db.cljc:168` — `(do #?@(:clj [(defmacro if-cljs`
@@ -244,11 +235,6 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 - #93 `eve/db/ds/db.cljc:822` — `#?(:clje (defmacro case-tree [qs vs]`
 - #94 `eve/db/ds/db.cljc:826` — `#?(:clj`
 - #95 `eve/db/ds/db.cljc:838` — `#?(:clj  {:inline (fn [x y] `(identical? (class ~x) (class ~y)))} :cljr {:inline`
-- #96 `eve/db/ds/db.cljc:840` — `#?@(:clj [(identical? (class x) (class y))] :cljr [(identical? (class x) (class `
-- #97 `eve/db/ds/db.cljc:845` — `(do #?@(:jank [   (defn class-name`
-- #98 `eve/db/ds/db.cljc:866` — `#?(:clje (defn class-name`
-- #102 `eve/db/ds/db.cljc:903` — `(do #?@(:jank [(defn ihash`
-- #103 `eve/db/ds/db.cljc:920` — `#?(:clje (defn ihash`
 - #109 `eve/db/ds/db.cljc:982` — `(catch #?@(:clj [ClassCastException] :cljr [System.InvalidCastException]`
 - #110 `eve/db/ds/db.cljc:991` — `#?(:clj`
 - #111 `eve/db/ds/db.cljc:1009` — `(do #?@(:jank [(defmacro defcomp [sym [arg1 arg2] & body]`
@@ -260,29 +246,11 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 - #133 `eve/db/ds/db.cljc:1264` — `(do #?@(:clj [(defmacro validate-val [v at]`
 - #134 `eve/db/ds/db.cljc:1284` — `#?(:clje (defmacro validate-val [v at]`
 - #135 `eve/db/ds/db.cljc:1329` — `#?(:clj`
-- #139 `eve/db/ds/db.cljc:1416` — `#?(:bb (seq x) :default x))`
-- #141 `eve/db/ds/db.cljc:1496` — `(-schema [db] #?(:clje schema`
-- #142 `eve/db/ds/db.cljc:1508` — `pred       #?(:clj  (vpred v)`
-- #144 `eve/db/ds/db.cljc:1630` — `#?(:clje`
-- #145 `eve/db/ds/db.cljc:1643` — `#?@(:jank [(and (satisfies? ISearch x)`
 - #148 `eve/db/ds/db.cljc:2031` — `#?(:cljs`
-- #149 `eve/db/ds/db.cljc:2056` — `#?(:lpy`
-- #150 `eve/db/ds/db.cljc:2066` — `#?(:clj`
-- #159 `eve/db/ds/db.cljc:2142` — `cmp     #?(:bb (case index`
 - #168 `eve/db/ds/db.cljc:2468` — `#?(:clj {:inline (fn [report] `(-> ~report :db-before :max-tx long inc))} :cljr `
 - #169 `eve/db/ds/db.cljc:2473` — `#?(:clj {:inline (fn [db] `(inc (long (:max-eid ~db))))} :cljr {:inline (fn [db]`
-- #170 `eve/db/ds/db.cljc:2477` — `(do #?@(:clj [(defn- ^Boolean tx-id?`
-- #171 `eve/db/ds/db.cljc:2507` — `#?(:clje (defn- tx-id?`
-- #226 `eve/db/ds/pull_api.cljc:205` — `(recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default`
-- #231 `eve/db/ds/pull_api.cljc:265` — `(recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default`
 - #246 `eve/db/ds/pull_parser.cljc:73` — `#?(:clj (when (namespace sym-or-fn)`
 - #252 `eve/db/ds/query.cljc:57` — `#?(:clj`
-- #255 `eve/db/ds/query.cljc:137` — `#?(:clj`
-- #256 `eve/db/ds/query.cljc:199` — `#?(:clje`
-- #270 `eve/db/ds/query.cljc:425` — `#?(:clje (let [getters (mapv #(getter-fn attrs %) common-attrs)]`
-- #272 `eve/db/ds/query.cljc:441` — `#?(:jank`
-- #273 `eve/db/ds/query.cljc:504` — `(if-some [tuples1 #?(:clj (hash key) :cljr (hash key) :cljs (get hash key) :clje`
-- #276 `eve/db/ds/query.cljc:649` — `(if #?(:clj  false :cljr false`
 - #279 `eve/db/ds/query.cljc:687` — `#?(:cljs nil`
 - #290 `eve/db/ds/query_v3.cljc:62` — `#?(:clj`
 - #291 `eve/db/ds/query_v3.cljc:107` — `#?(:clj`
@@ -294,14 +262,6 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 - #329 `eve/db/ds/serialize.cljc:81` — `#?(:clje`
 - #330 `eve/db/ds/serialize.cljc:87` — `#?(:clj`
 - #331 `eve/db/ds/serialize.cljc:117` — `#?(:clje`
-- #335 `eve/db/ds/serialize.cljc:145` — `#?(:clj`
-- #336 `eve/db/ds/serialize.cljc:161` — `#?(:clj`
-- #339 `eve/db/ds/serialize.cljc:242` — `#?@(:clj [(or`
-- #340 `eve/db/ds/serialize.cljc:256` — `#?(:clje false :default (== pos-inf v)) (array marker-inf)`
-- #341 `eve/db/ds/serialize.cljc:257` — `#?(:clje false :default (== neg-inf v)) (array marker-minus-inf)`
-- #346 `eve/db/ds/serialize.cljc:282` — `#?@(:clj`
-- #347 `eve/db/ds/serialize.cljc:295` — `#?@(:clj`
-- #348 `eve/db/ds/serialize.cljc:300` — `#?(:jank`
 - #352 `eve/db/ds/storage.cljc:21` — `#?(:lpy`
 - #354 `eve/db/ds/util.cljc:20` — `#?(:clj (defmacro log [& body]`
 - #355 `eve/db/ds/util.cljc:40` — `#?(:clje (defmacro log [& body]`
@@ -324,3 +284,44 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 - #372 `eve/db/ds/util.cljc:468` — `#?(:cljr`
 - #373 `eve/db/ds/util.cljc:477` — `#?(:cljs`
 - #375 `eve/db/ds/util.cljc:491` — `#?(:clj`
+
+
+## glue-candidate (0)
+
+
+## open-other (34)
+
+- #52 `eve/db/ds/db.cljc:60` — `#?@(:clj [(or (seq? x)`
+- #53 `eve/db/ds/db.cljc:79` — `#?@(:clj [(or (seq? x)`
+- #54 `eve/db/ds/db.cljc:105` — `#?@(:clj [(or (seq? x)`
+- #96 `eve/db/ds/db.cljc:840` — `#?@(:clj [(identical? (class x) (class y))] :cljr [(identical? (class x) (class `
+- #97 `eve/db/ds/db.cljc:845` — `(do #?@(:jank [   (defn class-name`
+- #98 `eve/db/ds/db.cljc:866` — `#?(:clje (defn class-name`
+- #102 `eve/db/ds/db.cljc:903` — `(do #?@(:jank [(defn ihash`
+- #103 `eve/db/ds/db.cljc:920` — `#?(:clje (defn ihash`
+- #139 `eve/db/ds/db.cljc:1416` — `#?(:bb (seq x) :default x))`
+- #141 `eve/db/ds/db.cljc:1496` — `(-schema [db] #?(:clje schema`
+- #142 `eve/db/ds/db.cljc:1508` — `pred       #?(:clj  (vpred v)`
+- #144 `eve/db/ds/db.cljc:1630` — `#?(:clje`
+- #145 `eve/db/ds/db.cljc:1643` — `#?@(:jank [(and (satisfies? ISearch x)`
+- #149 `eve/db/ds/db.cljc:2056` — `#?(:lpy`
+- #150 `eve/db/ds/db.cljc:2066` — `#?(:clj`
+- #159 `eve/db/ds/db.cljc:2142` — `cmp     #?(:bb (case index`
+- #170 `eve/db/ds/db.cljc:2477` — `(do #?@(:clj [(defn- ^Boolean tx-id?`
+- #171 `eve/db/ds/db.cljc:2507` — `#?(:clje (defn- tx-id?`
+- #226 `eve/db/ds/pull_api.cljc:205` — `(recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default`
+- #231 `eve/db/ds/pull_api.cljc:265` — `(recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default`
+- #255 `eve/db/ds/query.cljc:137` — `#?(:clj`
+- #256 `eve/db/ds/query.cljc:199` — `#?(:clje`
+- #270 `eve/db/ds/query.cljc:425` — `#?(:clje (let [getters (mapv #(getter-fn attrs %) common-attrs)]`
+- #272 `eve/db/ds/query.cljc:441` — `#?(:jank`
+- #273 `eve/db/ds/query.cljc:504` — `(if-some [tuples1 #?(:clj (hash key) :cljr (hash key) :cljs (get hash key) :clje`
+- #276 `eve/db/ds/query.cljc:649` — `(if #?(:clj  false :cljr false`
+- #335 `eve/db/ds/serialize.cljc:145` — `#?(:clj`
+- #336 `eve/db/ds/serialize.cljc:161` — `#?(:clj`
+- #339 `eve/db/ds/serialize.cljc:242` — `#?@(:clj [(or`
+- #340 `eve/db/ds/serialize.cljc:256` — `#?(:clje false :default (== pos-inf v)) (array marker-inf)`
+- #341 `eve/db/ds/serialize.cljc:257` — `#?(:clje false :default (== neg-inf v)) (array marker-minus-inf)`
+- #346 `eve/db/ds/serialize.cljc:282` — `#?@(:clj`
+- #347 `eve/db/ds/serialize.cljc:295` — `#?@(:clj`
+- #348 `eve/db/ds/serialize.cljc:300` — `#?(:jank`
