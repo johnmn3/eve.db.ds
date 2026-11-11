@@ -32,6 +32,8 @@
   (containsKey [_ k] (contains? key-value k))
   (entryAt [_ k]     (find key-value k))
   (assoc [this k v]  (assoc-lru this k v))
+  clojure.lang.Counted
+  (count [_] (count key-value))
   clojure.lang.Seqable
   (seq [this] (seq (.-key-value this)))
   IPrintWithWriter
