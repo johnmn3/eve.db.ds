@@ -133,3 +133,7 @@ Collapsed `tuple-ref-slot?`, `resolved-eid?`, `tempid?`, and `tuple-has-tempids?
 ## Open-other batch 12 — mark 95 leftover host-API/macro/print/storage rows glue
 
 No source change. Specific glue reasons for macro-layer host twins (F-CLJE-DECLARE) in db.cljc and util.cljc, serialize array/dict macros, print-method / pr-db, clj/cljr :inline metadata, the clj/cljr-only storage API, data-reader registration, requiring-resolve / resolve-sym, host exception classes, vpred, transact/future-call IDeref reify, query_v3 java.util fast collections, and squuid UUID/clock interop. Counts unchanged **291** / **0**. open-other 129→34; glue 107→202.
+
+## Open-other batch 13 — portable hash-join get + leftover glue
+
+hash-join looks up grouped tuples with portable `get` (#273); `hash-attrs` already returns a map. Marked 27 more leftover rows glue with specific reasons (seqable?, class-name/ihash, bb search-result, clje -schema, vpred, clje IAssociative, db?, leftover declares, find-datom comparator, tx-id? host equality, cljs issue-262, serialize amap/bigint/inf/settings/locking). Left #226/#231 (vm-adjacent `.-default`) and join-tuples / tuple-key-fn (#255, #256, #270, #272) for a later portable attempt. Counts **291→290** / **0**. open-other 34→6; glue 202→229.

@@ -486,7 +486,7 @@
                         tuples2
                         (reduce (fn outer [acc tuple2]
                                   (let [key (key-fn2 tuple2)]
-                                    (if-some [tuples1 #?(:clj (hash key) :cljr (hash key) :cljs (get hash key) :clje (get hash key) :lpy (get hash key))]
+                                    (if-some [tuples1 (get hash key)]
                                       (reduce (fn inner [acc tuple1]
                                                 (conj! acc (join-tuples tuple1 keep-idxs1 tuple2 keep-idxs2)))
                                         acc tuples1)
