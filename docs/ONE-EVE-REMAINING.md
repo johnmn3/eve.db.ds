@@ -1,6 +1,6 @@
-# Remaining 288 host branches — classification for vm
+# Remaining 284 host branches — classification for vm
 
-Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–5, 7, 10 and 11 removed 54 branches; 342→288; batches 6, 8, 9, 12 and 13 marked 193 as glue plus batch 10 #334, open-other 216→2). Comments/strings excluded, nested counted once. Re-derive of glue from batches 6, 8, 12, 13 and 14: 148 rows held up as real host glue; 44 reclassified data, 10 memory, 4 threading (vm data/memory rows untouched).
+Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–5, 7, 10 and 11 removed 54 branches; 342→288; batches 6, 8, 9, 12 and 13 marked 193 as glue plus batch 10 #334, open-other 216→2). Comments/strings excluded, nested counted once. Re-derive of glue from batches 6, 8, 12, 13 and 14: 148 rows held up as real host glue; 44 reclassified data, 10 memory, 4 threading (vm data/memory rows untouched). Batch 16 folded ihash (#102/#103) and tx-id? (#170/#171) to portable clojure.core (288→284).
 
 **Glue** = loader/require-macros/import/refer/type-hint/instance?-class-name/warn-on-reflection/export wiring that does not itself implement data, memory, threading, or HTTP.
 
@@ -9,7 +9,7 @@ Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–5
 **Open-other** = remaining host branches (math, host interop, etc.) that are not obviously glue and not in the four forbidden areas by snippet.
 
 
-## data (83)
+## data (79)
 
 - #1 `eve/db/ds/built_ins.cljc:127` — `(#?(:cljs js/Math.sqrt :clj Math/sqrt :cljr Math/Sqrt) (aggregate-variance coll)`
 - #20 `eve/db/ds/core.cljc:194` — `(def ^{:tag #?(:jank db/Datom :clj Datom :cljr Datom :cljs db/Datom :clje db/Dat`
@@ -75,16 +75,12 @@ Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–5
 - #96 `eve/db/ds/db.cljc:840` — `#?@(:clj [(identical? (class x) (class y))] :cljr [(identical? (class x) (class `
 - #97 `eve/db/ds/db.cljc:845` — `(do #?@(:jank [   (defn class-name`
 - #98 `eve/db/ds/db.cljc:866` — `#?(:clje (defn class-name`
-- #102 `eve/db/ds/db.cljc:903` — `(do #?@(:jank [(defn ihash`
-- #103 `eve/db/ds/db.cljc:920` — `#?(:clje (defn ihash`
 - #139 `eve/db/ds/db.cljc:1416` — `#?(:bb (seq x) :default x))`
 - #141 `eve/db/ds/db.cljc:1496` — `(-schema [db] #?(:clje schema`
 - #142 `eve/db/ds/db.cljc:1508` — `pred       #?(:clj  (vpred v)`
 - #144 `eve/db/ds/db.cljc:1630` — `#?(:clje`
 - #145 `eve/db/ds/db.cljc:1643` — `#?@(:jank [(and (satisfies? ISearch x)`
 - #159 `eve/db/ds/db.cljc:2142` — `cmp     #?(:bb (case index`
-- #170 `eve/db/ds/db.cljc:2477` — `(do #?@(:clj [(defn- ^Boolean tx-id?`
-- #171 `eve/db/ds/db.cljc:2507` — `#?(:clje (defn- tx-id?`
 - #335 `eve/db/ds/serialize.cljc:145` — `#?(:clj`
 - #336 `eve/db/ds/serialize.cljc:161` — `#?(:clj`
 - #339 `eve/db/ds/serialize.cljc:242` — `#?@(:clj [(or`

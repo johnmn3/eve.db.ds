@@ -903,26 +903,9 @@
               (- ~x ~y)
               (long (compare ~x ~y)))))
 
-(do #?@(:jank [(defn ihash
-             ^long [x]
-             (. clojure.lang.Util (hasheq x)))]
- :clj [(defn ihash
-             {:inline (fn [x] `(. clojure.lang.Util (hasheq ~x)))}
-             ^long [x]
-             (. clojure.lang.Util (hasheq x)))] :cljr [(defn ihash
-             {:inline (fn [x] `(. clojure.lang.Util (hasheq ~x)))}
-             ^long [x]
-             (. clojure.lang.Util (hasheq x)))]
- :lpy  [(defn ihash
-          ^long [x]
-          (hash x))]
- :cljs [(defn ihash
-          ^long [x]
-          (hash x))]))
-
-#?(:clje (defn ihash
-           ^long [x]
-           (hash x)))
+(defn ihash
+  ^long [x]
+  (hash x))
 
 (do #?@(:clj [(declare value-compare)] :cljr [(declare value-compare)]
  :lpy  [(declare value-compare)]
@@ -2384,42 +2367,12 @@
   ^long [db]
   (inc (long (:max-eid db))))
 
-(do #?@(:clj [(defn- ^Boolean tx-id?
-     [e]
-     (or (identical? :db/current-tx e)
-       (.equals ":db/current-tx" e) ;; for JS interop
-       (.equals "datomic.tx" e)
-       (.equals "eve.db.ds.tx" e)))] ;; PORT DELTA (F-CLJR-TXID-EQUALS): the :cljr arm's (.Equals lit e)
- ;; dies at runtime when e is not a String ("No matching member equals
- ;; taking 1 args for String" -- the DLR callsite will not bind
- ;; Object.Equals for a Keyword/long receiver arg the way JVM's
- ;; String.equals does). The :cljs arm's plain = is the portable body;
- ;; the :cljr arm now uses it too.
- :cljr [(defn- ^Boolean tx-id?
-     [e]
-     (or (identical? :db/current-tx e)
-       (= ":db/current-tx" e) ;; for JS interop
-       (= "datomic.tx" e)
-       (= "eve.db.ds.tx" e)))]
- :lpy  [(defn- tx-id?
-     [e]
-     (or (identical? :db/current-tx e)
-       (= e ":db/current-tx") ;; for JS interop
-       (= e "datomic.tx")
-       (= e "eve.db.ds.tx")))]
- :cljs [(defn- ^boolean tx-id?
-     [e]
-     (or (= e :db/current-tx)
-       (= e ":db/current-tx") ;; for JS interop
-       (= e "datomic.tx")
-       (= e "eve.db.ds.tx")))]))
-
-#?(:clje (defn- tx-id?
-           [e]
-           (or (= e :db/current-tx)
-             (= e ":db/current-tx") ;; for JS interop
-             (= e "datomic.tx")
-             (= e "eve.db.ds.tx"))))
+(defn- tx-id?
+  [e]
+  (or (= e :db/current-tx)
+    (= e ":db/current-tx") ;; for JS interop
+    (= e "datomic.tx")
+    (= e "eve.db.ds.tx")))
 
 (defn- tempid? [x]
   (or

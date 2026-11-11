@@ -22,6 +22,7 @@ After open-other batch 12 (mark 95 leftover host-API/macro/print/storage rows gl
 After open-other batch 13 (portable hash-join get + leftover glue): **290** / **0**.
 After open-other batch 14 (portable join-tuples + tuple-key-fn glue): **288** / **0**.
 After glue re-derive (batches 6/8/12/13/14 reviewed; 58 reclassified data/memory/threading, 0 folded, counts unchanged): **288** / **0**.
+After open-other batch 16 (portable ihash + tx-id?): **284** / **0**.
 
 Plain type sites (deftype/defrecord/defrecord-updatable that are not eve-deftype / eve.deftype/deftype) are **0**. Remaining `(deftype …)` forms in source are eve.deftype/deftype (LRU, Entity, AutoTempid, FilteredDB, ArrayRelation, CollRelation, SingletonRelation) or evicted through `def-eve-record` / `deftrecord`.
 
@@ -132,8 +133,8 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 99 | `eve/db/ds/db.cljc` | 872 | `#?@(:clj [(long (compare (class-name x) (class-name y)))] :cljr [(long (compare ` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 100 | `eve/db/ds/db.cljc` | 877 | `(do #?@(:jank [(defmacro int-compare [x y]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 101 | `eve/db/ds/db.cljc` | 898 | `#?(:clje (defmacro int-compare [x y]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 102 | `eve/db/ds/db.cljc` | 903 | `(do #?@(:jank [(defn ihash` | KEPT | data: ihash is hasheq of data values for comparators; foldable to clojure.core/hash if four hosts pass |
-| 103 | `eve/db/ds/db.cljc` | 920 | `#?(:clje (defn ihash` | KEPT | data: ihash clje twin; foldable to clojure.core/hash if four hosts pass |
+| 102 | `eve/db/ds/db.cljc` | 903 | `(do #?@(:jank [(defn ihash` | REMOVED | portable clojure.core/hash; dropped host Util/hasheq and clje twin |
+| 103 | `eve/db/ds/db.cljc` | 920 | `#?(:clje (defn ihash` | REMOVED | portable clojure.core/hash; dropped F-CLJE ihash twin |
 | 104 | `eve/db/ds/db.cljc` | 924 | `(do #?@(:clj [(declare value-compare)] :cljr [(declare value-compare)]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 105 | `eve/db/ds/db.cljc` | 928 | `#?(:clje (declare value-compare))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 106 | `eve/db/ds/db.cljc` | 974 | `#?@(:clj  [(instance? Number x)       (compare x y)] :cljr [(number? x)         ` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
@@ -200,8 +201,8 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 167 | `eve/db/ds/db.cljc` | 2402 | `#?(:clj` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
 | 168 | `eve/db/ds/db.cljc` | 2468 | `#?(:clj {:inline (fn [report] `(-> ~report :db-before :max-tx long inc))} :cljr ` | KEPT | glue: clj/cljr :inline compiler metadata |
 | 169 | `eve/db/ds/db.cljc` | 2473 | `#?(:clj {:inline (fn [db] `(inc (long (:max-eid ~db))))} :cljr {:inline (fn [db]` | KEPT | glue: clj/cljr :inline compiler metadata |
-| 170 | `eve/db/ds/db.cljc` | 2477 | `(do #?@(:clj [(defn- ^Boolean tx-id?` | KEPT | data: tx-id? recognizes :db/current-tx in transaction data; foldable to portable = if four hosts pass |
-| 171 | `eve/db/ds/db.cljc` | 2507 | `#?(:clje (defn- tx-id?` | KEPT | data: tx-id? clje twin; foldable to portable = if four hosts pass |
+| 170 | `eve/db/ds/db.cljc` | 2477 | `(do #?@(:clj [(defn- ^Boolean tx-id?` | REMOVED | portable tx-id? via =; dropped host identical?/.equals twins |
+| 171 | `eve/db/ds/db.cljc` | 2507 | `#?(:clje (defn- tx-id?` | REMOVED | portable tx-id? via =; dropped F-CLJE twin |
 | 172 | `eve/db/ds/db.cljc` | 2514 | `(do #?@(:clj [(defn-  ^Boolean tempid? [x] (or` | REMOVED | unhinted clojure.core defn-; predicate body was identical on every host |
 | 173 | `eve/db/ds/db.cljc` | 2530 | `#?(:clje (defn- tempid? [x] (or` | REMOVED | unhinted clojure.core defn-; dropped F-CLJE-PREDS twin (same body) |
 | 174 | `eve/db/ds/db.cljc` | 2654 | `(do #?@(:clj [(defn-  ^Boolean tuple-has-tempids? [db a vs] (and` | REMOVED | unhinted clojure.core defn-; predicate body was identical on every host |

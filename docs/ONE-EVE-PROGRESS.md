@@ -154,3 +154,7 @@ Reclassified, vm's existing data/memory rows untouched:
 - **threading (4):** transact/future-call host IDeref reify (jank already uses `eve.host-completion`) and serialize's clj/cljr lock around freeze.
 
 Design calls for John: (1) squuid should use an Eve clock/uuid facility rather than host UUID/Date; (2) folding serialize `amap` to `mapv` would change the cljs published format (JS Array vs vector); (3) folding query_v3 `fast-map`/`fast-arr`/`fast-set` to clojure.core collections is the Eve-correct path but is not on the four-host only-core gate and may have a JVM performance question. Fold candidates that do not touch vm rows and can be tried next: `ihash` → `hash`, `tx-id?` → portable `=`, `db?` → `satisfies?`, `vpred`/`-search` pred → `=`, `seqable?` → wrap `clojure.core/seqable?` plus `arrays/array?` and exclude strings.
+
+## Open-other batch 16 — portable ihash + tx-id?
+
+Folded `ihash` (#102, #103) to one portable `(defn ihash ^long [x] (hash x))` and `tx-id?` (#170, #171) to one portable `defn-` using `=`. No vm rows touched. Counts **288** → **284** / **0**. Four-host only-core + lru-portable vs `:dev` Eve `7840ffe529`: JVM, bb, nbb, basilisp all PASS.
