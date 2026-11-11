@@ -16,7 +16,11 @@ copyright notices contained within the Program may not be removed or
 altered. Upstream carries the license text at the root of its
 repository (file `LICENSE`); in the Eve development trees it is
 preserved verbatim at `contract-test/vanilla-ds/LICENSE` and
-`contract-test/upstream-ds/LICENSE`. Any standalone distribution of
+`contract-test/upstream-ds/LICENSE`; in this repository at
+`test/upstream-ds/LICENSE`, beside the vendored upstream test suite
+(tag 1.8.1, commit 34915cf673c02cbc64779fe56e0288d70fea63f8, renamed
+mechanically `datascript.` -> `eve.db.ds.` by
+`scripts/vendor_upstream_ds.sh`). Any standalone distribution of
 the ported sources (`eve.db.ds.*` namespaces) MUST ship that EPL-1.0
 license text alongside them, together with this NOTICE.
 

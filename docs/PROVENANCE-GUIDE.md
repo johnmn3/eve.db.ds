@@ -58,6 +58,15 @@ flagship external library on 2026-11-06.
   - `contract-test/upstream-ds/` — the upstream test suite (the
     conformance bar the port is measured against) plus
     `upstream-ds/LICENSE`.
+    In the eve.db.ds repository this tree lives at `test/upstream-ds/`
+    (classpath root `test/upstream-ds/test`): upstream tag 1.8.1, commit
+    `34915cf673c02cbc64779fe56e0288d70fea63f8`, regenerated and checked
+    by `scripts/vendor_upstream_ds.sh [--check]`. The only change is a
+    mechanical rename in the .clj/.cljc files — paths
+    `test/datascript/` -> `test/eve/db/ds/`, `#datascript/` ->
+    `#eve.db.ds/`, `datascript\.` -> `eve\.db\.ds\.`, `datascript.` ->
+    `eve.db.ds.`; `test/js/` and `LICENSE` are verbatim (see
+    `test/upstream-ds/UPSTREAM.txt`).
 - **What Eve changed, in one paragraph:** the DB value and the Datom
   became Eve values (`eve-deftype`s) so a whole database can live inside
   an Eve atom; the index sets ride the Eve BTSet port (below); vanilla's

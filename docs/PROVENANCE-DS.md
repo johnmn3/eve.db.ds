@@ -43,3 +43,25 @@ create-conn, etc.), with the DB value and its index sets built on the Eve
 BTSet port so a whole database is an Eve value that can live in a shared
 Eve atom. Every difference from the vanilla text is listed and categorized
 in PORTING-DS.md (Eve-surface adaptation / host-quirk workaround / NONE).
+
+## Upstream test suite — `test/upstream-ds/` (vendored 2026-11-11)
+
+- **Source:** https://github.com/tonsky/datascript, tag **1.8.1**, commit
+  `34915cf673c02cbc64779fe56e0288d70fea63f8` (lightweight tag; tag sha =
+  commit sha). Byte-identical to the earlier box copy at
+  `contract-test/upstream-ds` (fixgates tree) before renaming.
+- **License:** EPL-1.0, `test/upstream-ds/LICENSE` verbatim from upstream.
+  The upstream test files carry no per-file copyright headers; none were
+  added or removed.
+- **Rename rule (mechanical only, .clj/.cljc/.cljs):** paths
+  `test/datascript/` -> `test/eve/db/ds/`; reader tags `#datascript/` ->
+  `#eve.db.ds/`; namespace regex literal `datascript\.` -> `eve\.db\.ds\.`;
+  `datascript.` -> `eve.db.ds.` (namespaces, qualified symbols, and the
+  `"datascript.tx"` tempid string, which the port renamed to
+  `"eve.db.ds.tx"`). Test bodies and assertions are otherwise unchanged.
+  `test/js/` (the JS-release suite, not run by any Clojure host) is verbatim.
+- **Regenerate / check:** `scripts/vendor_upstream_ds.sh` rewrites the tree;
+  `scripts/vendor_upstream_ds.sh --check` regenerates into a temp dir and
+  diffs (exit 1 on any difference).
+- **Driver:** `contract.ds-suite` (test/drivers/contract/ds_suite.cljc).
+
