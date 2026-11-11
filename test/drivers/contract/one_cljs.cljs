@@ -16,7 +16,7 @@
             [eve.process-slab :as ps]
             [eve.atom :as atom]
             [eve.core :as e]
-            [datascript.core :as d]
+            [eve.db.ds.core :as d]
             [contract.one]))
 
 (defn- open-only [dir]

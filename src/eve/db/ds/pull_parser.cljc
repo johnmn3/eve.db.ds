@@ -1,10 +1,10 @@
-(ns ^:no-doc datascript.pull-parser
+(ns ^:no-doc eve.db.ds.pull-parser
   (:require
-    [datascript.built-ins :as built-ins]
-    [datascript.db :as db]
-    [datascript.util :as util]
+    [eve.db.ds.built-ins :as built-ins]
+    [eve.db.ds.db :as db]
+    [eve.db.ds.util :as util]
     ;; PORT DELTA (F-CLJE-HOST-REFERS): util/if+ expansions emit
-    ;; (volatile! nil) into the using ns; see datascript.util
+    ;; (volatile! nil) into the using ns; see eve.db.ds.util
     #?(:clje [eve.host :refer [volatile!]])))
 
 (defrecord PullAttr [as default limit name pattern recursion-limit recursive? reverse? xform multival? ref? component?])

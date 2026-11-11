@@ -1,23 +1,23 @@
-(ns datascript.serialize
+(ns eve.db.ds.serialize
   (:refer-clojure :exclude [amap array?])
   (:require
     [clojure.edn :as edn]
     [clojure.string :as str]
-    ;; PORT DELTA (F-NBB-MACROS round): as in datascript.conn — no
+    ;; PORT DELTA (F-NBB-MACROS round): as in eve.db.ds.conn — no
     ;; :cljs type refer; Datom is named qualified at its uses
-    [datascript.db :as db]
-    [datascript.lru :as lru]
-    [datascript.storage :as storage]
-    [datascript.util :as util]
+    [eve.db.ds.db :as db]
+    [eve.db.ds.lru :as lru]
+    [eve.db.ds.storage :as storage]
+    [eve.db.ds.util :as util]
     [me.tonsky.persistent-sorted-set :as set]
     [me.tonsky.persistent-sorted-set.arrays :as arrays]
-    ;; PORT DELTA (F-CLJE-HOST-REFERS): see datascript.util
+    ;; PORT DELTA (F-CLJE-HOST-REFERS): see eve.db.ds.util
     #?(:clje [eve.host :refer [transient persistent! conj! assoc! volatile! locking]]))
-  #?(:cljs (:require-macros [datascript.serialize :refer [array dict]]))
+  #?(:cljs (:require-macros [eve.db.ds.serialize :refer [array dict]]))
   #?(:clj
      (:import
-       [datascript.db Datom]) :cljr (:import
-       [datascript.db Datom])))
+       [eve.db.ds.db Datom]) :cljr (:import
+       [eve.db.ds.db Datom])))
   ;; PORT (PORTING-DS.md): vanilla also imports
   ;; [me.tonsky.persistent_sorted_set PersistentSortedSet] here — the JVM
   ;; form's class, which does not exist in the Eve world (the port's type
@@ -335,8 +335,8 @@
                     (select-keys opts [:branching-factor :ref-type]))]
      (db/restore-db
        {:schema  schema
-        :eavt    (set/from-sorted-array :datascript.db/cmp-eavt eavt (arrays/alength eavt) settings)
-        :aevt    (set/from-sorted-array :datascript.db/cmp-aevt aevt (arrays/alength aevt) settings)
-        :avet    (set/from-sorted-array :datascript.db/cmp-avet avet (arrays/alength avet) settings)
+        :eavt    (set/from-sorted-array :eve.db.ds.db/cmp-eavt eavt (arrays/alength eavt) settings)
+        :aevt    (set/from-sorted-array :eve.db.ds.db/cmp-aevt aevt (arrays/alength aevt) settings)
+        :avet    (set/from-sorted-array :eve.db.ds.db/cmp-avet avet (arrays/alength avet) settings)
         :max-eid (dict-get from "max-eid")
         :max-tx  (dict-get from "max-tx")}))))

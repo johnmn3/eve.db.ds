@@ -1,6 +1,6 @@
-(ns ^:no-doc datascript.query
+(ns ^:no-doc eve.db.ds.query
   (:require
-    ;; PORT DELTA (F-JANK-READER-LIBSPEC): see datascript.core — the
+    ;; PORT DELTA (F-JANK-READER-LIBSPEC): see eve.db.ds.core — the
     ;; #?-inside-libspec form is not portable (jank's loader rejects
     ;; it); spliced #?@ with one plain libspec per feature instead.
     #?@(:cljs [[cljs.reader :as edn]]
@@ -10,27 +10,27 @@
     [clojure.set :as set]
     [clojure.string :as str]
     [clojure.walk :as walk]
-    [datascript.built-ins :as built-ins]
-    [datascript.db :as db]
+    [eve.db.ds.built-ins :as built-ins]
+    [eve.db.ds.db :as db]
     [me.tonsky.persistent-sorted-set.arrays :as da]
-    [datascript.lru :as lru]
-    [datascript.impl.entity :as de]
-    ;; PORT DELTA (F-NBB-MACROS round): as in datascript.conn — no
+    [eve.db.ds.lru :as lru]
+    [eve.db.ds.impl.entity :as de]
+    ;; PORT DELTA (F-NBB-MACROS round): as in eve.db.ds.conn — no
     ;; :cljs type refers; parser types are named qualified (dp/...)
     ;; at their uses in this file
-    [datascript.parser :as dp]
-    [datascript.pull-api :as dpa]
-    [datascript.util :as util]
-    ;; PORT DELTA (F-CLJE-HOST-REFERS): see datascript.util
+    [eve.db.ds.parser :as dp]
+    [eve.db.ds.pull-api :as dpa]
+    [eve.db.ds.util :as util]
+    ;; PORT DELTA (F-CLJE-HOST-REFERS): see eve.db.ds.util
     #?(:clje [eve.host :refer [transient persistent! conj! assoc! volatile! to-array into-array long]]))
   #?(:clj
      (:import
        [clojure.lang ILookup LazilyPersistentVector]
-       [datascript.parser BindColl BindIgnore BindScalar BindTuple
+       [eve.db.ds.parser BindColl BindIgnore BindScalar BindTuple
         Constant FindColl FindRel FindScalar FindTuple PlainSymbol
         RulesVar SrcVar Variable]) :cljr (:import
        [clojure.lang ILookup LazilyPersistentVector]
-       [datascript.parser BindColl BindIgnore BindScalar BindTuple
+       [eve.db.ds.parser BindColl BindIgnore BindScalar BindTuple
         Constant FindColl FindRel FindScalar FindTuple PlainSymbol
         RulesVar SrcVar Variable])))
 
@@ -261,7 +261,7 @@
 ;;
 
 (defn parse-rules [rules]
-  (let [rules (if (string? rules) (edn/read-string rules) rules)] ;; for datascript.js interop
+  (let [rules (if (string? rules) (edn/read-string rules) rules)] ;; for JS interop
     (dp/parse-rules rules) ;; validation
     (group-by ffirst rules)))
 

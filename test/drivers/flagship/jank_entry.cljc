@@ -5,8 +5,8 @@
   ;; flagship worker needs the persistent domain, so the ticket
   ;; proves both. Prints one :jank-entry map; exit 0 only if every
   ;; row is exact.
-  (:require [datascript.core :as d]
-            [datascript.conn :as conn]
+  (:require [eve.db.ds.core :as d]
+            [eve.db.ds.conn :as conn]
             [eve.atom :as atom]))
 
 (def base-tx (mapv (fn [i] {:db/id i :name (str "base-" i) :age (+ 20 i)})

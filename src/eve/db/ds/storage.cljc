@@ -1,4 +1,4 @@
-(ns datascript.storage
+(ns eve.db.ds.storage
   "PORT (PORTING-DS.md): vanilla's storage layer serializes DBs through
    persistent-sorted-set 0.3.x's storage-capable sets (a StorageAdapter
    rides inside each index set; the JVM form's classes do the work). On
@@ -6,7 +6,7 @@
    value, and storing it IS placing it in an Eve atom — a disk atom for
    durability, a shared disk atom for cross-process/cross-host access.
    This namespace keeps vanilla's protocol and the entry points
-   datascript.core touches, with Eve semantics:
+   eve.db.ds.core touches, with Eve semantics:
 
    - maybe-adapt-storage: identity when no :storage opt is given (the
      overwhelmingly common path — it sits inside empty-db/init-db); an
@@ -60,7 +60,7 @@
 
 (defn file-storage [& _args] (throw (eve-storage-guidance)))
 
-;; Remaining vars datascript.conn / datascript.db reference from vanilla's
+;; Remaining vars eve.db.ds.conn / eve.db.ds.db reference from vanilla's
 ;; storage implementation (tail-store/restore machinery). Same disposition:
 ;; they exist so the namespaces compile; calling one raises the guidance.
 (defn store-impl! [& _args] (throw (eve-storage-guidance)))

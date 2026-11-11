@@ -1,10 +1,13 @@
-# datascript.cljc
+# eve.db.ds
 
-**One DataScript codebase. Every host, both planes.**
+**One Datalog codebase. Every host, both planes.**
 
-This is DataScript (upstream 1.8.1, by Nikita Prokopov) ported onto
-Eve's value substrate — the same namespaces, the same public API, the
-upstream test suite as its conformance bar — maintained here as a
+derived from DataScript (tonsky/datascript), EPL
+
+`eve.db.ds` is the Datalog database ported onto Eve's value substrate
+(its upstream is DataScript 1.8.1, by Nikita Prokopov) — the same public
+API under the `eve.db.ds.*` namespaces, the upstream test suite as its
+conformance bar — maintained here as a
 single `.cljc` codebase that spans **both** host sets:
 
 - **Plane A — directly on Eve.** Every Clojure-like Eve supports loads
@@ -30,7 +33,7 @@ substrates run. Where it came from and under what license:
 
 | Path | What |
 |---|---|
-| `lib-ds/` | The library: `datascript/*`, `data_readers.cljc`. Consume this. |
+| `src/` | The library: `eve/db/ds/*` (namespaces `eve.db.ds.*`) and `data_readers.cljc`. Consume this. |
 | `lib/` | `me.tonsky/persistent-sorted-set`, the Eve port — DataScript's index substrate. |
 | `lib-ds-deps/` | `extend-clj`, the protocol-extension overlay the port builds on. |
 | `test/drivers/` | The shipped contract drivers (flagship, one-datum, suites) — the lib's conformance proof. |
@@ -40,18 +43,18 @@ substrates run. Where it came from and under what license:
 ## Consume it
 
 ```clojure
-;; the whole library in one dep (this repo's root deps.edn aggregates)
-datascript/datascript {:git/url "https://github.com/johnmn3/datascript.cljc"
-                       :git/sha "<pin>"}
+;; deps.edn
+eve.db.ds/eve.db.ds {:git/url "https://github.com/johnmn3/eve.db.ds"
+                     :git/sha "<pin>"}
+```
 
-;; or exactly the arrangement the Eve example shipped:
-datascript-on-eve/datascript-on-eve
-  {:git/url "https://github.com/johnmn3/datascript.cljc"
-   :git/sha "<pin>" :deps/root "lib-ds"}
+```clojure
+(require '[eve.db.ds.core :as d])
+(d/db-with (d/empty-db) [{:db/id 1 :name "Ivan"}])
 ```
 
 Eve itself is a dependency of the library, pinned in
-`lib-ds/deps.edn` to the shipped Eve tree
+`deps.edn` to the shipped Eve tree
 (`SeniorCareMarket/eve` @ 0.9.3.1). Bumping Eve is a one-line pin
 change here — never a copy.
 
@@ -86,15 +89,14 @@ smoothed over.
   seven build keys asserted exact against in-process ground truth,
   then find-datom / pull / datoms-sequence / transact timings.
 
-## Source of this tree (initial import)
+## Source of this tree
 
-`eve.db.ds` is the new home of this library (operator, 2026-11-10: "We'll call it eve.db.ds"). The Clojure namespaces are still `datascript.*` — renaming them is a named follow-up, not done in the import.
+`eve.db.ds` is the home of this library (operator, 2026-11-10: "We'll call it eve.db.ds"). The initial import on `main` (`ea64dfb0`) was the DataScript port tree exactly as staged:
+- johnmn3/cohost.cljc, example branch, commit `2cc5e3d5` (the staged port tree, as-is from the hatch box), 89 files.
+- That tree is byte-identical to SeniorCareMarket/eve 0.9.3.1's contract-test DataScript set plus the D1 fix (db.cljc :lpy arm, `^Boolean` dropped); Eve is pinned as a git dep at SeniorCareMarket/eve @ `4a921298` (see deps.edn).
 
-Initial import (`main`) is the DataScript port tree exactly as staged, byte for byte, with no edits:
-- johnmn3/cohost.cljc, branch `datascript-example`, commit `2cc5e3d5` ("staged datascript-repo tree committed as-is from hatch ~/workspace/ds-cohost/datascript-repo"), path `examples/datascript/datascript-repo/` (92 files minus the local `test/.cpcache`).
-- That tree is itself byte-identical to SeniorCareMarket/eve 0.9.3.1's contract-test DataScript set plus the D1 fix (db.cljc :lpy arm, `^Boolean` dropped), Eve pinned as a git dep at SeniorCareMarket/eve @ `4a921298` (see lib-ds/deps.edn).
+The namespaces were renamed to `eve.db.ds.*` (files under `src/eve/db/ds/`) in the commit after the import; there is no compatibility with the old names. `me.tonsky.persistent-sorted-set` and `extend-clj` are separate libraries and keep their names.
 
-Reconciled against, and not yet imported (each waits on proof; see RELEASE-COLLATION.md):
-- lane-m/perf-doc-0931-lpyfix (atom.broker) `9edd792e`: the lpy lane's dropped DS-port arms (conn `eve.deftype` refer, Entity :lpy arm, :lpy arms in core/query/serialize/pull_api/parser, extend_clj `clojure.core/atom`) and the duplicate-feature fix.
-- lane-m/ds-stage2 (atom.broker) `df7b1966`: the BTSet `IPlain` comparator fix (F-BTSET-PLAIN-CMP) and its pin probe.
-- lane-m/compiled-cljd (atom.broker): `:cljd` arms, query/core folds 39-44.
+Reconciled against, not yet imported (each waits on proof; see RELEASE-COLLATION.md): lane-m/perf-doc-0931-lpyfix `9edd792e`, lane-m/ds-stage2 `df7b1966`, lane-m/compiled-cljd.
+
+License: EPL-1.0 (upstream DataScript); notices preserved in LICENSE and docs/NOTICE-eve-db-ds-epl-1.0.txt.

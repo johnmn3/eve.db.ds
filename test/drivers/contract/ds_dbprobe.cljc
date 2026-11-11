@@ -1,5 +1,5 @@
 (ns contract.ds-dbprobe
-  (:require [eve.host] [eve.atom] [datascript.core :as d]))
+  (:require [eve.host] [eve.atom] [eve.db.ds.core :as d]))
 (defn -main [& _]
   (let [db (d/db-with (d/empty-db {:aka {:db/cardinality :db.cardinality/many}})
              [{:db/id 1 :name "Ivan" :aka ["IV" "Terrible"]}

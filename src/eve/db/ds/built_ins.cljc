@@ -1,9 +1,9 @@
-(ns datascript.built-ins
+(ns eve.db.ds.built-ins
   (:require
     [clojure.string :as str]
-    [datascript.db :as db]
-    [datascript.impl.entity :as de]
-    [datascript.util :as util]))
+    [eve.db.ds.db :as db]
+    [eve.db.ds.impl.entity :as de]
+    [eve.db.ds.util :as util]))
 
 (defn- -differ? [& xs]
   (let [l (count xs)]

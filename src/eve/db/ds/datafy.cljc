@@ -1,9 +1,9 @@
-(ns datascript.datafy
+(ns eve.db.ds.datafy
   (:require
     [clojure.core.protocols :as cp]
-    [datascript.pull-api :as dp]
-    [datascript.db :as db]
-    [datascript.impl.entity :as e]))
+    [eve.db.ds.pull-api :as dp]
+    [eve.db.ds.db :as db]
+    [eve.db.ds.impl.entity :as e]))
 
 (declare datafy-entity-seq)
 
@@ -31,7 +31,7 @@
     {`cp/datafy (fn [entities] (navize-pulled-entity-seq db-val entities))}))
 
 (extend-protocol cp/Datafiable
-  datascript.impl.entity.Entity
+  eve.db.ds.impl.entity.Entity
   (datafy [this]
     (let [db (.-db this)
           ref-attrs (:db.type/ref (:rschema db))

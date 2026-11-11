@@ -1,9 +1,9 @@
 (ns flagship.jank-entry-db
-  ;; Partial jank entry proof: datascript.db only (load + transact
-  ;; + datoms). datascript.core/query are blocked on jank by
+  ;; Partial jank entry proof: eve.db.ds.db only (load + transact
+  ;; + datoms). eve.db.ds.core/query are blocked on jank by
   ;; F-JANK-READER-LIBSPEC (see STATUS); conn rides core, so the
   ;; conn/query rows wait on that finding's owners.
-  (:require [datascript.db :as db]))
+  (:require [eve.db.ds.db :as db]))
 
 (def base-tx (mapv (fn [i] {:db/id i :name (str "base-" i) :age (+ 20 i)})
                    (range 1 11)))

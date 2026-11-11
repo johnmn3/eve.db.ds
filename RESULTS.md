@@ -1,4 +1,4 @@
-# RESULTS — datascript.cljc
+# RESULTS — eve.db.ds
 
 Measured results for the one codebase, per host, per plane. Every row
 carries: runtime / box / pin / tool versions / load. A failure is a
@@ -13,8 +13,8 @@ Eve = SeniorCareMarket/eve @ 4a921298 (0.9.3.1).
 | Plane | Host | Verdict | Evidence |
 |---|---|---|---|
 | A (on Eve) | JVM | **PASS** | write: all 6 checks pass (datoms 9, names, age-34, entity, pull name+friends), journal artifact present; fresh-process read: all 6 checks pass, seal identical to the write process ({:ptr 536870948, :blocks 125}). Hatch box, Temurin 21.0.13, Clojure CLI 1.12.3.1577, load 2.3/10.7/14.9 at start |
-| A (on Eve) | Babashka | **PASS** | write + fresh-process read both all-6-checks pass, journal present, seals equal across the two bb processes. bb 1.13.226 (fleet), entered via ds-harness.bb-main (Eve's bb completion first — the shipped seat pattern; entering datascript directly on bb dies in SCI deftype analysis, per the shipped bb-flagship-main record) |
-| B (cohost body) | JVM body | **PASS (gate mechanics, JVM peer scaffold)** | The shipped example's JVM body (examples/datascript/body/jvm_body.clj) wrote the contract dataset into the shared domain (CONTRACT-WRITE-OK), then two cohost.bodies/call exchanges were answered by the peer from its own deref: CALL1-DATOMS = 9, CALL2-NAMES = ["Ada" "Edsger" "Grace"]. The peer's own readback agreed (names, 9 datoms), the fresh-process harness read passed all 6 checks, and **all four prints carry the identical seal** (digest 1743633616 — also identical to plane A's JVM-built domain). The peer in this run was a JVM scaffold mirroring the basilisk body's program (seat-local de-risking); it proves the classpath, hosting, mailbox, call and shared-domain mechanics. It is NOT the basilisk verdict |
+| A (on Eve) | Babashka | **PASS** | write + fresh-process read both all-6-checks pass, journal present, seals equal across the two bb processes. bb 1.13.226 (fleet), entered via ds-harness.bb-main (Eve's bb completion first — the shipped seat pattern; entering eve.db.ds directly on bb dies in SCI deftype analysis, per the shipped bb-flagship-main record) |
+| B (cohost body) | JVM body | **PASS (gate mechanics, JVM peer scaffold)** | The shipped example's JVM body (the example's body/jvm_body.clj) wrote the contract dataset into the shared domain (CONTRACT-WRITE-OK), then two cohost.bodies/call exchanges were answered by the peer from its own deref: CALL1-DATOMS = 9, CALL2-NAMES = ["Ada" "Edsger" "Grace"]. The peer's own readback agreed (names, 9 datoms), the fresh-process harness read passed all 6 checks, and **all four prints carry the identical seal** (digest 1743633616 — also identical to plane A's JVM-built domain). The peer in this run was a JVM scaffold mirroring the basilisk body's program (seat-local de-risking); it proves the classpath, hosting, mailbox, call and shared-domain mechanics. It is NOT the basilisk verdict |
 | B (cohost body) | Basilisk body | _filed to the Mac seat via the job agent (2026-11-10); see the gate note below_ | |
 
 A note on seals: the JVM-built and bb-built contract domains agree
@@ -29,8 +29,8 @@ and reader's battery).
 **Plane B gate note:** the two-body gate (JVM body writes + calls,
 basilisk body answers from its own deref of the shared domain, both
 fresh-process harness readbacks) is scripted as
-examples/datascript/run-gate.sh + mac-gate.sh in johnmn3/cohost.cljc
-(branch datascript-example) and filed through the job agent to the
+the example's run-gate.sh + mac-gate.sh in johnmn3/cohost.cljc
+(the cohost.cljc example branch) and filed through the job agent to the
 Mac seat (basilisk 0.5.1) on 2026-11-10 — this box has no working
 basilisk (the fleet binary is caught in the box's filesystem flap and
 PyPI is unreachable through its egress, both measured). The filing
@@ -72,10 +72,10 @@ them; they are never estimated in the meantime.
 
 ## Defect ledger
 
-### D1 — basilisk: datascript.db fails macroexpansion at the :lpy `tx-id?` `.equals` arm
+### D1 — basilisk: eve.db.ds.db fails macroexpansion at the :lpy `tx-id?` `.equals` arm
 
 - **Claim (inherited, being re-derived):** on basilisk, requiring
-  datascript.db fails at macroexpansion, db.cljc:2484 — the `:lpy`
+  eve.db.ds.db fails at macroexpansion, db.cljc:2484 — the `:lpy`
   `tx-id?` arm's `(.equals ":db/current-tx" e)` forms.
 - **Provenance:** perf-doc lane, Eve 0.9.3.1 pin, fresh cache, minimal
   repro; PERF-DOC-REPORT.md on atom.broker branch lane-m/perf-doc-0931.
@@ -101,7 +101,7 @@ them; they are never estimated in the meantime.
 
 ## Carried rows (Eve 0.9.3.1 record, not re-run at this pin)
 
-From the shipped tree's own record (docs/datascript-eve/GUIDE.md host
+From the shipped tree's own record (the shipped tree's docs GUIDE.md host
 table and doc/performance.md on SeniorCareMarket/eve @ 4a921298):
 jolt, nbb, glojure, jank, ClojureCLR and compiled ClojureScript all
 ran this same library content on Eve in the 0.9.3.1 campaign

@@ -1,9 +1,9 @@
 (ns flagship.lpy-entry-db
-  ;; Partial basilisp entry proof: datascript.db only (load +
-  ;; transact + datoms + entity). datascript.core is blocked on
+  ;; Partial basilisp entry proof: eve.db.ds.db only (load +
+  ;; transact + datoms + entity). eve.db.ds.core is blocked on
   ;; basilisp at its ns form (see STATUS) — conn/query wait on
   ;; that finding's owners.
-  (:require [datascript.db :as db]))
+  (:require [eve.db.ds.db :as db]))
 
 (def base-tx (mapv (fn [i] {:db/id i :name (str "base-" i) :age (+ 20 i)})
                    (range 1 11)))

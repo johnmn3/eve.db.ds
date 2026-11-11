@@ -1,4 +1,4 @@
-(ns ^:no-doc datascript.impl.entity
+(ns ^:no-doc eve.db.ds.impl.entity
   ;; PORT DELTA (F-NBB-MACROS round): vanilla excludes get as well,
   ;; for its JS-Map method name; the interpreted seat's deftype
   ;; (nbb/SCI) expands through the core get in this namespace and
@@ -8,16 +8,16 @@
   ;; nothing here names a var get
   (:refer-clojure :exclude [keys])
   (:require
-    ;; PORT DELTA (F-JANK-READER-LIBSPEC): as in datascript.core —
+    ;; PORT DELTA (F-JANK-READER-LIBSPEC): as in eve.db.ds.core —
     ;; the #?-inside-libspec form is rejected by jank's loader;
     ;; spliced #?@ with one plain libspec per feature instead.
     ;; :lpy (basilisp) reads clojure.core like :clj.
     #?@(:cljs [[cljs.core :as c]]
         :clj  [[clojure.core :as c]] :cljr [[clojure.core :as c]]
         :lpy  [[clojure.core :as c]])
-    ;; PORT DELTA (F-CLJE-HOST-REFERS): see datascript.util
+    ;; PORT DELTA (F-CLJE-HOST-REFERS): see eve.db.ds.util
     #?(:clje [eve.host :refer [volatile!]])
-    [datascript.db :as db]))
+    [eve.db.ds.db :as db]))
 
 (declare entity ->Entity equiv-entity lookup-entity touch hash-entity)
 
@@ -145,7 +145,7 @@
        clojure.lang.Associative
        (equiv [e o]       (equiv-entity e o))
        (containsKey [e k] (not= ::nf (lookup-entity e k ::nf)))
-       ;; PORT DELTA (F-CLJE-MAPENTRY): see datascript.db's Datom
+       ;; PORT DELTA (F-CLJE-MAPENTRY): see eve.db.ds.db's Datom
        (entryAt [e k]     (some->> (lookup-entity e k)
                             #?(:clje (vector k)
                                :clj  (clojure.lang.MapEntry. k) :cljr (clojure.lang.MapEntry. k)
@@ -174,7 +174,7 @@
        clojure.lang.Associative
        (equiv [e o]       (equiv-entity e o))
        (containsKey [e k] (not= ::nf (lookup-entity e k ::nf)))
-       ;; PORT DELTA (F-CLJE-MAPENTRY): see datascript.db's Datom
+       ;; PORT DELTA (F-CLJE-MAPENTRY): see eve.db.ds.db's Datom
        (entryAt [e k]     (some->> (lookup-entity e k)
                             #?(:clje (vector k)
                                :clj  (clojure.lang.MapEntry. k) :cljr (clojure.lang.MapEntry. k)
@@ -400,4 +400,4 @@
         (vreset! (.-touched e) true)))
     e))
 
-#?(:cljs (goog/exportSymbol "datascript.impl.entity.Entity" Entity))
+#?(:cljs (goog/exportSymbol "eve.db.ds.impl.entity.Entity" Entity))

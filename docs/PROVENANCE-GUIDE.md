@@ -4,7 +4,7 @@ Researched firsthand on 2026-11-07: every license below was read from the
 upstream repository itself (not from memory, not from a registry summary),
 and every in-tree claim was checked against the trees that carry the port —
 principally `contract-test/` on the flagship branches
-(`lane-m/datascript-flagship4` @ `1c3f2f331dfc`, verified on the remote ref)
+(`lane-m/…-flagship4` @ `1c3f2f331dfc`, verified on the remote ref)
 and its successor fix lanes. The Eve-side lane records are
 `contract-test/PROVENANCE-DS.md` (DataScript) and
 `contract-test/PROVENANCE.md` (persistent-sorted-set) on those branches;
@@ -36,7 +36,7 @@ flagship external library on 2026-11-06.
 
 - **What:** DataScript — immutable in-memory database + Datalog query
   engine for Clojure / ClojureScript / JS, by Nikita Prokopov (Tonsky).
-- **Upstream:** https://github.com/tonsky/datascript
+- **Upstream:** https://github.com/tonsky/DataScript
 - **Version pinned:** tag **1.8.1** (the tag was the upstream master tip
   at fetch time, 2026-11-06).
 - **License:** **Eclipse Public License 1.0.** Verified firsthand
@@ -44,7 +44,7 @@ flagship external library on 2026-11-06.
   tag `1.8.1` — both are the full EPL-1.0 text ("Eclipse Public
   License - v 1.0").
 - **What the Eve port carries:**
-  - `contract-test/lib-ds/datascript/` — the port itself: 17 namespaces
+  - `contract-test/lib-ds/<ns dir>/` — the port itself: 17 namespaces
     (`core`, `db`, `conn`, `query`, `query_v3`, `parser`, `pull_api`,
     `pull_parser`, `entity` (impl), `lru`, `util`, `built_ins`,
     `datafy`, `serialize`, `storage`, `inline`, `pprint`), ported
@@ -53,7 +53,7 @@ flagship external library on 2026-11-06.
     `contract-test/PORTING-DS.md` (deltas D1–D9, types T1–T3) and marked
     at the site with a `PORT DELTA` comment.
   - `contract-test/vanilla-ds/` — verbatim reference copies of the
-    complete upstream `src/datascript/` tree at 1.8.1 (21 files,
+    complete upstream `src/` tree at 1.8.1 (21 files,
     ~7,350 lines) plus `vanilla-ds/LICENSE`.
   - `contract-test/upstream-ds/` — the upstream test suite (the
     conformance bar the port is measured against) plus
@@ -74,7 +74,7 @@ flagship external library on 2026-11-06.
   replacement for `clojure.core/sorted-set`, with custom comparators,
   fast iteration and efficient slices. **This is the sorted set that
   runs across all of Eve's seats, and it is DataScript's index
-  substrate:** `datascript.db` requires
+  substrate:** `eve.db.ds.db` requires
   `me.tonsky.persistent-sorted-set` for its EAVT/AEVT/AVET indexes.
 - **Upstream:** https://github.com/tonsky/persistent-sorted-set
 - **License:** **MIT — Copyright (c) 2019 Nikita Prokopov.** Verified
@@ -143,7 +143,7 @@ included in all copies or substantial portions of the Software.
 
 | Component | License | Obligation | State in the current trees | Verdict |
 |---|---|---|---|---|
-| DataScript 1.8.1 (port in `lib-ds/`) | EPL-1.0 | EPL text must accompany each copy of the Program in source form; notices preserved; port's changes identified as the Eve project's Contribution | EPL text rides in-tree at `vanilla-ds/LICENSE` and `upstream-ds/LICENSE` (both read and confirmed EPL-1.0, 2026-11-07); every port delta is marked `PORT DELTA` at the site and catalogued in PORTING-DS.md; ported files carry no upstream copyright headers upstream either — none were removed | **Satisfied within the development trees. One gap for standalone distribution:** `lib-ds/` itself carries no LICENSE file, so a copy of the port shipped *without* its sibling `vanilla-ds/`/`upstream-ds/` trees would travel without the EPL text. Remedy drafted with this document: `NOTICE-datascript-epl-1.0.txt` (which itself directs that the EPL-1.0 text ship alongside) — the release packaging must place the EPL text + that NOTICE beside the ported sources |
+| DataScript 1.8.1 (port in `src/`) | EPL-1.0 | EPL text must accompany each copy of the Program in source form; notices preserved; port's changes identified as the Eve project's Contribution | EPL text rides in-tree at `vanilla-ds/LICENSE` and `upstream-ds/LICENSE` (both read and confirmed EPL-1.0, 2026-11-07); every port delta is marked `PORT DELTA` at the site and catalogued in PORTING-DS.md; ported files carry no upstream copyright headers upstream either — none were removed | **Satisfied within the development trees. One gap for standalone distribution:** `lib-ds/` itself carries no LICENSE file, so a copy of the port shipped *without* its sibling `vanilla-ds/`/`upstream-ds/` trees would travel without the EPL text. Remedy drafted with this document: `NOTICE-eve-db-ds-epl-1.0.txt` (which itself directs that the EPL-1.0 text ship alongside) — the release packaging must place the EPL text + that NOTICE beside the ported sources |
 | persistent-sorted-set (port in `lib/`) | MIT (c) 2019 Nikita Prokopov | Copyright + permission notice included in all copies | The MIT text with the 2019 copyright line sits at `contract-test/LICENSE` (the harness root — read and confirmed, 2026-11-07) and inside the vendored `upstream-pss/` copy | **Satisfied in-tree.** For a standalone copy of `lib/`, ship `LICENSE-persistent-sorted-set-MIT.txt` (drafted with this document) beside it |
 | extend-clj 0.1.0 (vendored in `lib-ds-deps/`) | MIT (c) 2023 Nikita Prokopov | Copyright + permission notice included in all copies | The vendored file is verbatim, but **no LICENSE file sits beside it** anywhere in the tree | **Gap — remedy drafted:** `LICENSE-extend-clj-MIT.txt` (the upstream MIT text with the 2023 copyright line, read from upstream 2026-11-07) must be placed beside `lib-ds-deps/extend_clj/` at packaging time |
 | Upstream test suites (`upstream-ds/test/`, `upstream-pss/`) | EPL-1.0 / MIT respectively | Same as their libraries | Both vendored copies carry their LICENSE files inside the copy | **Satisfied** |
@@ -159,7 +159,7 @@ governs which part.
 
 **Bottom line:** no license blocks this library. Two packaging actions
 remain, both drafted and ready: (1) ship the EPL-1.0 text +
-`NOTICE-datascript-epl-1.0.txt` beside the ported `datascript.*`
+`NOTICE-eve-db-ds-epl-1.0.txt` beside the ported `eve.db.ds.*`
 sources in any standalone distribution; (2) place
 `LICENSE-extend-clj-MIT.txt` beside the vendored extend-clj copy.
 Attribution to Nikita Prokopov is carried in this document, in the

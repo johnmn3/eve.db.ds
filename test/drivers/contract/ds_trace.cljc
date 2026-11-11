@@ -1,5 +1,5 @@
 (ns contract.ds-trace
-  (:require [eve.host] [eve.atom] [datascript.core :as d]))
+  (:require [eve.host] [eve.atom] [eve.db.ds.core :as d]))
 (defn -main [& _]
   (let [conn (d/create-conn)]
     (d/transact! conn [{:db/id 1 :name "Ivan" :age 34}

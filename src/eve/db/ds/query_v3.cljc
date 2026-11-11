@@ -1,31 +1,31 @@
-(ns ^:no-doc datascript.query-v3
+(ns ^:no-doc eve.db.ds.query-v3
   (:require
     [clojure.set :as set]
-    [datascript.built-ins :as built-ins]
-    [datascript.core :as d]
-    [datascript.db :as db]
-    [datascript.query :as dq]
-    [datascript.lru :as lru]
+    [eve.db.ds.built-ins :as built-ins]
+    [eve.db.ds.core :as d]
+    [eve.db.ds.db :as db]
+    [eve.db.ds.query :as dq]
+    [eve.db.ds.lru :as lru]
     [me.tonsky.persistent-sorted-set.arrays :as da]
-    ;; PORT DELTA (F-NBB-MACROS round): as in datascript.conn — no
+    ;; PORT DELTA (F-NBB-MACROS round): as in eve.db.ds.conn — no
     ;; :cljs type refers; parser types are named qualified (dp/...)
     ;; at their uses in this file
-    [datascript.parser :as dp]
-    [datascript.util :as util])
+    [eve.db.ds.parser :as dp]
+    [eve.db.ds.util :as util])
   #?(:clj
      (:import 
-       [datascript.parser
+       [eve.db.ds.parser
         BindColl BindIgnore BindScalar BindTuple
         Constant DefaultSrc Pattern RulesVar SrcVar Variable
         Not Or And Predicate PlainSymbol]
        [clojure.lang     IReduceInit Counted]
-       [datascript.db  Datom]) :cljr (:import 
-       [datascript.parser
+       [eve.db.ds.db  Datom]) :cljr (:import 
+       [eve.db.ds.parser
         BindColl BindIgnore BindScalar BindTuple
         Constant DefaultSrc Pattern RulesVar SrcVar Variable
         Not Or And Predicate PlainSymbol]
        [clojure.lang     IReduceInit Counted]
-       [datascript.db  Datom])))
+       [eve.db.ds.db  Datom])))
 
 (declare resolve-clauses collect-rel-xf collect-to)
 
@@ -651,7 +651,7 @@
             (let [sym (:symbol form)]
               (if-let [subs (get (:consts context) (:symbol form))]
                 ;; PORT DELTA (F-NBB-MACROS round): as in
-                ;; datascript.core's FilteredDB — class constructor
+                ;; eve.db.ds.core's FilteredDB — class constructor
                 ;; on :clj, factory var on :cljs
                 #?(:clj (Constant. subs) :cljr (Constant. subs) :cljs (dp/->Constant subs))
                 form))
@@ -972,7 +972,7 @@
 
 
 (comment
-  (t/test-ns 'datascript.test.query-v3)
+  (t/test-ns 'eve.db.ds.test.query-v3)
 
   (let [query   '[:find  ?lid ?status ?starttime ?endtime (min ?paid) (distinct ?studentinfo) ?lgid
                   :in    $ ?tid ?week ?list
@@ -1007,11 +1007,11 @@
   (defn bench [name q & args]
     (println "\n---\n")
     (perf/minibench (str "OLD " name) (apply d/q q args))
-    (perf/minibench (str "NEW " name) (apply datascript.query-v3/q q args))
+    (perf/minibench (str "NEW " name) (apply eve.db.ds.query-v3/q q args))
     nil)
 
   (do
-    #_(require '[datascript.query-v3 :as q] :reload)
+    #_(require '[eve.db.ds.query-v3 :as q] :reload)
 
     (def db (d/db-with (d/empty-db) (repeatedly 10000 random-man)))
 

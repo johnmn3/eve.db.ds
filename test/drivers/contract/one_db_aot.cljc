@@ -1,5 +1,5 @@
 (ns contract.one-db-aot
-  "AOT entry for contract.one-db (the write-only job over datascript.db
+  "AOT entry for contract.one-db (the write-only job over eve.db.ds.db
    alone): the completion first, the job, exit through eve.process/exit!."
   (:require [eve.host-completion] [eve.process :as proc] [contract.one-db]))
 

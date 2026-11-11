@@ -2,7 +2,7 @@
   "Flagship entry point for the Babashka seat: Eve's bb completion must
    load before the port's namespaces analyze (the eve.runner.<host>-main
    pattern, after contract.ds-host-main). Measured fs3run8: entering
-   contract.ds-flagship directly on bb dies loading datascript.conn —
+   contract.ds-flagship directly on bb dies loading eve.db.ds.conn —
    NullPointerException at sci.impl.deftype/analyze-deftype*
    (RT.intCast) — because the completion's deftype presentation is not
    yet interned; with eve.host-completion required first, the whole

@@ -26,7 +26,7 @@ see [PROVENANCE.md](PROVENANCE.md).
   (`sorted-set*`, `union`, `intersection`, `difference`, `subset?`,
   `est-count`, `settings`). (PORTING.md §U.)
 - **Phase 2 — DataScript 1.8.1 ported near-verbatim.** 17 namespaces in
-  `lib-ds/datascript/`, same names, same public API; extend-clj 0.1.0
+  `src/eve/db/ds/` (before the eve.db.ds rename), same names, same public API; extend-clj 0.1.0
   vendored verbatim as the second pinned dependency. The deltas
   (full catalogue: `contract-test/PORTING-DS.md`):
   - **D1 — storage:** vanilla's storage layer replaced by Eve-atom
@@ -49,13 +49,13 @@ see [PROVENANCE.md](PROVENANCE.md).
     any host has field-identical indexes everywhere.
   - **Residence proven (JVM):** a whole DB built inside a swap lives in
     a shared disk Eve atom; a second process derefs a real
-    `datascript.db.DB`, queries it identically, its seal matches the
+    `eve.db.ds.db.DB`, queries it identically, its seal matches the
     writer's exactly (72 blocks), and it transacts against the resident
     DB. (PORTING-DS.md, Types — AS IMPLEMENTED.)
 
 ## Correctness campaign (2026-11-06 → 11-07)
 
-- **D9 — the join fix** (lane `lane-m/datascript-cljc`): joins over free
+- **D9 — the join fix** (lane `lane-m/…-cljc`): joins over free
   entity variables died on ClojureScript-family seats because the
   contained/plain getters' `:cljs` face read ILookup tuples with the
   array getter. Fixed in three steps — `1da0306a24be` (getters read via
@@ -67,7 +67,7 @@ see [PROVENANCE.md](PROVENANCE.md).
   189 tests / 1,171 passing / 2 failing / 54 errors
   (`d89e198f3f64`); the **corrected, reconciled tally is 181 tests —
   1,081 passing, 2 failing, 55 errors** (`b8e0ad821a98`), with the 38th
-  suite row (`datascript.test.cljs`) throwing on the JVM runner exactly
+  suite row (`eve.db.ds.test.cljs`) throwing on the JVM runner exactly
   as it does on the unported baseline — an artifact of the runner, not
   a port regression. Per-namespace rows are identical to the successor
   baseline: **zero regressions** is the claim, and it is the measured
@@ -90,7 +90,7 @@ see [PROVENANCE.md](PROVENANCE.md).
   0.9.3.1 tree (Eve-side: the Babashka types adapter's IsEve arms in
   `eve/src/eve/deftype_proto/data.cljc` +
   `eve/adapters/types/bb/src/eve/types.clj`; report:
-  `REPORT-BB-DATOM-CMP.md` on `lane-m/datascript-collate-0931`).
+  `REPORT-BB-DATOM-CMP.md` on `lane-m/…-collate-0931`).
   Flagship-setting solo proof passed: READY reached, full window,
   `:inc-fail 0`, 246 datoms seen, seed seal identical.
 - **fs4run1 — four-host rendezvous** (JVM, Babashka, Jolt, nbb READY
@@ -127,14 +127,14 @@ see [PROVENANCE.md](PROVENANCE.md).
   (`[#?(:cljs cljs.reader :clj clojure.edn) :as edn]`), which jank's
   loader rejects (`a5b535c7345e`). The flagshipfix lane spliced the
   libspecs into one plain libspec per feature across
-  `datascript/core.cljc`, `datascript/query.cljc` (committed:
+  `eve/db/ds/core.cljc`, `eve/db/ds/query.cljc` (committed:
   `733a5c029594` — **local-only; that branch has no remote ref**) and
-  `datascript/impl/entity.cljc` (third splice, uncommitted in the
+  `eve/db/ds/impl/entity.cljc` (third splice, uncommitted in the
   lane's worktree at last check). The entry proof then hit the next
   wall — `clojure.lang.Seqable could not be resolved` inside
-  `datascript.db` — and the collation lane root-caused it on
+  `eve.db.ds.db` — and the collation lane root-caused it on
   2026-11-07: **F-JANK-CLASS-SIMPLE-NAME** (`da6cabc3565a` on
-  `lane-m/datascript-collate-0931`, local commits ahead of that
+  `lane-m/…-collate-0931`, local commits ahead of that
   branch's remote tip `350a3498f020`): on jank, a dotted symbol has no
   namespace, so `(name 'clojure.lang.Seqable)` is the full dotted
   string and the completion's class→protocol tables, keyed by simple
@@ -146,7 +146,7 @@ see [PROVENANCE.md](PROVENANCE.md).
 - **Basilisp — blocked, fix in flight** (lane `lane-m/eve-lpy-fix`;
   remote tip `ae9a82e4` trails the lane's local tip `ec8e507da97d`).
   The entry ticket failed on the core ns form plus **F-LPY-LRU-CTOR**:
-  `datascript.lru` defined its LRU type only under `:clj`/`:cljs`
+  `eve.db.ds.lru` defined its LRU type only under `:clj`/`:cljs`
   reader arms, so under basilisp's `:lpy` feature set no LRU type
   exists at all (`74727fe4c442`). The lane's wall-walk since:
   an `:lpy` deftype arm for the LRU (`f9d243c2`), the LRU rebuilt on
