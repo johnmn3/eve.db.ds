@@ -13,6 +13,7 @@ After open-other batch 3 (core.cljc Entity/DB :tag): **325** / **0**.
 After open-other batch 4 (core.cljc defn name/arg hints): **318** / **0**.
 After open-other batch 5 (pull_api Datom/DB type hints): **308** / **0**.
 After open-other batch 6 (mark 35 declare/import/flag/stub rows glue): **308** / **0** (no src change).
+After open-other batch 7 (pull_parser parse-pattern + query fn arg hints): **306** / **0**.
 
 Plain type sites (deftype/defrecord/defrecord-updatable that are not eve-deftype / eve.deftype/deftype) are **0**. Remaining `(deftype …)` forms in source are eve.deftype/deftype (LRU, Entity, AutoTempid, FilteredDB, ArrayRelation, CollRelation, SingletonRelation) or evicted through `def-eve-record` / `deftrecord`.
 
@@ -268,7 +269,7 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 244 | `eve/db/ds/pull_api.cljc` | 349 | `#?@(:clj [^PullPattern pattern :pattern] :cljr [^PullPattern pattern :pattern] :` | REMOVED | dropped host type hints; field reads use portable (.-pattern)/(.-name)/(.-first-attr) |
 | 245 | `eve/db/ds/pull_parser.cljc` | 8 | `#?(:clje [eve.host :refer [volatile!]])))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 246 | `eve/db/ds/pull_parser.cljc` | 73 | `#?(:clj (when (namespace sym-or-fn)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 247 | `eve/db/ds/pull_parser.cljc` | 156 | `(defn #?@(:clj [^PullPattern parse-pattern] :cljr [^PullPattern parse-pattern] :` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 247 | `eve/db/ds/pull_parser.cljc` | 156 | `(defn #?@(:clj [^PullPattern parse-pattern] :cljr [^PullPattern parse-pattern] :` | REMOVED | dropped host type hints on defn name; unhinted clojure.core defn |
 | 248 | `eve/db/ds/query.cljc` | 6 | `#?@(:cljs [[cljs.reader :as edn]]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 249 | `eve/db/ds/query.cljc` | 25 | `#?(:clje [eve.host :refer [transient persistent! conj! assoc! volatile! to-array` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 250 | `eve/db/ds/query.cljc` | 26 | `#?(:clj` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
@@ -301,7 +302,7 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 277 | `eve/db/ds/query.cljc` | 661 | `(da/aset a i #?(:cljs (tuple-get tuple tuple-idx)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 278 | `eve/db/ds/query.cljc` | 677 | `(da/aset a i #?(:cljs (tuple-get tuple tuple-idx)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 279 | `eve/db/ds/query.cljc` | 687 | `#?(:cljs nil` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 280 | `eve/db/ds/query.cljc` | 1032 | `(fn [#?(:cljs t1` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
+| 280 | `eve/db/ds/query.cljc` | 1032 | `(fn [#?(:cljs t1` | REMOVED | dropped host :tag metadata on fn arg; unhinted parameter |
 | 281 | `eve/db/ds/query.cljc` | 1082 | `#?(:jank dp/Variable :clj Variable :cljr Variable :cljs dp/Variable :clje dp/Var` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 282 | `eve/db/ds/query.cljc` | 1085 | `#?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar :clje dp/SrcVar :lpy` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 283 | `eve/db/ds/query.cljc` | 1088 | `#?(:jank dp/PlainSymbol :clj PlainSymbol :cljr PlainSymbol :cljs dp/PlainSymbol ` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |

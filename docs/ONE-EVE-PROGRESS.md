@@ -109,3 +109,7 @@ Unhinted Datom bindings, `fn [d]`, `(.-e (first-seq datoms))`, and `(.-eavt db)`
 ## Open-other batch 6 — mark 35 declare/import/flag/stub rows as glue
 
 No source change. Audit rows marked glue with a one-line reason: F-CLJE-DECLARE forward-declare twins (#116–#125, #129–#130, #151–#158, #176–#177), basilisp `multival?` declare (#137), cljs `pr-db` stub (#126), basilisp IFrame protocol stubs (#213, #214, #216), `*unchecked-math*` flags (#253, #257), and host `:import` / cljs `:require-macros` (#4, #14, #50, #206, #324, #353). Counts unchanged **308** / **0**. open-other 216→181; glue 37→72.
+
+## Open-other batch 7 — pull_parser parse-pattern + query fn arg hints
+
+Unhinted `defn parse-pattern` (#247) and `fn [t1]` in `-collect-tuples` (#280). Counts **308→306** / **0**. Four-host only-core + lru against :dev Eve 7840ffe529.

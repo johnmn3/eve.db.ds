@@ -1,6 +1,6 @@
-# Remaining 308 host branches — classification for vm
+# Remaining 306 host branches — classification for vm
 
-Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–5 removed 34 branches; 342→308; batch 6 marked 35 as glue, open-other 216→181). Comments/strings excluded, nested counted once.
+Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–5 and 7 removed 36 branches; 342→306; batch 6 marked 35 as glue, open-other 216→179). Comments/strings excluded, nested counted once.
 
 **Glue** = loader/require-macros/import/refer/type-hint/instance?-class-name/warn-on-reflection/export wiring that does not itself implement data, memory, threading, or HTTP.
 
@@ -155,7 +155,7 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 ## glue-candidate (0)
 
 
-## open-other (181)
+## open-other (179)
 
 - #9 `eve/db/ds/conn.cljc:87` — `#?(:clj`
 - #10 `eve/db/ds/conn.cljc:114` — `#?(:clj`
@@ -246,7 +246,6 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 - #226 `eve/db/ds/pull_api.cljc:205` — `(recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default`
 - #231 `eve/db/ds/pull_api.cljc:265` — `(recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default`
 - #246 `eve/db/ds/pull_parser.cljc:73` — `#?(:clj (when (namespace sym-or-fn)`
-- #247 `eve/db/ds/pull_parser.cljc:156` — `(defn #?@(:clj [^PullPattern parse-pattern] :cljr [^PullPattern parse-pattern] :`
 - #250 `eve/db/ds/query.cljc:26` — `#?(:clj`
 - #252 `eve/db/ds/query.cljc:57` — `#?(:clj`
 - #254 `eve/db/ds/query.cljc:131` — `#?(:cljs`
@@ -267,7 +266,6 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 - #273 `eve/db/ds/query.cljc:504` — `(if-some [tuples1 #?(:clj (hash key) :cljr (hash key) :cljs (get hash key) :clje`
 - #276 `eve/db/ds/query.cljc:649` — `(if #?(:clj  false :cljr false`
 - #279 `eve/db/ds/query.cljc:687` — `#?(:cljs nil`
-- #280 `eve/db/ds/query.cljc:1032` — `(fn [#?(:cljs t1`
 - #281 `eve/db/ds/query.cljc:1082` — `#?(:jank dp/Variable :clj Variable :cljr Variable :cljs dp/Variable :clje dp/Var`
 - #282 `eve/db/ds/query.cljc:1085` — `#?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar :clje dp/SrcVar :lpy`
 - #283 `eve/db/ds/query.cljc:1088` — `#?(:jank dp/PlainSymbol :clj PlainSymbol :cljr PlainSymbol :cljs dp/PlainSymbol `

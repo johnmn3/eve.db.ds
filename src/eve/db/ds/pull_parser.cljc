@@ -153,9 +153,9 @@
       (update pull-pattern pattern-attr assoc idx pull-attr)
       (update pull-pattern pattern-attr conj pull-attr))))
 
-;; PORT DELTA (F-LPY-SPLICE): :lpy arm of the name splice (see db.cljc's
-;; unfiltered-db — a missing arm deletes the defn name on basilisp).
-(defn #?@(:clj [^PullPattern parse-pattern] :cljr [^PullPattern parse-pattern] :cljs [^PullPattern parse-pattern] :clje [parse-pattern] :lpy [parse-pattern]) [db pattern]
+;; PORT DELTA (F-LPY-SPLICE): unhinted defn name (a missing :lpy arm on a
+;; name splice would delete the defn on basilisp; a plain defn is fine).
+(defn parse-pattern [db pattern]
   (check (sequential? pattern) "pattern to be sequential?" pattern)
   (loop [pattern pattern
          ^PullPattern result (map->PullPattern {:attrs [] :reverse-attrs [] :wildcard? nil})]

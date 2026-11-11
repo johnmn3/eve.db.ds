@@ -1030,10 +1030,7 @@
   (->Eduction
     (comp
       (map
-        (fn [#?(:cljs t1
-                :clj ^{:tag "[[Ljava.lang.Object;"} t1
-                :clje t1 :lpy t1
-                :cljr t1)]
+        (fn [t1]
           (->Eduction
             (map
               (fn [t2]
