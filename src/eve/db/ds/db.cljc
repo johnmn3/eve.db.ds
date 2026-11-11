@@ -10,6 +10,7 @@
     [eve.db.ds.util :as util]
     [eve.core :as e]
     [eve.encoding :as enc]
+    [eve.platform]
     [eve.map-entry :as me]
     ;; F-DS-EVE-WRITERS: the Eve value namespaces whose codec writers a DB
     ;; needs (value+sio->eve-bytes finds the :map/:set/:vec/:list writers
@@ -32,7 +33,7 @@
   ;; clojure.lang.IFn$OOL) is gone — SCI hosts (bb) cannot register
   ;; that class, and its only use was defcomp's invokePrim arm,
   ;; which D6 drops. The ns needs no :import on the :clj read.
-  #?(:cljs (:require-macros [eve.db.ds.db :refer [case-tree combine-cmp defn+ defcomp defrecord-updatable int-compare validate-attr validate-val]]
+  #?(:cljs (:require-macros [eve.db.ds.db :refer [case-tree combine-cmp defn+ defcomp defrecord-updatable if-cljs int-compare validate-attr validate-val]]
                             [eve.db.ds.eve-record :refer [def-eve-record]]))
   (:refer-clojure :exclude [seqable? #?(:clj update) deftype]))
 
@@ -284,24 +285,19 @@
                   (defn ~name' ~@rest))
                `(defn ~name' ~@rest)))))
 
-;; PORT DELTA (F-CLJE-HASHCOMBINE): clojure.lang.Util/hashCombine is
-;; a JVM static; the :clje arm of combine-hashes computes the same
-;; formula with explicit 32-bit wrap (0x9e3779b9 = 2654435769), so
-;; datom hashes agree with the JVM seat bit-for-bit.
-#?(:clje (defn- hash-combine* [seed hash]
-           (let [m32 (fn [x] (bit-and x 4294967295))
-                 s32 (fn [x] (let [v (m32 x)]
-                               (if (>= v 2147483648) (- v 4294967296) v)))]
-             (s32 (bit-xor (s32 seed)
-                           (s32 (+ (s32 hash) 2654435769
-                                   (s32 (bit-shift-left (s32 seed) 6))
-                                   (bit-shift-right (m32 seed) 2))))))))
-
+;; Portable mix, bit-for-bit with clojure.lang.Util/hashCombine
+;; (0x9e3779b9 = 2654435769). The JVM implementation uses a *signed*
+;; 32-bit right shift (ishr), not unsigned (iushr); eve.platform/int32
+;; keeps every intermediate in signed 32-bit on seats whose bit ops
+;; are wider than int.
 (defn combine-hashes [x y]
-  #?@(:clj [(clojure.lang.Util/hashCombine x y)] :cljr [(clojure.lang.Util/hashCombine x y)]
-   :lpy  [(clojure.lang.Util/hashCombine x y)]
-   :clje [(hash-combine* x y)]
-   :cljs [(hash-combine x y)]))
+  (let [seed (eve.platform/int32 x)
+        h    (eve.platform/int32 y)]
+    (eve.platform/int32
+      (bit-xor seed
+               (+ h 2654435769
+                  (eve.platform/int32 (bit-shift-left seed 6))
+                  (eve.platform/int32 (bit-shift-right seed 2)))))))
 
 (do #?@(:clj [   (defn- get-sig [method]
      ;; expects something like '(method-symbol [arg arg arg] ...)
@@ -444,46 +440,15 @@
 
 ;; ----------------------------------------------------------------------------
 
-;; PORT DELTA (F-CLJE-DECLARE): the six forward-declare blocks below
-;; had :clj/:lpy/:cljs arms only — on clojerl none read, so the
-;; Datom eve-deftype's method bodies could not resolve assoc-datom &
-;; friends (db.cljc:347 wall). The :clje arm mirrors :clj/:lpy: a
-;; plain declare. The blocks are also rewritten from #?@ splice form
-;; to plain #? select form (each seat selects exactly the form the
-;; splice produced): clojerl's compiler reader refuses a top-level
-;; #?@ whose arm actually matches ("Reader conditional splicing not
-;; allowed at the top level", db.cljc:295) — a non-matching #?@
-;; reads as nothing, which is why the splice form survived until a
-;; :clje arm existed.
-#?(:clj  (declare hash-datom) :cljr (declare hash-datom)
-   :lpy  (declare hash-datom)
-   :clje (declare hash-datom)
-   :cljs (defn ^number hash-datom [d]))
-
-#?(:clj  (declare equiv-datom) :cljr (declare equiv-datom)
-   :lpy  (declare equiv-datom)
-   :clje (declare equiv-datom)
-   :cljs (defn ^boolean equiv-datom [d o]))
-
-#?(:clj  (declare seq-datom) :cljr (declare seq-datom)
-   :lpy  (declare seq-datom)
-   :clje (declare seq-datom)
-   :cljs (defn seq-datom [d]))
-
-#?(:clj  (declare nth-datom) :cljr (declare nth-datom)
-   :lpy  (declare nth-datom)
-   :clje (declare nth-datom)
-   :cljs (defn nth-datom ([d i]) ([d i not-found])))
-
-#?(:clj  (declare assoc-datom) :cljr (declare assoc-datom)
-   :lpy  (declare assoc-datom)
-   :clje (declare assoc-datom)
-   :cljs (defn assoc-datom [d k v]))
-
-#?(:clj  (declare val-at-datom) :cljr (declare val-at-datom)
-   :lpy  (declare val-at-datom)
-   :clje (declare val-at-datom)
-   :cljs (defn val-at-datom [d k not-found]))
+;; Forward declares via if-cljs so the Datom eve-deftype's method bodies
+;; can resolve these before the defn+ that defines them. The cljs arm keeps
+;; the type-hinted stub (declare alone drops the hint on that compiler).
+(if-cljs (defn ^number hash-datom [d]) (declare hash-datom))
+(if-cljs (defn ^boolean equiv-datom [d o]) (declare equiv-datom))
+(if-cljs (defn seq-datom [d]) (declare seq-datom))
+(if-cljs (defn nth-datom ([d i]) ([d i not-found])) (declare nth-datom))
+(if-cljs (defn assoc-datom [d k v]) (declare assoc-datom))
+(if-cljs (defn val-at-datom [d k not-found]) (declare val-at-datom))
 
 (defprotocol IDatom
   (datom-tx [this])
@@ -517,7 +482,7 @@
 
   clojure.lang.IPersistentCollection
   (equiv [d o] (and (instance? Datom o) (equiv-datom d o)))
-  (empty [d] (throw #?(:cljr (System.NotSupportedException. "empty is not supported on Datom") :default (UnsupportedOperationException. "empty is not supported on Datom"))))
+  (empty [d] (throw (enc/unsupported "empty is not supported on Datom")))
   (count [d] 5)
   (cons [d [k v]] (assoc-datom d k v))
 
@@ -598,10 +563,7 @@
      2 (.-v d)
      3 (datom-tx d)
      4 (datom-added d)
-     #?@(:clj [(throw (IndexOutOfBoundsException.))] :cljr [(throw (System.IndexOutOfRangeException.))]
-      :lpy  [(throw (IndexOutOfBoundsException.))]
-      :clje [(throw (ex-info (str "Datom/-nth: Index out of bounds: " i) {}))]
-      :cljs [(throw (js/Error. (str "Datom/-nth: Index out of bounds: " i)))])))
+     (throw (enc/index-out-of-bounds (str "Datom/-nth: Index out of bounds: " i)))))
   ([^Datom d ^long i not-found]
    (case i
      0 (.-e d)
@@ -611,10 +573,6 @@
      4 (datom-added d)
      not-found)))
 
-;; PORT DELTA (F-CLJE-THROW): assoc-datom's throw below names a JVM
-;; exception class; the :clje arm of the throw form uses ex-info
-;; with the same message (there is no IllegalArgumentException.
-;; constructor on the BEAM seat).
 (defn+ ^:private ^Datom assoc-datom [^Datom d k v]
   (case k
     :e     (datom v       (.-a d) (.-v d) (datom-tx d) (datom-added d))
@@ -622,10 +580,7 @@
     :v     (datom (.-e d) (.-a d) v       (datom-tx d) (datom-added d))
     :tx    (datom (.-e d) (.-a d) (.-v d) v            (datom-added d))
     :added (datom (.-e d) (.-a d) (.-v d) (datom-tx d) v)
-    (throw #?(:clje (ex-info (str "invalid key for #eve.db.ds/Datom: " k) {})
-              :clj  (IllegalArgumentException. (str "invalid key for #eve.db.ds/Datom: " k)) :cljr (System.ArgumentException. (str "invalid key for #eve.db.ds/Datom: " k))
-              :cljs (IllegalArgumentException. (str "invalid key for #eve.db.ds/Datom: " k))
-              :lpy  (IllegalArgumentException. (str "invalid key for #eve.db.ds/Datom: " k))))))
+    (throw (enc/illegal-argument (str "invalid key for #eve.db.ds/Datom: " k)))))
 
 ;; printing and reading
 ;; #datomic/DB {:schema <map>, :datoms <vector of [e a v tx]>}
@@ -774,80 +729,31 @@
   (if (nil? x) 0 (if (nil? y) 0 (long (compare x y)))))
 
 (defn class-identical?
-  #?(:clj  {:inline (fn [x y] `(identical? (class ~x) (class ~y)))} :cljr {:inline (fn [x y] `(identical? (class ~x) (class ~y)))})
+  #?(:clj  {:inline (fn [x y] `(identical? (type ~x) (type ~y)))} :cljr {:inline (fn [x y] `(identical? (type ~x) (type ~y)))})
   [x y]
-  #?@(:clj [(identical? (class x) (class y))] :cljr [(identical? (class x) (class y))]
-   :lpy  [(identical? (class x) (class y))]
-   :clje [(identical? (type x) (type y))]
-   :cljs [(identical? (type x) (type y))]))
+  (identical? (type x) (type y)))
 
-(do #?@(:jank [   (defn class-name
-     ^String [^Object x] (if (nil? x) x (.getName (. x (getClass)))))]
- :clj [   (defn class-name
-     {:inline
-      (fn [x]
-        `(let [^Object x# ~x]
-           (if (nil? x#) x# (.getName (. x# (getClass))))))}
-     ^String [^Object x] (if (nil? x) x (.getName (. x (getClass)))))] :cljr [   (defn class-name
-     {:inline
-      (fn [x]
-        `(let [^Object x# ~x]
-           (if (nil? x#) x# (.getName (. x# (getClass))))))}
-     ^String [^Object x] (if (nil? x) x (.getName (. x (getClass)))))]
- :lpy  [(defn class-name
-     [x] (if (nil? x) x (.-__name__ (type x))))]
- :cljs []))
-
-;; PORT DELTA (F-CLJE-CLASSNAME): no JVM Class/getName on clojerl;
-;; the type atom's name is the seat's class name (only ever compared
-;; against other class names — a seat-local total order is the whole
-;; contract).
-#?(:clje (defn class-name
-           [x]
-           (if (nil? x) x (str (type x)))))
+;; Seat-local type-name order (compared only against other names on
+;; the same host). str/type is available on every seat; the JVM
+;; Class/getName spelling is not required for a total order.
+(defn class-name
+  [x]
+  (if (nil? x) x (str (type x))))
 
 (defn class-compare
   ^long [x y]
-  #?@(:clj [(long (compare (class-name x) (class-name y)))] :cljr [(long (compare (class-name x) (class-name y)))]
-   :lpy  [(long (compare (class-name x) (class-name y)))]
-   :clje [(long (compare (class-name x) (class-name y)))]
-   :cljs [(garray/defaultCompare (type->str (type x)) (type->str (type y)))]))
+  (long (compare (class-name x) (class-name y))))
 
-(do #?@(:jank [(defmacro int-compare [x y]
-     `(long (compare ~x ~y)))]
- :clj [(defmacro int-compare [x y]
-     `(if-cljs
-        (- ~x ~y)
-        (long (java.lang.Integer/compare ~x ~y))))] :cljr [(defmacro int-compare [x y]
-     `(if-cljs
-        (- ~x ~y)
-        (long (compare ~x ~y))))]
- :lpy  [(defmacro int-compare [x y]
-     `(if-cljs
-        (- ~x ~y)
-        (long (java.lang.Integer/compare ~x ~y))))]
- :cljs [(defmacro int-compare [x y]
-     `(if-cljs
-        (- ~x ~y)
-        (long (Integer/compare ~x ~y))))]))
-
-;; PORT DELTA (F-CLJE-INTCOMPARE): java.lang.Integer/compare is a
-;; JVM static; clojure.core/compare on integers carries the same
-;; -1/0/1 contract the datom comparators rely on.
-#?(:clje (defmacro int-compare [x y]
-           `(if-cljs
-              (- ~x ~y)
-              (long (compare ~x ~y)))))
+(defmacro int-compare [x y]
+  `(if-cljs
+     (- ~x ~y)
+     (long (compare ~x ~y))))
 
 (defn ihash
   ^long [x]
   (hash x))
 
-(do #?@(:clj [(declare value-compare)] :cljr [(declare value-compare)]
- :lpy  [(declare value-compare)]
- :cljs [(defn ^number value-compare [x y])]))
-
-#?(:clje (declare value-compare))
+(if-cljs (defn ^number value-compare [x y]) (declare value-compare))
 
 (defn- seq-compare [xs ys]
   (let [cx (count xs)
@@ -882,32 +788,40 @@
                   (recur (next xs) (next ys))
                   v)))))))))
 
-;; PORT DELTA (F-CLJE-CATCH): value-compare's :clje arms —
-;; number?/string/keyword/symbol compare via clojure.core/compare
-;; (probed: clojerl's compare orders all of them the JVM way), and
-;; the catch class is _ (clojerl's catch-all spelling, as in
-;; eve.thread_host). class-identical?/class-compare ride (type x)
-;; and the class-name twin above.
+;; Portable value order: compare only known-orderable same-kind values
+;; (numbers across numeric classes; other scalars only when class-identical?)
+;; so we never depend on a host Comparable/ClassCast catch. Different
+;; classes fall through to class-compare; same-class unorderable values
+;; fall through to hash order, matching the previous :else arm.
+(defn- orderable-value? [x]
+  (or (number? x) (string? x) (keyword? x) (symbol? x)
+      (boolean? x) (uuid? x) (inst? x) (char? x)
+      (arrays/array? x)))
+
 (defn+ ^number value-compare [x y]
+  (cond
+    (= x y) 0
+    (and (sequential? x) (sequential? y)) (seq-compare x y)
+    (and (number? x) (number? y)) (compare x y)
+    (and (orderable-value? x) (orderable-value? y) (class-identical? x y))
+    (compare x y)
+    (not (class-identical? x y)) (class-compare x y)
+    :else (int-compare (ihash x) (ihash y))))
+
+(defn cmp-or-incomparable
+  "Apply cmp to a and b. If the host compare throws because the values
+   are incomparable, return :incomparable. Public so diff-sorted (w2,
+   db.cljc ~1081 at base) can reuse this instead of a per-site catch
+   branch. value-compare itself no longer throws: it only compares
+   orderable values and otherwise uses class/hash order."
+  [cmp a b]
   (try
-    (cond
-      (= x y) 0
-      (and (sequential? x) (sequential? y)) (seq-compare x y)
-      #?@(:clj  [(instance? Number x)       (compare x y)] :cljr [(number? x)                (compare x y)]
-          :clje [(number? x)                (compare x y)])
-      #?@(:clj  [(instance? Comparable x)   (compare x y)] :cljr [(instance? System.IComparable x) (compare x y)]
-          :clje [(or (string? x) (keyword? x) (symbol? x)) (compare x y)]
-          :cljs [(satisfies? IComparable x) (-compare x y)])
-      (not (class-identical? x y)) (class-compare x y)
-      #?@(:cljs [(or (number? x) (string? x) (array? x) (true? x) (false? x)) (garray/defaultCompare x y)])
-      :else (int-compare (ihash x) (ihash y)))
+    (cmp a b)
     (catch #?@(:clj [ClassCastException] :cljr [System.InvalidCastException]
             :lpy  [python/TypeError]
             :clje [_]
-            :cljs [js/Error]) e
-      (if (not (class-identical? x y))
-        (class-compare x y)
-        (throw e)))))
+            :cljs [js/Error]) _
+      :incomparable)))
 
 (defn value-cmp
   #?(:clj
@@ -928,56 +842,12 @@
 ;; Slower cmp-* fns allows for datom fields to be nil.
 ;; Such datoms come from slice method where they are used as boundary markers.
 
-(do #?@(:jank [(defmacro defcomp [sym [arg1 arg2] & body]
-     `(defn ~sym [~arg1 ~arg2]
-        ~@body))]
- :clj [(defmacro defcomp [sym [arg1 arg2] & body]
-     (let [a1 (with-meta arg1 {})
-           a2 (with-meta arg2 {})]
-       `(if-cljs
-          (defn ~sym [~arg1 ~arg2]
-            ~@body)
-          (def ~sym
-            (reify
-              java.util.Comparator
-              (compare [_# ~a1 ~a2]
-                (let [~arg1 ~arg1 ~arg2 ~arg2]
-                  ~@body))
-              clojure.lang.IFn
-              (invoke [this# ~a1 ~a2]
-                (.compare this# ~a1 ~a2)))))))] :cljr [(defmacro defcomp [sym [arg1 arg2] & body]
-    `(defn ~sym [~arg1 ~arg2]
-       ~@body))]
- :lpy  [(defmacro defcomp [sym [arg1 arg2] & body]
-     (let [a1 (with-meta arg1 {})
-           a2 (with-meta arg2 {})]
-       `(defn ~sym [~arg1 ~arg2]
-          ~@body)))]
- :cljs [(defmacro defcomp [sym [arg1 arg2] & body]
-     (let [a1 (with-meta arg1 {})
-           a2 (with-meta arg2 {})]
-       `(if-cljs
-          (defn ~sym [~arg1 ~arg2]
-            ~@body)
-          (def ~sym
-            (reify
-              java.util.Comparator
-              (compare [_# ~a1 ~a2]
-                (let [~arg1 ~arg1 ~arg2 ~arg2]
-                  ~@body))
-              clojure.lang.IFn
-              (invoke [this# ~a1 ~a2]
-                (.compare this# ~a1 ~a2)))))))]))
-
-;; PORT DELTA (F-CLJE-MACROS): defcomp's :clje twin is the :lpy
-;; arm — a plain defn; the :clj arm's reify over
-;; java.util.Comparator has no BEAM counterpart, and Eve seats pass
-;; comparators as fns.
-#?(:clje (defmacro defcomp [sym [arg1 arg2] & body]
-           (let [a1 (with-meta arg1 {})
-                 a2 (with-meta arg2 {})]
-             `(defn ~sym [~arg1 ~arg2]
-                ~@body))))
+;; Eve seats pass comparators as fns (PSS register-comparator! stores an IFn;
+;; BTSet invokes it as (cmp a b)). A portable defn is enough on every host,
+;; including JVM — the old :clj arm's java.util.Comparator reify is gone.
+(defmacro defcomp [sym [arg1 arg2] & body]
+  `(defn ~sym [~arg1 ~arg2]
+     ~@body))
 
 (defcomp cmp-datoms-eavt ^long [^Datom d1, ^Datom d2]
   (combine-cmp
