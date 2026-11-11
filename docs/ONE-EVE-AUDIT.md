@@ -27,6 +27,7 @@ After open-other batch 17 (portable db?): **283** / **0**.
 After open-other batch 18 (portable vpred / -search pred): **281** / **0**.
 After open-other batch 19 (portable seqable?): **276** / **0**.
 After open-other batch 20 (storage API through Eve atoms): **266** / **0**.
+After open-other batch 21 (serialize locking via eve.host): **265** / **0**.
 
 Plain type sites (deftype/defrecord/defrecord-updatable that are not eve-deftype / eve.deftype/deftype) are **0**. Remaining `(deftype …)` forms in source are eve.deftype/deftype (LRU, Entity, AutoTempid, FilteredDB, ArrayRelation, CollRelation, SingletonRelation) or evicted through `def-eve-record` / `deftrecord`.
 
@@ -383,7 +384,7 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 345 | `eve/db/ds/serialize.cljc` | 278 | `avet        (amap-indexed (fn [_ #?@(:jank [^db/Datom d] :clj [^Datom d] :cljr [` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 346 | `eve/db/ds/serialize.cljc` | 282 | `#?@(:clj` | KEPT | data: serialize writes persistent-sorted-set settings into the DB payload; index-structure data |
 | 347 | `eve/db/ds/serialize.cljc` | 295 | `#?@(:clj` | KEPT | data: serialize writes persistent-sorted-set settings into the DB payload; index-structure data |
-| 348 | `eve/db/ds/serialize.cljc` | 300 | `#?(:jank` | KEPT | threading: clj/cljr locking around serializable (mutex on freeze/thaw); should go through Eve, not glue |
+| 348 | `eve/db/ds/serialize.cljc` | 300 | `#?(:jank` | REMOVED | portable serializable via eve.host/locking and eve.host/token; dropped host Object lock twins |
 | 349 | `eve/db/ds/serialize.cljc` | 362 | `#?(:clj arrays/into-array :cljr arrays/into-array))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 350 | `eve/db/ds/serialize.cljc` | 363 | `aevt     (some->> (dict-get from "aevt") (amap #(arrays/aget eavt %)) #?(:clj ar` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 351 | `eve/db/ds/serialize.cljc` | 364 | `avet     (some->> (dict-get from "avet") (amap #(arrays/aget eavt %)) #?(:clj ar` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |

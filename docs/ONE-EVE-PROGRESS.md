@@ -174,3 +174,7 @@ Folded `seqable?` (#51–#55) to one portable `defn`: not a string, and `nil?` /
 ## Open-other batch 20 — storage API through Eve atoms
 
 Un-branched `restore-conn` / `storage` / `store` / `restore` / `addresses` / `collect-garbage` / `file-storage` to one portable body each (they raise the Eve-atom guidance). Deleted the dead `#?(:clj/:cljr)` tail-store side channel in `-transact!` and `reset-schema!` (`storage/storage` is always nil). No vm rows touched. Counts **276** → **266** / **0**. Four-host only-core + lru-portable vs `:dev` Eve `7840ffe529`: JVM, bb, nbb, basilisp all PASS.
+
+## Open-other batch 21 — serialize locking via eve.host
+
+Folded `serializable` (#348) to one portable `defn` using `eve.host/locking` around `eve.host/token`. No vm rows touched. Counts **266** → **265** / **0**. Four-host only-core + lru-portable vs `:dev` Eve `7840ffe529`: JVM, bb, nbb, basilisp all PASS.

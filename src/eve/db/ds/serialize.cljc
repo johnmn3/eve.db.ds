@@ -11,6 +11,7 @@
     [eve.db.ds.util :as util]
     [me.tonsky.persistent-sorted-set :as set]
     [me.tonsky.persistent-sorted-set.arrays :as arrays]
+    [eve.host :as eh]
     ;; PORT DELTA (F-CLJE-HOST-REFERS): see eve.db.ds.util
     #?(:clje [eve.host :refer [transient persistent! conj! assoc! volatile! locking]]))
   #?(:cljs (:require-macros [eve.db.ds.serialize :refer [array dict]]))
@@ -291,33 +292,11 @@
            "ref-type"         (name (:ref-type settings))] :cljr ["branching-factor" (:branching-factor settings)
            "ref-type"         (name (:ref-type settings))]))))
 
-#?(:jank
-   (defn serializable
-     ([db] (serializable-impl db {}))
-     ([db opts] (serializable-impl db opts)))
-   :clj
-   (let [lock (Object.)]
-     (defn serializable
-       ([db] (locking lock (serializable-impl db {})))
-       ([db opts] (locking lock (serializable-impl db opts))))) :cljr (let [lock (Object.)]
-     (defn serializable
-       ([db] (locking lock (serializable-impl db {})))
-       ([db opts] (locking lock (serializable-impl db opts)))))
-   :cljs
-   (defn serializable
-     ([db] (serializable-impl db {}))
-     ([db opts] (serializable-impl db opts)))
-   ;; PORT DELTA (F-CLJE-SERIALIZE): no Object lock on BEAM; the
-   ;; :cljs (unlocked) shape
-   :clje
-   (defn serializable
-     ([db] (serializable-impl db {}))
-     ([db opts] (serializable-impl db opts)))
-   ;; PORT DELTA (F-LPY-SERIALIZE): as :cljs (no lock object)
-   :lpy
-   (defn serializable
-     ([db] (serializable-impl db {}))
-     ([db opts] (serializable-impl db opts))))
+(def ^:private serializable-lock (eh/token))
+
+(defn serializable
+  ([db] (eh/locking serializable-lock (serializable-impl db {})))
+  ([db opts] (eh/locking serializable-lock (serializable-impl db opts))))
 
 (defn from-serializable
   ([from] 
