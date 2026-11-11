@@ -9,17 +9,8 @@
     [eve.db.ds.db :as db]
     [eve.db.ds.lru :as lru]
     [eve.db.ds.util :as util]
-    [me.tonsky.persistent-sorted-set :as set]
     ;; PORT DELTA (F-CLJE-HOST-REFERS): see eve.db.ds.util
-    #?(:clje [eve.host :refer [transient persistent! conj! assoc! volatile!]]))
-  #?(:clj
-     (:import
-       [clojure.lang ISeq]
-       [eve.db.ds.db Datom DB]
-       [eve.db.ds.pull_parser PullAttr PullPattern]) :cljr (:import
-       [clojure.lang ISeq]
-       [eve.db.ds.db Datom DB]
-       [eve.db.ds.pull_parser PullAttr PullPattern])))
+    #?(:clje [eve.host :refer [transient persistent! conj! assoc! volatile!]])))
 
 (declare pull-impl attrs-frame ref-frame ->ReverseAttrsFrame)
 
@@ -196,8 +187,8 @@
         (recur acc (first-seq attrs) (next-seq attrs) datoms)
 
         ;; default
-        (and datom-ahead? (some? (#?(:clj .-default :cljr .-default :cljs :default :clje .-default :lpy .-default) attr)))
-        (recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default :clje .-default :lpy .-default) attr)) (first-seq attrs) (next-seq attrs) datoms)
+        (and datom-ahead? (some? (:default attr)))
+        (recur (assoc! acc (.-as attr) (:default attr)) (first-seq attrs) (next-seq attrs) datoms)
 
         ;; xform
         datom-ahead?
@@ -250,14 +241,14 @@
 
         :let [name   (.-name attr)
               db     (.-db ^Context context)
-              datoms (if (instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :lpy db/DB) db)
-                       (set/slice (.-avet db) (db/datom db/e0 name id db/tx0) (db/datom db/emax name id db/txmax))
-                       (db/-search db [nil name id]))]
+              ;; Concrete-DB avet slice and FilteredDB -search are the
+              ;; same ISearch pattern [_ a v]; always go through the protocol.
+              datoms (db/-search db [nil name id])]
 
         :do (visit context :db.pull/reverse nil name id)
 
-        (and (empty? datoms) (some? (#?(:clj .-default :cljr .-default :cljs :default :clje .-default :lpy .-default) attr)))
-        (recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default :clje .-default :lpy .-default) attr)) (first-seq attrs) (next-seq attrs))
+        (and (empty? datoms) (some? (:default attr)))
+        (recur (assoc! acc (.-as attr) (:default attr)) (first-seq attrs) (next-seq attrs))
 
         (empty? datoms)
         (recur acc (first-seq attrs) (next-seq attrs))
@@ -305,9 +296,9 @@
 (defn attrs-frame [^Context context seen recursion-limits pattern id]
   (let [db (.-db context)
         datoms (util/cond+
-                 (and (.-wildcard? pattern) (instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :lpy db/DB) db))
-                 (set/slice (.-eavt db) (db/datom id nil nil db/tx0) (db/datom id nil nil db/txmax))
-                 
+                 ;; Wildcard / range slices on a concrete DB are the
+                 ;; ISearch / IIndexAccess paths already used for
+                 ;; FilteredDB; always go through the protocol.
                  (.-wildcard? pattern)
                  (db/-search db [id])
 
@@ -316,17 +307,14 @@
 
                  :let [from (.-name (.-first-attr pattern))
                        to   (.-name (.-last-attr pattern))]
-                 
-                 (instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :lpy db/DB) db)
-                 (set/slice (.-eavt db) (db/datom id from nil db/tx0) (db/datom id to nil db/txmax))
 
                  :else
-                 (->> (db/-seek-datoms db :eavt id nil nil nil))
-                 (take-while
-                   (fn [d]
-                     (and
-                       (= (.-e d) id)
-                       (<= (compare (.-a d) to) 0)))))]
+                 (->> (db/-seek-datoms db :eavt id from nil nil)
+                   (take-while
+                     (fn [d]
+                       (and
+                         (= (.-e d) id)
+                         (<= (compare (.-a d) to) 0))))))]
     (when (.-wildcard? pattern)
       (visit context :db.pull/wildcard id nil nil))
     (->AttrsFrame
