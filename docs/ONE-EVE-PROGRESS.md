@@ -69,11 +69,11 @@ All eight gates below were run against the same local Eve checkout `/workspace/d
 
 Do not commit those overlays into this repo.
 
-## Dev/test Eve pin (atom.broker `lane-m/eve-db-ds-gaps-eve` @ `7840ffe529`)
+## Dev/test Eve pin (atom.broker `lane-m/eve-db-ds-gaps-eve` @ `07644bea15`)
 
 **Release pin (unchanged):** the default `eve/eve` dep in `deps.edn` and `lib/deps.edn` stays on the published SeniorCareMarket/eve tree `4a921298168080c2af9f57fcfcdee2db570dec4c`. That default is not retargeted to an unreleased work branch. Collating a later Eve release is a separate decision.
 
-**Dev/test pin:** alias `:dev` overrides `eve/eve` to `{:git/url "https://github.com/johnmn3/atom.broker" :git/sha "7840ffe52928f82784ff164e92666620f794f34d" :deps/root "eve"}` — the Eve work branch that lands the bb SciMap/`lookup-ns?` overlays, JS `enc/unsupported`, and process-slab auto-init. JVM gates: `clojure -A:dev:test -M -m contract.only-core` (and `contract.lru-portable`) — both proven from this alias after tools.deps cloned atom.broker @ 7840ffe529. bb/nbb/lpy: `scripts/eve_dev_cp.sh <host>` expands that tree's `hosts.edn` (or `EVE_ROOT` if already checked out). No local adapter overlays are required.
+**Dev/test pin:** alias `:dev` overrides `eve/eve` to `{:git/url "https://github.com/johnmn3/atom.broker" :git/sha "07644bea1540546c516c3a43c331778a2c5d9f52" :deps/root "eve"}` — the Eve work branch that lands IPending on `eve.thread` Promise/Future (so `clojure.core/realized?` works), the #460 test fix, and the jank `satisfies?` load order, plus the earlier bb SciMap/`lookup-ns?` overlays, JS `enc/unsupported`, and process-slab auto-init. JVM gates: `clojure -A:dev:test -M -m contract.only-core` (and `contract.lru-portable`, `contract.transact-realized`). bb/nbb/lpy: `scripts/eve_dev_cp.sh <host>` expands that tree's `hosts.edn` (or `EVE_ROOT` if already checked out). No local adapter overlays are required.
 
 ### Four-host matrix against this pin
 
@@ -182,3 +182,22 @@ Folded `serializable` (#348) to one portable `defn` using `eve.host/locking` aro
 ## Open-other batch 22 — transact/future-call via eve.thread
 
 Folded `transact` (#34) to return an immediately delivered `eve.thread/promise`, and `transact-async` to `eve.thread/future-call`. Dropped the cljs/clje/clj/cljr/jank IDeref reify twins and the host `future-call` defs (#35, #36). No vm rows touched. Counts **265** → **262** / **0**. Four-host only-core + lru-portable vs `:dev` Eve `7840ffe529`: JVM, bb, nbb, basilisp all PASS.
+
+## Dev/test Eve pin bump to `07644bea15`
+
+Bumped alias `:dev` and `scripts/eve_dev_cp.sh` from `7840ffe529` to `07644bea1540546c516c3a43c331778a2c5d9f52` (parent `b666d72cca`). The pin lands IPending on `eve.thread` Promise/Future so `clojure.core/realized?` works, the #460 test fix, and the jank `satisfies?` load order. Release pin in `deps.edn` and `lib/deps.edn` stays `4a921298`. `lib/deps.edn` has no `:dev` alias, so it was left on the release pin.
+
+Added `contract.transact-realized`, which asserts `(realized? (d/transact conn tx))` is true and that deref yields a tx report with `:db-after`. This is the nbb contract Eve could not run on the producer side.
+
+bb needed a load-order prelude: `#?(:bb [eve.host-completion])` in `eve.db.ds.core` before `[eve.db.ds.conn]`, so Eve's `present-deftype-atom` hook is in place before `extend/deftype-atom` expands. A same-file require inside `conn.cljc` is too late on SCI (the unpresented `->Conn` factory dies with `No value supplied for key: clojure.lang.Atom`). The prelude is `:bb`-only; an unconditional `eve.host-completion` require is harmful on basilisp. Counts **262** → **263** / **0**.
+
+Four-host only-core + lru-portable + transact-realized vs `:dev` Eve `07644bea15` (logs in `/tmp/gates-pin-07644d`):
+
+| host | only-core | lru-portable | transact-realized |
+| --- | --- | --- | --- |
+| JVM | ONLY-CORE-OK | LRU-PORTABLE-OK | TRANSACT-REALIZED-OK |
+| bb | ONLY-CORE-OK | LRU-PORTABLE-OK | TRANSACT-REALIZED-OK |
+| nbb | ONLY-CORE-OK | LRU-PORTABLE-OK | TRANSACT-REALIZED-OK |
+| basilisp | ONLY-CORE-OK | LRU-PORTABLE-OK | TRANSACT-REALIZED-OK |
+
+nbb is the host Eve could not test; `(realized? (d/transact conn …))` is true there on this pin. basilisp cold-loads of `eve.db.ds.core` can take ~107s even with `--disable-ns-cache`; do not treat a 90s timeout as a failure.

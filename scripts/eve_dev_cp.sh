@@ -5,7 +5,7 @@
 # Optional: EVE_ROOT=/path/to/eve (a tree at that sha) skips resolution.
 set -euo pipefail
 HOST="${1:?usage: scripts/eve_dev_cp.sh <jvm|bb|nbb|lpy>}"
-SHA=7840ffe52928f82784ff164e92666620f794f34d
+SHA=07644bea1540546c516c3a43c331778a2c5d9f52
 URL=https://github.com/johnmn3/atom.broker.git
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 

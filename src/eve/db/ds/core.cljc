@@ -9,6 +9,13 @@
     #?(:cljs [cljs.reader :as edn]
        :clj  [clojure.edn :as edn] :cljr [clojure.edn :as edn]
        :lpy  [clojure.edn :as edn] :clje [clojure.edn :as edn])
+    ;; bb: eve.host-completion must be loaded before eve.db.ds.conn
+    ;; expands extend/deftype-atom, so present-deftype-atom is in
+    ;; place. A same-file require inside conn.cljc is too late on
+    ;; SCI (the unpresented factory dies with "No value supplied
+    ;; for key: clojure.lang.Atom"). Keep this :bb-only; an
+    ;; unconditional require is harmful on basilisp.
+    #?(:bb [eve.host-completion])
     [eve.db.ds.conn :as conn]
     ;; PORT DELTA (F-NBB-MACROS round): as in eve.db.ds.conn — no
     ;; :cljs type refers; the types are named qualified at their uses
