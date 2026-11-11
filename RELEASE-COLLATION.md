@@ -8,7 +8,7 @@ One line per PROVEN DS-port fix: fix | source commit | proof. A fix is listed on
 
 | fix | source commit | proof |
 |---|---|---|
-| (none yet — release/0.1 starts equal to main, the 2cc5e3d5 import) | | |
+| F-DS-EVE-WRITERS: `eve.db.ds.db` requires eve.atom/map/set/vec/list (writers must be registered by requiring `eve.db.ds.core` alone) | main `193ceb6c74bca787186ef753b2a191cfaf632123` | `contract.only-core` (requires only eve.db.ds.core, db-with + q): before = ExceptionInfo ':map writer not registered' (codec.cljc:714); after = `ONLY-CORE-OK #{["Ivan"] ["Petr"]} 5`, exit 0; JVM, Clojure 1.12.0, Eve 73a6411 |
 
 ## Waiting on proof (not in this branch)
 
