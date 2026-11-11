@@ -1,6 +1,6 @@
 # Remaining 306 host branches — classification for vm
 
-Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–5 and 7 removed 36 branches; 342→306; batches 6 and 8 marked 67 as glue, open-other 216→147). Comments/strings excluded, nested counted once.
+Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–5 and 7 removed 36 branches; 342→306; batches 6, 8 and 9 marked 69 as glue, open-other 216→145). Comments/strings excluded, nested counted once.
 
 **Glue** = loader/require-macros/import/refer/type-hint/instance?-class-name/warn-on-reflection/export wiring that does not itself implement data, memory, threading, or HTTP.
 
@@ -76,7 +76,7 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 
 **HTTP count for vm: 0.**
 
-## glue (104)
+## glue (106)
 
 - #2 `eve/db/ds/conn.cljc:8` — `#?(:lpy [eve.deftype :refer [deftype]])`
 - #6 `eve/db/ds/conn.cljc:41` — `(if (instance? #?(:jank db/FilteredDB :clj FilteredDB :cljr FilteredDB :cljs db/`
@@ -184,11 +184,14 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 - #320 `eve/db/ds/query_v3.cljc:887` — `#?(:jank dp/And :clj And :cljr And :cljs dp/And)`
 - #321 `eve/db/ds/query_v3.cljc:890` — `#?(:jank dp/Predicate :clj Predicate :cljr Predicate :cljs dp/Predicate)`
 
+- #250 `eve/db/ds/query.cljc:26` — `#?(:clj`
+- #289 `eve/db/ds/query_v3.cljc:15` — `#?(:clj`
+
 
 ## glue-candidate (0)
 
 
-## open-other (147)
+## open-other (145)
 
 - #9 `eve/db/ds/conn.cljc:87` — `#?(:clj`
 - #10 `eve/db/ds/conn.cljc:114` — `#?(:clj`
@@ -279,7 +282,6 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 - #226 `eve/db/ds/pull_api.cljc:205` — `(recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default`
 - #231 `eve/db/ds/pull_api.cljc:265` — `(recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default`
 - #246 `eve/db/ds/pull_parser.cljc:73` — `#?(:clj (when (namespace sym-or-fn)`
-- #250 `eve/db/ds/query.cljc:26` — `#?(:clj`
 - #252 `eve/db/ds/query.cljc:57` — `#?(:clj`
 - #254 `eve/db/ds/query.cljc:131` — `#?(:cljs`
 - #255 `eve/db/ds/query.cljc:137` — `#?(:clj`
@@ -293,7 +295,6 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 - #273 `eve/db/ds/query.cljc:504` — `(if-some [tuples1 #?(:clj (hash key) :cljr (hash key) :cljs (get hash key) :clje`
 - #276 `eve/db/ds/query.cljc:649` — `(if #?(:clj  false :cljr false`
 - #279 `eve/db/ds/query.cljc:687` — `#?(:cljs nil`
-- #289 `eve/db/ds/query_v3.cljc:15` — `#?(:clj`
 - #290 `eve/db/ds/query_v3.cljc:62` — `#?(:clj`
 - #291 `eve/db/ds/query_v3.cljc:107` — `#?(:clj`
 - #292 `eve/db/ds/query_v3.cljc:178` — `#?(:clj`
