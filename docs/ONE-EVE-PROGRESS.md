@@ -50,3 +50,21 @@ Call sites in `db.cljc`, `eve_record.cljc`, and `impl/entity.cljc` now use `eve.
 - bb 1.13.226: only-core ONLY-CORE-OK #{["Ivan"] ["Petr"]} 5; lru-portable LRU-PORTABLE-OK. (Needs the two local adapter overlays above.)
 - basilisp 0.5.1: lru-portable LRU-PORTABLE-OK. only-core was blocked on `System/exit` before the driver fix; re-run after this commit if needed.
 - nbb 1.6.214: lru-portable LRU-PORTABLE-OK (the earlier `clojure.core/byte-array` blocker at Eve `mem.cljc:247` is gone at this checkout). only-core still fails analysis: `enc/unsupported` unresolved in `FilteredDB` (`db.cljc:1685`).
+
+## Four-host matrix after UNIT3b (`f3eefdae`) vs `/workspace/ds-wt-eve` @ `1d5f146fd7`
+
+Published pin in `deps.edn` remains `4a921298168080c2af9f57fcfcdee2db570dec4c` and was not used by these runs. Counts unchanged: **342/376** host branches, **0/20** plain types.
+
+All eight gates below were run against the same local Eve checkout `/workspace/ds-wt-eve` @ `1d5f146fd7`. bb and nbb legs that need Eve adapter patches used uncommitted local overlays only (not committed in eve.db.ds; they belong on the atom.broker Eve work branch):
+
+- bb: `adapters/types/bb` keeps `IPersistentMap` methods and `Iterable` in SciMap mode; `adapters/completion/bb` `lookup-ns?` carves out `eve.db.ds.*` so keyword/`get` on Datom rewrite to `eve.core/get`.
+- nbb analysis: JS `eve.encoding` is missing `unsupported` (it has only no-arg `throw-unsupported`; the Java and Python encoding adapters already define `unsupported`, and FilteredDB calls `(throw (enc/unsupported msg))` at `db.cljc:1685`). This is an Eve JS encoding gap, not a missing cljs require in eve.db.ds — `[eve.encoding :as enc]` is already unconditional. Local overlay adds `(defn unsupported [msg] (js/Error. msg))`, same contract as `illegal-argument` on that adapter.
+
+| Host | only-core | lru-portable | Notes |
+|------|-----------|--------------|-------|
+| JVM (Java 21, Clojure 1.12.6) | PASS `ONLY-CORE-OK #{["Ivan"] ["Petr"]} 5` | PASS `LRU-PORTABLE-OK` | no overlays |
+| basilisp 0.5.1 | PASS `ONLY-CORE-OK #{["Ivan"] ["Petr"]} 5` | PASS `LRU-PORTABLE-OK` | re-run after `f3eefdae` (`System/exit` driver fix); no overlays |
+| bb 1.13.226 | PASS `ONLY-CORE-OK #{["Ivan"] ["Petr"]} 5` | PASS `LRU-PORTABLE-OK` | depends on the two bb Eve overlays above, being landed on the atom.broker Eve work branch by another worker |
+| nbb 1.6.214 | FAIL after analysis fix | PASS `LRU-PORTABLE-OK` | with the JS `unsupported` overlay, FilteredDB analysis succeeds; `db-with` then fails in Eve `adapters/slab/module/src/eve/process_slab.cljs` `alloc-from-slab` at `mem/load-i32` (`No implementation of method: :-load-i32 of protocol: #'eve.mem/IMemRegion found for:` — empty type, consistent with a nil `:region` from `wasm/get-slab-instance`). Eve-worker follow-up; not fixed in eve.db.ds. |
+
+Do not commit those overlays into this repo.
