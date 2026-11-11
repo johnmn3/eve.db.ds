@@ -1,6 +1,6 @@
 # Remaining 306 host branches — classification for vm
 
-Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–5 and 7 removed 36 branches; 342→306; batch 6 marked 35 as glue, open-other 216→179). Comments/strings excluded, nested counted once.
+Method: lexical #?(/#?@( in src/ at unit-3 tip 9e9b441 (open-other batches 1–5 and 7 removed 36 branches; 342→306; batches 6 and 8 marked 67 as glue, open-other 216→147). Comments/strings excluded, nested counted once.
 
 **Glue** = loader/require-macros/import/refer/type-hint/instance?-class-name/warn-on-reflection/export wiring that does not itself implement data, memory, threading, or HTTP.
 
@@ -76,7 +76,7 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 
 **HTTP count for vm: 0.**
 
-## glue (72)
+## glue (104)
 
 - #2 `eve/db/ds/conn.cljc:8` — `#?(:lpy [eve.deftype :refer [deftype]])`
 - #6 `eve/db/ds/conn.cljc:41` — `(if (instance? #?(:jank db/FilteredDB :clj FilteredDB :cljr FilteredDB :cljs db/`
@@ -151,11 +151,44 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 - #324 `eve/db/ds/serialize.cljc:17` — `#?(:clj`
 - #353 `eve/db/ds/util.cljc:10` — `#?(:clj`
 
+- #258 `eve/db/ds/query.cljc:293` — `#?(:jank dp/BindIgnore :clj BindIgnore :cljr BindIgnore :cljs dp/BindIgnore :clj`
+- #259 `eve/db/ds/query.cljc:297` — `#?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/BindScalar :clj`
+- #260 `eve/db/ds/query.cljc:301` — `#?(:jank dp/BindColl :clj BindColl :cljr BindColl :cljs dp/BindColl :clje dp/Bin`
+- #261 `eve/db/ds/query.cljc:314` — `#?(:jank dp/BindTuple :clj BindTuple :cljr BindTuple :cljs dp/BindTuple :clje dp`
+- #263 `eve/db/ds/query.cljc:330` — `(instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar :clje dp/`
+- #265 `eve/db/ds/query.cljc:333` — `(instance? #?(:jank dp/RulesVar :clj RulesVar :cljr RulesVar :cljs dp/RulesVar :`
+- #281 `eve/db/ds/query.cljc:1082` — `#?(:jank dp/Variable :clj Variable :cljr Variable :cljs dp/Variable :clje dp/Var`
+- #282 `eve/db/ds/query.cljc:1085` — `#?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar :clje dp/SrcVar :lpy`
+- #283 `eve/db/ds/query.cljc:1088` — `#?(:jank dp/PlainSymbol :clj PlainSymbol :cljr PlainSymbol :cljs dp/PlainSymbol `
+- #284 `eve/db/ds/query.cljc:1092` — `#?(:jank dp/Constant :clj Constant :cljr Constant :cljs dp/Constant :clje dp/Con`
+- #285 `eve/db/ds/query.cljc:1137` — `#?(:jank dp/FindRel :clj FindRel :cljr FindRel :cljs dp/FindRel :clje dp/FindRel`
+- #286 `eve/db/ds/query.cljc:1143` — `#?(:jank dp/FindColl :clj FindColl :cljr FindColl :cljs dp/FindColl :clje dp/Fin`
+- #287 `eve/db/ds/query.cljc:1147` — `#?(:jank dp/FindScalar :clj FindScalar :cljr FindScalar :cljs dp/FindScalar :clj`
+- #288 `eve/db/ds/query.cljc:1151` — `#?(:jank dp/FindTuple :clj FindTuple :cljr FindTuple :cljs dp/FindTuple :clje dp`
+- #298 `eve/db/ds/query_v3.cljc:516` — `#?(:jank dp/BindIgnore :clj BindIgnore :cljr BindIgnore :cljs dp/BindIgnore)`
+- #299 `eve/db/ds/query_v3.cljc:519` — `#?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/BindScalar)`
+- #300 `eve/db/ds/query_v3.cljc:525` — `#?(:jank dp/BindColl :clj BindColl :cljr BindColl :cljs dp/BindColl)`
+- #301 `eve/db/ds/query_v3.cljc:539` — `#?(:jank dp/BindTuple :clj BindTuple :cljr BindTuple :cljs dp/BindTuple)`
+- #303 `eve/db/ds/query_v3.cljc:571` — `(instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar) (:variab`
+- #304 `eve/db/ds/query_v3.cljc:597` — `(instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar) source) `
+- #305 `eve/db/ds/query_v3.cljc:598` — `(instance? #?(:jank dp/DefaultSrc :clj DefaultSrc :cljr DefaultSrc :cljs dp/Defa`
+- #306 `eve/db/ds/query_v3.cljc:610` — `search-pattern (mapv #(when (instance? #?(:jank dp/Constant :clj Constant :cljr `
+- #307 `eve/db/ds/query_v3.cljc:634` — `idxs    (->> (map #(when (instance? #?(:jank dp/Constant :clj Constant :cljr Con`
+- #311 `eve/db/ds/query_v3.cljc:758` — `(if (instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar) sour`
+- #313 `eve/db/ds/query_v3.cljc:814` — `(instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar) arg)`
+- #314 `eve/db/ds/query_v3.cljc:819` — `(instance? #?(:jank dp/Constant :clj Constant :cljr Constant :cljs dp/Constant) `
+- #315 `eve/db/ds/query_v3.cljc:824` — `(if (instance? #?(:jank dp/PlainSymbol :clj PlainSymbol :cljr PlainSymbol :cljs `
+- #317 `eve/db/ds/query_v3.cljc:878` — `#?(:jank dp/Pattern :clj Pattern :cljr Pattern :cljs dp/Pattern)`
+- #318 `eve/db/ds/query_v3.cljc:881` — `#?(:jank dp/Not :clj Not :cljr Not :cljs dp/Not)`
+- #319 `eve/db/ds/query_v3.cljc:884` — `#?(:jank dp/Or :clj Or :cljr Or :cljs dp/Or)`
+- #320 `eve/db/ds/query_v3.cljc:887` — `#?(:jank dp/And :clj And :cljr And :cljs dp/And)`
+- #321 `eve/db/ds/query_v3.cljc:890` — `#?(:jank dp/Predicate :clj Predicate :cljr Predicate :cljs dp/Predicate)`
+
 
 ## glue-candidate (0)
 
 
-## open-other (179)
+## open-other (147)
 
 - #9 `eve/db/ds/conn.cljc:87` — `#?(:clj`
 - #10 `eve/db/ds/conn.cljc:114` — `#?(:clj`
@@ -251,12 +284,6 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 - #254 `eve/db/ds/query.cljc:131` — `#?(:cljs`
 - #255 `eve/db/ds/query.cljc:137` — `#?(:clj`
 - #256 `eve/db/ds/query.cljc:199` — `#?(:clje`
-- #258 `eve/db/ds/query.cljc:293` — `#?(:jank dp/BindIgnore :clj BindIgnore :cljr BindIgnore :cljs dp/BindIgnore :clj`
-- #259 `eve/db/ds/query.cljc:297` — `#?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/BindScalar :clj`
-- #260 `eve/db/ds/query.cljc:301` — `#?(:jank dp/BindColl :clj BindColl :cljr BindColl :cljs dp/BindColl :clje dp/Bin`
-- #261 `eve/db/ds/query.cljc:314` — `#?(:jank dp/BindTuple :clj BindTuple :cljr BindTuple :cljs dp/BindTuple :clje dp`
-- #263 `eve/db/ds/query.cljc:330` — `(instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar :clje dp/`
-- #265 `eve/db/ds/query.cljc:333` — `(instance? #?(:jank dp/RulesVar :clj RulesVar :cljr RulesVar :cljs dp/RulesVar :`
 - #266 `eve/db/ds/query.cljc:370` — `(let [eid #?(:cljs (tuple-get tuple idx)`
 - #267 `eve/db/ds/query.cljc:381` — `(let [eid #?(:cljs (tuple-get tuple idx)`
 - #268 `eve/db/ds/query.cljc:396` — `#?(:cljs (tuple-get tuple idx)`
@@ -266,14 +293,6 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 - #273 `eve/db/ds/query.cljc:504` — `(if-some [tuples1 #?(:clj (hash key) :cljr (hash key) :cljs (get hash key) :clje`
 - #276 `eve/db/ds/query.cljc:649` — `(if #?(:clj  false :cljr false`
 - #279 `eve/db/ds/query.cljc:687` — `#?(:cljs nil`
-- #281 `eve/db/ds/query.cljc:1082` — `#?(:jank dp/Variable :clj Variable :cljr Variable :cljs dp/Variable :clje dp/Var`
-- #282 `eve/db/ds/query.cljc:1085` — `#?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar :clje dp/SrcVar :lpy`
-- #283 `eve/db/ds/query.cljc:1088` — `#?(:jank dp/PlainSymbol :clj PlainSymbol :cljr PlainSymbol :cljs dp/PlainSymbol `
-- #284 `eve/db/ds/query.cljc:1092` — `#?(:jank dp/Constant :clj Constant :cljr Constant :cljs dp/Constant :clje dp/Con`
-- #285 `eve/db/ds/query.cljc:1137` — `#?(:jank dp/FindRel :clj FindRel :cljr FindRel :cljs dp/FindRel :clje dp/FindRel`
-- #286 `eve/db/ds/query.cljc:1143` — `#?(:jank dp/FindColl :clj FindColl :cljr FindColl :cljs dp/FindColl :clje dp/Fin`
-- #287 `eve/db/ds/query.cljc:1147` — `#?(:jank dp/FindScalar :clj FindScalar :cljr FindScalar :cljs dp/FindScalar :clj`
-- #288 `eve/db/ds/query.cljc:1151` — `#?(:jank dp/FindTuple :clj FindTuple :cljr FindTuple :cljs dp/FindTuple :clje dp`
 - #289 `eve/db/ds/query_v3.cljc:15` — `#?(:clj`
 - #290 `eve/db/ds/query_v3.cljc:62` — `#?(:clj`
 - #291 `eve/db/ds/query_v3.cljc:107` — `#?(:clj`
@@ -281,24 +300,6 @@ None of the remaining 334 kept original branches (or 342 current lexical branche
 - #293 `eve/db/ds/query_v3.cljc:274` — `(.write #?(:clj  (.getSimpleName ^Class (class rel)) :cljr (.getSimpleName ^Clas`
 - #294 `eve/db/ds/query_v3.cljc:306` — `#?(:clj`
 - #297 `eve/db/ds/query_v3.cljc:357` — `#?(:clj`
-- #298 `eve/db/ds/query_v3.cljc:516` — `#?(:jank dp/BindIgnore :clj BindIgnore :cljr BindIgnore :cljs dp/BindIgnore)`
-- #299 `eve/db/ds/query_v3.cljc:519` — `#?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/BindScalar)`
-- #300 `eve/db/ds/query_v3.cljc:525` — `#?(:jank dp/BindColl :clj BindColl :cljr BindColl :cljs dp/BindColl)`
-- #301 `eve/db/ds/query_v3.cljc:539` — `#?(:jank dp/BindTuple :clj BindTuple :cljr BindTuple :cljs dp/BindTuple)`
-- #303 `eve/db/ds/query_v3.cljc:571` — `(instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar) (:variab`
-- #304 `eve/db/ds/query_v3.cljc:597` — `(instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar) source) `
-- #305 `eve/db/ds/query_v3.cljc:598` — `(instance? #?(:jank dp/DefaultSrc :clj DefaultSrc :cljr DefaultSrc :cljs dp/Defa`
-- #306 `eve/db/ds/query_v3.cljc:610` — `search-pattern (mapv #(when (instance? #?(:jank dp/Constant :clj Constant :cljr `
-- #307 `eve/db/ds/query_v3.cljc:634` — `idxs    (->> (map #(when (instance? #?(:jank dp/Constant :clj Constant :cljr Con`
-- #311 `eve/db/ds/query_v3.cljc:758` — `(if (instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar) sour`
-- #313 `eve/db/ds/query_v3.cljc:814` — `(instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar) arg)`
-- #314 `eve/db/ds/query_v3.cljc:819` — `(instance? #?(:jank dp/Constant :clj Constant :cljr Constant :cljs dp/Constant) `
-- #315 `eve/db/ds/query_v3.cljc:824` — `(if (instance? #?(:jank dp/PlainSymbol :clj PlainSymbol :cljr PlainSymbol :cljs `
-- #317 `eve/db/ds/query_v3.cljc:878` — `#?(:jank dp/Pattern :clj Pattern :cljr Pattern :cljs dp/Pattern)`
-- #318 `eve/db/ds/query_v3.cljc:881` — `#?(:jank dp/Not :clj Not :cljr Not :cljs dp/Not)`
-- #319 `eve/db/ds/query_v3.cljc:884` — `#?(:jank dp/Or :clj Or :cljr Or :cljs dp/Or)`
-- #320 `eve/db/ds/query_v3.cljc:887` — `#?(:jank dp/And :clj And :cljr And :cljs dp/And)`
-- #321 `eve/db/ds/query_v3.cljc:890` — `#?(:jank dp/Predicate :clj Predicate :cljr Predicate :cljs dp/Predicate)`
 - #328 `eve/db/ds/serialize.cljc:48` — `#?(:clj`
 - #329 `eve/db/ds/serialize.cljc:81` — `#?(:clje`
 - #330 `eve/db/ds/serialize.cljc:87` — `#?(:clj`

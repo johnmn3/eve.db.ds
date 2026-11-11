@@ -113,3 +113,7 @@ No source change. Audit rows marked glue with a one-line reason: F-CLJE-DECLARE 
 ## Open-other batch 7 — pull_parser parse-pattern + query fn arg hints
 
 Unhinted `defn parse-pattern` (#247) and `fn [t1]` in `-collect-tuples` (#280). Counts **308→306** / **0**. Four-host only-core + lru against :dev Eve 7840ffe529.
+
+## Open-other batch 8 — mark instance? class-name rows as glue
+
+No source change. Audit reasons for parser `instance?` class-name dispatch (imported short name on JVM/CLR vs qualified type on other hosts) in query.cljc and query_v3.cljc: #258–#261, #263, #265, #281–#288, #298–#301, #303–#307, #311, #313–#315, #317–#321 (32 rows moved open-other→glue). Also recorded the same glue reason on #6, #8, #23, #228, #237, #241, #262, #264, #295, #296, #302, #308, #309, #312, #316, which were already listed under glue in the remaining doc. Left vm data #106/#107 and serialize java.util #332/#334/#339 for the interop batch. Counts unchanged **306** / **0**. open-other 179→147; glue 72→104.
