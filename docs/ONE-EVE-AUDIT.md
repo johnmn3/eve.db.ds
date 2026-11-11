@@ -21,6 +21,7 @@ After open-other batch 11 (unhinted identical predicate defns): **291** / **0**.
 After open-other batch 12 (mark 95 leftover host-API/macro/print/storage rows glue): **291** / **0** (no src change).
 After open-other batch 13 (portable hash-join get + leftover glue): **290** / **0**.
 After open-other batch 14 (portable join-tuples + tuple-key-fn glue): **288** / **0**.
+After glue re-derive (batches 6/8/12/13/14 reviewed; 58 reclassified data/memory/threading, 0 folded, counts unchanged): **288** / **0**.
 
 Plain type sites (deftype/defrecord/defrecord-updatable that are not eve-deftype / eve.deftype/deftype) are **0**. Remaining `(deftype …)` forms in source are eve.deftype/deftype (LRU, Entity, AutoTempid, FilteredDB, ArrayRelation, CollRelation, SingletonRelation) or evicted through `def-eve-record` / `deftrecord`.
 
@@ -35,12 +36,12 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 3 | `eve/db/ds/conn.cljc` | 13 | `#?(:clje [eve.host :refer [volatile! swap! reset! compare-and-set! locking]]))` | KEPT | glue: clje eve.host :refer for host primitives (also listed under threading refers) |
 | 4 | `eve/db/ds/conn.cljc` | 14 | `#?(:clj` | KEPT | glue: host :import of library or JVM types |
 | 5 | `eve/db/ds/conn.cljc` | 30 | `#?(:jank  (if (identical? (:db @atom) oldv) @atom (assoc @atom :db oldv))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 6 | `eve/db/ds/conn.cljc` | 41 | `(if (instance? #?(:jank db/FilteredDB :clj FilteredDB :cljr FilteredDB :cljs db/` | KEPT | glue: instance? class-name dispatch on DB/FilteredDB (imported short name on JVM/CLR vs qualified type on other hosts) |
+| 6 | `eve/db/ds/conn.cljc` | 41 | `(if (instance? #?(:jank db/FilteredDB :clj FilteredDB :cljr FilteredDB :cljs db/` | KEPT | data: type test of FilteredDB in transact; should go through an Eve protocol, not instance? class-name glue |
 | 7 | `eve/db/ds/conn.cljc` | 45 | `(defn #?@(:jank [^db/DB db-with] :clj [^DB db-with] :cljr [^DB db-with] :cljs [^` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 8 | `eve/db/ds/conn.cljc` | 53 | `#?(:clj  (instance? clojure.lang.IDeref conn) :cljr (instance? clojure.lang.IDer` | KEPT | glue: instance?/satisfies? of host IDeref |
-| 9 | `eve/db/ds/conn.cljc` | 87 | `#?(:clj` | KEPT | glue: clj/cljr-only storage API (restore/store/addresses/collect-garbage/file-storage) |
-| 10 | `eve/db/ds/conn.cljc` | 114 | `#?(:clj` | KEPT | glue: clj/cljr-only storage API (restore/store/addresses/collect-garbage/file-storage) |
-| 11 | `eve/db/ds/conn.cljc` | 189 | `#?(:clj` | KEPT | glue: clj/cljr-only storage API (restore/store/addresses/collect-garbage/file-storage) |
+| 8 | `eve/db/ds/conn.cljc` | 53 | `#?(:clj  (instance? clojure.lang.IDeref conn) :cljr (instance? clojure.lang.IDer` | KEPT | data: conn? tests a connection value via host IDeref; should be an Eve protocol/conn? rather than host IDeref |
+| 9 | `eve/db/ds/conn.cljc` | 87 | `#?(:clj` | KEPT | memory: conn restore-conn is vanilla storage I/O; on Eve, persistence is an Eve atom (see eve.db.ds.storage docstring) |
+| 10 | `eve/db/ds/conn.cljc` | 114 | `#?(:clj` | KEPT | memory: transact! stores a tail through vanilla storage; on Eve, persistence is an Eve atom |
+| 11 | `eve/db/ds/conn.cljc` | 189 | `#?(:clj` | KEPT | memory: reset-schema! stores through vanilla storage; on Eve, persistence is an Eve atom |
 | 12 | `eve/db/ds/core.cljc` | 9 | `#?(:cljs [cljs.reader :as edn]` | KEPT | glue: host edn reader libspec (cljs.reader vs clojure.edn) |
 | 13 | `eve/db/ds/core.cljc` | 16 | `#?(:clj [eve.db.ds.pprint])` | KEPT | glue: clj-only pprint require |
 | 14 | `eve/db/ds/core.cljc` | 24 | `#?(:clj` | KEPT | glue: host :import of library or JVM types |
@@ -52,26 +53,26 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 20 | `eve/db/ds/core.cljc` | 194 | `(def ^{:tag #?(:jank db/Datom :clj Datom :cljr Datom :cljs db/Datom :clje db/Dat` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 21 | `eve/db/ds/core.cljc` | 207 | `(defn #?@(:jank [^db/DB init-db] :clj [^DB init-db] :cljr [^DB init-db] :cljs [^` | REMOVED | dropped host type hints on defn name/args; unhinted clojure.core defn |
 | 22 | `eve/db/ds/core.cljc` | 233 | `(def ^{:tag #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :lpy db/DB)` | REMOVED | dropped host :tag metadata; Entity/DB return hints were reader branches only |
-| 23 | `eve/db/ds/core.cljc` | 257 | `(instance? #?(:jank db/FilteredDB :clj FilteredDB :cljr FilteredDB :cljs db/Filt` | KEPT | glue: instance? class-name dispatch on DB/FilteredDB (imported short name on JVM/CLR vs qualified type on other hosts) |
+| 23 | `eve/db/ds/core.cljc` | 257 | `(instance? #?(:jank db/FilteredDB :clj FilteredDB :cljr FilteredDB :cljs db/Filt` | KEPT | data: type test of FilteredDB in core filter/db ops; should go through an Eve protocol |
 | 24 | `eve/db/ds/core.cljc` | 271 | `(let [#?@(:jank [^db/FilteredDB fdb] :clj [^FilteredDB fdb] :cljr [^FilteredDB f` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 25 | `eve/db/ds/core.cljc` | 277 | `#?(:jank (db/->FilteredDB orig-db #(and (orig-pred %) (pred orig-db %)) (atom 0)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 26 | `eve/db/ds/core.cljc` | 281 | `#?(:jank (db/->FilteredDB db #(pred db %) (atom 0))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 27 | `eve/db/ds/core.cljc` | 293 | `(def ^{:arglists '([db tx-data]) :tag #?(:jank db/DB :clj DB :cljr DB :cljs db/D` | REMOVED | dropped host :tag metadata; Entity/DB return hints were reader branches only |
 | 28 | `eve/db/ds/core.cljc` | 297 | `(defn #?@(:jank [^db/DB with-schema] :clj [^DB with-schema] :cljr [^DB with-sche` | REMOVED | dropped host type hints on defn name/args; unhinted clojure.core defn |
 | 29 | `eve/db/ds/core.cljc` | 381 | `(defn #?@(:jank [^db/Datom find-datom] :clj [^Datom find-datom] :cljr [^Datom fi` | REMOVED | dropped host type hints on defn name/args; unhinted clojure.core defn |
-| 30 | `eve/db/ds/core.cljc` | 488 | `#?(:clj` | KEPT | glue: clj/cljr-only storage API (restore/store/addresses/collect-garbage/file-storage) |
+| 30 | `eve/db/ds/core.cljc` | 488 | `#?(:clj` | KEPT | memory: core restore-conn wrapper around vanilla storage; should be Eve atoms |
 | 31 | `eve/db/ds/core.cljc` | 615 | `#?(:cljs` | KEPT | glue: cljs EDN tag-parser registration for data-readers |
 | 32 | `eve/db/ds/core.cljc` | 628 | `#?(:lpy` | KEPT | glue: basilisp programmatic *data-readers* merge (file route runs too early) |
 | 33 | `eve/db/ds/core.cljc` | 656 | `(defn #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db/DB db] :clje` | REMOVED | dropped host type hints on defn name/args; unhinted clojure.core defn |
-| 34 | `eve/db/ds/core.cljc` | 672 | `#?(:cljs` | KEPT | glue: host IDeref/IPending reify for transact/future-call API compatibility |
-| 35 | `eve/db/ds/core.cljc` | 714 | `#?(:clje` | KEPT | glue: host IDeref/IPending reify for transact/future-call API compatibility |
-| 36 | `eve/db/ds/core.cljc` | 723 | `#?(:cljs` | KEPT | glue: host IDeref/IPending reify for transact/future-call API compatibility |
-| 37 | `eve/db/ds/core.cljc` | 760 | `#?(:clj` | KEPT | glue: clj/cljr-only storage API (restore/store/addresses/collect-garbage/file-storage) |
-| 38 | `eve/db/ds/core.cljc` | 767 | `#?(:clj` | KEPT | glue: clj/cljr-only storage API (restore/store/addresses/collect-garbage/file-storage) |
-| 39 | `eve/db/ds/core.cljc` | 784 | `#?(:clj` | KEPT | glue: clj/cljr-only storage API (restore/store/addresses/collect-garbage/file-storage) |
-| 40 | `eve/db/ds/core.cljc` | 791 | `#?(:clj` | KEPT | glue: clj/cljr-only storage API (restore/store/addresses/collect-garbage/file-storage) |
-| 41 | `eve/db/ds/core.cljc` | 802 | `#?(:clj` | KEPT | glue: clj/cljr-only storage API (restore/store/addresses/collect-garbage/file-storage) |
-| 42 | `eve/db/ds/core.cljc` | 811 | `#?(:clj` | KEPT | glue: clj/cljr-only storage API (restore/store/addresses/collect-garbage/file-storage) |
+| 34 | `eve/db/ds/core.cljc` | 672 | `#?(:cljs` | KEPT | threading: transact realized-future reify of host IDeref/IPending; jank already uses eve.host-completion — should go through Eve, not glue |
+| 35 | `eve/db/ds/core.cljc` | 714 | `#?(:clje` | KEPT | threading: clje future-call is a synchronous IDeref reify; should go through Eve host-completion |
+| 36 | `eve/db/ds/core.cljc` | 723 | `#?(:cljs` | KEPT | threading: cljs future-call uses js/setTimeout plus IDeref reify; should go through Eve host-completion |
+| 37 | `eve/db/ds/core.cljc` | 760 | `#?(:clj` | KEPT | memory: core storage accessor is vanilla IStorage; should be Eve atoms |
+| 38 | `eve/db/ds/core.cljc` | 767 | `#?(:clj` | KEPT | memory: core store! wrapper around vanilla storage; should be Eve atoms |
+| 39 | `eve/db/ds/core.cljc` | 784 | `#?(:clj` | KEPT | memory: core restore wrapper around vanilla storage; should be Eve atoms |
+| 40 | `eve/db/ds/core.cljc` | 791 | `#?(:clj` | KEPT | memory: core addresses wrapper around vanilla storage; should be Eve atoms |
+| 41 | `eve/db/ds/core.cljc` | 802 | `#?(:clj` | KEPT | memory: core collect-garbage wrapper around vanilla storage; should be Eve atoms |
+| 42 | `eve/db/ds/core.cljc` | 811 | `#?(:clj` | KEPT | memory: core file-storage constructor is vanilla filesystem I/O; should be Eve atoms |
 | 43 | `eve/db/ds/db.cljc` | 3 | `#?(:cljs [goog.array :as garray])` | KEPT | glue: cljs goog.array require |
 | 44 | `eve/db/ds/db.cljc` | 6 | `#?(:clj [eve.db.ds.inline :refer [update]])` | KEPT | glue: clj-only inline/update require |
 | 45 | `eve/db/ds/db.cljc` | 8 | `#?(:clje [eve.host :refer [transient persistent! conj! dissoc! long volatile!]])` | KEPT | glue: clje eve.host :refer for host primitives |
@@ -81,9 +82,9 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 49 | `eve/db/ds/db.cljc` | 32 | `#?(:clj (set! *warn-on-reflection* true) :cljr (set! *warn-on-reflection* true))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 50 | `eve/db/ds/db.cljc` | 36 | `#?(:cljs` | KEPT | glue: cljs :require-macros for this file's macros |
 | 51 | `eve/db/ds/db.cljc` | 59 | `(do #?@(:clj [(defn ^Boolean seqable? [x] (and (not (string? x))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 52 | `eve/db/ds/db.cljc` | 60 | `#?@(:clj [(or (seq? x)` | KEPT | glue: host seqable? implementation (instance? Seqable/Iterable/Map vs cljs/bb/clje arms) |
-| 53 | `eve/db/ds/db.cljc` | 79 | `#?@(:clj [(or (seq? x)` | KEPT | glue: host seqable? implementation (instance? Seqable/Iterable/Map vs cljs/bb/clje arms) |
-| 54 | `eve/db/ds/db.cljc` | 105 | `#?@(:clj [(or (seq? x)` | KEPT | glue: host seqable? implementation (instance? Seqable/Iterable/Map vs cljs/bb/clje arms) |
+| 52 | `eve/db/ds/db.cljc` | 60 | `#?@(:clj [(or (seq? x)` | KEPT | data: seqable? is the collection test used by query/transact; host instance? arms, not loader glue. Foldable to (and (not (string? x)) (or (clojure.core/seqable? x) (arrays/array? x))) if four hosts pass |
+| 53 | `eve/db/ds/db.cljc` | 79 | `#?@(:clj [(or (seq? x)` | KEPT | data: seqable? host collection test (nested arm of the same defn) |
+| 54 | `eve/db/ds/db.cljc` | 105 | `#?@(:clj [(or (seq? x)` | KEPT | data: seqable? host collection test (nested arm of the same defn) |
 | 55 | `eve/db/ds/db.cljc` | 128 | `#?(:clje (defn seqable? [x] (and (not (string? x))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 56 | `eve/db/ds/db.cljc` | 141 | `(do #?@(:clj [(defn- cljs-env?` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
 | 57 | `eve/db/ds/db.cljc` | 164 | `#?(:clje (defn- cljs-env?` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
@@ -93,8 +94,8 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 61 | `eve/db/ds/db.cljc` | 225 | `#?(:clje (defn patch-tag` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
 | 62 | `eve/db/ds/db.cljc` | 238 | `(do #?@(:clj [(defmacro defn+` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
 | 63 | `eve/db/ds/db.cljc` | 322 | `#?(:clje (defmacro defn+` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
-| 64 | `eve/db/ds/db.cljc` | 348 | `#?(:clje (defn- hash-combine* [seed hash]` | KEPT | glue: clje portable mix for clojure.lang.Util/hashCombine |
-| 65 | `eve/db/ds/db.cljc` | 358 | `#?@(:clj [(clojure.lang.Util/hashCombine x y)] :cljr [(clojure.lang.Util/hashCom` | KEPT | glue: host hashCombine (clojure.lang.Util vs clje mix) |
+| 64 | `eve/db/ds/db.cljc` | 348 | `#?(:clje (defn- hash-combine* [seed hash]` | KEPT | data: datom/DB hash mixing; host Util/hashCombine vs portable mix — hashing of data values |
+| 65 | `eve/db/ds/db.cljc` | 358 | `#?@(:clj [(clojure.lang.Util/hashCombine x y)] :cljr [(clojure.lang.Util/hashCom` | KEPT | data: datom/DB hash mixing; host Util/hashCombine vs portable mix — hashing of data values |
 | 66 | `eve/db/ds/db.cljc` | 363 | `(do #?@(:clj [   (defn- get-sig [method]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
 | 67 | `eve/db/ds/db.cljc` | 387 | `#?(:clje (defn- get-sig [& _args] nil))` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
 | 68 | `eve/db/ds/db.cljc` | 389 | `(do #?@(:clj [   (defn- dedupe-interfaces [deftype-form]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
@@ -111,10 +112,10 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 79 | `eve/db/ds/db.cljc` | 530 | `#?(:clj  (declare nth-datom) :cljr (declare nth-datom)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 80 | `eve/db/ds/db.cljc` | 535 | `#?(:clj  (declare assoc-datom) :cljr (declare assoc-datom)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 81 | `eve/db/ds/db.cljc` | 540 | `#?(:clj  (declare val-at-datom) :cljr (declare val-at-datom)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 82 | `eve/db/ds/db.cljc` | 577 | `(empty [d] (throw #?(:cljr (System.NotSupportedException. "empty is not supporte` | KEPT | glue: host exception class for unsupported empty on Datom |
+| 82 | `eve/db/ds/db.cljc` | 577 | `(empty [d] (throw #?(:cljr (System.NotSupportedException. "empty is not supporte` | KEPT | data: Datom empty throws a host exception class; data-path error, not loader glue |
 | 83 | `eve/db/ds/db.cljc` | 596 | `#?(:clje (vector k)` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
 | 84 | `eve/db/ds/db.cljc` | 607 | `#?(:cljs (goog/exportSymbol "eve.db.ds.db.Datom" Datom))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 85 | `eve/db/ds/db.cljc` | 662 | `#?@(:clj [(throw (IndexOutOfBoundsException.))] :cljr [(throw (System.IndexOutOf` | KEPT | glue: host IndexOutOfBounds / IndexOutOfRange exception class |
+| 85 | `eve/db/ds/db.cljc` | 662 | `#?@(:clj [(throw (IndexOutOfBoundsException.))] :cljr [(throw (System.IndexOutOf` | KEPT | data: Datom nth out-of-bounds throws a host exception class; data-path error |
 | 86 | `eve/db/ds/db.cljc` | 686 | `(throw #?(:clje (ex-info (str "invalid key for #eve.db.ds/Datom: " k) {})` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 87 | `eve/db/ds/db.cljc` | 697 | `#?(:clj` | KEPT | glue: host print-method for Datom |
 | 88 | `eve/db/ds/db.cljc` | 710 | `(do #?@(:clj [(defmacro combine-cmp [& comps]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
@@ -125,26 +126,26 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 93 | `eve/db/ds/db.cljc` | 822 | `#?(:clje (defmacro case-tree [qs vs]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
 | 94 | `eve/db/ds/db.cljc` | 826 | `#?(:clj` | KEPT | glue: clj/cljr :inline compiler metadata |
 | 95 | `eve/db/ds/db.cljc` | 838 | `#?(:clj  {:inline (fn [x y] `(identical? (class ~x) (class ~y)))} :cljr {:inline` | KEPT | glue: clj/cljr :inline compiler metadata |
-| 96 | `eve/db/ds/db.cljc` | 840 | `#?@(:clj [(identical? (class x) (class y))] :cljr [(identical? (class x) (class ` | KEPT | glue: host class vs type identity test |
-| 97 | `eve/db/ds/db.cljc` | 845 | `(do #?@(:jank [   (defn class-name` | KEPT | glue: host class-name (Class/getName vs type/__name__ vs str type) |
-| 98 | `eve/db/ds/db.cljc` | 866 | `#?(:clje (defn class-name` | KEPT | glue: host class-name (Class/getName vs type/__name__ vs str type) |
+| 96 | `eve/db/ds/db.cljc` | 840 | `#?@(:clj [(identical? (class x) (class y))] :cljr [(identical? (class x) (class ` | KEPT | data: class-identical? is used by datom/value comparators; data-path type identity, not loader glue |
+| 97 | `eve/db/ds/db.cljc` | 845 | `(do #?@(:jank [   (defn class-name` | KEPT | data: class-name is used by datom/value comparators for type-order fallback |
+| 98 | `eve/db/ds/db.cljc` | 866 | `#?(:clje (defn class-name` | KEPT | data: class-name clje twin; data-path type-order fallback |
 | 99 | `eve/db/ds/db.cljc` | 872 | `#?@(:clj [(long (compare (class-name x) (class-name y)))] :cljr [(long (compare ` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 100 | `eve/db/ds/db.cljc` | 877 | `(do #?@(:jank [(defmacro int-compare [x y]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 101 | `eve/db/ds/db.cljc` | 898 | `#?(:clje (defmacro int-compare [x y]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 102 | `eve/db/ds/db.cljc` | 903 | `(do #?@(:jank [(defn ihash` | KEPT | glue: host hasheq (clojure.lang.Util/hasheq vs clojure.core/hash) |
-| 103 | `eve/db/ds/db.cljc` | 920 | `#?(:clje (defn ihash` | KEPT | glue: host hasheq (clojure.lang.Util/hasheq vs clojure.core/hash) |
+| 102 | `eve/db/ds/db.cljc` | 903 | `(do #?@(:jank [(defn ihash` | KEPT | data: ihash is hasheq of data values for comparators; foldable to clojure.core/hash if four hosts pass |
+| 103 | `eve/db/ds/db.cljc` | 920 | `#?(:clje (defn ihash` | KEPT | data: ihash clje twin; foldable to clojure.core/hash if four hosts pass |
 | 104 | `eve/db/ds/db.cljc` | 924 | `(do #?@(:clj [(declare value-compare)] :cljr [(declare value-compare)]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 105 | `eve/db/ds/db.cljc` | 928 | `#?(:clje (declare value-compare))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 106 | `eve/db/ds/db.cljc` | 974 | `#?@(:clj  [(instance? Number x)       (compare x y)] :cljr [(number? x)         ` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 107 | `eve/db/ds/db.cljc` | 976 | `#?@(:clj  [(instance? Comparable x)   (compare x y)] :cljr [(instance? System.IC` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 108 | `eve/db/ds/db.cljc` | 980 | `#?@(:cljs [(or (number? x) (string? x) (array? x) (true? x) (false? x)) (garray/` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 109 | `eve/db/ds/db.cljc` | 982 | `(catch #?@(:clj [ClassCastException] :cljr [System.InvalidCastException]` | KEPT | glue: host catch class (ClassCastException / InvalidCastException / TypeError) |
+| 109 | `eve/db/ds/db.cljc` | 982 | `(catch #?@(:clj [ClassCastException] :cljr [System.InvalidCastException]` | KEPT | data: value-compare catch of host ClassCast/TypeError; data-path comparison |
 | 110 | `eve/db/ds/db.cljc` | 991 | `#?(:clj` | KEPT | glue: clj/cljr :inline compiler metadata |
 | 111 | `eve/db/ds/db.cljc` | 1009 | `(do #?@(:jank [(defmacro defcomp [sym [arg1 arg2] & body]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
 | 112 | `eve/db/ds/db.cljc` | 1054 | `#?(:clje (defmacro defcomp [sym [arg1 arg2] & body]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
 | 113 | `eve/db/ds/db.cljc` | 1084 | `#?(:clj` | KEPT | glue: clj/cljr :inline compiler metadata |
 | 114 | `eve/db/ds/db.cljc` | 1092 | `#?@(:clj [(long (compare a1 a2))] :cljr [(long (compare a1 a2))]` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 115 | `eve/db/ds/db.cljc` | 1159 | `(catch #?@(:clj [ClassCastException] :cljr [System.InvalidCastException]` | KEPT | glue: host catch class (ClassCastException / InvalidCastException / TypeError) |
+| 115 | `eve/db/ds/db.cljc` | 1159 | `(catch #?@(:clj [ClassCastException] :cljr [System.InvalidCastException]` | KEPT | data: value-compare catch of host ClassCast/TypeError; data-path comparison |
 | 116 | `eve/db/ds/db.cljc` | 1172 | `(do #?@(:clj [(declare hash-db pr-db)] :cljr [(declare hash-db pr-db)]` | KEPT | glue: forward-declare twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
 | 117 | `eve/db/ds/db.cljc` | 1179 | `#?(:clje (declare hash-db pr-db))` | KEPT | glue: forward-declare twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
 | 118 | `eve/db/ds/db.cljc` | 1181 | `(do #?@(:clj [(declare hash-fdb)] :cljr [(declare hash-fdb)]` | KEPT | glue: forward-declare twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
@@ -164,17 +165,17 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 132 | `eve/db/ds/db.cljc` | 1255 | `#?(:clje (defmacro validate-attr [attr at]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
 | 133 | `eve/db/ds/db.cljc` | 1264 | `(do #?@(:clj [(defmacro validate-val [v at]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
 | 134 | `eve/db/ds/db.cljc` | 1284 | `#?(:clje (defmacro validate-val [v at]` | KEPT | glue: macro-layer host twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
-| 135 | `eve/db/ds/db.cljc` | 1329 | `#?(:clj` | KEPT | glue: clj/cljr-only fast vpred using host .equals |
+| 135 | `eve/db/ds/db.cljc` | 1329 | `#?(:clj` | KEPT | data: vpred is a fast search predicate over datom values (host .equals); foldable to = if four hosts pass |
 | 136 | `eve/db/ds/db.cljc` | 1367 | `#?(:lpy (declare -schema -attrs-by -search -datoms -seek-datoms -rseek-datoms -i` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 137 | `eve/db/ds/db.cljc` | 1373 | `#?(:lpy (declare multival?))` | KEPT | glue: basilisp-only forward declare so deftype method bodies resolve at analysis |
 | 138 | `eve/db/ds/db.cljc` | 1387 | `(let [entry #?(:clj  (fn [k v] (clojure.lang.MapEntry. k v)) :cljr (fn [k v] (cl` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
-| 139 | `eve/db/ds/db.cljc` | 1416 | `#?(:bb (seq x) :default x))` | KEPT | glue: bb search-result must seq SciType slices; other hosts return the value as-is (F-BB-SEARCH-SEQ) |
+| 139 | `eve/db/ds/db.cljc` | 1416 | `#?(:bb (seq x) :default x))` | KEPT | data: search-result wraps -search slices so transact can vec them; data-path (F-BB-SEARCH-SEQ) |
 | 140 | `eve/db/ds/db.cljc` | 1453 | `#?(:clje [k v]` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
-| 141 | `eve/db/ds/db.cljc` | 1496 | `(-schema [db] #?(:clje schema` | KEPT | glue: clje -schema must read the method-body local; (.-schema db) recurses (F-CLJE-SCHEMA) |
-| 142 | `eve/db/ds/db.cljc` | 1508 | `pred       #?(:clj  (vpred v)` | KEPT | glue: clj uses vpred; other hosts use (fn [x] (= v x)) (F-CLJE-PRED) |
+| 141 | `eve/db/ds/db.cljc` | 1496 | `(-schema [db] #?(:clje schema` | KEPT | data: DB -schema field access (F-CLJE-SCHEMA); data-path field read, not loader glue |
+| 142 | `eve/db/ds/db.cljc` | 1508 | `pred       #?(:clj  (vpred v)` | KEPT | data: -search value predicate (vpred vs =); data-path. Foldable to = if four hosts pass |
 | 143 | `eve/db/ds/db.cljc` | 1566 | `#?(:bb  (seq (set/slice (get db index)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 144 | `eve/db/ds/db.cljc` | 1630 | `#?(:clje` | KEPT | glue: clje extend-type of clojerl.IAssociative on DB (translator withholds persistent assoc) |
-| 145 | `eve/db/ds/db.cljc` | 1643 | `#?@(:jank [(and (satisfies? ISearch x)` | KEPT | glue: host db? test (instance? protocol classes vs satisfies?) |
+| 144 | `eve/db/ds/db.cljc` | 1630 | `#?(:clje` | KEPT | data: clje extend-type of IAssociative on DB so assoc/update work in transact; data-path |
+| 145 | `eve/db/ds/db.cljc` | 1643 | `#?@(:jank [(and (satisfies? ISearch x)` | KEPT | data: db? type test of a DB value; foldable to portable satisfies? if four hosts pass |
 | 146 | `eve/db/ds/db.cljc` | 1678 | `#?@(:cljs` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
 | 147 | `eve/db/ds/db.cljc` | 1767 | `(defn #?@(:clj [^DB unfiltered-db] :cljr [^DB unfiltered-db] :cljs [^DB unfilter` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 148 | `eve/db/ds/db.cljc` | 2031 | `#?(:cljs` | KEPT | glue: host print-method / pr-db for DB and FilteredDB |
@@ -188,7 +189,7 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 156 | `eve/db/ds/db.cljc` | 2112 | `#?(:clje (declare tuple?))` | KEPT | glue: forward-declare twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
 | 157 | `eve/db/ds/db.cljc` | 2114 | `(do #?@(:clj [(declare resolve-tuple-refs)] :cljr [(declare resolve-tuple-refs)]` | KEPT | glue: forward-declare twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
 | 158 | `eve/db/ds/db.cljc` | 2118 | `#?(:clje (declare resolve-tuple-refs))` | KEPT | glue: forward-declare twins; clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
-| 159 | `eve/db/ds/db.cljc` | 2142 | `cmp     #?(:bb (case index` | KEPT | glue: host comparator access for find-datom (F-BB-SEEK-SLICE / F-CLJE-CMP) |
+| 159 | `eve/db/ds/db.cljc` | 2142 | `cmp     #?(:bb (case index` | KEPT | data: find-datom comparator access on an index set (F-BB-SEEK-SLICE / F-CLJE-CMP); data-path |
 | 160 | `eve/db/ds/db.cljc` | 2179 | `datom   #?(:bb (first (set/slice set from to))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 161 | `eve/db/ds/db.cljc` | 2265 | `(do #?@(:clj [(defn-  ^Boolean tuple-ref-slot? [db schema-a idx] (cond` | REMOVED | unhinted clojure.core defn-; predicate body was identical on every host |
 | 162 | `eve/db/ds/db.cljc` | 2284 | `#?(:clje (defn- tuple-ref-slot? [db schema-a idx] (cond` | REMOVED | unhinted clojure.core defn-; dropped F-CLJE-PREDS twin (same body) |
@@ -199,8 +200,8 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 167 | `eve/db/ds/db.cljc` | 2402 | `#?(:clj` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
 | 168 | `eve/db/ds/db.cljc` | 2468 | `#?(:clj {:inline (fn [report] `(-> ~report :db-before :max-tx long inc))} :cljr ` | KEPT | glue: clj/cljr :inline compiler metadata |
 | 169 | `eve/db/ds/db.cljc` | 2473 | `#?(:clj {:inline (fn [db] `(inc (long (:max-eid ~db))))} :cljr {:inline (fn [db]` | KEPT | glue: clj/cljr :inline compiler metadata |
-| 170 | `eve/db/ds/db.cljc` | 2477 | `(do #?@(:clj [(defn- ^Boolean tx-id?` | KEPT | glue: host equality for :db/current-tx (String.equals / identical? vs =) |
-| 171 | `eve/db/ds/db.cljc` | 2507 | `#?(:clje (defn- tx-id?` | KEPT | glue: host equality for :db/current-tx (String.equals / identical? vs =) |
+| 170 | `eve/db/ds/db.cljc` | 2477 | `(do #?@(:clj [(defn- ^Boolean tx-id?` | KEPT | data: tx-id? recognizes :db/current-tx in transaction data; foldable to portable = if four hosts pass |
+| 171 | `eve/db/ds/db.cljc` | 2507 | `#?(:clje (defn- tx-id?` | KEPT | data: tx-id? clje twin; foldable to portable = if four hosts pass |
 | 172 | `eve/db/ds/db.cljc` | 2514 | `(do #?@(:clj [(defn-  ^Boolean tempid? [x] (or` | REMOVED | unhinted clojure.core defn-; predicate body was identical on every host |
 | 173 | `eve/db/ds/db.cljc` | 2530 | `#?(:clje (defn- tempid? [x] (or` | REMOVED | unhinted clojure.core defn-; dropped F-CLJE-PREDS twin (same body) |
 | 174 | `eve/db/ds/db.cljc` | 2654 | `(do #?@(:clj [(defn-  ^Boolean tuple-has-tempids? [db a vs] (and` | REMOVED | unhinted clojure.core defn-; predicate body was identical on every host |
@@ -257,7 +258,7 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 225 | `eve/db/ds/pull_api.cljc` | 204 | `(and datom-ahead? (some? (#?(:clj .-default :cljr .-default :cljs :default :clje` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 226 | `eve/db/ds/pull_api.cljc` | 205 | `(recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 227 | `eve/db/ds/pull_api.cljc` | 236 | `(defrecord ReverseAttrsFrame [seen recursion-limits acc pattern #?@(:clj [^PullA` | REMOVED | collapsed in units 1–3 (Eve type or branch deletion) |
-| 228 | `eve/db/ds/pull_api.cljc` | 258 | `datoms (if (instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :l` | KEPT | glue: instance? class-name dispatch on DB/FilteredDB (imported short name on JVM/CLR vs qualified type on other hosts) |
+| 228 | `eve/db/ds/pull_api.cljc` | 258 | `datoms (if (instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :l` | KEPT | data: pull index access branches on instance? DB; data-path type test, not loader glue |
 | 229 | `eve/db/ds/pull_api.cljc` | 259 | `(set/slice (.-avet #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db` | REMOVED | dropped Datom/DB type hints; field and binding reads are unhinted |
 | 230 | `eve/db/ds/pull_api.cljc` | 264 | `(and (empty? datoms) (some? (#?(:clj .-default :cljr .-default :cljs :default :c` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 231 | `eve/db/ds/pull_api.cljc` | 265 | `(recur (assoc! acc (.-as attr) (#?(:clj .-default :cljr .-default :cljs :default` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
@@ -266,11 +267,11 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 234 | `eve/db/ds/pull_api.cljc` | 286 | `(.-wildcard? #?(:clj ^PullPattern (.-pattern attr) :cljr ^PullPattern (.-pattern` | REMOVED | dropped host type hints; field reads use portable (.-pattern)/(.-name)/(.-first-attr) |
 | 235 | `eve/db/ds/pull_api.cljc` | 288 | `(defn ref-frame [context seen recursion-limits pattern #?@(:clj [^PullAttr attr]` | REMOVED | dropped host type hints; field reads use portable (.-pattern)/(.-name)/(.-first-attr) |
 | 236 | `eve/db/ds/pull_api.cljc` | 310 | `(defn attrs-frame [^Context context seen recursion-limits #?@(:clj [^PullPattern` | REMOVED | dropped host type hints; field reads use portable (.-pattern)/(.-name)/(.-first-attr) |
-| 237 | `eve/db/ds/pull_api.cljc` | 313 | `(and (.-wildcard? pattern) (instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/D` | KEPT | glue: instance? class-name dispatch on DB/FilteredDB (imported short name on JVM/CLR vs qualified type on other hosts) |
+| 237 | `eve/db/ds/pull_api.cljc` | 313 | `(and (.-wildcard? pattern) (instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/D` | KEPT | data: pull wildcard index access branches on instance? DB; data-path type test |
 | 238 | `eve/db/ds/pull_api.cljc` | 314 | `(set/slice (.-eavt #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db` | REMOVED | dropped Datom/DB type hints; field and binding reads are unhinted |
 | 239 | `eve/db/ds/pull_api.cljc` | 322 | `:let [from (.-name #?(:clj ^PullAttr (.-first-attr pattern) :cljr ^PullAttr (.-f` | REMOVED | dropped host type hints; field reads use portable (.-pattern)/(.-name)/(.-first-attr) |
 | 240 | `eve/db/ds/pull_api.cljc` | 323 | `to   (.-name #?(:clj ^PullAttr (.-last-attr pattern) :cljr ^PullAttr (.-last-att` | REMOVED | dropped host type hints; field reads use portable (.-pattern)/(.-name)/(.-first-attr) |
-| 241 | `eve/db/ds/pull_api.cljc` | 325 | `(instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :lpy db/DB) d` | KEPT | glue: instance? class-name dispatch on DB/FilteredDB (imported short name on JVM/CLR vs qualified type on other hosts) |
+| 241 | `eve/db/ds/pull_api.cljc` | 325 | `(instance? #?(:jank db/DB :clj DB :cljr DB :cljs db/DB :clje db/DB :lpy db/DB) d` | KEPT | data: pull index access branches on instance? DB; data-path type test |
 | 242 | `eve/db/ds/pull_api.cljc` | 326 | `(set/slice (.-eavt #?@(:jank [^db/DB db] :clj [^DB db] :cljr [^DB db] :cljs [^db` | REMOVED | dropped Datom/DB type hints; field and binding reads are unhinted |
 | 243 | `eve/db/ds/pull_api.cljc` | 331 | `(fn [#?@(:jank [^db/Datom d] :clj [^Datom d] :cljr [^Datom d] :cljs [^db/Datom d` | REMOVED | dropped Datom/DB type hints; field and binding reads are unhinted |
 | 244 | `eve/db/ds/pull_api.cljc` | 349 | `#?@(:clj [^PullPattern pattern :pattern] :cljr [^PullPattern pattern :pattern] :` | REMOVED | dropped host type hints; field reads use portable (.-pattern)/(.-name)/(.-first-attr) |
@@ -299,9 +300,9 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 267 | `eve/db/ds/query.cljc` | 381 | `(let [eid #?(:cljs (tuple-get tuple idx)` | REMOVED | getter-fn uses portable tuple-get |
 | 268 | `eve/db/ds/query.cljc` | 396 | `#?(:cljs (tuple-get tuple idx)` | REMOVED | getter-fn uses portable tuple-get |
 | 269 | `eve/db/ds/query.cljc` | 412 | `#?(:cljs (tuple-get tuple idx)` | REMOVED | getter-fn uses portable tuple-get |
-| 270 | `eve/db/ds/query.cljc` | 425 | `#?(:clje (let [getters (mapv #(getter-fn attrs %) common-attrs)]` | KEPT | glue: tuple-key-fn multi-attr keys use host object arrays on jvm/cljs vs mapv on clje/lpy/jank |
+| 270 | `eve/db/ds/query.cljc` | 425 | `#?(:clje (let [getters (mapv #(getter-fn attrs %) common-attrs)]` | KEPT | data: tuple-key-fn multi-attr join keys; same reader form as vm data #271. Foldable to portable mapv once vm reclassifies #271; not glue |
 | 271 | `eve/db/ds/query.cljc` | 434 | `(let [^objects getters-arr #?(:clj (into-array Object common-attrs) :cljr (into-` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 272 | `eve/db/ds/query.cljc` | 441 | `#?(:jank` | KEPT | glue: tuple-key-fn multi-attr keys use host object arrays on jvm/cljs vs mapv on clje/lpy/jank |
+| 272 | `eve/db/ds/query.cljc` | 441 | `#?(:jank` | KEPT | data: tuple-key-fn multi-attr join keys; same reader form as vm data #271. Foldable to portable mapv once vm reclassifies #271; not glue |
 | 273 | `eve/db/ds/query.cljc` | 504 | `(if-some [tuples1 #?(:clj (hash key) :cljr (hash key) :cljs (get hash key) :clje` | REMOVED | hash-join uses portable get; hash-attrs returns a map |
 | 274 | `eve/db/ds/query.cljc` | 533 | `(#?(:cljs tuple-get :clj get :cljr get :clje da/aget :lpy get) tuple idx)))))))` | KEPT | open: vm-owned data row; foldable by the portable tuple-get once vm reclassifies it |
 | 275 | `eve/db/ds/query.cljc` | 617 | `(#?(:cljs tuple-get :clj get :cljr get :clje da/aget :lpy get) tuple ((:attrs re` | KEPT | open: vm-owned data row; foldable by the portable tuple-get once vm reclassifies it |
@@ -319,9 +320,9 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 287 | `eve/db/ds/query.cljc` | 1147 | `#?(:jank dp/FindScalar :clj FindScalar :cljr FindScalar :cljs dp/FindScalar :clj` | KEPT | glue: instance? class-name dispatch (imported short name on JVM/CLR vs qualified parser type on other hosts) |
 | 288 | `eve/db/ds/query.cljc` | 1151 | `#?(:jank dp/FindTuple :clj FindTuple :cljr FindTuple :cljs dp/FindTuple :clje dp` | KEPT | glue: instance? class-name dispatch (imported short name on JVM/CLR vs qualified parser type on other hosts) |
 | 289 | `eve/db/ds/query_v3.cljc` | 15 | `#?(:clj` | KEPT | glue: host :import of library or JVM types |
-| 290 | `eve/db/ds/query_v3.cljc` | 62 | `#?(:clj` | KEPT | glue: clj java.util.HashMap/ArrayList/HashSet fast collections vs cljs maps/arrays |
-| 291 | `eve/db/ds/query_v3.cljc` | 107 | `#?(:clj` | KEPT | glue: clj java.util.HashMap/ArrayList/HashSet fast collections vs cljs maps/arrays |
-| 292 | `eve/db/ds/query_v3.cljc` | 178 | `#?(:clj` | KEPT | glue: clj java.util.HashMap/ArrayList/HashSet fast collections vs cljs maps/arrays |
+| 290 | `eve/db/ds/query_v3.cljc` | 62 | `#?(:clj` | KEPT | data: query_v3 fast-map is a java.util.HashMap on clj vs a Clojure map on cljs — query engine data structure, should be clojure.core or Eve collections |
+| 291 | `eve/db/ds/query_v3.cljc` | 107 | `#?(:clj` | KEPT | data: query_v3 fast-arr is a java.util.ArrayList on clj vs a cljs array — query engine data structure, should be clojure.core or Eve collections |
+| 292 | `eve/db/ds/query_v3.cljc` | 178 | `#?(:clj` | KEPT | data: query_v3 fast-set is a java.util.HashSet on clj — query engine data structure, should be clojure.core or Eve collections |
 | 293 | `eve/db/ds/query_v3.cljc` | 274 | `(.write #?(:clj  (.getSimpleName ^Class (class rel)) :cljr (.getSimpleName ^Clas` | KEPT | glue: host class-name writing in query_v3 printer (.getSimpleName vs type) |
 | 294 | `eve/db/ds/query_v3.cljc` | 306 | `#?(:clj` | KEPT | glue: host print-method for ArrayRelation |
 | 295 | `eve/db/ds/query_v3.cljc` | 345 | `(instance? #?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/Bind` | KEPT | glue: instance? class-name dispatch (imported short name on JVM/CLR vs qualified parser type on other hosts) |
@@ -364,20 +365,20 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 332 | `eve/db/ds/serialize.cljc` | 127 | `#?(:clj  (.get ^java.util.List d (int i)) :cljr (nth d i)` | REMOVED | array-get is portable nth |
 | 333 | `eve/db/ds/serialize.cljc` | 133 | `#?(:clj  (.get ^java.util.Map d k) :cljr (get d k)` | REMOVED | dict-get is portable get |
 | 334 | `eve/db/ds/serialize.cljc` | 139 | `#?(:clj  (instance? java.util.List a) :cljr (instance? System.Collections.IList ` | KEPT | glue: host collection type test (java.util.List / IList / JS array / vector) |
-| 335 | `eve/db/ds/serialize.cljc` | 145 | `#?(:clj` | KEPT | glue: host amap builder (java.util.ArrayList / JS Array / vector) |
-| 336 | `eve/db/ds/serialize.cljc` | 161 | `#?(:clj` | KEPT | glue: host amap-indexed builder (java.util.ArrayList / JS Array / vector) |
+| 335 | `eve/db/ds/serialize.cljc` | 145 | `#?(:clj` | KEPT | data: serialize amap builds java.util.ArrayList / JS Array / vectors of datom payload; Eve serialization, not glue. Folding to mapv would change the cljs published format (JS Array vs vector) — design call |
+| 336 | `eve/db/ds/serialize.cljc` | 161 | `#?(:clj` | KEPT | data: serialize amap-indexed, same as #335 — design call to fold |
 | 337 | `eve/db/ds/serialize.cljc` | 178 | `[#?@(:jank [^db/Datom d1] :clj [^Datom d1] :cljr [^Datom d1] :cljs [^db/Datom d1` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 338 | `eve/db/ds/serialize.cljc` | 178 | `[#?@(:jank [^db/Datom d1] :clj [^Datom d1] :cljr [^Datom d1] :cljs [^db/Datom d1` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 339 | `eve/db/ds/serialize.cljc` | 242 | `#?@(:clj [(or` | KEPT | glue: JVM/CLR BigInteger/BigDecimal/Ratio/BigInt instance? in serialize |
-| 340 | `eve/db/ds/serialize.cljc` | 256 | `#?(:clje false :default (== pos-inf v)) (array marker-inf)` | KEPT | glue: clje has no pos-inf; other hosts compare with == |
-| 341 | `eve/db/ds/serialize.cljc` | 257 | `#?(:clje false :default (== neg-inf v)) (array marker-minus-inf)` | KEPT | glue: clje has no neg-inf; other hosts compare with == |
+| 339 | `eve/db/ds/serialize.cljc` | 242 | `#?@(:clj [(or` | KEPT | data: serialize special-cases JVM/CLR big numeric types in datom values |
+| 340 | `eve/db/ds/serialize.cljc` | 256 | `#?(:clje false :default (== pos-inf v)) (array marker-inf)` | KEPT | data: serialize encoding of +Inf in datom values (clje has no pos-inf) |
+| 341 | `eve/db/ds/serialize.cljc` | 257 | `#?(:clje false :default (== neg-inf v)) (array marker-minus-inf)` | KEPT | data: serialize encoding of -Inf in datom values (clje has no neg-inf) |
 | 342 | `eve/db/ds/serialize.cljc` | 258 | `#?(:jank (not (== v v)) :clj (Double/isNaN v) :cljr (Double/IsNaN v) :cljs (js/i` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 343 | `eve/db/ds/serialize.cljc` | 270 | `(fn [_idx #?@(:jank [^db/Datom d] :clj [^Datom d] :cljr [^Datom d] :cljs [^db/Da` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 344 | `eve/db/ds/serialize.cljc` | 277 | `aevt        (amap-indexed (fn [_ #?@(:jank [^db/Datom d] :clj [^Datom d] :cljr [` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 345 | `eve/db/ds/serialize.cljc` | 278 | `avet        (amap-indexed (fn [_ #?@(:jank [^db/Datom d] :clj [^Datom d] :cljr [` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 346 | `eve/db/ds/serialize.cljc` | 282 | `#?@(:clj` | KEPT | glue: clj/cljr persistent-sorted-set settings written into serialize payload |
-| 347 | `eve/db/ds/serialize.cljc` | 295 | `#?@(:clj` | KEPT | glue: clj/cljr persistent-sorted-set settings written into serialize payload |
-| 348 | `eve/db/ds/serialize.cljc` | 300 | `#?(:jank` | KEPT | glue: clj/cljr locking around serializable vs unlocked jank/cljs |
+| 346 | `eve/db/ds/serialize.cljc` | 282 | `#?@(:clj` | KEPT | data: serialize writes persistent-sorted-set settings into the DB payload; index-structure data |
+| 347 | `eve/db/ds/serialize.cljc` | 295 | `#?@(:clj` | KEPT | data: serialize writes persistent-sorted-set settings into the DB payload; index-structure data |
+| 348 | `eve/db/ds/serialize.cljc` | 300 | `#?(:jank` | KEPT | threading: clj/cljr locking around serializable (mutex on freeze/thaw); should go through Eve, not glue |
 | 349 | `eve/db/ds/serialize.cljc` | 362 | `#?(:clj arrays/into-array :cljr arrays/into-array))` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 350 | `eve/db/ds/serialize.cljc` | 363 | `aevt     (some->> (dict-get from "aevt") (amap #(arrays/aget eavt %)) #?(:clj ar` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 | 351 | `eve/db/ds/serialize.cljc` | 364 | `avet     (some->> (dict-get from "avet") (amap #(arrays/aget eavt %)) #?(:clj ar` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
@@ -401,10 +402,10 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 | 369 | `eve/db/ds/util.cljc` | 431 | `#?(:clje (defmacro cond+ [& clauses]` | KEPT | glue: util macro-layer host twins (log/raise/if+/cond+/some-of); clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
 | 370 | `eve/db/ds/util.cljc` | 439 | `#?(:clj (defmacro some-of` | KEPT | glue: util macro-layer host twins (log/raise/if+/cond+/some-of); clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
 | 371 | `eve/db/ds/util.cljc` | 459 | `#?(:clje (defmacro some-of` | KEPT | glue: util macro-layer host twins (log/raise/if+/cond+/some-of); clje cannot share a top-level #?@ arm (F-CLJE-DECLARE) |
-| 372 | `eve/db/ds/util.cljc` | 468 | `#?(:cljr` | KEPT | glue: host UUID and clock interop for squuid |
-| 373 | `eve/db/ds/util.cljc` | 477 | `#?(:cljs` | KEPT | glue: host UUID and clock interop for squuid |
+| 372 | `eve/db/ds/util.cljc` | 468 | `#?(:cljr` | KEPT | data: squuid builds a time-ordered UUID with a host clock and UUID type; needs an Eve clock/uuid facility (design call) rather than glue |
+| 373 | `eve/db/ds/util.cljc` | 477 | `#?(:cljs` | KEPT | data: squuid host clock/UUID interop; needs an Eve clock/uuid facility (design call) |
 | 374 | `eve/db/ds/util.cljc` | 488 | `(squuid #?(:clj  (System/currentTimeMillis) :cljr (.ToUnixTimeMilliseconds (Syst` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
-| 375 | `eve/db/ds/util.cljc` | 491 | `#?(:clj` | KEPT | glue: host UUID and clock interop for squuid |
+| 375 | `eve/db/ds/util.cljc` | 491 | `#?(:clj` | KEPT | data: squuid host clock/UUID interop; needs an Eve clock/uuid facility (design call) |
 | 376 | `eve/db/ds/util.cljc` | 523 | `#?(:clj (-> (.getMostSignificantBits ^UUID uuid)` | KEPT | open: remaining host branch (vm owns non-record removal); not classified as glue |
 
 ## Tally

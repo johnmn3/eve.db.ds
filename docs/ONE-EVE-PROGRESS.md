@@ -141,3 +141,16 @@ hash-join looks up grouped tuples with portable `get` (#273); `hash-attrs` alrea
 ## Open-other batch 14 — portable join-tuples + tuple-key-fn glue
 
 Collapsed `join-tuples` to one portable `defn` using `count` and `tuple-get` (#255, #256). Marked tuple-key-fn multi-attr host object-array vs mapv arms (#270, #272) glue. Left #226/#231 (vm-adjacent `.-default`). Counts **290→288** / **0**. open-other 6→2; glue 229→231. Four-host only-core + lru against :dev Eve 7840ffe529.
+
+## Glue re-derive — batches 6, 8, 12, 13, 14
+
+Reviewed every glue reason added in those batches against John's bar (only real host glue; data/memory/threading/HTTP go through Eve; Eve deftypes). No source change, counts stay **288** / **0**. Four-host only-core + lru-portable vs `:dev` Eve `7840ffe529`: JVM, bb, nbb, basilisp all PASS.
+
+Held up as real host glue (148, including three `:inline` rows the batch-12 table parse missed plus 25 query_v3 parser `instance?` class-name rows): loader/require-macros/:import, F-CLJE-DECLARE declare and macro twins, compiler flags and `:inline` metadata, basilisp protocol stubs and analysis declares, print-method, parser `instance?` class-name dispatch (imported short name vs qualified type; bb parser types are SciMap so this is not a casual `satisfies?` fold), data-reader registration, requiring-resolve / resolve-sym, the lpy defprotocol `:extend-via-metadata` carve-out, and the cljs issue-262 apply+vector workaround.
+
+Reclassified, vm's existing data/memory rows untouched:
+- **data (44):** DB/FilteredDB/conn type tests; hashCombine; Datom/compare host exceptions; vpred; query_v3 java.util fast collections; squuid clock/UUID; seqable?; class-identical?/class-name/ihash; bb search-result; clje -schema and IAssociative; db?; find-datom comparator; tx-id?; serialize amap/big-numeric/inf/PSS settings; tuple-key-fn multi-attr keys (#270/#272 sit in the same reader form as vm data #271 — foldable to `mapv` only once vm reclassifies #271).
+- **memory (10):** vanilla storage API on conn/core (`restore-conn`, `store!`, `addresses`, `file-storage`, …). The storage ns already says a DB lives in an Eve atom.
+- **threading (4):** transact/future-call host IDeref reify (jank already uses `eve.host-completion`) and serialize's clj/cljr lock around freeze.
+
+Design calls for John: (1) squuid should use an Eve clock/uuid facility rather than host UUID/Date; (2) folding serialize `amap` to `mapv` would change the cljs published format (JS Array vs vector); (3) folding query_v3 `fast-map`/`fast-arr`/`fast-set` to clojure.core collections is the Eve-correct path but is not on the four-host only-core gate and may have a JVM performance question. Fold candidates that do not touch vm rows and can be tried next: `ihash` → `hash`, `tx-id?` → portable `=`, `db?` → `satisfies?`, `vpred`/`-search` pred → `=`, `seqable?` → wrap `clojure.core/seqable?` plus `arrays/array?` and exclude strings.
