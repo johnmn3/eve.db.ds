@@ -928,13 +928,7 @@
       :else
       (let [first-a (first a)
             first-b (first b)
-            diff (try
-                   (cmp first-a first-b)
-                   (catch #?@(:clj [ClassCastException] :cljr [System.InvalidCastException]
-                           :lpy  [python/TypeError]
-                           :clje [_]
-                           :cljs [js/Error]) _
-                     :incomparable))]
+            diff (cmp-or-incomparable cmp first-a first-b)]
         (cond
           (= diff :incomparable) (recur (conj only-a first-a) (conj only-b first-b) both                (next a) (next b))
           (== diff 0)            (recur only-a                only-b                (conj both first-a) (next a) (next b))
