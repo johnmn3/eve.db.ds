@@ -1786,8 +1786,6 @@
         :else
         (-> (-datoms db :avet attr value nil nil) first :e)))
     
-    #?@(:cljs [(array? eid) (recur db (array-seq eid))])
-    
     (keyword? eid)
     (-> (-datoms db :avet :db/ident eid nil nil) first :e)
 

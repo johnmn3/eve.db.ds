@@ -14,7 +14,6 @@
     [eve.host :as eh]
     ;; PORT DELTA (F-CLJE-HOST-REFERS): see eve.db.ds.util
     #?(:clje [eve.host :refer [transient persistent! conj! assoc! volatile! locking]]))
-  #?(:cljs (:require-macros [eve.db.ds.serialize :refer [array dict]]))
   #?(:clj
      (:import
        [eve.db.ds.db Datom]) :cljr (:import
@@ -54,128 +53,40 @@
       (when (not (== x x))
         x))))
 
-(defn- if-cljs [env then else]
-  (if (:ns env) then else))
+(defn- array
+  "The wire array representation is a Clojure vector on every target."
+  [& xs]
+  (vec xs))
 
-#?(:clj
-(defmacro array
-     "Platform-native array representation (java.util.List on JVM, Array on JS)"
-     [& args]
-     (if-cljs &env
-       (list* 'js* (str "[" (str/join "," (repeat (count args) "~{}")) "]") args)
-       (vec args))) :cljr (defmacro array
-     "Platform-native array representation (java.util.List on JVM, Array on JS)"
-     [& args]
-     (if-cljs &env
-       (list* 'js* (str "[" (str/join "," (repeat (count args) "~{}")) "]") args)
-       (vec args)))
-   ;; PORT DELTA (F-NBB-MACROS): visible to the :cljs macro read
-   :cljs
-(defmacro array
-     "Platform-native array representation (java.util.List on JVM, Array on JS)"
-     [& args]
-     (if-cljs &env
-       (list* 'js* (str "[" (str/join "," (repeat (count args) "~{}")) "]") args)
-       (vec args)))
-   ;; PORT DELTA (F-LPY-SERIALIZE): visible to the :lpy macro read;
-   ;; basilisp is a macro seat like :clj, and the expansion here is
-   ;; the non-cljs one (a vector)
-   :lpy
-(defmacro array
-     "Platform-native array representation (java.util.List on JVM, Array on JS)"
-     [& args]
-     (if-cljs &env
-       (list* 'js* (str "[" (str/join "," (repeat (count args) "~{}")) "]") args)
-       (vec args)))
-   ;; PORT DELTA (F-CLJE-SERIALIZE): :clje twin of array (the :clj arm's
-   ;; expansion is seat-correct here: vectors are the array representation)
-   :clje
-(defmacro array
-     "Platform-native array representation (java.util.List on JVM, Array on JS)"
-     [& args]
-     (vec args)))
+(defn- dict [& kvs]
+  (apply array-map kvs))
 
-#?(:clj
-(defmacro dict
-     "Platform-native dictionary representation (java.util.Map on JVM, Object on JS)"
-     [& args]
-     (if-cljs &env
-       (list* 'js* (str "{" (str/join "," (repeat (/ (count args) 2) "~{}:~{}")) "}") args)
-       `(array-map ~@args))) :cljr (defmacro dict
-     "Platform-native dictionary representation (java.util.Map on JVM, Object on JS)"
-     [& args]
-     (if-cljs &env
-       (list* 'js* (str "{" (str/join "," (repeat (/ (count args) 2) "~{}:~{}")) "}") args)
-       `(array-map ~@args)))
-   ;; PORT DELTA (F-NBB-MACROS): visible to the :cljs macro read
-   :cljs
-(defmacro dict
-     "Platform-native dictionary representation (java.util.Map on JVM, Object on JS)"
-     [& args]
-     (if-cljs &env
-       (list* 'js* (str "{" (str/join "," (repeat (/ (count args) 2) "~{}:~{}")) "}") args)
-       `(array-map ~@args)))
-   ;; PORT DELTA (F-LPY-SERIALIZE): visible to the :lpy macro read
-   :lpy
-(defmacro dict
-     "Platform-native dictionary representation (java.util.Map on JVM, Object on JS)"
-     [& args]
-     (if-cljs &env
-       (list* 'js* (str "{" (str/join "," (repeat (/ (count args) 2) "~{}:~{}")) "}") args)
-       `(array-map ~@args)))
-   ;; PORT DELTA (F-CLJE-SERIALIZE): :clje twin of dict (array-map branch)
-   :clje
-(defmacro dict
-     "Platform-native dictionary representation (java.util.Map on JVM, Object on JS)"
-     [& args]
-     `(array-map ~@args)))
-
-;; PORT DELTA (F-LPY-SERIALIZE): on this seat the array macro's
-;; expansion is a vector (as on :clj) and dict an array-map, so the
-;; accessors are the portable ones and amap builds vectors.
-(defn- array-get [d i]
-  (nth d i))
-
-(defn- dict-get [d k]
-  (get d k))
-
-(defn- array? [a]
-  #?(:clj  (instance? java.util.List a) :cljr (instance? System.Collections.IList a)
-     :cljs (or (cljs.core/array? a) (vector? a))
-     :lpy  (vector? a)
-     :clje (vector? a)))
-
-(defn- amap [f xs]
-  #?(:clj
-     (let [arr (java.util.ArrayList. (count xs))]
-       (reduce (fn [idx x] (.add arr (f x)) (inc idx)) 0 xs)
-       arr) :cljr (let [arr (System.Collections.ArrayList. (count xs))]
-       (reduce (fn [idx x] (.add arr (f x)) (inc idx)) 0 xs)
-       arr)
-     :cljs
-     (let [arr (js/Array. (count xs))]
-       (reduce (fn [idx x] (arrays/aset arr idx (f x)) (inc idx)) 0 xs)
-       arr)
-     :lpy
-     (reduce (fn [arr x] (conj arr (f x))) [] xs)
-     :clje
-     (vec (map f xs))))
-
+(defn- array-get [d i] (nth d i))
+(defn- dict-get [d k] (get d k))
+(defn- array? [a] (vector? a))
+(defn- amap [f xs] (mapv f xs))
 (defn- amap-indexed [f xs]
-  #?(:clj
-     (let [arr (java.util.ArrayList. (count xs))]
-       (reduce (fn [idx x] (.add arr (f idx x)) (inc idx)) 0 xs)
-       arr) :cljr (let [arr (System.Collections.ArrayList. (count xs))]
-       (reduce (fn [idx x] (.add arr (f idx x)) (inc idx)) 0 xs)
-       arr)
-     :cljs
-     (let [arr (js/Array. (count xs))]
-       (reduce (fn [idx x] (arrays/aset arr idx (f idx x)) (inc idx)) 0 xs)
-       arr)
-     :lpy
-     (reduce (fn [arr x] (conj arr (f (count arr) x))) [] xs)
-     :clje
-     (vec (map-indexed f xs))))
+  (reduce (fn [out x] (conj out (f (count out) x))) [] xs))
+
+(defn- exact-number-token? [s]
+  (or (str/ends-with? s "N")
+      (str/ends-with? s "M")
+      (boolean (re-matches #"[-+]?[0-9]+/[0-9]+" s))))
+
+(defn- exact-number? [v]
+  ;; Preserve exact Clojure numeric types as EDN, not JSON doubles.
+  (and (number? v) (exact-number-token? (pr-str v))))
+
+(defn- read-edn [s]
+  (let [v (edn/read-string s)]
+    ;; Some target EDN readers silently round N/M/ratio tokens to a double.
+    ;; Never pretend that is a faithful round-trip. Exact numeric support
+    ;; belongs in Eve's numeric/reader backend; callers can supply :thaw-fn
+    ;; until that backend exists. The wire token itself remains lossless.
+    (when (and (exact-number-token? s) (not= s (pr-str v)))
+      (util/raise "Target EDN reader cannot preserve exact numeric token " s
+        {:error :serialize/exact-number :token s :decoded (pr-str v)}))
+    v))
 
 (defn- attr-comparator
   "Looks for a datom with attribute exactly bigger than the given one"
@@ -243,18 +154,8 @@
         write-v     (fn [v]
                       (cond
                         (string? v)  v
-                        #?@(:clj [(or
-                                    (instance? BigInteger v)
-                                    (instance? BigDecimal v)
-                                    (instance? clojure.lang.Ratio v)
-                                    (instance? clojure.lang.BigInt v))
-                                  (write-other v)] :cljr [(or
-                                    (instance? BigInteger v)
-                                    (instance? BigDecimal v)
-                                    (instance? clojure.lang.Ratio v)
-                                    (instance? clojure.lang.BigInt v))
-                                  (write-other v)])
-                        
+                        (exact-number? v) (write-other v)
+
                         (number? v)  
                         (cond
                           (and (some? pos-inf) (== pos-inf v)) (array marker-inf)
@@ -269,7 +170,7 @@
         ;; mutation (datom-set-idx) and reads it back for the other two
         ;; indexes. Datom idx is fixed at construction in this port, so
         ;; the freeze builds a side table keyed by the datom value.
-        idx-of      (into {} (map-indexed (fn [i d] [d i]) (:eavt db)))
+        idx-of      (into {} (amap-indexed (fn [i d] [d i]) (:eavt db)))
         eavt        (amap-indexed
                       (fn [_idx d]
                         (let [e  (.-e d)
@@ -283,8 +184,7 @@
         schema      (freeze-fn (:schema db))
         attrs       (amap freeze-kw attrs)
         kws         (amap freeze-kw (persistent! @*kws))
-        #?@(:clj
-            [settings (set/settings (:eavt db))] :cljr [settings (set/settings (:eavt db))])]
+        settings    (set/settings (:eavt db))]
     (dict
       "count"    (count (:eavt db))
       "tx0"      db/tx0
@@ -296,10 +196,8 @@
       "eavt"     eavt
       "aevt"     aevt
       "avet"     avet
-      #?@(:clj
-          ["branching-factor" (:branching-factor settings)
-           "ref-type"         (name (:ref-type settings))] :cljr ["branching-factor" (:branching-factor settings)
-           "ref-type"         (name (:ref-type settings))]))))
+      "branching-factor" (:branching-factor settings)
+      "ref-type"         (name (:ref-type settings)))))
 
 (def ^:private serializable-lock (eh/token))
 
@@ -311,7 +209,7 @@
   ([from] 
    (from-serializable from {}))
   ([from {:keys [thaw-fn thaw-kw]
-          :or   {thaw-fn edn/read-string
+          :or   {thaw-fn read-edn
                  thaw-kw thaw-kw}
           :as opts}]
    (let [tx0      (dict-get from "tx0")
@@ -342,8 +240,8 @@
                                   tx (+ tx0 (array-get arr 3))]
                               (db/datom e a v tx))))
                     arrays/into-array)
-         aevt     (some->> (dict-get from "aevt") (amap #(arrays/aget eavt %)) #?(:clj arrays/into-array :cljr arrays/into-array))
-         avet     (some->> (dict-get from "avet") (amap #(arrays/aget eavt %)) #?(:clj arrays/into-array :cljr arrays/into-array))
+         aevt     (some->> (dict-get from "aevt") (amap #(arrays/aget eavt %)) arrays/into-array)
+         avet     (some->> (dict-get from "avet") (amap #(arrays/aget eavt %)) arrays/into-array)
          settings (merge
                     {:branching-factor (dict-get from "branching-factor")
                      :ref-type         (some-> (dict-get from "ref-type") keyword)}
