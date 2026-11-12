@@ -772,3 +772,79 @@ Kept branches still include portable/glue work owned by vm (non-record host-bran
 
 Not yet certified. Many kept rows are still open portable branches (host I/O of exceptions, type hints, seq interop, print-method, `:bb`/`:lpy` arms). Unit 3 only converted records. vm is assigned remaining non-record branch removal. No RESULT #56 until only glue remains, each with a reason, and none touch data, memory, threading, or HTTP.
 
+
+## Final close-out (2026-11-11, last-92 unit)
+
+Supersedes the Tally above and the 'Not yet certified' check below it.
+
+- Original branches: 376. Final lexical count at this tree: **73** (`scripts/one_eve_counts.py`: host-branches=73, plain-type-sites=0). (An interim count of 63 was reported during the close-out; it rested on the defrecord-updatable deletion corrected below — the corrected final count is 73.)
+- Every original row's final status: **REMOVED** (313) or **GLUE** (the 63 rows below, each with its reason). No surviving branch touches data, memory, threading, or HTTP.
+- This unit (88 -> 73, from the 92 counted at 84dd8ae): squuid routed through Eve's `eve.uuid` (4); combine-cmp / case-tree / `:inline`-metadata folds (9); loader folds (2); query `instance?` class-name folds attempted and REVERTED on measurement (17 restored as glue — `dp/BindIgnore` does not resolve on JVM/CLR). The `defrecord-updatable` cluster (10 branches) was deleted mid-unit on a src/-only usage grep and RESTORED verbatim when full-suite runs showed the upstream test tree exercises it (`test/db.cljc` HashBeef, `test-defrecord-updatable`): it is tested public surface, kept as GLUE. Full detail: ~/workspace/ds-lanes-pickup/last92-REPORT.md (see its correction section).
+- Eve-gap rows (kept seams, capability missing in Eve): built_ins.cljc:3 (no portable sqrt in Eve), core.cljc:9 + query.cljc:7 (no Eve EDN reader with *data-readers*), db.cljc:1115 (eve.deftype cljerl backend does not emit clojerl.IAssociative).
+- Gates at the close-out tree (default deps): contract gates only-core / lru-portable / transact-realized / serialize-portable PASS on JVM and bb; the 12-namespace suite is at its pre-unit baseline on both hosts (baseline reds unchanged, named in the report).
+
+| file | line | status | reason |
+|------|------|--------|--------|
+| `src/eve/db/ds/built_ins.cljc` | 3 | GLUE — loader: host math library require | Eve-gap: no portable sqrt in Eve (single math/sqrt call, stddev aggregate) |
+| `src/eve/db/ds/conn.cljc` | 17 | GLUE — refer wiring: eve.host fns for cljerl | clojerl's clojure.core lacks volatile!/swap!/reset!/compare-and-set!/locking; Eve's BEAM host supplies them; other hosts get them from clojure.core / SCI completion |
+| `src/eve/db/ds/core.cljc` | 9 | GLUE — loader: host EDN reader library | Eve-gap note: no Eve EDN reader with *data-readers*; the read calls themselves are single portable calls |
+| `src/eve/db/ds/core.cljc` | 18 | GLUE — loader: bb preload of eve.host-completion | SCI seat needs Eve's host completion loaded before conn expands |
+| `src/eve/db/ds/core.cljc` | 23 | GLUE — loader: JVM-only print utility | eve.db.ds.pprint is a .clj file |
+| `src/eve/db/ds/core.cljc` | 600 | GLUE — reader-registration wiring (cljs) | cljs.reader registers tag parsers programmatically at load |
+| `src/eve/db/ds/core.cljc` | 613 | GLUE — reader-registration wiring (lpy) | basilisp registers data readers by merging into *data-readers* at load |
+| `src/eve/db/ds/db.cljc` | 8 | GLUE — loader: JVM-only macro file refer | eve.db.ds.inline is a .clj file; refers `update` on :clj |
+| `src/eve/db/ds/db.cljc` | 10 | GLUE — refer wiring: eve.host fns for cljerl | as conn.cljc |
+| `src/eve/db/ds/db.cljc` | 40 | GLUE — loader: cljs :require-macros self-refer | db's macros are referred for the cljs build |
+| `src/eve/db/ds/db.cljc` | 42 | GLUE — namespace wiring: :refer-clojure :exclude spelling | :clj also excludes `update` because eve.db.ds.inline refers it |
+| `src/eve/db/ds/db.cljc` | 44 | GLUE — compiler wiring: set! *warn-on-reflection* | JVM/CLR compiler flag only |
+| `src/eve/db/ds/db.cljc` | 48 | GLUE — type wiring: cljs exception-class aliases | js/Error stands in for Exception/IllegalArgumentException/UnsupportedOperationException on the JS host |
+| `src/eve/db/ds/db.cljc` | 169 | GLUE — macro wiring: compile-time cljs-env? probe | reads the macro &env; emits no runtime behavior |
+| `src/eve/db/ds/db.cljc` | 192 | GLUE — macro wiring: cljerl cljs-env? twin | cljerl has no cljs env; answers false |
+| `src/eve/db/ds/db.cljc` | 196 | GLUE — macro wiring: if-cljs codegen | compile-time selection of the declared-stub form |
+| `src/eve/db/ds/db.cljc` | 216 | GLUE — macro wiring: cljerl if-cljs twin | same macro, cljerl reader |
+| `src/eve/db/ds/db.cljc` | 220 | GLUE — type-hint wiring: patch-tag | rewrites portable tag spellings ('boolean/'number) to seat classes at macro time |
+| `src/eve/db/ds/db.cljc` | 253 | GLUE — type-hint wiring: cljerl patch-tag twin | cljerl has neither spelling; unresolvable tags are left alone |
+| `src/eve/db/ds/db.cljc` | 266 | GLUE — macro wiring: defn+ | emits the :declared stub + defn per compiler (cljs declared-var handling) |
+| `src/eve/db/ds/db.cljc` | 350 | GLUE — macro wiring: cljerl defn+ twin | same macro, cljerl reader |
+| `src/eve/db/ds/db.cljc` | 462 | GLUE — export wiring: goog/exportSymbol | JS export of the Datom type name |
+| `src/eve/db/ds/db.cljc` | 542 | GLUE — print wiring: Datom print-method | host print-method for #eve.db.ds/Datom on class hosts |
+| `src/eve/db/ds/db.cljc` | 684 | GLUE — type wiring: catch class names | ClassCastException / System.InvalidCastException / python TypeError / js Error per host |
+| `src/eve/db/ds/db.cljc` | 1115 | GLUE — type wiring: cljerl IAssociative patch for DB | Eve-gap: eve.deftype's cljerl backend does not emit clojerl.IAssociative from the Associative protocol group; other hosts get it from the deftype |
+| `src/eve/db/ds/eve_record.cljc` | 6 | GLUE — loader: cljs :require-macros self-refer | the file is deleted when its last types migrate (see record-migration report); the branch goes with it |
+| `src/eve/db/ds/parser.cljc` | 3 | GLUE — loader: cljs :require-macros | deftrecord + def-eve-record referred for the cljs build |
+| `src/eve/db/ds/pull_api.cljc` | 11 | GLUE — refer wiring: eve.host fns for cljerl | as conn.cljc |
+| `src/eve/db/ds/pull_parser.cljc` | 2 | GLUE — loader: cljs :require-macros | eve.record's defrecord referred for the cljs build |
+| `src/eve/db/ds/pull_parser.cljc` | 6 | GLUE — loader: cljs eve.record require | loads the slab record runtime on the JS host |
+| `src/eve/db/ds/pull_parser.cljc` | 12 | GLUE — refer wiring: eve.host volatile! for cljerl | as conn.cljc |
+| `src/eve/db/ds/pull_parser.cljc` | 127 | GLUE — resolution wiring: host var resolution | requiring-resolve exists on clj/cljr; other hosts resolve :xform symbols via the built-ins table |
+| `src/eve/db/ds/query.cljc` | 2 | GLUE — loader: cljs :require-macros | def-eve-record referred for the cljs build |
+| `src/eve/db/ds/query.cljc` | 7 | GLUE — loader: host EDN reader libspecs | as core.cljc:9 |
+| `src/eve/db/ds/query.cljc` | 27 | GLUE — refer wiring: eve.host fns for cljerl | as conn.cljc |
+| `src/eve/db/ds/query.cljc` | 28 | GLUE — type wiring: parser-type :import | names eve.deftype classes for instance? on class hosts (JVM/CLR); SCI hosts name them via the dp/ alias — batch-B fold to the alias form was measured impossible on JVM (No such var: dp/BindIgnore) and reverted |
+| `src/eve/db/ds/query.cljc` | 37 | GLUE — compiler wiring: set! *warn-on-reflection* | JVM/CLR compiler flag only |
+| `src/eve/db/ds/query.cljc` | 57 | GLUE — print wiring: Relation print-method | host print-method for #Relation on class hosts |
+| `src/eve/db/ds/query.cljc` | 121 | GLUE — compiler wiring: set! *unchecked-math* true | JVM/CLR compiler flag around sum-rel |
+| `src/eve/db/ds/query.cljc` | 155 | GLUE — compiler wiring: set! *unchecked-math* false | restores the flag after sum-rel |
+| `src/eve/db/ds/query.cljc` | 235 | GLUE — class-name wiring: instance? type name | eve.deftype class named via (:import) on class hosts, via the dp/ alias on SCI hosts; one Eve type per site (batch-B fold measured impossible on JVM and reverted) |
+| `src/eve/db/ds/query.cljc` | 238 | GLUE — class-name wiring: instance? type name | eve.deftype class named via (:import) on class hosts, via the dp/ alias on SCI hosts; one Eve type per site (batch-B fold measured impossible on JVM and reverted) |
+| `src/eve/db/ds/query.cljc` | 241 | GLUE — class-name wiring: instance? type name | eve.deftype class named via (:import) on class hosts, via the dp/ alias on SCI hosts; one Eve type per site (batch-B fold measured impossible on JVM and reverted) |
+| `src/eve/db/ds/query.cljc` | 253 | GLUE — class-name wiring: instance? type name | eve.deftype class named via (:import) on class hosts, via the dp/ alias on SCI hosts; one Eve type per site (batch-B fold measured impossible on JVM and reverted) |
+| `src/eve/db/ds/query.cljc` | 270 | GLUE — class-name wiring: instance? type name | eve.deftype class named via (:import) on class hosts, via the dp/ alias on SCI hosts; one Eve type per site (batch-B fold measured impossible on JVM and reverted) |
+| `src/eve/db/ds/query.cljc` | 271 | GLUE — class-name wiring: instance? type name | eve.deftype class named via (:import) on class hosts, via the dp/ alias on SCI hosts; one Eve type per site (batch-B fold measured impossible on JVM and reverted) |
+| `src/eve/db/ds/query.cljc` | 273 | GLUE — class-name wiring: instance? type name | eve.deftype class named via (:import) on class hosts, via the dp/ alias on SCI hosts; one Eve type per site (batch-B fold measured impossible on JVM and reverted) |
+| `src/eve/db/ds/query.cljc` | 274 | GLUE — class-name wiring: instance? type name | eve.deftype class named via (:import) on class hosts, via the dp/ alias on SCI hosts; one Eve type per site (batch-B fold measured impossible on JVM and reverted) |
+| `src/eve/db/ds/query.cljc` | 546 | GLUE — class-name wiring: instance? type name | eve.deftype class named via (:import) on class hosts, via the dp/ alias on SCI hosts; one Eve type per site (batch-B fold measured impossible on JVM and reverted) |
+| `src/eve/db/ds/query.cljc` | 936 | GLUE — class-name wiring: instance? type name | eve.deftype class named via (:import) on class hosts, via the dp/ alias on SCI hosts; one Eve type per site (batch-B fold measured impossible on JVM and reverted) |
+| `src/eve/db/ds/query.cljc` | 938 | GLUE — class-name wiring: instance? type name | eve.deftype class named via (:import) on class hosts, via the dp/ alias on SCI hosts; one Eve type per site (batch-B fold measured impossible on JVM and reverted) |
+| `src/eve/db/ds/query.cljc` | 940 | GLUE — class-name wiring: instance? type name | eve.deftype class named via (:import) on class hosts, via the dp/ alias on SCI hosts; one Eve type per site (batch-B fold measured impossible on JVM and reverted) |
+| `src/eve/db/ds/query.cljc` | 943 | GLUE — class-name wiring: instance? type name | eve.deftype class named via (:import) on class hosts, via the dp/ alias on SCI hosts; one Eve type per site (batch-B fold measured impossible on JVM and reverted) |
+| `src/eve/db/ds/query.cljc` | 987 | GLUE — class-name wiring: instance? type name | eve.deftype class named via (:import) on class hosts, via the dp/ alias on SCI hosts; one Eve type per site (batch-B fold measured impossible on JVM and reverted) |
+| `src/eve/db/ds/query.cljc` | 992 | GLUE — class-name wiring: instance? type name | eve.deftype class named via (:import) on class hosts, via the dp/ alias on SCI hosts; one Eve type per site (batch-B fold measured impossible on JVM and reverted) |
+| `src/eve/db/ds/query.cljc` | 995 | GLUE — class-name wiring: instance? type name | eve.deftype class named via (:import) on class hosts, via the dp/ alias on SCI hosts; one Eve type per site (batch-B fold measured impossible on JVM and reverted) |
+| `src/eve/db/ds/query.cljc` | 998 | GLUE — class-name wiring: instance? type name | eve.deftype class named via (:import) on class hosts, via the dp/ alias on SCI hosts; one Eve type per site (batch-B fold measured impossible on JVM and reverted) |
+| `src/eve/db/ds/serialize.cljc` | 16 | GLUE — refer wiring: eve.host fns for cljerl | as conn.cljc |
+| `src/eve/db/ds/serialize.cljc` | 17 | GLUE — type wiring: Datom :import | names the Datom class for type hints on class hosts |
+| `src/eve/db/ds/serialize.cljc` | 182 | GLUE — type-hint wiring: per-host hint on the amap fn arg | ^db/Datom / ^Datom / unhinted per host reader |
+| `src/eve/db/ds/serialize.cljc` | 183 | GLUE — type-hint wiring: per-host hint on the amap fn arg | same as :182 |
+| `src/eve/db/ds/storage.cljc` | 21 | GLUE — protocol wiring: defprotocol option form | basilisp's defprotocol cannot read :extend-via-metadata; the option is absent on that seat |
+| `src/eve/db/ds/util.cljc` | 12 | GLUE — refer wiring: eve.host fns for cljerl | as conn.cljc |

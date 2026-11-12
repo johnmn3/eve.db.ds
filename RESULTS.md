@@ -78,14 +78,14 @@ them; they are never estimated in the meantime.
   eve.db.ds.db fails at macroexpansion, db.cljc:2484 — the `:lpy`
   `tx-id?` arm's `(.equals ":db/current-tx" e)` forms.
 - **Provenance:** perf-doc lane, Eve 0.9.3.1 pin, fresh cache, minimal
-  repro; PERF-DOC-REPORT.md on atom.broker branch lane-m/perf-doc-0931.
+  repro; PERF-DOC-REPORT.md on a private Eve development tree branch lane-m/perf-doc-0931.
   Handed to this repo's seat 2026-11-10.
 - **Tree leg (verified at the seed):** db.cljc:2484 is exactly that
   arm. The file's own PORT DELTA comment (db.cljc:2471-2477) records
   F-CLJR-TXID-EQUALS: the identical `.equals` body already died on
   :cljr and was fixed there by switching to the portable `=` body;
   the :lpy arm never got the same treatment.
-- **Reconcile target:** lane-m/lpy-standing (atom.broker) passed
+- **Reconcile target:** lane-m/lpy-standing (private Eve dev tree) passed
   people-1k on basilisk; only a subset of its fixes reached 0.9.3.1.
   Diff its db.cljc against this pin before designing any fix.
 - **Reconcile result (2026-11-10):** DONE — the lpy-standing tree's

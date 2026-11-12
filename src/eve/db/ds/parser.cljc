@@ -667,7 +667,7 @@
           (flatten-rule-vars vars0) " vs. " (flatten-rule-vars vars)
           {:error :parser/rule, :rule name})))))
 
-(defn parse-rules [form]
+(defn- parse-rules-impl [form]
   (vec
     ;; group rule branches by name
     (for [[name branches] (group-by :name (parse-seq parse-rule form))
@@ -769,7 +769,12 @@
       (util/raise "Missing rules var '%' in :in"
         {:error :parser/query, :form form}))))
 
-(defn parse-query [q]
+(defn parse-rules [form]
+  ;; Construction law: parse output is process-local compiled data,
+  ;; constructed in the explicit parse domain (eve.db.ds.db).
+  (db/call-in-parse-domain (fn [] (parse-rules-impl form))))
+
+(defn- parse-query-impl [q]
   (let [qm  (cond
               (map? q) q
               (sequential? q) (query->map q)
@@ -788,4 +793,8 @@
                :qwhere qwhere})]
     (validate-query res q qm)
     res))
+
+(defn parse-query [q]
+  ;; Construction law: as parse-rules — the parse domain.
+  (db/call-in-parse-domain (fn [] (parse-query-impl q))))
 

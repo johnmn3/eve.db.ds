@@ -39,7 +39,7 @@
 ;; ----------------------------------------------------------------------------
 
 (def ^:dynamic *query-cache*
-  (lru/cache 100))
+  (db/call-in-parse-domain (fn [] (lru/cache 100))))
 
 (declare -collect collect -resolve-clause resolve-clause)
 
@@ -1018,7 +1018,19 @@
         resolved
         tuple))))
 
+(declare q-impl)
+
 (defn q [q & inputs]
+  ;; Construction law: Relations, result sets and return maps are
+  ;; constructed in the queried DB's own domain (the aggregates in
+  ;; built-ins run inside this binding, so they inherit it); a query
+  ;; with no DB input constructs in the parse domain.
+  (let [db (first (filter #(or (db/db? %) (db/filtered-db? %)) inputs))]
+    (if (some? db)
+      (db/call-in-db-ish-domain db (fn [] (apply q-impl q inputs)))
+      (db/call-in-parse-domain (fn [] (apply q-impl q inputs))))))
+
+(defn- q-impl [q & inputs]
   (let [parsed-q      (lru/-get *query-cache* q #(dp/parse-query q))
         find          (:qfind parsed-q)
         find-elements (dp/find-elements find)

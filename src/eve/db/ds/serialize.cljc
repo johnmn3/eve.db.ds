@@ -202,16 +202,28 @@
 (def ^:private serializable-lock (eh/token))
 
 (defn serializable
-  ([db] (eh/locking serializable-lock (serializable-impl db {})))
-  ([db opts] (eh/locking serializable-lock (serializable-impl db opts))))
+  ;; Construction law: the frozen form's Eve arrays are constructed in
+  ;; the serialized DB's own domain.
+  ([db] (eh/locking serializable-lock (db/call-in-db-domain db (fn [] (serializable-impl db {})))))
+  ([db opts] (eh/locking serializable-lock (db/call-in-db-domain db (fn [] (serializable-impl db opts))))))
+
+(declare from-serializable-impl)
 
 (defn from-serializable
-  ([from] 
+  ([from]
    (from-serializable from {}))
-  ([from {:keys [thaw-fn thaw-kw]
-          :or   {thaw-fn read-edn
-                 thaw-kw thaw-kw}
-          :as opts}]
+  ([from opts]
+   ;; Construction law: the restored DB is built in its home domain —
+   ;; the process domain, explicitly bound (see
+   ;; db/call-in-process-domain); db/restore-db adopts the index sets'
+   ;; domain, which is this one.
+   (db/call-in-process-domain (fn [] (from-serializable-impl from opts)))))
+
+(defn- from-serializable-impl
+  [from {:keys [thaw-fn thaw-kw]
+         :or   {thaw-fn read-edn
+                thaw-kw thaw-kw}
+         :as opts}]
    (let [tx0      (dict-get from "tx0")
          schema   (thaw-fn (dict-get from "schema"))
          _        (#'db/validate-schema schema)
@@ -252,4 +264,4 @@
         :aevt    (set/from-sorted-array :eve.db.ds.db/cmp-aevt aevt (arrays/alength aevt) settings)
         :avet    (set/from-sorted-array :eve.db.ds.db/cmp-avet avet (arrays/alength avet) settings)
         :max-eid (dict-get from "max-eid")
-        :max-tx  (dict-get from "max-tx")}))))
+        :max-tx  (dict-get from "max-tx")})))

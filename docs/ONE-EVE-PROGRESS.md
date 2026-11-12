@@ -28,7 +28,7 @@ Count with `python3 scripts/one_eve_counts.py [ref]`; excludes strings/comments,
 ## UNIT3b (#56) — bb only-core + Eve MapEntry wiring (this commit)
 
 Published Eve pin in `deps.edn` is unchanged: `4a921298168080c2af9f57fcfcdee2db570dec4c`.
-Tests in this unit used a **local Eve checkout** at `/workspace/ds-wt-eve` @ `1d5f146fd7` (plus two uncommitted bb adapter overlays used only for bb runs; write-up at `/workspace/ds-wt/56-bb-eve-adapter-notes.txt`): (1) `adapters/types/bb` keeps `IPersistentMap` methods + `Iterable` in SciMap mode so def-eve-record `assoc`/`dissoc`/`set` work; (2) `adapters/completion/bb` `lookup-ns?` carves out `eve.db.ds.*` so keyword/`get` on Datom rewrite to `eve.core/get`. Those overlays are for the Eve worker to land on the atom.broker work branch. This commit does not change the published pin.
+Tests in this unit used a **local Eve checkout** at `/workspace/ds-wt-eve` @ `1d5f146fd7` (plus two uncommitted bb adapter overlays used only for bb runs; write-up at `/workspace/ds-wt/56-bb-eve-adapter-notes.txt`): (1) `adapters/types/bb` keeps `IPersistentMap` methods + `Iterable` in SciMap mode so def-eve-record `assoc`/`dissoc`/`set` work; (2) `adapters/completion/bb` `lookup-ns?` carves out `eve.db.ds.*` so keyword/`get` on Datom rewrite to `eve.core/get`. Those overlays are for the Eve worker to land on the Eve dev tree's work branch. This commit does not change the published pin.
 
 Counts after this commit: **342/376** host branches, **0/20** plain types (no new src reader-conditionals; the `:bb` `deftype-atom` arm lives in `lib-ds-deps`, not `src/`).
 
@@ -42,7 +42,7 @@ Counts after this commit: **342/376** host branches, **0/20** plain types (no ne
 
 ### MapEntry
 
-Call sites in `db.cljc`, `eve_record.cljc`, and `impl/entity.cljc` now use `eve.map-entry/map-entry` (Eve type `eve.map_entry.MapEntry` on JVM). Encoding adapters still construct host MapEntry; pointing `enc/map-entry` at the Eve type is an Eve-worker follow-up on the atom.broker work branch. bb native MapEntry remains RED (wakes #2).
+Call sites in `db.cljc`, `eve_record.cljc`, and `impl/entity.cljc` now use `eve.map-entry/map-entry` (Eve type `eve.map_entry.MapEntry` on JVM). Encoding adapters still construct host MapEntry; pointing `enc/map-entry` at the Eve type is an Eve-worker follow-up on the Eve dev tree's work branch. bb native MapEntry remains RED (wakes #2).
 
 ### Tests (local Eve checkout `/workspace/ds-wt-eve` @ `1d5f146fd7`; published pin `4a92129` unused by these runs)
 
@@ -55,7 +55,7 @@ Call sites in `db.cljc`, `eve_record.cljc`, and `impl/entity.cljc` now use `eve.
 
 Published pin in `deps.edn` remains `4a921298168080c2af9f57fcfcdee2db570dec4c` and was not used by these runs. Counts unchanged: **342/376** host branches, **0/20** plain types.
 
-All eight gates below were run against the same local Eve checkout `/workspace/ds-wt-eve` @ `1d5f146fd7`. bb and nbb legs that need Eve adapter patches used uncommitted local overlays only (not committed in eve.db.ds; they belong on the atom.broker Eve work branch):
+All eight gates below were run against the same local Eve checkout `/workspace/ds-wt-eve` @ `1d5f146fd7`. bb and nbb legs that need Eve adapter patches used uncommitted local overlays only (not committed in eve.db.ds; they belong on the Eve dev tree's work branch):
 
 - bb: `adapters/types/bb` keeps `IPersistentMap` methods and `Iterable` in SciMap mode; `adapters/completion/bb` `lookup-ns?` carves out `eve.db.ds.*` so keyword/`get` on Datom rewrite to `eve.core/get`.
 - nbb analysis: JS `eve.encoding` is missing `unsupported` (it has only no-arg `throw-unsupported`; the Java and Python encoding adapters already define `unsupported`, and FilteredDB calls `(throw (enc/unsupported msg))` at `db.cljc:1685`). This is an Eve JS encoding gap, not a missing cljs require in eve.db.ds — `[eve.encoding :as enc]` is already unconditional. Local overlay adds `(defn unsupported [msg] (js/Error. msg))`, same contract as `illegal-argument` on that adapter.
@@ -64,16 +64,16 @@ All eight gates below were run against the same local Eve checkout `/workspace/d
 |------|-----------|--------------|-------|
 | JVM (Java 21, Clojure 1.12.6) | PASS `ONLY-CORE-OK #{["Ivan"] ["Petr"]} 5` | PASS `LRU-PORTABLE-OK` | no overlays |
 | basilisp 0.5.1 | PASS `ONLY-CORE-OK #{["Ivan"] ["Petr"]} 5` | PASS `LRU-PORTABLE-OK` | re-run after `f3eefdae` (`System/exit` driver fix); no overlays |
-| bb 1.13.226 | PASS `ONLY-CORE-OK #{["Ivan"] ["Petr"]} 5` | PASS `LRU-PORTABLE-OK` | depends on the two bb Eve overlays above, being landed on the atom.broker Eve work branch by another worker |
+| bb 1.13.226 | PASS `ONLY-CORE-OK #{["Ivan"] ["Petr"]} 5` | PASS `LRU-PORTABLE-OK` | depends on the two bb Eve overlays above, being landed on the Eve dev tree's work branch by another worker |
 | nbb 1.6.214 | FAIL after analysis fix | PASS `LRU-PORTABLE-OK` | with the JS `unsupported` overlay, FilteredDB analysis succeeds; `db-with` then fails in Eve `adapters/slab/module/src/eve/process_slab.cljs` `alloc-from-slab` at `mem/load-i32` (`No implementation of method: :-load-i32 of protocol: #'eve.mem/IMemRegion found for:` — empty type, consistent with a nil `:region` from `wasm/get-slab-instance`). Eve-worker follow-up; not fixed in eve.db.ds. |
 
 Do not commit those overlays into this repo.
 
-## Dev/test Eve pin (atom.broker `lane-m/eve-db-ds-gaps-eve` @ `07644bea15`)
+## Dev/test Eve tree (a private Eve development tree, branch `lane-m/eve-db-ds-gaps-eve`)
 
-**Release pin (unchanged):** the default `eve/eve` dep in `deps.edn` and `lib/deps.edn` stays on the published SeniorCareMarket/eve tree `4a921298168080c2af9f57fcfcdee2db570dec4c`. That default is not retargeted to an unreleased work branch. Collating a later Eve release is a separate decision.
+**Release pin (unchanged):** the default `eve/eve` dep in `deps.edn` and `lib/deps.edn` stays on the published SeniorCareMarket/eve tree. That default is not retargeted to an unreleased work branch. Collating a later Eve release is a separate decision.
 
-**Dev/test pin:** alias `:dev` overrides `eve/eve` to `{:git/url "https://github.com/johnmn3/atom.broker" :git/sha "07644bea1540546c516c3a43c331778a2c5d9f52" :deps/root "eve"}` — the Eve work branch that lands IPending on `eve.thread` Promise/Future (so `clojure.core/realized?` works), the #460 test fix, and the jank `satisfies?` load order, plus the earlier bb SciMap/`lookup-ns?` overlays, JS `enc/unsupported`, and process-slab auto-init. JVM gates: `clojure -A:dev:test -M -m contract.only-core` (and `contract.lru-portable`, `contract.transact-realized`). bb/nbb/lpy: `scripts/eve_dev_cp.sh <host>` expands that tree's `hosts.edn` (or `EVE_ROOT` if already checked out). No local adapter overlays are required.
+**Dev/test runs:** there is no dev-pin alias in this repo (an earlier `:dev` alias pointing at a private Eve development tree was removed for public-repo hygiene; this repo points only at public Eve). The dev tree carried the Eve work that lands IPending on `eve.thread` Promise/Future (so `clojure.core/realized?` works), the #460 test fix, and the jank `satisfies?` load order, plus the earlier bb SciMap/`lookup-ns?` overlays, JS `enc/unsupported`, and process-slab auto-init. To run against an Eve dev tree, use the `EVE_ROOT` environment override: JVM gates: `clojure -A:test -M -m contract.only-core` with a `-Sdeps` local override for Eve; bb/nbb/lpy: `scripts/eve_dev_cp.sh <host>` expands the `EVE_ROOT` tree's `hosts.edn` when `EVE_ROOT` is set, and otherwise resolves the public release pin from `deps.edn`.
 
 ### Four-host matrix against this pin
 

@@ -1,18 +1,15 @@
 (ns eve.db.ds.util
   (:refer-clojure :exclude [find])
-  ;; PORT DELTA (F-CLJE-HOST-REFERS): clojerl's clojure.core has no
-  ;; transient family (bare-boot inventory in STATUS-DS-CLJE-LRU);
-  ;; Eve's beam eve.host supplies them with persistent semantics
-  ;; (transient/persistent! are identity there), so under :clje this
-  ;; ns refers them from eve.host. Same remedy in db/conn/query/
-  ;; pull-api/entity/serialize for the names each of those files
-  ;; calls bare.
-  #?(:clj
-     (:import
-       [java.util UUID]) :cljr (:import [System Guid])
-     :clje
-     (:require
-       [eve.host :refer [transient conj! assoc! persistent! volatile! vswap!]])))
+  (:require
+    [eve.uuid :as eve-uuid]
+    ;; PORT DELTA (F-CLJE-HOST-REFERS): clojerl's clojure.core has no
+    ;; transient family (bare-boot inventory in STATUS-DS-CLJE-LRU);
+    ;; Eve's beam eve.host supplies them with persistent semantics
+    ;; (transient/persistent! are identity there), so under :clje this
+    ;; ns refers them from eve.host. Same remedy in db/conn/query/
+    ;; pull-api/entity/serialize for the names each of those files
+    ;; calls bare.
+    #?(:clje [eve.host :refer [transient conj! assoc! persistent! volatile! vswap!]])))
 
 (def ^:dynamic *debug*
   false)
@@ -123,79 +120,19 @@
   ([x & more]
    `(let [x# ~x] (if (nil? x#) (some-of ~@more) x#))))
 
-(defn- rand-bits [pow]
-  (rand-int (bit-shift-left 1 pow)))
-
-#?(:cljr
-   (defn- to-hex-string [n l]
-     (let [s (System.Convert/ToString (long n) 16)
-           c (count s)]
-       (cond
-         (> c l) (subs s 0 l)
-         (< c l) (str (apply str (repeat (- l c) "0")) s)
-         :else   s))))
-
-#?(:cljs
-   (defn- to-hex-string [n l]
-     (let [s (.toString n 16)
-           c (count s)]
-       (cond
-         (> c l) (subs s 0 l)
-         (< c l) (str (apply str (repeat (- l c) "0")) s)
-         :else   s))))
-
+;; PORT: squuid is Eve's (eve.uuid/squuid — the e2 clock/UUID unit):
+;; one implementation on every host, semi-sequential v4 with the
+;; unsigned-seconds prefix, instead of per-host UUID/clock branches
+;; (java.util.UUID / System.Guid / cljs string building, now deleted
+;; with their to-hex-string/rand-bits helpers).
 (defn squuid
-  ([]
-   (squuid #?(:clj  (System/currentTimeMillis) :cljr (.ToUnixTimeMilliseconds (System.DateTimeOffset/UtcNow))
-              :cljs (.getTime (js/Date.)))))
-  ([msec]
-   #?(:clj
-      (let [uuid     (UUID/randomUUID)
-            time     (int (/ msec 1000))
-            high     (.getMostSignificantBits uuid)
-            low      (.getLeastSignificantBits uuid)
-            new-high (bit-or (bit-and high 0x00000000FFFFFFFF)
-                       (bit-shift-left time 32))]
-        (UUID. new-high low)) :cljr (System.Guid/Parse
-        (str
-          (-> (int (/ msec 1000))
-            (to-hex-string 8))
-          "-" (-> (rand-bits 16) (to-hex-string 4))
-          "-" (-> (rand-bits 16) (bit-and 0x0FFF) (bit-or 0x4000) (to-hex-string 4))
-          "-" (-> (rand-bits 16) (bit-and 0x3FFF) (bit-or 0x8000) (to-hex-string 4))
-          "-" (-> (rand-bits 16) (to-hex-string 4))
-          (-> (rand-bits 16) (to-hex-string 4))
-          (-> (rand-bits 16) (to-hex-string 4))))
-      :cljs
-      (uuid
-        (str
-          (-> (int (/ msec 1000))
-            (to-hex-string 8))
-          "-" (-> (rand-bits 16) (to-hex-string 4))
-          "-" (-> (rand-bits 16) (bit-and 0x0FFF) (bit-or 0x4000) (to-hex-string 4))
-          "-" (-> (rand-bits 16) (bit-and 0x3FFF) (bit-or 0x8000) (to-hex-string 4))
-          "-" (-> (rand-bits 16) (to-hex-string 4))
-          (-> (rand-bits 16) (to-hex-string 4))
-          (-> (rand-bits 16) (to-hex-string 4)))))))
-
-(defn- parse-hex [s]
-  (reduce (fn [acc ch]
-            (let [c (int ch)
-                  n (cond
-                      (<= 48 c 57)  (- c 48)
-                      (<= 97 c 102) (+ 10 (- c 97))
-                      (<= 65 c 70)  (+ 10 (- c 65))
-                      :else (throw (ex-info (str "Not a hex digit: " ch) {:ch ch})))]
-              (+ (* acc 16) n)))
-    0
-    s))
+  ([] (eve-uuid/squuid))
+  ([msec] (eve-uuid/squuid msec)))
 
 (defn squuid-time-millis
   "Returns time that was used in [[squuid]] call, in milliseconds, rounded to the closest second."
   [uuid]
-  (-> (subs (str uuid) 0 8)
-    parse-hex
-    (* 1000)))
+  (eve-uuid/squuid-time-millis uuid))
 
 (defn distinct-by [f coll]
   (->>

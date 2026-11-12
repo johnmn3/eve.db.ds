@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
-# Print Eve src + hosts.edn roots for a host, using the :dev pin
-# (atom.broker lane-m/eve-db-ds-gaps-eve, eve/ subdir, sha below).
+# Print Eve src + hosts.edn roots for a host, using the PUBLIC Eve pin
+# from the root deps.edn (SeniorCareMarket/eve, sha below).
 # Usage: scripts/eve_dev_cp.sh <jvm|bb|nbb|lpy>
-# Optional: EVE_ROOT=/path/to/eve (a tree at that sha) skips resolution.
+# Optional: EVE_ROOT=/path/to/eve (an Eve dev tree) skips resolution —
+# that env override is how dev runs point at a non-release Eve tree.
 set -euo pipefail
 HOST="${1:?usage: scripts/eve_dev_cp.sh <jvm|bb|nbb|lpy>}"
-SHA=ec22aba4c0ddf4f2ff58f26b04d654d53f247d61
-URL=https://github.com/johnmn3/atom.broker.git
+SHA=383097e063df5eec07b6b6ee64c72e62a3176fb1
+URL=https://github.com/SeniorCareMarket/eve.git
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 if [[ -n "${EVE_ROOT:-}" && -f "${EVE_ROOT}/hosts.edn" && -f "${EVE_ROOT}/bb.edn" ]]; then
   EVE="$EVE_ROOT"
 else
   CANDIDATES=(
-    "${GITLIBS:-$HOME/.gitlibs}/libs/eve/eve/${SHA}/eve"
     "${GITLIBS:-$HOME/.gitlibs}/libs/eve/eve/${SHA}"
   )
   EVE=""
@@ -28,12 +28,12 @@ else
     if [[ ! -f "$CACHE/hosts.edn" ]]; then
       mkdir -p "$CACHE"
       extract() { git --git-dir="$ROOT/.git" archive "$1" | tar -x -C "$CACHE"; }
-      if git --git-dir="$ROOT/.git" cat-file -t "${SHA}:eve" >/dev/null 2>&1; then
-        extract "${SHA}:eve"
+      if git --git-dir="$ROOT/.git" cat-file -t "${SHA}" >/dev/null 2>&1; then
+        extract "${SHA}"
       else
         git --git-dir="$ROOT/.git" fetch --no-tags --depth=1 "$URL" \
-          "+refs/heads/lane-m/eve-db-ds-gaps-eve:refs/dev-eve/${SHA}"
-        extract "${SHA}:eve"
+          "+refs/heads/release/eve-0.9.3.2:refs/dev-eve/${SHA}"
+        extract "${SHA}"
       fi
     fi
     EVE="$CACHE"

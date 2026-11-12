@@ -29,7 +29,9 @@
   {:pre [(db/db? db)]}
   (when-let [e (entid db eid)]
     (when (db/numeric-eid-exists? db e)
-      (->Entity db e (volatile! false) (volatile! {})))))
+      ;; Construction law: the Entity is constructed in its DB's domain.
+      (db/call-in-db-domain db
+        (fn [] (->Entity db e (volatile! false) (volatile! {})))))))
 
 (defn- entity-attr [db a datoms]
   (if (db/multival? db a)

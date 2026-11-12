@@ -263,12 +263,14 @@
    - Does not support [[with]] and [[db-with]]."
   [db pred]
   {:pre [(db/db? db)]}
+  ;; No functions in Eve memory: the pred travels with this call and is
+  ;; registered host-side (see eve.db.ds.db/filter-db); the FilteredDB
+  ;; value carries only the registry id. Composition of nested filters
+  ;; happens inside db/filter-db.
   (if (is-filtered db)
-    (let [fdb       db
-          orig-pred (.-pred fdb)
-          orig-db   (.-unfiltered-db fdb)]
-      (db/->FilteredDB orig-db #(and (orig-pred %) (pred orig-db %)) (atom 0)))
-    (db/->FilteredDB db #(pred db %) (atom 0))))
+    (let [orig-db (db/unfiltered-db db)]
+      (db/filter-db db (fn [d] (pred orig-db d))))
+    (db/filter-db db (fn [d] (pred db d)))))
 
 
 ; Changing DB
