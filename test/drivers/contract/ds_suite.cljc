@@ -23,7 +23,7 @@
    from a stale basilisp cache before this driver loaded would count no
    passes — run with a fresh PYTHONPYCACHEPREFIX). On bb and basilisp load
    eve.host-completion before this namespace, as the contract gates do."
-  (:require [eve.host] [eve.atom] [clojure.test :as t] [clojure.string :as str])
+  (:require [eve.host] [eve.atom] [eve.db.ds.db :as ds-db] [clojure.test :as t] [clojure.string :as str])
   #?(:lpy (:import importlib os.path sys)))
 
 #?(:lpy
@@ -192,12 +192,27 @@
     (println {:suite-ns n :result r})
     (assoc r :loaded 1 :skipped (if @load-only? 0 (count (filter #(skip-reason n %) (vals (ns-interns n))))))))
 
+(defn- in-test-domain
+  "Operator ruling (2026-11-12): the suite driver binds the process
+   domain around each namespace's load + run. Upstream's tests
+   construct Eve values freely — (d/datom ...), parser ->Records as
+   expected values, top-level DBs/conns — and the construction law
+   requires a domain context; the driver (ds's own harness, not the
+   product, not the test text) supplies the process domain. Product
+   paths that need a specific domain bind their own (ambient context
+   wins), and the unbound paths stay exercised by the smoke and
+   acceptance probes, which do not run under this driver. On :cljs
+   the async require cannot be covered by a synchronous binding, so
+   only the run is wrapped there."
+  [f]
+  (ds-db/call-in-process-domain f))
+
 #?(:cljs
    (defn- run-one
      "A promise of the counts for namespace n."
      [n]
      (-> (js/Promise. (fn [res _] (res (require n))))
-         (.then (fn [_] (run-loaded n))
+         (.then (fn [_] (in-test-domain #(run-loaded n)))
                 (fn [e] (load-failed n e))))))
 
 #?(:cljs nil
@@ -205,14 +220,16 @@
    (defn- run-one
      "The counts for namespace n."
      [n]
-     (if (try #?(:lpy (package-paths! n))
-              (require n)
-              true
-              (catch #?(:clj Throwable :lpy python/Exception :default Exception) e
-                (load-failed n e)
-                false))
-       (run-loaded n)
-       load-error)))
+     (in-test-domain
+       (fn []
+         (if (try #?(:lpy (package-paths! n))
+                  (require n)
+                  true
+                  (catch #?(:clj Throwable :lpy python/Exception :default Exception) e
+                    (load-failed n e)
+                    false))
+           (run-loaded n)
+           load-error)))))
 
 (def ^:private zero {:loaded 0 :test 0 :pass 0 :fail 0 :error 0 :skipped 0})
 
