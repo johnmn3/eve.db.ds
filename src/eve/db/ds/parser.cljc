@@ -1,11 +1,12 @@
 (ns ^:no-doc eve.db.ds.parser
   (:refer-clojure :exclude [distinct?])
   #?(:cljs (:require-macros [eve.db.ds.parser :refer [deftrecord]]
-                            [eve.db.ds.eve-record :refer [def-eve-record]]))
+                            [eve.record :as erecord]))
   (:require
     [clojure.set :as set]
     [eve.db.ds.db :as db]
-    [eve.db.ds.eve-record :refer [def-eve-record]]
+    [eve.record :as erecord]
+    #?(:cljs [eve.record])
     [eve.db.ds.util :as util]))
 
 ;; utils
@@ -20,12 +21,14 @@
 (defmacro deftrecord
   "Augment all eve.db.ds.parser records with ITraversable. UNIT3 (#56):
    one eve.deftype record for every host; the per-host defrecord copies
-   are gone."
+   are gone. Record migration (2026-11-12): the record itself is Eve's
+   slab eve.record (erecord/defrecord) — the process-local def-eve-record
+   cheat is deleted; the generated ITraversable impls are unchanged."
   [tagname fields & rest]
   (let [f    (gensym "f")
         pred (gensym "pred")
         acc  (gensym "acc")]
-    `(def-eve-record ~tagname ~fields
+    `(erecord/defrecord ~tagname ~fields
        ITraversable
        (~'-postwalk [this# ~f]
          (let [new# (~(symbol (str "->" (name tagname)))

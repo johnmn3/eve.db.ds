@@ -30,7 +30,8 @@
     ;; every host — the per-host require branch is gone (ledger rows
     ;; db.cljc:22 et al.).
     [eve.deftype :refer [deftype]]
-    [eve.db.ds.eve-record :refer [def-eve-record]]
+    [eve.record :as erecord]
+    #?(:cljs [eve.record])
     [me.tonsky.persistent-sorted-set :as set]
     [me.tonsky.persistent-sorted-set.arrays :as arrays])
   ;; PORT DELTA (D6, PORTING-DS.md): vanilla's (:import
@@ -38,7 +39,7 @@
   ;; that class, and its only use was defcomp's invokePrim arm,
   ;; which D6 drops. The ns needs no :import on the :clj read.
   #?(:cljs (:require-macros [eve.db.ds.db :refer [case-tree combine-cmp defn+ defcomp defrecord-updatable if-cljs int-compare validate-attr validate-val]]
-                            [eve.db.ds.eve-record :refer [def-eve-record]]))
+                            [eve.record :as erecord]))
   (:refer-clojure :exclude [seqable? #?(:clj update) deftype]))
 
 #?(:clj (set! *warn-on-reflection* true) :cljr (set! *warn-on-reflection* true))
@@ -1708,7 +1709,7 @@
 
 ;; ----------------------------------------------------------------------------
 
-(def-eve-record TxReport [db-before db-after tx-data tempids tx-meta])
+(erecord/defrecord TxReport [db-before db-after tx-data tempids tx-meta])
 
 (defn+ ^boolean is-attr? [db attr property]
   (contains? (-attrs-by db property) attr))

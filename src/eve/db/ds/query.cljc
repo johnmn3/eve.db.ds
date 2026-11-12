@@ -1,5 +1,5 @@
 (ns ^:no-doc eve.db.ds.query
-  #?(:cljs (:require-macros [eve.db.ds.eve-record :refer [def-eve-record]]))
+  #?(:cljs (:require-macros [eve.record :as erecord]))
   (:require
     ;; Eve's EDN reader: one portable libspec (see eve.db.ds.core).
     [eve.edn :as edn]
@@ -8,7 +8,8 @@
     [clojure.walk :as walk]
     [eve.db.ds.built-ins :as built-ins]
     [eve.db.ds.db :as db]
-    [eve.db.ds.eve-record :refer [def-eve-record]]
+    [eve.record :as erecord]
+    #?(:cljs [eve.record])
     [me.tonsky.persistent-sorted-set.arrays :as da]
     [eve.db.ds.lru :as lru]
     [eve.db.ds.impl.entity :as de]
@@ -40,14 +41,14 @@
 
 ;; Records
 
-(def-eve-record Context [rels sources rules])
+(erecord/defrecord Context [rels sources rules])
 
 ;; attrs:
 ;;    {?e 0, ?v 1} or {?e2 "a", ?age "v"}
 ;; tuples:
 ;;    [#js [1 "Ivan" 5 14] ...]
 ;; or [(Datom. 2 "Oleg" 1 55) ...]
-(def-eve-record Relation [attrs tuples])
+(erecord/defrecord Relation [attrs tuples])
 
 #?(:clj
    (defmethod print-method Relation [r, ^java.io.Writer w]
