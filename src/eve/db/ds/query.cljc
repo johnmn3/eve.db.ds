@@ -42,19 +42,17 @@
 
 ;; Records
 
-(erecord/defrecord Context [rels sources rules])
+;; Context/Relation are HOST records (John, 2026-11-12): never put into
+;; an Eve atom; they hold call-time host values mid-query (user-supplied
+;; :in sources, tuples in flight) that a slab record rightly refuses.
+(defrecord Context [rels sources rules])
 
 ;; attrs:
 ;;    {?e 0, ?v 1} or {?e2 "a", ?age "v"}
 ;; tuples:
 ;;    [#js [1 "Ivan" 5 14] ...]
 ;; or [(Datom. 2 "Oleg" 1 55) ...]
-(erecord/defrecord Relation [attrs tuples])
-
-;; Context/Relation are slab eve.records: clojure.core/assoc|update cannot
-;; dispatch on them on SCI hosts (measured on bb). Route record updates
-;; through eve.core/assoc, the surface pull-parser already uses.
-(defn- update-record [r k f & args] (e/assoc r k (apply f (get r k) args)))
+(defrecord Relation [attrs tuples])
 
 #?(:clj
    (defmethod print-method Relation [r, ^java.io.Writer w]
@@ -271,12 +269,12 @@
   (cond
     (and (instance? #?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/BindScalar :clje dp/BindScalar :lpy dp/BindScalar) binding)
       (instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar :clje dp/SrcVar :lpy dp/SrcVar) (:variable binding)))
-    (update-record context :sources assoc (get-in binding [:variable :symbol]) value)
+    (update context :sources assoc (get-in binding [:variable :symbol]) value)
     (and (instance? #?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/BindScalar :clje dp/BindScalar :lpy dp/BindScalar) binding)
       (instance? #?(:jank dp/RulesVar :clj RulesVar :cljr RulesVar :cljs dp/RulesVar :clje dp/RulesVar :lpy dp/RulesVar) (:variable binding)))
-    (e/assoc context :rules (parse-rules value))
+    (assoc context :rules (parse-rules value))
     :else
-    (update-record context :rels conj (in->rel binding value))))
+    (update context :rels conj (in->rel binding value))))
 
 (defn resolve-ins [context bindings values]
   (let [cb (count bindings)
@@ -506,7 +504,7 @@
 (defn- rel-prod-by-attrs [context attrs]
   (let [rels       (filter #(rel-contains-attrs? % attrs) (:rels context))
         production (reduce prod-rel rels)]
-    [(update-record context :rels #(remove (set rels) %)) production]))
+    [(update context :rels #(remove (set rels) %)) production]))
 
 (defn -call-fn [context rel f args]
   ;; PORT (PORTING-DS.md): static-args/tuples-args are da arrays — Eve
@@ -565,9 +563,9 @@
         [context production] (rel-prod-by-attrs context (filter symbol? args))
         new-rel      (if pred
                        (let [tuple-pred (-call-fn context production pred args)]
-                         (update-record production :tuples #(filter tuple-pred %)))
-                       (e/assoc production :tuples []))]
-    (update-record context :rels conj new-rel)))
+                         (update production :tuples #(filter tuple-pred %)))
+                       (assoc production :tuples []))]
+    (update context :rels conj new-rel)))
 
 (defn bind-by-fn [context clause]
   (let [[[f & args] out] clause
@@ -594,9 +592,9 @@
                          (empty-rel binding))
                        (reduce sum-rel rels)))
                    (prod-rel
-                     (e/assoc production :tuples [])
+                     (assoc production :tuples [])
                      (empty-rel binding)))]
-    (update-record context :rels collapse-rels new-rel)))
+    (update context :rels collapse-rels new-rel)))
 
 ;;; RULES
 
@@ -740,10 +738,10 @@
 
 (defn limit-rel [rel vars]
   (when-some [attrs' (not-empty (select-keys (:attrs rel) vars))]
-    (e/assoc rel :attrs attrs')))
+    (assoc rel :attrs attrs')))
 
 (defn limit-context [context vars]
-  (e/assoc context
+  (assoc context
     :rels (->> (:rels context)
             (keep #(limit-rel % vars)))))
 
@@ -801,7 +799,7 @@
            _        (check-free-same (bound-vars context) branches clause)
            contexts (map #(resolve-clause context %) branches)
            rels     (map #(reduce hash-join (:rels %)) contexts)]
-       (e/assoc (first contexts) :rels [(reduce sum-rel rels)]))
+       (assoc (first contexts) :rels [(reduce sum-rel rels)]))
      
      '[or-join [[*] *] *] ;; (or-join [[req-vars] vars] ...)
      (let [[_ [req-vars & vars] & branches] clause
@@ -818,7 +816,7 @@
            contexts     (map #(-> join-context (resolve-clause %) (limit-context vars)) branches)
            rels         (map #(reduce hash-join (:rels %)) contexts)
            sum-rel      (reduce sum-rel rels)]
-       (update-record context :rels collapse-rels sum-rel))
+       (update context :rels collapse-rels sum-rel))
      
      '[and *] ;; (and ...)
      (let [[_ & clauses] clause]
@@ -832,25 +830,25 @@
                               (util/raise "Insufficient bindings: none of " negation-vars " is bound in " orig-clause
                                 {:error :query/where
                                  :form  orig-clause}))
-           context'         (e/assoc context :rels [(reduce hash-join (:rels context))])
+           context'         (assoc context :rels [(reduce hash-join (:rels context))])
            negation-context (reduce resolve-clause context' clauses)
            negation         (subtract-rel
                               (util/single (:rels context'))
                               (reduce hash-join (:rels negation-context)))]
-       (e/assoc context' :rels [negation]))
+       (assoc context' :rels [negation]))
      
      '[not-join [*] *] ;; (not-join [vars] ...)
      (let [[_ vars & clauses] clause
            bound            (bound-vars context)
            _                (check-bound bound vars orig-clause)
-           context'         (e/assoc context :rels [(reduce hash-join (:rels context))])
+           context'         (assoc context :rels [(reduce hash-join (:rels context))])
            join-context     (limit-context context' vars)
            negation-context (-> (reduce resolve-clause join-context clauses)
                               (limit-context vars))
            negation         (subtract-rel
                               (util/single (:rels context'))
                               (reduce hash-join (:rels negation-context)))]
-       (e/assoc context' :rels [negation]))
+       (assoc context' :rels [negation]))
      
      '[*] ;; pattern
      (let [source   *implicit-source*
@@ -859,11 +857,11 @@
        (binding [*lookup-attrs* (if (satisfies? db/IDB source)
                                   (dynamic-lookup-attrs source pattern')
                                   *lookup-attrs*)]
-         (update-record context :rels collapse-rels relation))))))
+         (update context :rels collapse-rels relation))))))
 
 (defn short-circuit-empty-rel [context]
   (if (some #(empty? (:tuples %)) (:rels context))
-    (e/assoc context
+    (assoc context
       :rels
       [(->Relation
          (zipmap (mapcat #(keys (:attrs %)) (:rels context)) (range))
@@ -878,7 +876,7 @@
         (if (source? (first clause))
           (binding [*implicit-source* (get (:sources context) (first clause))]
             (resolve-clause context (next clause)))
-          (update-record context :rels collapse-rels (solve-rule context clause)))
+          (update context :rels collapse-rels (solve-rule context clause)))
         (-resolve-clause context clause)))))
 
 (defn -q [context clauses]

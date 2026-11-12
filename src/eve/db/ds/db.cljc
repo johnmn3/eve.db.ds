@@ -1709,15 +1709,12 @@
 
 ;; ----------------------------------------------------------------------------
 
-(erecord/defrecord TxReport [db-before db-after tx-data tempids tx-meta])
-
-;; TxReport is a slab eve.record: clojure.core/assoc|update|dissoc cannot
-;; dispatch on it on SCI hosts (SciType is not clojure.lang.Associative —
-;; measured on bb). Route report updates through eve.record's own fns,
-;; the same surface pull-parser uses via eve.core/assoc.
-(defn assoc-report [r k v] (erecord/assoc-record r k v))
-(defn update-report [r k f & args] (erecord/assoc-record r k (apply f (get r k) args)))
-(defn dissoc-report [r & ks] (reduce erecord/dissoc-record r ks))
+;; TxReport is a HOST record (John, 2026-11-12): it is never put into an
+;; Eve atom; it lives host-side in relation with Eve, and mid-transaction
+;; it legitimately holds call-time host values (tempid bookkeeping, tx
+;; data in flight) that a slab eve.record's normalize gate rightly
+;; refuses. Only types that enter Eve atoms (DB, Datom) are slab records.
+(defrecord TxReport [db-before db-after tx-data tempids tx-meta])
 
 (defn+ ^boolean is-attr? [db attr property]
   (contains? (-attrs-by db property) attr))
@@ -1985,24 +1982,24 @@
 
 (defn- allocate-eid
   ([report eid]
-   (update-report report :db-after advance-max-eid eid))
+   (update report :db-after advance-max-eid eid))
   ([report e eid]
    (cond-> report
      (tx-id? e)
      (->
-       (update-report :tempids assoc e eid)
-       (update-report ::reverse-tempids update eid util/conjs e))
+       (update :tempids assoc e eid)
+       (update ::reverse-tempids update eid util/conjs e))
      
      (tempid? e)
      (->
-       (update-report :tempids assoc e eid)
-       (update-report ::reverse-tempids update eid util/conjs e))
+       (update :tempids assoc e eid)
+       (update ::reverse-tempids update eid util/conjs e))
 
      (and (not (tempid? e)) (new-eid? (:db-after report) eid))
-     (update-report :tempids assoc eid eid)
+     (update :tempids assoc eid eid)
 
      true
-     (update-report :db-after advance-max-eid eid))))
+     (update :db-after advance-max-eid eid))))
 
 (defn- resolve-tuple-value
   "Resoleves refs, tempids and :db/current-tx in ref slots. Returns [report' vs']"
@@ -2029,11 +2026,11 @@
 
                                     (tempid? v)
                                     (if-some [resolved (get (:tempids report') v)]
-                                      [(update-report report' ::value-tempids assoc resolved v) resolved]
+                                      [(update report' ::value-tempids assoc resolved v) resolved]
                                       (let [resolved (next-eid db)]
                                         [(-> report'
                                              (allocate-eid v resolved)
-                                             (update-report ::value-tempids assoc resolved v))
+                                             (update ::value-tempids assoc resolved v))
                                          resolved]))
 
                                     :else ;; lookup ref or ident
@@ -2081,15 +2078,15 @@
   (let [db      (:db-after report)
         a       (:a datom)
         report' (-> report
-                  (assoc-report :db-after (with-datom db datom))
-                  (update-report :tx-data conj datom))]
+                  (assoc :db-after (with-datom db datom))
+                  (update :tx-data conj datom))]
     (if (tuple-source? db a)
       (let [e      (:e datom)
             v      (if (datom-added datom) (:v datom) nil)
             queue  (or (-> report' ::queued-tuples (get e)) {})
             tuples (get (-attrs-by db :db/attrTuples) a)
             queue' (queue-tuples queue tuples db e a v)]
-        (update-report report' ::queued-tuples assoc e queue'))
+        (update report' ::queued-tuples assoc e queue'))
       report')))
 
 (defn- tuple-has-tempids? [db a vs]
@@ -2254,7 +2251,7 @@
       (transact-report report new-datom)
 
       (= (.-v old-datom) v)
-      (update-report report ::tx-redundant util/conjv new-datom)
+      (update report ::tx-redundant util/conjv new-datom)
 
       :else
       (-> report
@@ -2331,14 +2328,14 @@
           unused    (reduce reduce-fn tempids (:tx-data report))
           unused    (reduce reduce-fn unused (::tx-redundant report))]
       (if (zero? (count unused))
-        (dissoc-report report ::value-tempids ::tx-redundant)
+        (dissoc report ::value-tempids ::tx-redundant)
         (util/raise "Tempids used only as value in transaction: " (sort (vals unused))
           {:error :transact/syntax, :tempids unused})))
-    (dissoc-report report ::value-tempids ::tx-redundant)))
+    (dissoc report ::value-tempids ::tx-redundant)))
 
 (defn+ transact-tx-data-impl [initial-report initial-es]
   (let [initial-report' (-> initial-report
-                          (update-report :db-after transient))
+                          (update :db-after transient))
         has-tuples?     (not (empty? (-attrs-by (:db-after initial-report) :db/attrTuples)))
         initial-es'     (if has-tuples?
                           (interleave initial-es (repeat ::flush-tuples))
@@ -2350,12 +2347,12 @@
         (empty? es)
         (-> report
           (check-value-tempids)
-          (dissoc-report ::upserted-tempids)
-          (dissoc-report ::reverse-tempids)
-          (update-report :tempids #(util/removem auto-tempid? %))
-          (update-report :tempids assoc :db/current-tx (current-tx report))
-          (update-report :db-after update :max-tx inc)
-          (update-report :db-after persistent!))
+          (dissoc ::upserted-tempids)
+          (dissoc ::reverse-tempids)
+          (update :tempids #(util/removem auto-tempid? %))
+          (update :tempids assoc :db/current-tx (current-tx report))
+          (update :db-after update :max-tx inc)
+          (update :db-after persistent!))
 
         :let [[entity & entities] es]
 
@@ -2485,7 +2482,7 @@
 
             (and (ref? db a) (tempid? v))
             (if-some [resolved (get tempids v)]
-              (let [report' (update-report report ::value-tempids assoc resolved v)]
+              (let [report' (update report ::value-tempids assoc resolved v)]
                 (recur report' (cons [op e a resolved] entities)))
               (let [resolved (next-eid db)
                     report'  (-> report
