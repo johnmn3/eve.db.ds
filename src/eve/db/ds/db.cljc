@@ -131,6 +131,19 @@
   [f]
   (call-in-domain (process-sio) f))
 
+(defn call-in-home-domain
+  "Call f in a NEW DB's home domain: the ambient domain context when
+   one is bound — an Eve atom's swap! installing this DB: the DB must
+   be BORN in the atom's domain, because swap! refuses a value whose
+   pointers were allocated in a different domain (eve.atom's
+   resolve-new-ptr check; measured by the perf harness's persistent
+   atom seed swap, 2026-11-12). With no ambient context, the home is
+   the process domain (call-in-process-domain)."
+  [f]
+  (if (some? eve-data/*domain-sio*)
+    (f)
+    (call-in-process-domain f)))
+
 (defonce ^:private parse-domain-sio
   (delay (eve-alloc/heap-domain-sio! {})))
 
@@ -1517,8 +1530,9 @@
   {:pre [(or (nil? schema) (map? schema))]}
   (validate-schema schema)
   ;; Construction law: a new DB is built in its home domain — the
-  ;; process domain, explicitly bound (see call-in-process-domain).
-  (call-in-process-domain (fn []
+  ;; ambient domain when bound (an installing atom's swap!), else the
+  ;; process domain (see call-in-home-domain).
+  (call-in-home-domain (fn []
   (map->DB
     {:schema        schema
      :rschema       (rschema (merge implicit-schema schema))
@@ -1553,13 +1567,13 @@
     res))
 
 (defn ^DB init-db [datoms schema opts]
-  ;; Construction law: as empty-db — the process domain, explicitly
-  ;; bound. The binding covers the datom? check too: `datoms` may be a
-  ;; lazy seq of not-yet-constructed Datoms (e.g. a caller's
-  ;; (map #(apply datom %) rows)), and drop-while realizes it — that
-  ;; construction belongs to the new DB's home domain, the process
-  ;; domain.
-  (call-in-process-domain (fn []
+  ;; Construction law: as empty-db — the home domain (ambient when
+  ;; bound, else the process domain). The binding covers the datom?
+  ;; check too: `datoms` may be a lazy seq of not-yet-constructed
+  ;; Datoms (e.g. a caller's (map #(apply datom %) rows)), and
+  ;; drop-while realizes it — that construction belongs to the new
+  ;; DB's home domain.
+  (call-in-home-domain (fn []
   (when-some [not-datom (first (drop-while datom? datoms))]
     (util/raise "init-db expects list of Datoms, got " (type not-datom)
       {:error :init-db}))
