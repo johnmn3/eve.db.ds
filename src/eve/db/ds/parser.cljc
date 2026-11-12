@@ -612,17 +612,22 @@
                         :vars  missing}))))))))
 
 (defn parse-clause [form]
-  (or 
-    (parse-not       form)
-    (parse-not-join  form)
-    (parse-or        form)
-    (parse-or-join   form)
-    (parse-pred      form)
-    (parse-fn        form)
-    (parse-rule-expr form)
-    (parse-pattern   form)
-    (util/raise "Cannot parse clause, expected (data-pattern | pred-expr | fn-expr | rule-expr | not-clause | not-join-clause | or-clause | or-join-clause)"
-      {:error :parser/where, :form form})))
+  ;; Public entry (the parser tests call it directly): parsing
+  ;; constructs the AST records, so it establishes the parse domain
+  ;; itself, exactly as parse-query and parse-rules do.
+  (db/call-in-parse-domain
+    (fn []
+      (or
+        (parse-not       form)
+        (parse-not-join  form)
+        (parse-or        form)
+        (parse-or-join   form)
+        (parse-pred      form)
+        (parse-fn        form)
+        (parse-rule-expr form)
+        (parse-pattern   form)
+        (util/raise "Cannot parse clause, expected (data-pattern | pred-expr | fn-expr | rule-expr | not-clause | not-join-clause | or-clause | or-join-clause)"
+          {:error :parser/where, :form form})))))
 
 (defn parse-clauses [clauses]
   (parse-seq parse-clause clauses))
