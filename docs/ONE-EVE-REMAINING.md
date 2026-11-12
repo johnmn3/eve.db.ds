@@ -1,10 +1,20 @@
 # Remaining host branches — final state (2026-11-11, last-92 unit)
 
-**Final count: 73 host branches (`scripts/one_eve_counts.py`:
-host-branches=73, plain-type-sites=0). All 73 are GLUE. No branch that
+**Final count: 69 host branches (`scripts/one_eve_counts.py`:
+host-branches=69, plain-type-sites=0). All 69 are GLUE. No branch that
 touches data, memory, threading, or HTTP remains in eve.db.ds.**
 (Corrected from an interim 63: the defrecord-updatable deletion that
 produced 63 was reverted — see "Removed in this unit" below.)
+
+**Post-close-out (2026-11-12): 73 → 69.** Four more branches removed
+once their Eve-side blockers landed in the collated Eve 0.9.3.2
+(45935b95): built-ins' per-host math import (now eve.math/sqrt), the
+EDN-reader libspec branches in core and query (now eve.edn), and db's
+hand-wired `:clje` clojerl.IAssociative extend-type (now supplied by
+Eve's types layer). serialize's reader also moved to eve.edn (it was
+a plain clojure.edn require, not a counted branch). The removals were
+proven in the gaps lane's proof tree (all gates green there) and are
+applied here unchanged.
 
 This file replaces the 262-state classification wholesale. Every
 remaining branch was re-derived at the close-out tree (the old
@@ -12,11 +22,12 @@ classification was stale and was not trusted). The full row table
 with per-row reasons is in `docs/ONE-EVE-AUDIT.md`, section
 "Final close-out (2026-11-11, last-92 unit)". Summary by kind:
 
-- **Loader / require / require-macros wiring** — host EDN reader
-  libspecs (core, query), JVM-only files (eve.db.ds.pprint,
-  eve.db.ds.inline), bb's eve.host-completion preload, cljs
-  :require-macros self-refers (db, parser, query, pull-parser,
-  eve-record), the cljs eve.record require (pull-parser).
+- **Loader / require / require-macros wiring** — JVM-only files
+  (eve.db.ds.pprint, eve.db.ds.inline), bb's eve.host-completion
+  preload, cljs :require-macros self-refers (db, parser, query,
+  pull-parser, eve-record), the cljs eve.record require (pull-parser).
+  (The host EDN-reader libspecs in core/query were removed
+  2026-11-12: both read through eve.edn now.)
 - **Refer wiring for cljerl** — `#?(:clje [eve.host :refer [...]])`
   in conn, db, query, pull-api, pull-parser, serialize, util:
   clojerl's clojure.core lacks the transient/volatile family; Eve's

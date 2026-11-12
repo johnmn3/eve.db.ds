@@ -1,14 +1,9 @@
 (ns eve.db.ds.core
   (:refer-clojure :exclude [filter])
   (:require
-    ;; PORT DELTA (F-JANK-READER-LIBSPEC): vanilla's reader-conditional
-    ;; INSIDE the libspec — [#?(:cljs cljs.reader :clj clojure.edn) :as edn]
-    ;; — is rejected by jank's loader ("not a libspec: [:as edn]"); the
-    ;; portable form is a spliced #?@ with one plain libspec per feature.
-    ;; :lpy (basilisp) reads clojure.edn like :clj.
-    #?(:cljs [cljs.reader :as edn]
-       :clj  [clojure.edn :as edn] :cljr [clojure.edn :as edn]
-       :lpy  [clojure.edn :as edn] :clje [clojure.edn :as edn])
+    ;; Eve's EDN reader (registered Eve readers + exact number tokens on
+    ;; every host): one portable libspec, no per-host reader branch.
+    [eve.edn :as edn]
     ;; bb: eve.host-completion must be loaded before eve.db.ds.conn
     ;; expands extend/deftype-atom, so present-deftype-atom is in
     ;; place. A same-file require inside conn.cljc is too late on

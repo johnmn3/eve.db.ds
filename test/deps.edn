@@ -11,3 +11,9 @@
  :deps {eve.db.ds/eve.db.ds {:local/root ".."}
         org.clojure/clojure {:mvn/version "1.12.0"}
         org.clojure/test.check {:mvn/version "1.1.1"}}}
+;; NOTE: no datascript dep here. The Eve-vs-stock bench's stock arm
+;; (contract.ds-bench-stock) lives in its own deps context,
+;; test/bench-stock/deps.edn: stock's compiled code links the real
+;; persistent-sorted-set jar's Java classes, and that jar shadows
+;; this repo's vendored PSS port (lib/) on any shared classpath.
+;; See test/drivers/contract/ds_bench.cljc.

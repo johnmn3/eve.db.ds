@@ -1,13 +1,8 @@
 (ns ^:no-doc eve.db.ds.query
   #?(:cljs (:require-macros [eve.db.ds.eve-record :refer [def-eve-record]]))
   (:require
-    ;; PORT DELTA (F-JANK-READER-LIBSPEC): see eve.db.ds.core — the
-    ;; #?-inside-libspec form is not portable (jank's loader rejects
-    ;; it); spliced #?@ with one plain libspec per feature instead.
-    #?@(:cljs [[cljs.reader :as edn]]
-        :clj  [[clojure.edn :as edn]] :cljr [[clojure.edn :as edn]]
-        :lpy  [[clojure.edn :as edn]]
-        :clje [[clojure.edn :as edn]])
+    ;; Eve's EDN reader: one portable libspec (see eve.db.ds.core).
+    [eve.edn :as edn]
     [clojure.set :as set]
     [clojure.string :as str]
     [clojure.walk :as walk]

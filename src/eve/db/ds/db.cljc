@@ -1252,34 +1252,6 @@
     (throw (ex-info (str "eve.db.ds.db.DB has no field " k) {:key k}))))
 
 
-;; PORT DELTA (F-CLJE-DB-ASSOC): eve-deftype's beam translation
-;; classifies a type by its JVM interfaces: because DB declares
-;; clojure.lang.ITransientCollection (a DB is its own transient --
-;; db-transient/db-persistent! only swap the transiency of its three
-;; index sets), the translator takes its transient branch and emits
-;; only eve.core/ITransient*, withholding the persistent protocol
-;; set, clojerl.IAssociative among it. core assoc/update on a DB
-;; then have no impl on this seat; transact-tx-data-impl's
-;; (update :db-after update :max-tx inc) is the first caller to hit
-;; it (stage-41 stall: the throw inside conn's swap! retry loop).
-;; Wire the persistent associative surface on by hand, from the same
-;; fns the type's own clojure.lang.Associative group names.
-;; transient/persistent! stay eve.host's identity fns on this seat:
-;; db-assoc and the -assoc/-disj index ops rebuild the sets
-;; persistently, which is what db-transient + db-persistent!
-;; would bracket on a seat with real transients.
-#?(:clje
-   (extend-type DB
-     clojerl.IAssociative
-     (assoc [db k v] (db-assoc db k v))
-     (contains_key [db k]
-       (boolean (#{:schema :eavt :aevt :avet :max-eid :max-tx :rschema} k)))
-     (entry_at [db k]
-       (let [v (db-lookup db k ::absent)]
-         (when (not (identical? ::absent v))
-           [k v])))))
-
-
 (defn db? [x]
   (and (satisfies? ISearch x)
     (satisfies? IIndexAccess x)

@@ -1,7 +1,7 @@
 (ns eve.db.ds.serialize
   (:refer-clojure :exclude [amap array?])
   (:require
-    [clojure.edn :as edn]
+    [eve.edn :as edn]
     [clojure.string :as str]
     ;; PORT DELTA (F-NBB-MACROS round): as in eve.db.ds.conn — no
     ;; :cljs type refer; Datom is named qualified at its uses
@@ -79,10 +79,10 @@
 
 (defn- read-edn [s]
   (let [v (edn/read-string s)]
-    ;; Some target EDN readers silently round N/M/ratio tokens to a double.
-    ;; Never pretend that is a faithful round-trip. Exact numeric support
-    ;; belongs in Eve's numeric/reader backend; callers can supply :thaw-fn
-    ;; until that backend exists. The wire token itself remains lossless.
+    ;; eve.edn reads exact N/M/ratio tokens losslessly on every host.
+    ;; Never pretend a rounded double is a faithful round-trip: if a
+    ;; future reader regresses, this check names it. The wire token
+    ;; itself remains lossless.
     (when (and (exact-number-token? s) (not= s (pr-str v)))
       (util/raise "Target EDN reader cannot preserve exact numeric token " s
         {:error :serialize/exact-number :token s :decoded (pr-str v)}))

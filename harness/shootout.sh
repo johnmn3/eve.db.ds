@@ -12,7 +12,7 @@
 set -u
 LABEL="$1"; shift
 CAP_MS=10000
-WORK="${SHOOTOUT_WORK:-$HOME/workspace/ds-cohost/shootout-runs}"
+WORK="${SHOOTOUT_WORK:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/.shootout-runs}"
 mkdir -p "$WORK"
 times=()
 for i in 1 2 3 4 5; do

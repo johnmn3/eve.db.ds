@@ -1,0 +1,14 @@
+;; Stock-arm deps context for contract.ds-bench-stock (the Eve-vs-stock
+;; bench, test/drivers/contract/ds_bench.cljc). ISOLATED on purpose:
+;; stock DataScript's compiled code links the Java classes of the real
+;; persistent-sorted-set jar, while eve.db.ds runs on this repo's
+;; vendored PSS port (lib/) — the jar shadows the port on any shared
+;; classpath and is shadowed by it in turn, so the stock arm gets its
+;; own project root here and never shares a process with the Eve arm.
+;; The vendored tree in test/upstream-ds is upstream's TEST suite
+;; (renamed), not the library, so it cannot serve as the stock arm;
+;; upstream DataScript 1.8.1 is a plain Maven dep, scoped to this
+;; directory only — the shipped library never depends on it.
+{:paths ["../drivers"]
+ :deps {org.clojure/clojure {:mvn/version "1.12.0"}
+        datascript/datascript {:mvn/version "1.8.1"}}}

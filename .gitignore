@@ -1,3 +1,6 @@
 .cpcache/
 **/__pycache__/
 *.pyc
+.shootout-runs/
+.lpycache/
+perf-results/
