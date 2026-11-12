@@ -1115,15 +1115,18 @@
   clojure.lang.IPersistentCollection
   (count [db] (count eavt))
   (equiv [db other] (equiv-db db other))
-  (empty [db] (-> (restore-db
-                    {:schema  (.-schema db)
-                     :rschema (.-rschema db)
-                     :eavt    (empty (.-eavt db))
-                     :aevt    (empty (.-aevt db))
-                     :avet    (empty (.-avet db))})
-                ;; (.-meta db), not (meta db): the field shadows
-                ;; clojure.core/meta inside method bodies.
-                (with-meta (.-meta db))))
+  (empty [db] ;; Rebuilding the indexes constructs Eve data (BTSet leaves):
+             ;; run it in the DB's home domain, like the read paths.
+             (call-in-db-domain db
+               (fn [] (-> (restore-db
+                            {:schema  (.-schema db)
+                             :rschema (.-rschema db)
+                             :eavt    (empty (.-eavt db))
+                             :aevt    (empty (.-aevt db))
+                             :avet    (empty (.-avet db))})
+                        ;; (.-meta db), not (meta db): the field shadows
+                        ;; clojure.core/meta inside method bodies.
+                        (with-meta (.-meta db))))))
   (cons [db _v] (throw (ex-info "eve.db.ds.db.DB/cons is not supported" {})))
 
   clojure.lang.IEditableCollection
