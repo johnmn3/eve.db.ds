@@ -7,38 +7,27 @@
 ;; over the Eve backend).
 ;;
 ;; Release pin: eve/eve below is the published SeniorCareMarket/eve
-;; release/eve-0.9.3.2 tip (383097e063df5eec07b6b6ee64c72e62a3176fb1).
+;; release/eve-0.9.3.2 tip (45935b9570bc286abc2a5789bf504c204778f899).
 ;; Do not retarget that default dep to an unreleased work branch.
 ;; Collation onto a later Eve release is a separate, explicit decision.
 ;;
-;; Dev/test pin: alias :dev overrides eve/eve to johnmn3/atom.broker
-;; lane-m/eve-db-ds-gaps-eve (the eve/ subdir) @ ec22aba4c0, which
-;; caps heap bitmap-class growth below the i32/byte-array limit (no
-;; integer overflow in make-heap-region; ec22aba4c0), adds IPending
-;; on eve.thread Promise/Future (so clojure.core/realized? works), the
-;; bb MapEntry presentation, nbb pending test and bb slab-map SciMap
-;; carve-out fix (55cd54ca34),
-;; the #460 test fix, and the jank satisfies? load order, on
-;; top of the earlier bb SciMap/lookup-ns? overlays, JS enc/unsupported,
-;; and process-slab auto-init. Four-host gates use
-;; :dev (or scripts/eve_dev_cp.sh for bb/nbb/lpy). The sibling
-;; libraries (persistent-sorted-set port, extend-clj) are :local/root
-;; deps inside this repository.
+;; Dev runs: there is no dev-pin alias. To run against an Eve dev
+;; tree instead of the release pin, use the EVE_ROOT environment
+;; override (scripts/eve_dev_cp.sh resolves EVE_ROOT when set) or a
+;; -Sdeps {:deps {eve/eve {:local/root <eve-tree>}}} override. The
+;; sibling libraries (persistent-sorted-set port, extend-clj) are
+;; :local/root deps inside this repository.
 {:paths ["src"]
  :deps {org.clojure/clojure {:mvn/version "1.12.0"}
         eve/eve {:git/url "https://github.com/SeniorCareMarket/eve"
-                 :git/sha "383097e063df5eec07b6b6ee64c72e62a3176fb1"}
+                 :git/sha "45935b9570bc286abc2a5789bf504c204778f899"}
         me.tonsky/persistent-sorted-set {:local/root "lib"}
         extend-clj/extend-clj {:local/root "lib-ds-deps"}}
  :aliases
- {:dev {:override-deps
-        {eve/eve {:git/url "https://github.com/johnmn3/atom.broker"
-                  :git/sha "ec22aba4c0ddf4f2ff58f26b04d654d53f247d61"
-                  :deps/root "eve"}}}
-  :test {:extra-paths ["test/drivers"]}
+ {:test {:extra-paths ["test/drivers"]}
   ;; DataScript's upstream test suite (test/upstream-ds, tag 1.8.1, renamed
-  ;; datascript. -> eve.db.ds.) + its JVM test deps (upstream :dev alias):
-  ;; clojure -M:dev:ds-suite -m contract.ds-suite
+  ;; datascript. -> eve.db.ds.) + its JVM test deps:
+  ;; clojure -M:ds-suite -m contract.ds-suite
   :ds-suite {:extra-paths ["test/drivers" "test/upstream-ds/test"]
              :extra-deps {com.cognitect/transit-clj {:mvn/version "1.0.333"}
                           cheshire/cheshire {:mvn/version "5.12.0"}

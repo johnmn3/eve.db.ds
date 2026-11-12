@@ -20,7 +20,11 @@ def capture(cmd, **kw):
 def command(host):
     roots = [ROOT / x for x in ("src", "lib", "lib-ds-deps", "test/drivers", "test/upstream-ds/test")]
     if host == "jvm":
-        cp = capture(["clojure", "-A:dev:ds-suite", "-Spath"], cwd=ROOT)
+        # Resolve against the root deps.edn DEFAULT Eve pin (the
+        # published SeniorCareMarket/eve release). There is no dev-pin
+        # alias; DS_DEFAULT_DEPS is accepted for compatibility.
+        alias = "-A:ds-suite"
+        cp = capture(["clojure", alias, "-Spath"], cwd=ROOT)
         return ["java", "--enable-native-access=ALL-UNNAMED", "--add-opens=java.base/java.lang=ALL-UNNAMED", "-cp", cp, "clojure.main", "-m", "contract.ds-suite"]
     cp = capture([str(ROOT / "scripts/eve_dev_cp.sh"), host], cwd=ROOT)
     cp = ":".join([cp, *map(str, roots)])

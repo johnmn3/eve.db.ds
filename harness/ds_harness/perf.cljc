@@ -19,6 +19,7 @@
    [eve.host :refer [swap!]]
    [eve.atom :as atom]
    [eve.core :as e]
+   [eve.clock :as clock]
    [eve.db.ds.core :as d]))
 
 (def ^:private atom-name "ds-harness/perf-people-1k")
@@ -45,7 +46,11 @@
 (defn- now-ms []
   #?(:clj (double (/ (System/nanoTime) 1e6))
      :cljs (.now js/Date)
-     :lpy (python/time.time)
+     ;; (python/time.time) does not analyze as an invoke form under
+     ;; basilisp 0.5.1 (pre-existing break, hidden until the lpy entry
+     ;; existed) and returns SECONDS besides; Eve's portable clock is
+     ;; the sanctioned route.
+     :lpy (double (clock/current-time-millis))
      :default 0))
 
 (defmacro timed [label & body]

@@ -1,10 +1,7 @@
 (ns eve.db.ds.built-ins
-  ;; Glue only: bind each host's native IEEE-754 sqrt to the same alias.
-  #?(:lpy (:import [math :as math])
-     :cljs (:require [cljs.math :as math])
-     :default (:require [clojure.math :as math]))
   (:require
     [clojure.string :as str]
+    [eve.math :as math]
     [eve.db.ds.db :as db]
     [eve.db.ds.impl.entity :as de]
     [eve.db.ds.util :as util]))
@@ -128,8 +125,7 @@
     (/ sum (count coll))))
 
 (defn- sqrt [x]
-  ;; Eve ec22aba4c0 has no platform/host sqrt. Use the native IEEE-754
-  ;; square root through namespace glue, never a converged approximation.
+  ;; eve.math/sqrt: Eve's portable, correctly rounded binary64 sqrt.
   (math/sqrt (double x)))
 
 (defn- aggregate-stddev [coll]

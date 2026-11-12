@@ -23,15 +23,34 @@
                         :db/cardinality :db.cardinality/many}})))
 
 (defn pattern [& {:as args}]
-  (let [attrs (filter #(not= :db/id (:name %)) (:attrs args))]
-    (dpp/map->PullPattern (merge {:first-attr (first attrs) :last-attr (last attrs)} args))))
+  ;; PORT DELTA (#56): expected values are constructed in the parse
+  ;; domain, the same domain parse-pattern constructs in — eve.record
+  ;; refuses cross-domain storage (the attrs embed parse-domain
+  ;; default patterns).
+  (db/call-in-parse-domain
+    (fn []
+      (let [attrs (filter #(not= :db/id (:name %)) (:attrs args))]
+        (dpp/map->PullPattern (merge {:first-attr (first attrs) :last-attr (last attrs)} args))))))
 
 (defn attr [name & {:as args}]
-  (dpp/map->PullAttr
-    (merge
-      {:name name :xform identity :as name}
+  (db/call-in-parse-domain
+    (fn []
+      (dpp/map->PullAttr
+        (merge
+      ;; PORT DELTA (#56): vanilla's helper defaulted :xform to the
+      ;; identity FN stored in the record. Functions are never stored in
+      ;; Eve values in this port; a parsed attr carries :xform-spec /
+      ;; :xform-id, both nil for a plain attr. A :xform arg here is
+      ;; translated exactly as the parser translates it.
+      {:name name :as name}
       (when (db/ref? @*db name) {:pattern dpp/default-pattern-ref})
-      args)))
+      (if-some [x (:xform args)]
+        (cond
+          (symbol? x) {:xform-spec (str x)}
+          (fn? x)     {:xform-id (dpp/register-xform! x)}
+          :else       {})
+        {})
+      (dissoc args :xform))))))
 
 (deftest test-parse-pattern
   (are [pattern expected] (= expected (dpp/parse-pattern @*db pattern))
@@ -90,13 +109,13 @@
     [['default :multival :xyz]]   (pattern :attrs [(attr :multival, :multival? true, :limit 1000, :default :xyz)])
 
     ; xform
-    [[:normal :xform 'inc]] (pattern :attrs [(attr :normal :xform inc)])
+    [[:normal :xform 'inc]] (pattern :attrs [(attr :normal :xform 'inc)])
     [[:normal :xform inc]] (pattern :attrs [(attr :normal :xform inc)])
-    #?@(:clj [[[:normal :xform 'eve.db.ds.db/datom?]] (pattern :attrs [(attr :normal :xform db/datom?)])])
+    #?@(:clj [[[:normal :xform 'eve.db.ds.db/datom?]] (pattern :attrs [(attr :normal :xform 'eve.db.ds.db/datom?)])])
 
     ; combined
-    ['(:multival :limit 100 :default :xyz :as :other :xform inc)] (pattern :attrs [(attr :multival, :multival? true, :default :xyz, :limit 100, :as :other, :xform inc)])
-    ['(:multival :xform inc :as :other :default :xyz :limit 100)] (pattern :attrs [(attr :multival, :multival? true, :default :xyz, :limit 100, :as :other, :xform inc)])
+    ['(:multival :limit 100 :default :xyz :as :other :xform inc)] (pattern :attrs [(attr :multival, :multival? true, :default :xyz, :limit 100, :as :other, :xform 'inc)])
+    ['(:multival :xform inc :as :other :default :xyz :limit 100)] (pattern :attrs [(attr :multival, :multival? true, :default :xyz, :limit 100, :as :other, :xform 'inc)])
     ['((:multival :limit 100) :default :xyz)] (pattern :attrs [(attr :multival, :multival? true, :default :xyz, :limit 100)])
     ['((:multival :default :xyz) :limit 100)] (pattern :attrs [(attr :multival, :multival? true, :default :xyz, :limit 100)])
 

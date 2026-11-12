@@ -194,7 +194,7 @@ The port lives in the 0.9.3.1 release tree under
 `contract-test/lib-ds/` (the library), `contract-test/lib/` (the sorted
 set), `contract-test/lib-ds-deps/` (extend-clj), with drivers under
 `contract-test/drivers/`. Development happens in the
-private atom.broker repository; public repositories receive releases
+a private development repository; public repositories receive releases
 only, as collated snapshots, on the operator's word.
 
 It is consumed **as a dependency**, the way any library made for Eve

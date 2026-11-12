@@ -1,16 +1,19 @@
 ;; The lib's own proof workspace: the shipped contract drivers plus this
 ;; repo's harness (contract check, people-1k perf, shootout drivers).
 ;;
-;; Release pin lives in the root deps.edn default eve/eve (4a921298).
-;; Dev/test pin is alias :dev (atom.broker :deps/root "eve" @ 7840ffe529).
-;; From the library root: clojure -A:dev:test -M -m contract.only-core
-;; Offline/local override remains -Sdeps {:deps {eve/eve {:local/root <eve-tree>}}}.
+;; Release pin lives in the root deps.edn default eve/eve
+;; (SeniorCareMarket/eve release/eve-0.9.3.2). There is no dev-pin
+;; alias: dev runs use the EVE_ROOT environment override
+;; (scripts/eve_dev_cp.sh) or a -Sdeps local override,
+;; -Sdeps {:deps {eve/eve {:local/root <eve-tree>}}}.
+;; From the library root: clojure -A:test -M -m contract.only-core
 {:paths ["drivers" "../harness" "upstream-ds/test"]
  :deps {eve.db.ds/eve.db.ds {:local/root ".."}
         org.clojure/clojure {:mvn/version "1.12.0"}
-        org.clojure/test.check {:mvn/version "1.1.1"}}
- :aliases
- {:dev {:override-deps
-        {eve/eve {:git/url "https://github.com/johnmn3/atom.broker"
-                  :git/sha "7840ffe52928f82784ff164e92666620f794f34d"
-                  :deps/root "eve"}}}}}
+        org.clojure/test.check {:mvn/version "1.1.1"}}}
+;; NOTE: no datascript dep here. The Eve-vs-stock bench's stock arm
+;; (contract.ds-bench-stock) lives in its own deps context,
+;; test/bench-stock/deps.edn: stock's compiled code links the real
+;; persistent-sorted-set jar's Java classes, and that jar shadows
+;; this repo's vendored PSS port (lib/) on any shared classpath.
+;; See test/drivers/contract/ds_bench.cljc.

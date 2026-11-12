@@ -5,8 +5,11 @@
     ;; name (a class entry, not a var), so the types are named
     ;; qualified (db/DB) at their uses in this file
     [eve.db.ds.db :as db]
-    #?(:bb [eve.deftype :refer [deftype]]
-       :lpy [eve.deftype :refer [deftype]])
+    ;; PORT: eve.deftype referred on every host — the refer is what
+    ;; extend/deftype-atom's expansion resolves `deftype` through on
+    ;; the interpreted seats; referring it unconditionally is the same
+    ;; wiring with no branch (this ns defines no deftype of its own).
+    [eve.deftype :refer [deftype]]
     [eve.db.ds.storage :as storage]
     [extend-clj.core :as extend]
     [me.tonsky.persistent-sorted-set :as set]
@@ -36,7 +39,16 @@
    {:pre [(db/db? db)]}
    (if (not (identical? db (db/unfiltered-db db)))
      (throw (ex-info "Filtered DB cannot be modified" {:error :transaction/filtered}))
-     (db/transact-tx-data (db/->TxReport db db [] {} tx-meta) tx-data))))
+     ;; Construction law: Conn is a host-atom-backed deftype (above) —
+     ;; verified 2026-11-11: its swap! is the HOST atom's swap and does
+     ;; NOT bind Eve's *domain-sio* (that binding exists only in
+     ;; eve.atom/swap-attempt!). So the transaction runs under an
+     ;; explicit binding of the DB's own domain: -transact! reaches this
+     ;; fn from inside Conn's swap!, and everything the transaction
+     ;; constructs (TxReport, the new DB, tempid maps) belongs to the
+     ;; DB's domain.
+     (db/call-in-db-domain db
+       (fn [] (db/transact-tx-data (db/->TxReport db db [] {} tx-meta) tx-data))))))
 
 (defn db-with
   "Applies transaction to an immutable db value, returning new immutable db value. Same as `(:db-after (with db tx-data))`."

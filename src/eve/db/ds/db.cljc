@@ -1,6 +1,8 @@
 (ns ^:no-doc eve.db.ds.db
   (:require
-    #?(:cljs [goog.array :as garray])
+    ;; PORT: the :cljs goog.array require is deleted — nothing in this
+    ;; ns calls garray/ anymore (the last use was the JS -compare arm,
+    ;; long folded); a require with no uses is not glue, it's litter.
     [clojure.walk]
     [clojure.data]
     #?(:clj [eve.db.ds.inline :refer [update]])
@@ -16,7 +18,9 @@
     ;; needs (value+sio->eve-bytes finds the :map/:set/:vec/:list writers
     ;; only once these have loaded). Required here so that requiring
     ;; eve.db.ds.core alone is enough, on every host arm.
-    [eve.atom]
+    [eve.atom :as eve-atom]
+    [eve.deftype-proto.alloc :as eve-alloc]
+    [eve.deftype-proto.data :as eve-data]
     [eve.map]
     [eve.set]
     [eve.vec]
@@ -26,7 +30,8 @@
     ;; every host — the per-host require branch is gone (ledger rows
     ;; db.cljc:22 et al.).
     [eve.deftype :refer [deftype]]
-    [eve.db.ds.eve-record :refer [def-eve-record]]
+    [eve.record :as erecord]
+    #?(:cljs [eve.record])
     [me.tonsky.persistent-sorted-set :as set]
     [me.tonsky.persistent-sorted-set.arrays :as arrays])
   ;; PORT DELTA (D6, PORTING-DS.md): vanilla's (:import
@@ -34,7 +39,7 @@
   ;; that class, and its only use was defcomp's invokePrim arm,
   ;; which D6 drops. The ns needs no :import on the :clj read.
   #?(:cljs (:require-macros [eve.db.ds.db :refer [case-tree combine-cmp defn+ defcomp defrecord-updatable if-cljs int-compare validate-attr validate-val]]
-                            [eve.db.ds.eve-record :refer [def-eve-record]]))
+                            [eve.record :as erecord]))
   (:refer-clojure :exclude [seqable? #?(:clj update) deftype]))
 
 #?(:clj (set! *warn-on-reflection* true) :cljr (set! *warn-on-reflection* true))
@@ -61,6 +66,88 @@
 
 (def ^:const implicit-schema
   {:db/ident {:db/unique :db.unique/identity}})
+
+;; ----------------------------------------------------------------------------
+;; Construction law (John, 2026-11-11): "All eve data must be constructed
+;; in a swapping operation, in the atom domain. Instantiating eve data
+;; outside of an eve context should throw."
+;;
+;; Eve constructors resolve their domain from eve.deftype-proto.data/
+;; *domain-sio*: bound by an Eve atom's swap! while the swap fn runs, or
+;; bound explicitly. The contexts eve.db.ds constructs in:
+;;
+;; - a DB's own domain: the sio the DB value itself carries (its indexes
+;;   live there) — transactions, query/pull execution, entity creation;
+;; - the parse domain: one explicit small heap domain holding parsed
+;;   queries/pull patterns and the caches over them. Parse output is
+;;   immutable, domain-agnostic compiled data (symbols, keywords, records
+;;   of them), consumed read-only by execution and never persisted as
+;;   user data, so it belongs to no DB's domain;
+;; - the process domain for a brand-new DB: a DB's home domain is the
+;;   process domain, bound explicitly (call-in-process-domain). It
+;;   becomes resident in an atom's domain by being swapped into that
+;;   atom, and that swap's binding governs later construction.
+
+(defn db-sio
+  "The Eve domain sio of a DB value (the domain its indexes live in)."
+  [db]
+  (eve-data/-eve-sio db))
+
+(defn call-in-domain
+  "Call f with Eve's *domain-sio* bound to sio: an explicit Eve domain
+   context for construction outside a swap!."
+  [sio f]
+  (binding [eve-data/*domain-sio* sio]
+    (f)))
+
+(defn call-in-db-domain
+  "Call f in db's own Eve domain (see db-sio) — unless a domain context
+   is already bound (e.g. an Eve atom's swap! over the atom that holds
+   the DB): the ambient context wins, because construction for that
+   atom belongs to the atom's domain."
+  [db f]
+  (if (some? eve-data/*domain-sio*)
+    (f)
+    (call-in-domain (db-sio db) f)))
+
+(declare call-in-db-ish-domain)
+
+(defn process-sio
+  "This process's own Eve domain sio (eve.deftype-proto.alloc/default-sio)."
+  []
+  (eve-alloc/default-sio))
+
+(defn call-in-process-domain
+  "Call f with the process domain explicitly bound. A DB value's home
+   domain is the process domain: host values (exact numbers, host
+   collections) stay themselves there, where copying a value into a
+   foreign slab domain would canonicalize it through the codec —
+   measured at the 383097e pin: a clojure.lang.BigInt stored into a
+   DB built in a fresh heap domain came back as a plain long and the
+   serialize-portable gate's exact-number rows failed. A DB becomes
+   resident in an atom's domain by being swapped into that atom; the
+   swap's own binding then governs new construction (call-in-db-domain
+   defers to it)."
+  [f]
+  (call-in-domain (process-sio) f))
+
+(defonce ^:private parse-domain-sio
+  (delay (eve-alloc/heap-domain-sio! {})))
+
+(defn call-in-parse-domain
+  "Call f in the parse domain (see the construction-law note above)."
+  [f]
+  (call-in-domain @parse-domain-sio f))
+
+(defn in-new-domain
+  "Construct a value in a brand-new Eve domain: run build-fn inside a
+   fresh Eve atom's swap! and return the built value. NOT used for DB
+   construction: a DB's home domain is the process domain (see
+   call-in-process-domain for the measured reason)."
+  [build-fn]
+  (let [a (eve-atom/atom nil)]
+    (swap! a (fn [_] (build-fn)))
+    @a))
 
 ;; ----------------------------------------------------------------------------
 
@@ -299,6 +386,11 @@
                   (eve.platform/int32 (bit-shift-left seed 6))
                   (eve.platform/int32 (bit-shift-right seed 2)))))))
 
+;; PORT: vanilla's defrecord-updatable macro machinery is RETAINED:
+;; it is part of the port's tested surface — the upstream suite
+;; (test/eve/db/ds/test/db.cljc, HashBeef) exercises it directly.
+;; (An earlier close-out batch deleted it on a src/-only usage grep
+;; and broke the JVM suite load; restored verbatim, measured.)
 (do #?@(:clj [   (defn- get-sig [method]
      ;; expects something like '(method-symbol [arg arg arg] ...)
      ;; if the thing matches, returns [fully-qualified-symbol arity], otherwise nil
@@ -601,135 +693,48 @@
 ;; datom cmp macros/funcs
 ;;
 
-(do #?@(:clj [(defmacro combine-cmp [& comps]
-     (loop [comps (reverse comps)
-            res   (num 0)]
-       (if (not-empty comps)
-         (recur
-           (next comps)
-           `(let [c# ~(first comps)]
-              (if (== 0 c#)
-                ~res
-                c#)))
-         res)))] :cljr [(defmacro combine-cmp [& comps]
-     (loop [comps (reverse comps)
-            res   (num 0)]
-       (if (not-empty comps)
-         (recur
-           (next comps)
-           `(let [c# ~(first comps)]
-              (if (== 0 c#)
-                ~res
-                c#)))
-         res)))]
- :lpy  [(defmacro combine-cmp [& comps]
-     (loop [comps (reverse comps)
-            res   (num 0)]
-       (if (not-empty comps)
-         (recur
-           (next comps)
-           `(let [c# ~(first comps)]
-              (if (== 0 c#)
-                ~res
-                c#)))
-         res)))]
- :cljs [(defmacro combine-cmp [& comps]
-     (loop [comps (reverse comps)
-            res   0]
-       (if (not-empty comps)
-         (recur
-           (next comps)
-           `(let [c# ~(first comps)]
-              (if (== 0 c#)
-                ~res
-                c#)))
-         res)))]))
+;; PORT: one portable defmacro — vanilla's per-host arms (and the
+;; :clje twin) were textually identical except the :cljs arm's literal
+;; 0 for (num 0); at macro time both are the same number.
+(defmacro combine-cmp [& comps]
+  (loop [comps (reverse comps)
+         res   0]
+    (if (not-empty comps)
+      (recur
+        (next comps)
+        `(let [c# ~(first comps)]
+           (if (== 0 c#)
+             ~res
+             c#)))
+      res)))
 
-;; PORT DELTA (F-CLJE-MACROS): combine-cmp twin (the :clj/:lpy
-;; arm) — it IS used, inside every defcomp body; an earlier census
-;; grep missed the uses because they sit on the line after the
-;; opening paren.
-#?(:clje (defmacro combine-cmp [& comps]
-           (loop [comps (reverse comps)
-                  res   (num 0)]
-             (if (not-empty comps)
-               (recur
-                 (next comps)
-                 `(let [c# ~(first comps)]
-                    (if (== 0 c#)
-                      ~res
-                      c#)))
-               res))))
 
-(do #?@(:clj [(defn- -case-tree [queries variants]
-     (if queries
-       (let [v1 (take (/ (count variants) 2) variants)
-             v2 (drop (/ (count variants) 2) variants)]
-         (list 'if (first queries)
-           (-case-tree (next queries) v1)
-           (-case-tree (next queries) v2)))
-       (first variants)))] :cljr [(defn- -case-tree [queries variants]
-     (if queries
-       (let [v1 (take (/ (count variants) 2) variants)
-             v2 (drop (/ (count variants) 2) variants)]
-         (list 'if (first queries)
-           (-case-tree (next queries) v1)
-           (-case-tree (next queries) v2)))
-       (first variants)))]
- :lpy  [(defn- -case-tree [queries variants]
-     (if queries
-       (let [v1 (take (/ (count variants) 2) variants)
-             v2 (drop (/ (count variants) 2) variants)]
-         (list 'if (first queries)
-           (-case-tree (next queries) v1)
-           (-case-tree (next queries) v2)))
-       (first variants)))]
- :cljs [(defn- -case-tree [queries variants]
-     (if queries
-       (let [v1 (take (/ (count variants) 2) variants)
-             v2 (drop (/ (count variants) 2) variants)]
-         (list 'if (first queries)
-           (-case-tree (next queries) v1)
-           (-case-tree (next queries) v2)))
-       (first variants)))]))
+;; PORT: one portable form — vanilla's arms were identical; the :clje
+;; twin spelled the halving quot (clojerl's / is float division, and
+;; this runs at macro time). quot is the portable spelling: variant
+;; counts in case-tree are even at every split (each query doubles the
+;; variant list), where quot and / agree.
+(defn- -case-tree [queries variants]
+  (if queries
+    (let [v1 (take (quot (count variants) 2) variants)
+          v2 (drop (quot (count variants) 2) variants)]
+      (list 'if (first queries)
+        (-case-tree (next queries) v1)
+        (-case-tree (next queries) v2)))
+    (first variants)))
 
-;; PORT DELTA (F-CLJE-DIV): the :clje twin also spells the halving
-;; quot — clojerl's / is float division and this fn runs at macro
-;; time (same finding as persistent-sorted-set's min-len).
-#?(:clje (defn- -case-tree [queries variants]
-           (if queries
-             (let [v1 (take (quot (count variants) 2) variants)
-                   v2 (drop (quot (count variants) 2) variants)]
-               (list 'if (first queries)
-                 (-case-tree (next queries) v1)
-                 (-case-tree (next queries) v2)))
-             (first variants))))
+(defmacro case-tree [qs vs]
+  (-case-tree qs vs))
 
-(do #?@(:clj [(defmacro case-tree [qs vs]
-     (-case-tree qs vs))] :cljr [(defmacro case-tree [qs vs]
-     (-case-tree qs vs))]
- :lpy  [(defmacro case-tree [qs vs]
-     (-case-tree qs vs))]
- :cljs [(defmacro case-tree [qs vs]
-     (-case-tree qs vs))]))
-
-#?(:clje (defmacro case-tree [qs vs]
-           (-case-tree qs vs)))
 
 (defn cmp
-  #?(:clj
-     {:inline
-      (fn [x y]
-        `(let [x# ~x y# ~y]
-           (if (nil? x#) 0 (if (nil? y#) 0 (long (compare x# y#))))))} :cljr {:inline
-      (fn [x y]
-        `(let [x# ~x y# ~y]
-           (if (nil? x#) 0 (if (nil? y#) 0 (long (compare x# y#))))))})
+  ;; PORT: the :clj/:cljr :inline metadata branch is dropped — the
+  ;; inline expansions were textually the fn body; one portable defn.
   ^long [x y]
   (if (nil? x) 0 (if (nil? y) 0 (long (compare x y)))))
 
 (defn class-identical?
-  #?(:clj  {:inline (fn [x y] `(identical? (type ~x) (type ~y)))} :cljr {:inline (fn [x y] `(identical? (type ~x) (type ~y)))})
+  ;; PORT: :inline metadata branch dropped, as for cmp above.
   [x y]
   (identical? (type x) (type y)))
 
@@ -824,14 +829,7 @@
       :incomparable)))
 
 (defn value-cmp
-  #?(:clj
-     {:inline
-      (fn [x y]
-        `(let [x# ~x y# ~y]
-           (if (nil? x#) 0 (if (nil? y#) 0 (value-compare x# y#)))))} :cljr {:inline
-      (fn [x y]
-        `(let [x# ~x y# ~y]
-           (if (nil? x#) 0 (if (nil? y#) 0 (value-compare x# y#)))))})
+  ;; PORT: :inline metadata branch dropped, as for cmp above.
   ^long [x y]
   (if (nil? x)
     0
@@ -1011,8 +1009,8 @@
 ;; pull_api reads them from here), and hash-db computes on demand with
 ;; the same combine-hashes formula vanilla cached. FilteredDB stays a
 ;; host record: it is an ephemeral query view holding a host fn.
-(def pull-patterns-cache (lru/cache 100))
-(def pull-attrs-cache (lru/cache 100))
+(def pull-patterns-cache (call-in-parse-domain (fn [] (lru/cache 100))))
+(def pull-attrs-cache (call-in-parse-domain (fn [] (lru/cache 100))))
 
 (defn- db-lookup [db k nf]
   (case k
@@ -1042,6 +1040,9 @@
   ;; divergence, not a defect.
   ;; PORT DELTA (F-NBB-MACROS round): the entry type is the host's —
   ;; UNIT2 (#56): ONE Eve map-entry (eve.map-entry/map-entry) on every host.
+  ;; Construction law: the Eve map-entries are constructed in the DB's
+  ;; own domain.
+  (call-in-db-domain db (fn []
   (let [entry (fn [k v] (me/map-entry k v))]
     [(entry :schema (.-schema db))
      (entry :eavt (.-eavt db))
@@ -1049,7 +1050,7 @@
      (entry :avet (.-avet db))
      (entry :max-eid (.-max-eid db))
      (entry :max-tx (.-max-tx db))
-     (entry :rschema (.-rschema db))]))
+     (entry :rschema (.-rschema db))]))))
 
 (defn- search-result
   "PORT DELTA (F-BB-SEARCH-SEQ): -search (DB) returns slices (PSS
@@ -1148,6 +1149,9 @@
 
   ISearch
   (-search [db pattern]
+    ;; Construction law: the slice-bound Datoms are constructed in the
+    ;; DB's own domain (see the IIndexAccess note below).
+    (call-in-db-domain db (fn []
     (let [[e a v tx] pattern
           eavt       (.-eavt db)
           aevt       (.-aevt db)
@@ -1185,10 +1189,17 @@
                                   (= tx (datom-tx d)))) eavt)                 ;; _ _ v tx
          (filter (fn [^Datom d] (pred (.-v d))) eavt)                         ;; _ _ v 
          (filter (fn [^Datom d] (= tx (datom-tx d))) eavt)                    ;; _ _ _ tx
-         eavt]))))                                                             ;; _ _ _ _
+         eavt]))))))                                                           ;; _ _ _ _
 
   IIndexAccess
+  ;; Construction law: the pattern/bound Datoms these methods build
+  ;; belong to the DB's own domain. The binding sits on the DB methods
+  ;; themselves — the choke point every public read entry point
+  ;; (core/datoms, core/seek-datoms, core/find-datom, entity, pull,
+  ;; datafy) funnels through — and call-in-db-domain defers to an
+  ;; ambient context (a swap!, conn/with, q) when one is bound.
   (-datoms [db index c0 c1 c2 c3]
+    (call-in-db-domain db (fn []
     (validate-indexed db index c0 c1 c2 c3)
     ;; Always seq the slice: under bb/SCI a PSS Iter is not a host
     ;; ISeq (mapv/vec die on SciType). Every -datoms consumer walks
@@ -1196,26 +1207,29 @@
     ;; in the same order on every host.
     (seq (set/slice (get db index)
            (components->pattern db index c0 c1 c2 c3 e0 tx0)
-           (components->pattern db index c0 c1 c2 c3 emax txmax))))
+           (components->pattern db index c0 c1 c2 c3 emax txmax))))))
 
   (-seek-datoms [db index c0 c1 c2 c3]
+    (call-in-db-domain db (fn []
     (validate-indexed db index c0 c1 c2 c3)
     (set/slice (get db index)
       (components->pattern db index c0 c1 c2 c3 e0 tx0)
-      (datom emax nil nil txmax)))
+      (datom emax nil nil txmax)))))
 
   (-rseek-datoms [db index c0 c1 c2 c3]
+    (call-in-db-domain db (fn []
     (validate-indexed db index c0 c1 c2 c3)
     (set/rslice (get db index)
       (components->pattern db index c0 c1 c2 c3 emax txmax)
-      (datom e0 nil nil tx0)))
+      (datom e0 nil nil tx0)))))
 
   (-index-range [db attr start end]
+    (call-in-db-domain db (fn []
     (validate-indexed db :avet attr nil nil nil)
     (validate-attr attr (list '-index-range 'db attr start end))
     (set/slice (.-avet db)
       (resolve-datom db nil attr start nil e0 tx0)
-      (resolve-datom db nil attr end nil emax txmax)))
+      (resolve-datom db nil attr end nil emax txmax)))))
                 
   clojure.data/EqualityPartition
   (equality-partition [x] :eve.db.ds/db)
@@ -1239,41 +1253,39 @@
     (throw (ex-info (str "eve.db.ds.db.DB has no field " k) {:key k}))))
 
 
-;; PORT DELTA (F-CLJE-DB-ASSOC): eve-deftype's beam translation
-;; classifies a type by its JVM interfaces: because DB declares
-;; clojure.lang.ITransientCollection (a DB is its own transient --
-;; db-transient/db-persistent! only swap the transiency of its three
-;; index sets), the translator takes its transient branch and emits
-;; only eve.core/ITransient*, withholding the persistent protocol
-;; set, clojerl.IAssociative among it. core assoc/update on a DB
-;; then have no impl on this seat; transact-tx-data-impl's
-;; (update :db-after update :max-tx inc) is the first caller to hit
-;; it (stage-41 stall: the throw inside conn's swap! retry loop).
-;; Wire the persistent associative surface on by hand, from the same
-;; fns the type's own clojure.lang.Associative group names.
-;; transient/persistent! stay eve.host's identity fns on this seat:
-;; db-assoc and the -assoc/-disj index ops rebuild the sets
-;; persistently, which is what db-transient + db-persistent!
-;; would bracket on a seat with real transients.
-#?(:clje
-   (extend-type DB
-     clojerl.IAssociative
-     (assoc [db k v] (db-assoc db k v))
-     (contains_key [db k]
-       (boolean (#{:schema :eavt :aevt :avet :max-eid :max-tx :rschema} k)))
-     (entry_at [db k]
-       (let [v (db-lookup db k ::absent)]
-         (when (not (identical? ::absent v))
-           [k v])))))
-
-
 (defn db? [x]
   (and (satisfies? ISearch x)
     (satisfies? IIndexAccess x)
     (satisfies? IDB x)))
 
 ;; ----------------------------------------------------------------------------
-(deftype FilteredDB [unfiltered-db pred hash]
+;; No functions in Eve memory (John, 2026-11-11): a FilteredDB is a
+;; long-lived DB value, so it must not hold its predicate fn. The pred
+;; travels with the filter call and is kept in this host-side registry
+;; (the Conn-listener pattern: host handles stay host-side); the
+;; FilteredDB value carries only the registry id. A FilteredDB whose
+;; pred is not registered in this process — e.g. one restored from
+;; durable Eve memory in a fresh process — cannot be searched; it fails
+;; with a clear error naming the remedy (re-create it with filter).
+(defonce ^:private filter-preds (atom {}))
+(defonce ^:private filter-pred-ids (atom 0))
+
+(defn register-filter-pred!
+  "Register a FilteredDB predicate fn host-side; returns its id."
+  [pred]
+  (let [id (swap! filter-pred-ids inc)]
+    (swap! filter-preds assoc id pred)
+    id))
+
+(defn filter-pred-of
+  "Resolve a FilteredDB's predicate from the host-side registry."
+  [fdb]
+  (let [id (.-pred-id fdb)]
+    (or (get @filter-preds id)
+      (throw (ex-info "FilteredDB predicate is not available in this process: predicates are host-side call state and are not stored in Eve memory. Re-create this DB view with (filter db pred)."
+               {:eve.db.ds/error :filter/pred-not-registered, :pred-id id})))))
+
+(deftype FilteredDB [unfiltered-db pred-id]
   ;; UNIT3 (#56): ONE definition, eve.deftype/deftype. The per-host arm
   ;; splices (cljs IHash/IEquiv/ICounted/IPrintWithWriter/... and the JVM
   ;; Object/IHashEq/IPersistentCollection/ILookup and the CLR arms) are
@@ -1300,16 +1312,16 @@
     (-attrs-by (.-unfiltered-db db) property))
   ISearch
   (-search [db pattern]
-    (filter (.-pred db) (-search (.-unfiltered-db db) pattern)))
+    (filter (filter-pred-of db) (-search (.-unfiltered-db db) pattern)))
   IIndexAccess
   (-datoms [db index c0 c1 c2 c3]
-    (filter (.-pred db) (-datoms (.-unfiltered-db db) index c0 c1 c2 c3)))
+    (filter (filter-pred-of db) (-datoms (.-unfiltered-db db) index c0 c1 c2 c3)))
   (-seek-datoms [db index c0 c1 c2 c3]
-    (filter (.-pred db) (-seek-datoms (.-unfiltered-db db) index c0 c1 c2 c3)))
+    (filter (filter-pred-of db) (-seek-datoms (.-unfiltered-db db) index c0 c1 c2 c3)))
   (-rseek-datoms [db index c0 c1 c2 c3]
-    (filter (.-pred db) (-rseek-datoms (.-unfiltered-db db) index c0 c1 c2 c3)))
+    (filter (filter-pred-of db) (-rseek-datoms (.-unfiltered-db db) index c0 c1 c2 c3)))
   (-index-range [db attr start end]
-    (filter (.-pred db) (-index-range (.-unfiltered-db db) attr start end))))
+    (filter (filter-pred-of db) (-index-range (.-unfiltered-db db) attr start end))))
 
 ;; PORT DELTA (D5, PORTING-DS.md — AS CORRECTED by measurement):
 ;; an earlier form of this delta, (def FilteredDB FilteredDB),
@@ -1322,10 +1334,43 @@
 ;; the F-NBB-MACROS round established for exactly these names. No
 ;; form belongs here; D5's entry records the full diagnosis.
 
+(defn filter-db
+  "Build a FilteredDB view over db with pred (a fn of one datom, with
+   any db it needs closed over). Composes with an existing FilteredDB
+   the way vanilla's nested filters do. The pred is registered
+   host-side; the FilteredDB value holds only its id."
+  [db pred]
+  ;; Construction law: the FilteredDB value is constructed in the
+  ;; underlying DB's own domain.
+  (call-in-db-ish-domain db (fn []
+  (if (instance? FilteredDB db)
+    (let [orig-db   (.-unfiltered-db db)
+          orig-pred (filter-pred-of db)]
+      (->FilteredDB orig-db
+        (register-filter-pred! (fn [d] (and (orig-pred d) (pred d))))))
+    (->FilteredDB db (register-filter-pred! pred))))))
+
 (defn unfiltered-db [db]
   (if (instance? FilteredDB db)
     (.-unfiltered-db ^FilteredDB db)
     db))
+
+(defn filtered-db? [x]
+  (instance? FilteredDB x))
+
+(defn db-domain-sio
+  "The Eve domain sio to construct results in for a DB-ish value (a DB
+   or a FilteredDB view of one): the underlying DB's own sio."
+  [db]
+  (db-sio (unfiltered-db db)))
+
+(defn call-in-db-ish-domain
+  "Call f in the domain of a DB-ish value (see db-domain-sio), deferring
+   to an ambient domain context when one is bound (as call-in-db-domain)."
+  [db f]
+  (if (some? eve-data/*domain-sio*)
+    (f)
+    (call-in-domain (db-domain-sio db) f)))
 
 ;; ----------------------------------------------------------------------------
 
@@ -1468,6 +1513,9 @@
 (defn ^DB empty-db [schema opts]
   {:pre [(or (nil? schema) (map? schema))]}
   (validate-schema schema)
+  ;; Construction law: a new DB is built in its home domain — the
+  ;; process domain, explicitly bound (see call-in-process-domain).
+  (call-in-process-domain (fn []
   (map->DB
     {:schema        schema
      :rschema       (rschema (merge implicit-schema schema))
@@ -1478,7 +1526,7 @@
      :max-tx        tx0
      :pull-patterns (lru/cache 100)
      :pull-attrs    (lru/cache 100)
-     :hash          (atom 0)}))
+     :hash          (atom 0)}))))
 
 (defn- init-max-eid [rschema eavt avet]
   (let [max     #(if (and %2 (> %2 %1)) %2 %1)
@@ -1502,6 +1550,13 @@
     res))
 
 (defn ^DB init-db [datoms schema opts]
+  ;; Construction law: as empty-db — the process domain, explicitly
+  ;; bound. The binding covers the datom? check too: `datoms` may be a
+  ;; lazy seq of not-yet-constructed Datoms (e.g. a caller's
+  ;; (map #(apply datom %) rows)), and drop-while realizes it — that
+  ;; construction belongs to the new DB's home domain, the process
+  ;; domain.
+  (call-in-process-domain (fn []
   (when-some [not-datom (first (drop-while datom? datoms))]
     (util/raise "init-db expects list of Datoms, got " (type not-datom)
       {:error :init-db}))
@@ -1535,9 +1590,12 @@
        :max-tx        max-tx
        :pull-patterns (lru/cache 100)
        :pull-attrs    (lru/cache 100)
-       :hash          (atom 0)})))
+       :hash          (atom 0)})))))
 
 (defn+ ^DB restore-db [{:keys [schema eavt aevt avet max-eid max-tx] :as keys}]
+  ;; Construction law: the restored DB adopts the domain of the index
+  ;; sets it is rebuilt from (they carry the target domain with them).
+  (call-in-domain (eve-data/-eve-sio eavt) (fn []
   (map->DB
     {:schema        schema
      :rschema       (or (:rschema keys)
@@ -1549,14 +1607,16 @@
      :max-tx        (or max-tx tx0)
      :pull-patterns (lru/cache 100)
      :pull-attrs    (lru/cache 100)
-     :hash          (atom 0)}))
+     :hash          (atom 0)}))))
 
 (defn with-schema [db schema]
   {:pre [(db? db) (or (nil? schema) (map? schema))]}
   ;; PORT (T2): vanilla assocs the record; the port reconstructs.
-  (->DB schema
-    (.-eavt db) (.-aevt db) (.-avet db) (.-max-eid db) (.-max-tx db)
-    (rschema (merge implicit-schema schema)) (.-meta db)))
+  ;; Construction law: the reconstruction happens in db's own domain.
+  (call-in-db-domain db (fn []
+    (->DB schema
+      (.-eavt db) (.-aevt db) (.-avet db) (.-max-eid db) (.-max-tx db)
+      (rschema (merge implicit-schema schema)) (.-meta db)))))
 
 (defn- equiv-db-index [x y]
   (loop [xs (seq x)
@@ -1573,13 +1633,11 @@
     (hash (.-eavt db))))
 
 (defn+ ^:private ^number hash-fdb [^FilteredDB db]
-  (let [h @(.-hash db)
-        datoms (or (-datoms db :eavt nil nil nil nil) #{})]
-    (if (zero? h)
-      (let [datoms (or (-datoms db :eavt nil nil nil nil) #{})]
-        (reset! (.-hash db) (combine-hashes (hash (-schema db))
-                              (hash-unordered-coll datoms))))
-      h)))
+  ;; Computed on demand, like hash-db: the port carries no host atom
+  ;; hash cache in the value (and no fn — see filter-preds above).
+  (let [datoms (or (-datoms db :eavt nil nil nil nil) #{})]
+    (combine-hashes (hash (-schema db))
+      (hash-unordered-coll datoms))))
 
 (defn+ ^:private ^boolean equiv-db [db other]
   (and (or (instance? DB other) (instance? FilteredDB other))
@@ -1629,6 +1687,9 @@
     :avet (resolve-datom db c2 c0 c1 c3 default-e default-tx)))
 
 (defn find-datom [db index c0 c1 c2 c3]
+  ;; Construction law: the pattern Datoms are constructed in the DB's
+  ;; own domain (db-ish: db may be a FilteredDB view).
+  (call-in-db-ish-domain db (fn []
   (validate-indexed db index c0 c1 c2 c3)
   (let [set     (get db index)
         ;; Index sets store a registered comparator name; name the
@@ -1644,11 +1705,19 @@
         to      (components->pattern db index c0 c1 c2 c3 emax txmax)
         datom   (first (set/slice set from to))]
     (when (and (some? datom) (<= 0 (cmp to datom)))
-      datom)))
+      datom)))))
 
 ;; ----------------------------------------------------------------------------
 
-(def-eve-record TxReport [db-before db-after tx-data tempids tx-meta])
+(erecord/defrecord TxReport [db-before db-after tx-data tempids tx-meta])
+
+;; TxReport is a slab eve.record: clojure.core/assoc|update|dissoc cannot
+;; dispatch on it on SCI hosts (SciType is not clojure.lang.Associative —
+;; measured on bb). Route report updates through eve.record's own fns,
+;; the same surface pull-parser uses via eve.core/assoc.
+(defn assoc-report [r k v] (erecord/assoc-record r k v))
+(defn update-report [r k f & args] (erecord/assoc-record r k (apply f (get r k) args)))
+(defn dissoc-report [r & ks] (reduce erecord/dissoc-record r ks))
 
 (defn+ ^boolean is-attr? [db attr property]
   (contains? (-attrs-by db property) attr))
@@ -1916,24 +1985,24 @@
 
 (defn- allocate-eid
   ([report eid]
-   (update report :db-after advance-max-eid eid))
+   (update-report report :db-after advance-max-eid eid))
   ([report e eid]
    (cond-> report
      (tx-id? e)
      (->
-       (update :tempids assoc e eid)
-       (update ::reverse-tempids update eid util/conjs e))
+       (update-report :tempids assoc e eid)
+       (update-report ::reverse-tempids update eid util/conjs e))
      
      (tempid? e)
      (->
-       (update :tempids assoc e eid)
-       (update ::reverse-tempids update eid util/conjs e))
+       (update-report :tempids assoc e eid)
+       (update-report ::reverse-tempids update eid util/conjs e))
 
      (and (not (tempid? e)) (new-eid? (:db-after report) eid))
-     (update :tempids assoc eid eid)
+     (update-report :tempids assoc eid eid)
 
      true
-     (update :db-after advance-max-eid eid))))
+     (update-report :db-after advance-max-eid eid))))
 
 (defn- resolve-tuple-value
   "Resoleves refs, tempids and :db/current-tx in ref slots. Returns [report' vs']"
@@ -1960,11 +2029,11 @@
 
                                     (tempid? v)
                                     (if-some [resolved (get (:tempids report') v)]
-                                      [(update report' ::value-tempids assoc resolved v) resolved]
+                                      [(update-report report' ::value-tempids assoc resolved v) resolved]
                                       (let [resolved (next-eid db)]
                                         [(-> report'
                                              (allocate-eid v resolved)
-                                             (update ::value-tempids assoc resolved v))
+                                             (update-report ::value-tempids assoc resolved v))
                                          resolved]))
 
                                     :else ;; lookup ref or ident
@@ -2012,15 +2081,15 @@
   (let [db      (:db-after report)
         a       (:a datom)
         report' (-> report
-                  (assoc :db-after (with-datom db datom))
-                  (update :tx-data conj datom))]
+                  (assoc-report :db-after (with-datom db datom))
+                  (update-report :tx-data conj datom))]
     (if (tuple-source? db a)
       (let [e      (:e datom)
             v      (if (datom-added datom) (:v datom) nil)
             queue  (or (-> report' ::queued-tuples (get e)) {})
             tuples (get (-attrs-by db :db/attrTuples) a)
             queue' (queue-tuples queue tuples db e a v)]
-        (update report' ::queued-tuples assoc e queue'))
+        (update-report report' ::queued-tuples assoc e queue'))
       report')))
 
 (defn- tuple-has-tempids? [db a vs]
@@ -2185,7 +2254,7 @@
       (transact-report report new-datom)
 
       (= (.-v old-datom) v)
-      (update report ::tx-redundant util/conjv new-datom)
+      (update-report report ::tx-redundant util/conjv new-datom)
 
       :else
       (-> report
@@ -2262,14 +2331,14 @@
           unused    (reduce reduce-fn tempids (:tx-data report))
           unused    (reduce reduce-fn unused (::tx-redundant report))]
       (if (zero? (count unused))
-        (dissoc report ::value-tempids ::tx-redundant)
+        (dissoc-report report ::value-tempids ::tx-redundant)
         (util/raise "Tempids used only as value in transaction: " (sort (vals unused))
           {:error :transact/syntax, :tempids unused})))
-    (dissoc report ::value-tempids ::tx-redundant)))
+    (dissoc-report report ::value-tempids ::tx-redundant)))
 
 (defn+ transact-tx-data-impl [initial-report initial-es]
   (let [initial-report' (-> initial-report
-                          (update :db-after transient))
+                          (update-report :db-after transient))
         has-tuples?     (not (empty? (-attrs-by (:db-after initial-report) :db/attrTuples)))
         initial-es'     (if has-tuples?
                           (interleave initial-es (repeat ::flush-tuples))
@@ -2281,12 +2350,12 @@
         (empty? es)
         (-> report
           (check-value-tempids)
-          (dissoc ::upserted-tempids)
-          (dissoc ::reverse-tempids)
-          (update :tempids #(util/removem auto-tempid? %))
-          (update :tempids assoc :db/current-tx (current-tx report))
-          (update :db-after update :max-tx inc)
-          (update :db-after persistent!))
+          (dissoc-report ::upserted-tempids)
+          (dissoc-report ::reverse-tempids)
+          (update-report :tempids #(util/removem auto-tempid? %))
+          (update-report :tempids assoc :db/current-tx (current-tx report))
+          (update-report :db-after update :max-tx inc)
+          (update-report :db-after persistent!))
 
         :let [[entity & entities] es]
 
@@ -2363,10 +2432,15 @@
             (and (keyword? op)
               (not (builtin-fn? op)))
             (if-some [ident (entid db op)]
-              (let [fun  (:v (fsearch db [ident :db/fn]))
+              (let [stored (:v (fsearch db [ident :db/fn]))
                     args (next entity)]
-                (if (fn? fun)
-                  (recur report (concat (apply fun db args) entities))
+                (if (some? stored)
+                  ;; No functions in Eve memory (John, 2026-11-11):
+                  ;; transaction functions are transact-time input,
+                  ;; never a stored DB value. A :db/fn found in storage
+                  ;; is not executed from storage — it fails clearly.
+                  (util/raise "Entity " op " has a stored :db/fn value. Functions can't be stored in Eve memory; pass the transaction function in the transaction instead ([:db.fn/call f & args])"
+                    {:error :transact/stored-fn, :operation :db.fn/call, :tx-data entity})
                   (util/raise "Entity " op " expected to have :db/fn attribute with fn? value"
                     {:error :transact/syntax, :operation :db.fn/call, :tx-data entity})))
               (util/raise "Can’t find entity for transaction fn " op
@@ -2411,7 +2485,7 @@
 
             (and (ref? db a) (tempid? v))
             (if-some [resolved (get tempids v)]
-              (let [report' (update report ::value-tempids assoc resolved v)]
+              (let [report' (update-report report ::value-tempids assoc resolved v)]
                 (recur report' (cons [op e a resolved] entities)))
               (let [resolved (next-eid db)
                     report'  (-> report

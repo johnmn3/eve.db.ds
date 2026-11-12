@@ -1,11 +1,12 @@
 (ns ^:no-doc eve.db.ds.parser
   (:refer-clojure :exclude [distinct?])
   #?(:cljs (:require-macros [eve.db.ds.parser :refer [deftrecord]]
-                            [eve.db.ds.eve-record :refer [def-eve-record]]))
+                            [eve.record :as erecord]))
   (:require
     [clojure.set :as set]
     [eve.db.ds.db :as db]
-    [eve.db.ds.eve-record :refer [def-eve-record]]
+    [eve.record :as erecord]
+    #?(:cljs [eve.record])
     [eve.db.ds.util :as util]))
 
 ;; utils
@@ -20,12 +21,14 @@
 (defmacro deftrecord
   "Augment all eve.db.ds.parser records with ITraversable. UNIT3 (#56):
    one eve.deftype record for every host; the per-host defrecord copies
-   are gone."
+   are gone. Record migration (2026-11-12): the record itself is Eve's
+   slab eve.record (erecord/defrecord) — the process-local def-eve-record
+   cheat is deleted; the generated ITraversable impls are unchanged."
   [tagname fields & rest]
   (let [f    (gensym "f")
         pred (gensym "pred")
         acc  (gensym "acc")]
-    `(def-eve-record ~tagname ~fields
+    `(erecord/defrecord ~tagname ~fields
        ITraversable
        (~'-postwalk [this# ~f]
          (let [new# (~(symbol (str "->" (name tagname)))
@@ -667,7 +670,7 @@
           (flatten-rule-vars vars0) " vs. " (flatten-rule-vars vars)
           {:error :parser/rule, :rule name})))))
 
-(defn parse-rules [form]
+(defn- parse-rules-impl [form]
   (vec
     ;; group rule branches by name
     (for [[name branches] (group-by :name (parse-seq parse-rule form))
@@ -769,7 +772,12 @@
       (util/raise "Missing rules var '%' in :in"
         {:error :parser/query, :form form}))))
 
-(defn parse-query [q]
+(defn parse-rules [form]
+  ;; Construction law: parse output is process-local compiled data,
+  ;; constructed in the explicit parse domain (eve.db.ds.db).
+  (db/call-in-parse-domain (fn [] (parse-rules-impl form))))
+
+(defn- parse-query-impl [q]
   (let [qm  (cond
               (map? q) q
               (sequential? q) (query->map q)
@@ -788,4 +796,8 @@
                :qwhere qwhere})]
     (validate-query res q qm)
     res))
+
+(defn parse-query [q]
+  ;; Construction law: as parse-rules — the parse domain.
+  (db/call-in-parse-domain (fn [] (parse-query-impl q))))
 

@@ -819,9 +819,20 @@
 
 ;; Query
 
-(def query-cache (lru/cache lru-cache-size))
+(def query-cache (db/call-in-parse-domain (fn [] (lru/cache lru-cache-size))))
+
+(declare q-impl)
 
 (defn q [q & inputs]
+  ;; Construction law: relations and result collections are constructed
+  ;; in the queried DB's own domain; a query with no DB input uses the
+  ;; parse domain.
+  (let [db (first (filter #(or (db/db? %) (db/filtered-db? %)) inputs))]
+    (if (some? db)
+      (db/call-in-db-ish-domain db (fn [] (apply q-impl q inputs)))
+      (db/call-in-parse-domain (fn [] (apply q-impl q inputs))))))
+
+(defn- q-impl [q & inputs]
   (let [parsed-q (lru/-get query-cache q #(dp/parse-query q))
         context  {:rels    []
                   :consts  {}
