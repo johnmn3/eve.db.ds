@@ -133,8 +133,14 @@ Hatch: light legs only, load1 gate < 8.
   agent (record `ds-standing-lpy-contract.json`, venue_pref grok):
   clone Eve @ 45935b95 + this branch, `run-lpy.sh contract write`
   then a fresh-process `contract read`, verdict = both
-  CONTRACT-*-OK lines with equal seals. Result banks here when
-  the RESULT lands.
+  CONTRACT-*-OK lines with equal seals. Filing state (2026-11-14
+  10:27 ET): the router swept it and HELD it — "submission to
+  grok failed" (the router's own git-submission path, the same
+  breakage banked at stage-2 banks 29/31); record kept for the
+  sweep agent as `held-ds-standing-lpy-contract`. Exactly-once:
+  NOT re-filed. The leg runs when the router's grok submission
+  path is restored or the sweep releases it; result banks here
+  when the RESULT lands.
 
 ## Provenance
 
