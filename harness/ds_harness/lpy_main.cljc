@@ -8,11 +8,13 @@
    Usage: basilisp run -p <cp>... -c '(require (quote ds-harness.lpy-main)) (apply (resolve (quote ds-harness.lpy-main/-main)) *command-line-args*)' -- <perf|one> <args...>
    (harness/run-lpy.sh composes exactly that command.)"
   (:require [eve.host-completion]
+            [ds-harness.contract-check :as cc]
             [ds-harness.perf :as perf]
             [contract.one :as one]))
 
 (defn -main [& [mode & args]]
   (case mode
+    "contract" (apply cc/-main args)
     "perf" (apply perf/-main args)
     "one" (apply one/-main args)
     (println (pr-str {:fatal (str "unknown mode " mode)}))))

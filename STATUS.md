@@ -116,6 +116,26 @@ Venue state at seat open (Nov 14): J wedged (SSH banner timeouts
 since ~09:26 ET), kind-hypatia dark, Grok via job agent only.
 Hatch: light legs only, load1 gate < 8.
 
+## Seat log
+
+- **2026-11-14 (seat open):** census above banked @ 44f463ae,
+  read-back byte-identical. Harness gap fixed in-tree:
+  `ds-harness.lpy-main` gains the `contract` mode (mirrors bb-main
+  verbatim) — the lpy contract leg previously had no entry point.
+- **Basilisp closure leg — re-routed, filed:** the local route is
+  blocked by a hatch environment defect, measured this seat: the
+  Eve pin tree pull (SCM/eve @ 45935b95, 876 blobs) landed 498 good
+  files, then the box's write-guard window turned — **397 of 876
+  files are 0-byte husks** (incl. src/eve/atom.cljc), shell/python
+  writes intermittently zero or EPERM, git loose-object writes
+  refused. Not an Eve or DS defect; the local pull retries when
+  the window passes. The leg is therefore filed through the job
+  agent (record `ds-standing-lpy-contract.json`, venue_pref grok):
+  clone Eve @ 45935b95 + this branch, `run-lpy.sh contract write`
+  then a fresh-process `contract read`, verdict = both
+  CONTRACT-*-OK lines with equal seals. Result banks here when
+  the RESULT lands.
+
 ## Provenance
 
 Tree: eve.db.ds main @ 2c45e69cf0358b31c2d0c9142ae62417ed64c0fc
