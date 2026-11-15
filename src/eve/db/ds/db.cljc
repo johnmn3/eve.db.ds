@@ -2207,6 +2207,16 @@
              :conflict  {:db/id eid}}))
         upsert-id))))
 
+;; HOST GLUE: a host array (Java Object[], JS array, Python list) as a
+;; multival transaction value — upstream's arrays/array?, which this
+;; port's arrays/array? (Eve vectors only) no longer answers. Only the
+;; transaction input is host data; the exploded datoms are Eve values.
+(defn- host-array? [x]
+  #?(:clj  (and (some? x) (.isArray ^Class (class x)))
+     :cljs (cljs.core/array? x)
+     :lpy  (instance? python/list x)
+     :default false))
+
 ;; multivals/reverse can be specified as coll or as a single value, trying to guess
 (defn- maybe-wrap-multival [db a vs]
   (cond
@@ -2217,6 +2227,7 @@
 
     ;; not a collection at all, so definitely a single value
     (not (or (arrays/array? vs)
+           (host-array? vs)
            (and (coll? vs) (not (map? vs)))))
     [vs]
     
