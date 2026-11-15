@@ -55,7 +55,7 @@ eve.db.ds/eve.db.ds {:git/url "https://github.com/johnmn3/eve.db.ds"
 
 Eve itself is a dependency of the library, pinned in
 `deps.edn` to the shipped Eve tree
-(`SeniorCareMarket/eve` @ 0.9.3.1). Bumping Eve is a one-line pin
+(`SeniorCareMarket/eve` release/eve-0.9.3.2). Bumping Eve is a one-line pin
 change here — never a copy.
 
 ## Support matrix

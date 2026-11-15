@@ -19,10 +19,10 @@ cd "$DS"
 echo DS-HEAD "$(git rev-parse HEAD)"
 EVESHA=$(awk -F= '$1 == "SHA" {print $2}' scripts/eve_dev_cp.sh)
 echo EVE-DEV-PIN "$EVESHA"
-timeout 1500 clojure -A:dev:ds-suite -Spath > "$J/jvm.cp" < /dev/null
+timeout 1500 clojure -A:ds-suite -Spath > "$J/jvm.cp" < /dev/null
 rc=$?; echo RESOLVE-RC=$rc
 [ "$rc" -eq 0 ] || exit "$rc"
-# Runner GITLIBS may not live below HOME. Use the actual :dev classpath,
+# Runner GITLIBS may not live below HOME. Use the actual default-pin classpath,
 # not an assumed cache location (#482 used a non-default gitlibs layout).
 GL=$(tr ':' '\n' < "$J/jvm.cp" | awk -v suffix="/$EVESHA/eve/src" '
   length($0) >= length(suffix) && substr($0, length($0)-length(suffix)+1) == suffix {

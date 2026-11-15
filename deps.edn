@@ -7,7 +7,7 @@
 ;; over the Eve backend).
 ;;
 ;; Release pin: eve/eve below is the published SeniorCareMarket/eve
-;; release/eve-0.9.3.2 tip (45935b9570bc286abc2a5789bf504c204778f899).
+;; release/eve-0.9.3.2 tip, 2026-11-15 (43c1a14af1e736c7732b27954e69b2a2aad91d13).
 ;; Do not retarget that default dep to an unreleased work branch.
 ;; Collation onto a later Eve release is a separate, explicit decision.
 ;;
@@ -20,7 +20,7 @@
 {:paths ["src"]
  :deps {org.clojure/clojure {:mvn/version "1.12.0"}
         eve/eve {:git/url "https://github.com/SeniorCareMarket/eve"
-                 :git/sha "45935b9570bc286abc2a5789bf504c204778f899"}
+                 :git/sha "43c1a14af1e736c7732b27954e69b2a2aad91d13"}
         me.tonsky/persistent-sorted-set {:local/root "lib"}
         extend-clj/extend-clj {:local/root "lib-ds-deps"}}
  :aliases
