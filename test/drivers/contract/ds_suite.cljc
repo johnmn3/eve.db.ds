@@ -23,7 +23,7 @@
    from a stale basilisp cache before this driver loaded would count no
    passes — run with a fresh PYTHONPYCACHEPREFIX). On bb and basilisp load
    eve.host-completion before this namespace, as the contract gates do."
-  (:require [eve.host] [eve.atom] [eve.db.ds.db :as ds-db] [clojure.test :as t] [clojure.string :as str])
+  (:require [eve.host] [eve.atom] [eve.deftype-proto.data] [eve.db.ds.db :as ds-db] [clojure.test :as t] [clojure.string :as str])
   #?(:lpy (:import importlib os.path sys)))
 
 #?(:lpy
@@ -211,9 +211,16 @@
    (defn- run-one
      "A promise of the counts for namespace n."
      [n]
-     (-> (js/Promise. (fn [res _] (res (require n))))
-         (.then (fn [_] (in-test-domain #(run-loaded n)))
-                (fn [e] (load-failed n e))))))
+     ;; The async require cannot sit inside a synchronous binding, so
+     ;; the load sees the process domain as the root value of Eve's
+     ;; *domain-sio* (single-threaded host), restored once the load
+     ;; settles — the same ruling as the other hosts' load + run.
+     (let [prior eve.deftype-proto.data/*domain-sio*
+           restore! #(alter-var-root #'eve.deftype-proto.data/*domain-sio* (constantly prior))]
+       (alter-var-root #'eve.deftype-proto.data/*domain-sio* (constantly (ds-db/process-sio)))
+       (-> (js/Promise. (fn [res _] (res (require n))))
+           (.then (fn [_] (restore!) (in-test-domain #(run-loaded n)))
+                  (fn [e] (restore!) (load-failed n e)))))))
 
 #?(:cljs nil
    :default
