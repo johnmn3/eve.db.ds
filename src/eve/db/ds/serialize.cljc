@@ -62,8 +62,18 @@
   (apply array-map kvs))
 
 (defn- array-get [d i] (nth d i))
-(defn- dict-get [d k] (get d k))
-(defn- array? [a] (vector? a))
+;; HOST GLUE: from-serializable also reads the host JSON shapes the
+;; upstream suite feeds it (jsonista/cheshire java.util.List + Map on the
+;; JVM, JSON.parse objects + arrays on cljs, Python lists).
+(defn- dict-get [d k]
+  #?(:cljs (if (object? d) (unchecked-get d k) (get d k))
+     :default (get d k)))
+(defn- array? [a]
+  (or (vector? a)
+      #?(:clj  (instance? java.util.List a)
+         :cljs (cljs.core/array? a)
+         :lpy  (instance? python/list a)
+         :default false)))
 (defn- amap [f xs] (mapv f xs))
 (defn- amap-indexed [f xs]
   (reduce (fn [out x] (conj out (f (count out) x))) [] xs))
