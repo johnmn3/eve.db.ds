@@ -6,7 +6,7 @@
     [eve.map :as em]
     [eve.vec :as ev]
     [eve.set :as es]
-    [eve.deftype :refer [deftype]]
+    [eve.deftype-proto.macros :refer [host-deftype]]
     [eve.db.ds.built-ins :as built-ins]
     [eve.db.ds.core :as d]
     [eve.db.ds.db :as db]
@@ -140,7 +140,7 @@
        ", :coll " (pr-str (e/persistent! (-fold rel #(e/conj! %1 (seq %2)) (e/transient []))))
        "}"))
 
-(deftype ArrayRelation [offset-map coll]
+(host-deftype ArrayRelation [offset-map coll]
   clojure.lang.ILookup
   (valAt [_ k] (case k :offset-map offset-map :coll coll nil))
   (valAt [_ k nf] (case k :offset-map offset-map :coll coll nf))
@@ -180,7 +180,7 @@
 
 ;;; CollRelation
 
-(deftype CollRelation [offset-map coll]
+(host-deftype CollRelation [offset-map coll]
   clojure.lang.ILookup
   (valAt [_ k] (case k :offset-map offset-map :coll coll nil))
   (valAt [_ k nf] (case k :offset-map offset-map :coll coll nf))
@@ -275,7 +275,7 @@
 
 ;;; SingletonRelation
 
-(deftype SingletonRelation []
+(host-deftype SingletonRelation []
   IRelation
   ;; basilisp requires every protocol method at compile time. The
   ;; original type only named the methods its call sites used; the

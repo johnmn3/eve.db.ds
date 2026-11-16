@@ -26,11 +26,11 @@
     [eve.set]
     [eve.vec]
     [eve.list]
-    [eve.deftype :refer [eve-deftype]]
+    [eve.deftype :refer [deftype]]
     ;; UNIT1 (#56): eve.deftype/deftype is the one portable deftype on
     ;; every host — the per-host require branch is gone (ledger rows
     ;; db.cljc:22 et al.).
-    [eve.deftype :refer [deftype]]
+    [eve.deftype-proto.macros :refer [host-deftype]]
     [eve.record :as erecord]
     #?(:cljs [eve.record])
     [me.tonsky.persistent-sorted-set :as set]
@@ -571,7 +571,7 @@
 ;; computes on demand, the PSS E2 pattern) and idx is fixed at
 ;; construction: datom-set-idx throws (serialize's freeze path, its only
 ;; caller, uses a side table in this port).
-(eve-deftype Datom [e a v tx idx]
+(deftype Datom [e a v tx idx]
   IDatom
   (datom-tx [d] (if (pos? tx) tx (- tx)))
   (datom-added [d] (pos? tx))
@@ -1092,7 +1092,7 @@
   ;; (seq x) is the same datoms in the same order on every host.
   (seq x))
 
-(eve-deftype DB [schema eavt aevt avet max-eid max-tx rschema meta]
+(deftype DB [schema eavt aevt avet max-eid max-tx rschema meta]
   Object
   (hashCode [db] (hash-db db))
   (toString [db] (pr-str db))
@@ -1306,7 +1306,7 @@
       (throw (ex-info "FilteredDB predicate is not available in this process: predicates are host-side call state and are not stored in Eve memory. Re-create this DB view with (filter db pred)."
                {:eve.db.ds/error :filter/pred-not-registered, :pred-id id})))))
 
-(deftype FilteredDB [unfiltered-db pred-id]
+(host-deftype FilteredDB [unfiltered-db pred-id]
   ;; UNIT3 (#56): ONE definition, eve.deftype/deftype. The per-host arm
   ;; splices (cljs IHash/IEquiv/ICounted/IPrintWithWriter/... and the JVM
   ;; Object/IHashEq/IPersistentCollection/ILookup and the CLR arms) are
@@ -1907,7 +1907,7 @@
 ;; pr-str): eve.deftype realizes it per host (print-method on the
 ;; JVM/CLR/basilisp faces, the protocol on bb/jank/cljs). The old four
 ;; per-host arm splices and the two print-method defmethods delete.
-(deftype AutoTempid [id]
+(host-deftype AutoTempid [id]
   Object
   (toString [this]
     (str "#eve.db.ds/AutoTempid [" id "]"))

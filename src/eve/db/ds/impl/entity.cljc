@@ -10,7 +10,7 @@
   (:refer-clojure :exclude [deftype])
   (:require
     [eve.core :as e]
-    [eve.deftype :refer [deftype]]
+    [eve.deftype-proto.macros :refer [host-deftype]]
     [eve.host :refer [volatile!]]
     [eve.encoding :as enc]
     [eve.map-entry :as me]
@@ -49,7 +49,7 @@
       (reduce #(conj %1 (entity db (:e %2))) #{} datoms))
     not-found))
 
-(deftype Entity [db eid touched cache]
+(host-deftype Entity [db eid touched cache]
   Object
   (toString [this]
     (pr-str (assoc @cache :db/id eid)))

@@ -9,7 +9,7 @@
     ;; extend/deftype-atom's expansion resolves `deftype` through on
     ;; the interpreted seats; referring it unconditionally is the same
     ;; wiring with no branch (this ns defines no deftype of its own).
-    [eve.deftype :refer [deftype]]
+    [eve.deftype-proto.macros]
     [eve.db.ds.storage :as storage]
     [extend-clj.core :as extend]
     [me.tonsky.persistent-sorted-set :as set]

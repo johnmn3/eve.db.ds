@@ -43,7 +43,7 @@
            ->name     (symbol (str "->" name))
            all-fields (into fields '[__validator __watches __meta])]
        (list 'do
-         (list* 'eve.deftype/deftype name all-fields
+         (list* 'eve.deftype-proto.macros/host-deftype name all-fields
            ;; eve.deftype's spec grammar is FLAT (a protocol symbol, then its
            ;; method lists, then the next symbol): the groups below are built
            ;; as (head method...) lists and spliced flat by the mapcat -
@@ -154,7 +154,7 @@
            ->name     (symbol (str "->" name))
            all-fields (into fields '[atom-validator atom-watches atom-meta])]
        (list 'do
-         (list* 'eve.deftype/deftype name all-fields
+         (list* 'eve.deftype-proto.macros/host-deftype name all-fields
            ;; eve.deftype's spec grammar is FLAT (a protocol symbol, then its
            ;; method lists, then the next symbol): the groups below are built
            ;; as (head method...) lists and spliced flat by the mapcat -
@@ -911,7 +911,7 @@
            ->name     (symbol (str "->" name))
            all-fields (into fields '[__validator __watches __meta])]
        (list 'do
-         (list* 'deftype name all-fields
+         (list* 'eve.deftype-proto.macros/host-deftype name all-fields
            ;; eve.deftype takes FLAT groups: protocol symbol, then its
            ;; methods as siblings — flatten each (head m...) one level
            (mapcat (fn [g] (cons (first g) (rest g)))

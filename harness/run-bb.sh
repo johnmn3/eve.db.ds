@@ -20,8 +20,9 @@ fi
 BB="${BB:-$HOME/workspace/tools/bin/bb}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 REPO="$(cd "$HERE/.." && pwd)"
-ROOTS="src adapters/slab-io/protocol/src adapters/http/java/src adapters/http-server/httpkit/src adapters/crypto/java/src adapters/core/clojure/src adapters/completion/bb/src adapters/completion/clojure/src adapters/coll/protocols/src adapters/slab/heap/src adapters/region/jvm-nio-lock/src adapters/encoding/java/src adapters/int32/jvm/src adapters/codec/byte-array/src adapters/process/java/src adapters/thread/jvm/src adapters/types/bb/src adapters/journal-file/java/src"
-CP=""
-for r in $ROOTS; do CP="$CP:$EVE_LOCAL/$r"; done
+# Eve's own bb classpath (src + hosts.edn :bb roots), not a copied root
+# list: a copy goes stale when the Eve tree adds a root (the private
+# release line's :bb adds adapters/crypto/portable/src; the copy lacked it).
+CP="$(cd "$EVE_LOCAL" && "$BB" classpath bb)" || exit 8
 CP="$CP:$REPO/src:$REPO/lib:$REPO/lib-ds-deps:$REPO/test/drivers:$REPO/harness"
 exec "$BB" -cp "${CP#:}" -m ds-harness.bb-main "$@"

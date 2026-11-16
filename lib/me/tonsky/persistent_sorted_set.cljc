@@ -10,7 +10,8 @@
   (:require
     [clojure.string :as str]
     [eve.core :as e]
-    [eve.deftype :refer [eve-deftype deftype]]
+    [eve.deftype :refer [deftype]]
+    [eve.deftype-proto.macros :refer [host-deftype]]
     [eve.deftype-proto.data :as d]
     [me.tonsky.persistent-sorted-set.arrays :as arrays]
     ;; PORT DELTA (F-CLJE-HOST-REFERS): as in arrays — clojerl core
@@ -278,7 +279,7 @@
     (let [nodes (node-merge-n-split node right)]
       (return-array left (arrays/aget nodes 0) (arrays/aget nodes 1)))))
 
-(eve-deftype Node [keys pointers]
+(deftype Node [keys pointers]
   INode
   (node-lim-key [_]
     (arrays/alast keys))
@@ -334,7 +335,7 @@
                   new-pointers (splice             pointers left-idx right-idx disjned)]
               (rotate (->Node new-keys new-pointers) root? left right))))))))
 
-(eve-deftype Leaf [keys]
+(deftype Leaf [keys]
   INode
   (node-lim-key [_]
     (arrays/alast keys))
@@ -421,7 +422,7 @@
           (keyword? c) (get @comparator-registry c)
           :else        c)))
 
-(eve-deftype BTSet [root ^:int32 shift cnt comparator meta]
+(deftype BTSet [root ^:int32 shift cnt comparator meta]
   clojure.lang.IMeta
   (meta [_] meta)
 
@@ -678,7 +679,7 @@
 
 ;; PORTING.md T3: vanilla's Chunk/IChunkedSeq (a performance device) is not
 ;; ported; seqs here are element-wise. Semantics unchanged.
-(deftype Iter [set left right keys idx]
+(host-deftype Iter [set left right keys idx]
   IIter
   (-copy [_ l r]
     (Iter. set l r (keys-for set l) (path-get l 0)))
@@ -807,7 +808,7 @@
 
 ;; reverse iteration
 
-(deftype ReverseIter [set left right keys idx]
+(host-deftype ReverseIter [set left right keys idx]
   IIter
   (-copy [_ l r]
     (ReverseIter. set l r (keys-for set r) (path-get r 0)))

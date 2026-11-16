@@ -19,12 +19,12 @@
   (:refer-clojure :exclude [deftype])
   (:require
     [eve.core :as e]
-    [eve.deftype :refer [deftype]]
+    [eve.deftype-proto.macros :refer [host-deftype]]
     [eve.host :refer [volatile! vswap!]]))
 
 (declare assoc-lru cleanup-lru)
 
-(deftype LRU [key-value gen-key key-gen gen limit]
+(host-deftype LRU [key-value gen-key key-gen gen limit]
   clojure.lang.ILookup
   (valAt [_ k]           (get key-value k))
   (valAt [_ k not-found] (get key-value k not-found))
