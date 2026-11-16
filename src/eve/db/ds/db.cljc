@@ -89,7 +89,7 @@
 ;;   becomes resident in an atom's domain by being swapped into that
 ;;   atom, and that swap's binding governs later construction.
 
-(declare tx-db?)
+(declare tx-db? tx-db-set!)
 
 (defn db-sio
   "The Eve domain sio of a DB value (the domain its indexes live in)."
@@ -2010,7 +2010,7 @@
 (defn- advance-max-eid [db eid]
   (cond-> db
     (new-eid? db eid)
-    (assoc :max-eid eid)))
+    (#(if (tx-db? %) (tx-db-set! % :max-eid eid) (assoc % :max-eid eid)))))
 
 (defn- allocate-eid
   ([report eid]
@@ -2290,13 +2290,6 @@
   (-lookup [db k] (tx-lookup db k nil))
   (-lookup [db k nf] (tx-lookup db k nf))
 
-  IAssociative
-  (-contains-key? [_ k] (boolean (#{:schema :eavt :aevt :avet :max-eid :max-tx :rschema} k)))
-  (-assoc [db k v]
-    (case k
-      (:max-eid :max-tx) (do (vswap! (.-st db) assoc k v) db)
-      (throw (enc/unsupported (str "assoc " k " is not supported on a transaction's TxDB")))))
-
   ICounted
   (-count [db] (count (tx-all (:eavt @(.-st db)))))
 
@@ -2336,6 +2329,12 @@
       (seq (tx-slice (:avet @(.-st db))
              (resolve-datom db nil attr start nil e0 tx0)
              (resolve-datom db nil attr end nil emax txmax)))))))
+
+(defn- tx-db-set!
+  "A TxDB's :max-eid / :max-tx, set in place (the transaction owns it)."
+  [db k v]
+  (vswap! (.-st db) assoc k v)
+  db)
 
 (defn tx-db? [x] (instance? TxDB x))
 
@@ -2709,7 +2708,7 @@
           (dissoc ::reverse-tempids)
           (update :tempids #(util/removem auto-tempid? %))
           (update :tempids assoc :db/current-tx (current-tx report))
-          (update :db-after update :max-tx inc)
+          (update :db-after (fn [db] (if (tx-db? db) (tx-db-set! db :max-tx (inc (:max-tx db))) (update db :max-tx inc))))
           (update :db-after #(if (tx-db? %) (tx-db-persistent! %) (persistent! %))))
 
         :let [[entity & entities] es]
