@@ -2212,7 +2212,9 @@
 ;; port's arrays/array? (Eve vectors only) no longer answers. Only the
 ;; transaction input is host data; the exploded datoms are Eve values.
 (defn- host-array? [x]
-  #?(:clj  (and (some? x) (.isArray ^Class (class x)))
+  ;; jank reads :clj arms too and has no JVM Class: no host arrays there
+  #?(:jank false
+     :clj  (and (some? x) (.isArray ^Class (class x)))
      :cljs (cljs.core/array? x)
      :lpy  (instance? python/list x)
      :default false))

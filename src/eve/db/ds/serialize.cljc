@@ -47,8 +47,10 @@
 
 (def ^:private pos-inf (ieee-overflow 1.0))
 (def ^:private neg-inf (ieee-overflow -1.0))
+;; jank: any arithmetic whose result is NaN ends the process (SIGSEGV:
+;; measured, (- inf inf) and (* inf 0.0) on jank), so no NaN there, as on BEAM.
 (def ^:private nan-val
-  (when (some? pos-inf)
+  (when #?(:jank false :default (some? pos-inf))
     (let [x (- pos-inf pos-inf)]
       (when (not (== x x))
         x))))
@@ -70,7 +72,8 @@
      :default (get d k)))
 (defn- array? [a]
   (or (vector? a)
-      #?(:clj  (instance? java.util.List a)
+      #?(:jank false
+         :clj  (instance? java.util.List a)
          :cljs (cljs.core/array? a)
          :lpy  (instance? python/list a)
          :default false)))

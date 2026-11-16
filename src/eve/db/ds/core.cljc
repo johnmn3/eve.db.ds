@@ -15,7 +15,8 @@
     ;; PORT DELTA (F-NBB-MACROS round): as in eve.db.ds.conn — no
     ;; :cljs type refers; the types are named qualified at their uses
     [eve.db.ds.db :as db]
-    #?(:clj [eve.db.ds.pprint])
+    ;; pprint.clj is JVM-only; jank reads :clj arms too, so skip it there
+    #?@(:jank [] :clj [[eve.db.ds.pprint]])
     [eve.db.ds.pull-api :as dp]
     [eve.db.ds.serialize :as ds]
     [eve.db.ds.storage :as storage]
