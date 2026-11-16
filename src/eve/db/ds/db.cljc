@@ -89,10 +89,12 @@
 ;;   becomes resident in an atom's domain by being swapped into that
 ;;   atom, and that swap's binding governs later construction.
 
+(declare tx-db?)
+
 (defn db-sio
   "The Eve domain sio of a DB value (the domain its indexes live in)."
   [db]
-  (eve-data/-eve-sio db))
+  (eve-data/-eve-sio (if (tx-db? db) (.-base db) db)))
 
 (defn call-in-domain
   "Call f with Eve's *domain-sio* bound to sio: an explicit Eve domain
@@ -1092,6 +1094,48 @@
   ;; (seq x) is the same datoms in the same order on every host.
   (seq x))
 
+(defn- search-in
+  "DB's -search over index views: slice-fn is (fn [index from to]) over
+   an index (set/slice for a DB's sets; the transaction overlay's merged
+   slice for a TxDB), all-fn the index's full ascending seq (identity
+   for a DB's sets)."
+  [db pattern eavt aevt avet slice-fn all-fn]
+    (let [[e a v tx] pattern
+          pred       (vpred v)
+          multival?  (contains? (-attrs-by db :db.cardinality/many) a)]
+      (search-result (case-tree [e a (some? v) tx]
+        [(slice-fn eavt (datom e a v tx) (datom e a v tx))                   ;; e a v tx
+         (slice-fn eavt (datom e a v tx0) (datom e a v txmax))               ;; e a v _
+         (->> (slice-fn eavt (datom e a nil tx0) (datom e a nil txmax))      ;; e a _ tx
+           (->Eduction (filter (fn [^Datom d] (= tx (datom-tx d))))))
+         (slice-fn eavt (datom e a nil tx0) (datom e a nil txmax))           ;; e a _ _
+         (->> (slice-fn eavt (datom e nil nil tx0) (datom e nil nil txmax))  ;; e _ v tx
+           (->Eduction (filter (fn [^Datom d] (and (pred (.-v d))
+                                                (= tx (datom-tx d)))))))
+         (->> (slice-fn eavt (datom e nil nil tx0) (datom e nil nil txmax))  ;; e _ v _
+           (->Eduction (filter (fn [^Datom d] (pred (.-v d))))))
+         (->> (slice-fn eavt (datom e nil nil tx0) (datom e nil nil txmax))  ;; e _ _ tx
+           (->Eduction (filter (fn [^Datom d] (= tx (datom-tx d))))))
+         (slice-fn eavt (datom e nil nil tx0) (datom e nil nil txmax))       ;; e _ _ _
+         (if (indexing? db a)                                                 ;; _ a v tx
+           (->> (slice-fn avet (datom e0 a v tx0) (datom emax a v txmax))      
+             (->Eduction (filter (fn [^Datom d] (= tx (datom-tx d))))))
+           (->> (slice-fn aevt (datom e0 a nil tx0) (datom emax a nil txmax))
+             (->Eduction (filter (fn [^Datom d] (and (pred (.-v d))
+                                                  (= tx (datom-tx d))))))))
+         (if (indexing? db a)                                                 ;; _ a v _
+           (slice-fn avet (datom e0 a v tx0) (datom emax a v txmax))
+           (->> (slice-fn aevt (datom e0 a nil tx0) (datom emax a nil txmax))
+             (->Eduction (filter (fn [^Datom d] (pred (.-v d)))))))
+         (->> (slice-fn aevt (datom e0 a nil tx0) (datom emax a nil txmax))  ;; _ a _ tx
+           (->Eduction (filter (fn [^Datom d] (= tx (datom-tx d))))))
+         (slice-fn aevt (datom e0 a nil tx0) (datom emax a nil txmax))       ;; _ a _ _
+         (filter (fn [^Datom d] (and (pred (.-v d))
+                                  (= tx (datom-tx d)))) (all-fn eavt))                 ;; _ _ v tx
+         (filter (fn [^Datom d] (pred (.-v d))) (all-fn eavt))                         ;; _ _ v 
+         (filter (fn [^Datom d] (= tx (datom-tx d))) (all-fn eavt))                    ;; _ _ _ tx
+         (all-fn eavt)]))))
+
 (deftype DB [schema eavt aevt avet max-eid max-tx rschema meta]
   Object
   (hashCode [db] (hash-db db))
@@ -1173,44 +1217,7 @@
     ;; Construction law: the slice-bound Datoms are constructed in the
     ;; DB's own domain (see the IIndexAccess note below).
     (call-in-db-domain db (fn []
-    (let [[e a v tx] pattern
-          eavt       (.-eavt db)
-          aevt       (.-aevt db)
-          avet       (.-avet db)
-          pred       (vpred v)
-          multival?  (contains? (-attrs-by db :db.cardinality/many) a)]
-      (search-result (case-tree [e a (some? v) tx]
-        [(set/slice eavt (datom e a v tx) (datom e a v tx))                   ;; e a v tx
-         (set/slice eavt (datom e a v tx0) (datom e a v txmax))               ;; e a v _
-         (->> (set/slice eavt (datom e a nil tx0) (datom e a nil txmax))      ;; e a _ tx
-           (->Eduction (filter (fn [^Datom d] (= tx (datom-tx d))))))
-         (set/slice eavt (datom e a nil tx0) (datom e a nil txmax))           ;; e a _ _
-         (->> (set/slice eavt (datom e nil nil tx0) (datom e nil nil txmax))  ;; e _ v tx
-           (->Eduction (filter (fn [^Datom d] (and (pred (.-v d))
-                                                (= tx (datom-tx d)))))))
-         (->> (set/slice eavt (datom e nil nil tx0) (datom e nil nil txmax))  ;; e _ v _
-           (->Eduction (filter (fn [^Datom d] (pred (.-v d))))))
-         (->> (set/slice eavt (datom e nil nil tx0) (datom e nil nil txmax))  ;; e _ _ tx
-           (->Eduction (filter (fn [^Datom d] (= tx (datom-tx d))))))
-         (set/slice eavt (datom e nil nil tx0) (datom e nil nil txmax))       ;; e _ _ _
-         (if (indexing? db a)                                                 ;; _ a v tx
-           (->> (set/slice avet (datom e0 a v tx0) (datom emax a v txmax))      
-             (->Eduction (filter (fn [^Datom d] (= tx (datom-tx d))))))
-           (->> (set/slice aevt (datom e0 a nil tx0) (datom emax a nil txmax))
-             (->Eduction (filter (fn [^Datom d] (and (pred (.-v d))
-                                                  (= tx (datom-tx d))))))))
-         (if (indexing? db a)                                                 ;; _ a v _
-           (set/slice avet (datom e0 a v tx0) (datom emax a v txmax))
-           (->> (set/slice aevt (datom e0 a nil tx0) (datom emax a nil txmax))
-             (->Eduction (filter (fn [^Datom d] (pred (.-v d)))))))
-         (->> (set/slice aevt (datom e0 a nil tx0) (datom emax a nil txmax))  ;; _ a _ tx
-           (->Eduction (filter (fn [^Datom d] (= tx (datom-tx d))))))
-         (set/slice aevt (datom e0 a nil tx0) (datom emax a nil txmax))       ;; _ a _ _
-         (filter (fn [^Datom d] (and (pred (.-v d))
-                                  (= tx (datom-tx d)))) eavt)                 ;; _ _ v tx
-         (filter (fn [^Datom d] (pred (.-v d))) eavt)                         ;; _ _ v 
-         (filter (fn [^Datom d] (= tx (datom-tx d))) eavt)                    ;; _ _ _ tx
-         eavt]))))))                                                           ;; _ _ _ _
+      (search-in db pattern (.-eavt db) (.-aevt db) (.-avet db) set/slice identity))))
 
   IIndexAccess
   ;; Construction law: the pattern/bound Datoms these methods build
@@ -1714,6 +1721,7 @@
   (call-in-db-ish-domain db (fn []
   (validate-indexed db index c0 c1 c2 c3)
   (let [set     (get db index)
+        tx?     (tx-db? db)
         ;; Index sets store a registered comparator name; name the
         ;; cmp-datoms-* fn directly. (first (set/slice set from to))
         ;; is the first element >= from, bounded by to — the same
@@ -1725,7 +1733,9 @@
                   :avet cmp-datoms-avet)
         from    (components->pattern db index c0 c1 c2 c3 e0 tx0)
         to      (components->pattern db index c0 c1 c2 c3 emax txmax)
-        datom   (first (set/slice set from to))]
+        datom   (if tx?
+                  (first (-datoms db index c0 c1 c2 c3))
+                  (first (set/slice set from to)))]
     (when (and (some? datom) (<= 0 (cmp to datom)))
       datom)))))
 
@@ -2064,11 +2074,318 @@
 ;; In context of `with-datom` we can use faster comparators which
 ;; do not check for nil (~10-15% performance gain in `transact`)
 
+;; ----------------------------------------------------------------------------
+;; Append-on-transact: the transaction-scoped, edit-tracked transient DB.
+;;
+;; (transient db) inside transact-tx-data-impl answers a TxDB: a HOST
+;; value that lives only for one transaction (never stored, never in an
+;; atom; the TxReport that holds it is a host record). Its index views
+;; are the transaction's base DB sets plus a host-side overlay per index
+;; — the datoms this transaction added and the base datoms it retracted
+;; — and every read (-search, -datoms, -seek-datoms, -rseek-datoms,
+;; -index-range, find-datom) answers the merged view, so mid-transaction
+;; reads see exactly what the persistent per-datom path showed. A datom
+;; costs an overlay insert instead of a slab path copy per index plus a
+;; DB block; persistent! writes the slab indexes once (a fresh sorted
+;; build when the transaction is large against its base, the per-datom
+;; conj/disj otherwise) and constructs one DB. No on-disk format change:
+;; the stored DB, BTSet, Leaf and Node are exactly what the persistent
+;; path stores. *tx-overlay* false restores the per-datom path.
+
+(def ^:dynamic *tx-overlay* true)
+
+(def ^:private ov-chunk-max 128)
+
+(defn- ov-lower-bound
+  "First index i in sorted vector v with (cmp (v i) x) >= 0."
+  ^long [v cmp x]
+  (loop [lo 0 hi (count v)]
+    (if (< lo hi)
+      (let [mid (quot (+ lo hi) 2)]
+        (if (neg? (cmp (nth v mid) x)) (recur (inc mid) hi) (recur lo mid)))
+      lo)))
+
+(defn- ov-chunk-of
+  "Index of the first chunk whose last element is >= x (the last chunk
+   when every chunk ends below x)."
+  ^long [chunks cmp x]
+  (loop [lo 0 hi (dec (count chunks))]
+    (if (< lo hi)
+      (let [mid (quot (+ lo hi) 2)]
+        (if (neg? (cmp (peek (nth chunks mid)) x)) (recur (inc mid) hi) (recur lo mid)))
+      lo)))
+
+(defn- ov-splice [v i j xs]
+  (into (into (vec (subvec v 0 i)) xs) (subvec v j)))
+
+(defn- ov-find
+  "[chunk-index index found?] of x in the overlay's chunks."
+  [chunks cmp x]
+  (if (zero? (count chunks))
+    nil
+    (let [ci (ov-chunk-of chunks cmp x)
+          c  (nth chunks ci)
+          i  (ov-lower-bound c cmp x)]
+      [ci i (and (< i (count c)) (zero? (cmp (nth c i) x)))])))
+
+(defn- ov-add!
+  "Insert x into overlay ov (a volatile of sorted chunks); false when an
+   equal element is already there."
+  [ov cmp x]
+  (let [chunks @ov]
+    (if (zero? (count chunks))
+      (do (vreset! ov [[x]]) true)
+      (let [[ci i found?] (ov-find chunks cmp x)]
+        (if found?
+          false
+          (let [c  (nth chunks ci)
+                c' (ov-splice c i i [x])
+                parts (if (> (count c') ov-chunk-max)
+                        (let [h (quot (count c') 2)]
+                          [(vec (subvec c' 0 h)) (vec (subvec c' h))])
+                        [c'])]
+            (vreset! ov (ov-splice chunks ci (inc ci) parts))
+            true))))))
+
+(defn- ov-remove!
+  "Remove the element equal to x from overlay ov; false when absent."
+  [ov cmp x]
+  (let [chunks @ov]
+    (if-some [[ci i found?] (ov-find chunks cmp x)]
+      (if found?
+        (let [c' (ov-splice (nth chunks ci) i (inc i) [])]
+          (vreset! ov (ov-splice chunks ci (inc ci) (if (zero? (count c')) [] [c'])))
+          true)
+        false)
+      false)))
+
+(defn- ov-contains? [ov cmp x]
+  (boolean (nth (ov-find @ov cmp x) 2 false)))
+
+(defn- ov-count [ov]
+  (reduce + 0 (map count @ov)))
+
+(defn- ov-range
+  "The overlay's elements e with from <= e <= to, ascending."
+  [ov cmp from to]
+  (let [chunks @ov
+        n (count chunks)]
+    (when (pos? n)
+      (let [ci (ov-chunk-of chunks cmp from)
+            i  (ov-lower-bound (nth chunks ci) cmp from)]
+        (letfn [(step [ci i]
+                  (lazy-seq
+                    (when (< ci n)
+                      (let [c (nth chunks ci)]
+                        (if (< i (count c))
+                          (let [x (nth c i)]
+                            (when (<= (cmp x to) 0)
+                              (cons x (step ci (inc i)))))
+                          (step (inc ci) 0))))))]
+          (step ci i))))))
+
+(defn- ov-seq [ov] (seq (apply concat @ov)))
+
+(defn- ov-merge
+  "Lazy merge of the base seq bs (minus the overlay rem) and the overlay
+   seq as, both ordered by (cmp a b) ascending; cmp reversed for a
+   descending walk."
+  [cmp bs as rem rem-cmp]
+  (lazy-seq
+    (let [bs (loop [bs (seq bs)]
+               (if (and bs (ov-contains? rem rem-cmp (first bs))) (recur (next bs)) bs))
+          as (seq as)]
+      (cond (nil? bs) as
+            ;; the rest of base still has rem datoms to drop
+            (nil? as) (cons (first bs) (remove #(ov-contains? rem rem-cmp %) (next bs)))
+            :else (let [b (first bs) a (first as)]
+                    (if (neg? (cmp a b))
+                      (cons a (ov-merge cmp bs (next as) rem rem-cmp))
+                      (cons b (ov-merge cmp (next bs) as rem rem-cmp))))))))
+
+(defn- index-cmp [k]
+  (case k
+    :eavt cmp-datoms-eavt
+    :aevt cmp-datoms-aevt
+    :avet cmp-datoms-avet))
+
+;; One index's transaction view: the base BTSet, the overlay of datoms
+;; this transaction added (add) and of base datoms it retracted (rem).
+(defrecord TxIndex [base add rem cmp])
+
+(defn- tx-index [base k]
+  (->TxIndex base (volatile! []) (volatile! []) (index-cmp k)))
+
+(defn- tx-index-dirty? [ix]
+  (or (pos? (count @(:add ix))) (pos? (count @(:rem ix)))))
+
+(defn- tx-slice [ix from to]
+  (let [{:keys [base add rem cmp]} ix]
+    (if (tx-index-dirty? ix)
+      (ov-merge cmp (set/slice base from to) (ov-range add cmp from to) rem cmp)
+      (set/slice base from to))))
+
+(defn- tx-rslice
+  "Descending from `from` down to `to`, as set/rslice."
+  [ix from to]
+  (let [{:keys [base add rem cmp]} ix]
+    (if (tx-index-dirty? ix)
+      (ov-merge (fn [a b] (cmp b a)) (set/rslice base from to)
+                (reverse (vec (ov-range add cmp to from))) rem cmp)
+      (set/rslice base from to))))
+
+(defn- tx-all [ix]
+  (let [{:keys [base add rem cmp]} ix]
+    (if (tx-index-dirty? ix)
+      (ov-merge cmp (seq base) (ov-seq add) rem cmp)
+      (seq base))))
+
+(defn- tx-index-add!
+  "conj: a datom already in the merged view is a no-op, as set/conj."
+  [ix d]
+  (let [{:keys [base add rem cmp]} ix]
+    (cond
+      (ov-remove! rem cmp d) nil                  ;; a retracted base datom, back
+      (contains? base d)     nil
+      :else                  (ov-add! add cmp d))))
+
+(defn- tx-index-remove!
+  "disj of a datom present in the merged view."
+  [ix d]
+  (let [{:keys [add rem cmp]} ix]
+    (when-not (ov-remove! add cmp d)
+      (ov-add! rem cmp d))))
+
+(defn- tx-index-persistent!
+  "The slab BTSet for this index after the transaction."
+  [ix quick-cmp]
+  (let [{:keys [base add rem]} ix]
+    (if-not (tx-index-dirty? ix)
+      base
+      (let [nb (count base)
+            nc (+ (ov-count add) (ov-count rem))]
+        (if (or (zero? nb) (<= nb (* 4 nc)))
+          ;; a fresh sorted build: every leaf and node written once
+          (set/from-sorted-array (.-comparator base)
+                                 (vec (tx-all ix)))
+          (as-> base s
+            (reduce (fn [s d] (set/disj s d quick-cmp)) s (ov-seq rem))
+            (reduce (fn [s d] (set/conj s d quick-cmp)) s (ov-seq add))))))))
+
+(declare tx-db-persistent!)
+
+(defn- tx-lookup [db k nf]
+  (case k
+    :schema  (.-schema ^DB (.-base db))
+    :rschema (.-rschema ^DB (.-base db))
+    :max-eid (:max-eid @(.-st db))
+    :max-tx  (:max-tx @(.-st db))
+    :eavt    (tx-all (:eavt @(.-st db)))
+    :aevt    (tx-all (:aevt @(.-st db)))
+    :avet    (tx-all (:avet @(.-st db)))
+    nf))
+
+(host-deftype TxDB [base st]
+  ILookup
+  (-lookup [db k] (tx-lookup db k nil))
+  (-lookup [db k nf] (tx-lookup db k nf))
+
+  IAssociative
+  (-contains-key? [_ k] (boolean (#{:schema :eavt :aevt :avet :max-eid :max-tx :rschema} k)))
+  (-assoc [db k v]
+    (case k
+      (:max-eid :max-tx) (do (vswap! (.-st db) assoc k v) db)
+      (throw (enc/unsupported (str "assoc " k " is not supported on a transaction's TxDB")))))
+
+  ICounted
+  (-count [db] (count (tx-all (:eavt @(.-st db)))))
+
+  IDB
+  (-schema [db] (-schema (.-base db)))
+  (-attrs-by [db property] (-attrs-by (.-base db) property))
+
+  ISearch
+  (-search [db pattern]
+    (call-in-db-domain (.-base db) (fn []
+      (let [m @(.-st db)]
+        (search-in db pattern (:eavt m) (:aevt m) (:avet m) tx-slice tx-all)))))
+
+  IIndexAccess
+  (-datoms [db index c0 c1 c2 c3]
+    (call-in-db-domain (.-base db) (fn []
+      (validate-indexed db index c0 c1 c2 c3)
+      (seq (tx-slice (get @(.-st db) index)
+             (components->pattern db index c0 c1 c2 c3 e0 tx0)
+             (components->pattern db index c0 c1 c2 c3 emax txmax))))))
+  (-seek-datoms [db index c0 c1 c2 c3]
+    (call-in-db-domain (.-base db) (fn []
+      (validate-indexed db index c0 c1 c2 c3)
+      (seq (tx-slice (get @(.-st db) index)
+             (components->pattern db index c0 c1 c2 c3 e0 tx0)
+             (datom emax nil nil txmax))))))
+  (-rseek-datoms [db index c0 c1 c2 c3]
+    (call-in-db-domain (.-base db) (fn []
+      (validate-indexed db index c0 c1 c2 c3)
+      (seq (tx-rslice (get @(.-st db) index)
+             (components->pattern db index c0 c1 c2 c3 emax txmax)
+             (datom e0 nil nil tx0))))))
+  (-index-range [db attr start end]
+    (call-in-db-domain (.-base db) (fn []
+      (validate-indexed db :avet attr nil nil nil)
+      (validate-attr attr (list '-index-range 'db attr start end))
+      (seq (tx-slice (:avet @(.-st db))
+             (resolve-datom db nil attr start nil e0 tx0)
+             (resolve-datom db nil attr end nil emax txmax)))))))
+
+(defn tx-db? [x] (instance? TxDB x))
+
+(defn tx-db
+  "The transaction-scoped transient view of DB db (see above)."
+  [^DB db]
+  (->TxDB db (volatile! {:max-eid (.-max-eid db) :max-tx (.-max-tx db)
+                         :eavt (tx-index (.-eavt db) :eavt)
+                         :aevt (tx-index (.-aevt db) :aevt)
+                         :avet (tx-index (.-avet db) :avet)})))
+
+(defn tx-db-persistent!
+  "The DB after the transaction: each index's slab set written once, one
+   DB constructed (in the base DB's domain unless one is bound)."
+  [txdb]
+  (let [^DB base (.-base txdb)
+        m @(.-st txdb)]
+    (call-in-db-domain base (fn []
+      (->DB (.-schema base)
+            (tx-index-persistent! (:eavt m) cmp-datoms-eavt-quick)
+            (tx-index-persistent! (:aevt m) cmp-datoms-aevt-quick)
+            (tx-index-persistent! (:avet m) cmp-datoms-avet-quick)
+            (:max-eid m) (:max-tx m) (.-rschema base) (.-meta base))))))
+
+(defn- tx-with-datom! [txdb ^Datom datom]
+  (validate-datom txdb datom)
+  (let [indexing? (indexing? txdb (.-a datom))
+        m @(.-st txdb)]
+    (if (datom-added datom)
+      (let [eid (.-e datom)]
+        (tx-index-add! (:eavt m) datom)
+        (tx-index-add! (:aevt m) datom)
+        (when indexing? (tx-index-add! (:avet m) datom))
+        (when (new-eid? txdb eid) (vswap! (.-st txdb) assoc :max-eid eid))
+        txdb)
+      (if-some [removing (fsearch txdb [(.-e datom) (.-a datom) (.-v datom)])]
+        (do (tx-index-remove! (:eavt m) removing)
+            (tx-index-remove! (:aevt m) removing)
+            (when indexing? (tx-index-remove! (:avet m) removing))
+            txdb)
+        txdb))))
+
 (defn with-datom [db ^Datom datom]
   ;; One DB per datom: the new indexes (and max-eid) are computed first and
   ;; the DB is built once, not once per (update db :eavt ..) step — each
   ;; step constructed (and slab-allocated) a whole DB block, three or four
   ;; per datom (~20% of a basilisp transaction, 2026-11-15). Same result.
+  (if (tx-db? db)
+    (tx-with-datom! db datom)
+  (do
   (validate-datom db datom)
   (let [indexing? (indexing? db (.-a datom))
         ^DB db db]
@@ -2086,7 +2403,7 @@
               (set/disj (.-aevt db) removing cmp-datoms-aevt-quick)
               (if indexing? (set/disj (.-avet db) removing cmp-datoms-avet-quick) (.-avet db))
               (.-max-eid db) (.-max-tx db) (.-rschema db) (.-meta db))
-        db))))
+        db))))))
 
 (defn- queue-tuple [queue tuple idx db e a v]
   (let [tuple-value  (or (get queue tuple)
@@ -2376,7 +2693,7 @@
 
 (defn+ transact-tx-data-impl [initial-report initial-es]
   (let [initial-report' (-> initial-report
-                          (update :db-after transient))
+                          (update :db-after #(if *tx-overlay* (tx-db %) (transient %))))
         has-tuples?     (not (empty? (-attrs-by (:db-after initial-report) :db/attrTuples)))
         initial-es'     (if has-tuples?
                           (interleave initial-es (repeat ::flush-tuples))
@@ -2393,7 +2710,7 @@
           (update :tempids #(util/removem auto-tempid? %))
           (update :tempids assoc :db/current-tx (current-tx report))
           (update :db-after update :max-tx inc)
-          (update :db-after persistent!))
+          (update :db-after #(if (tx-db? %) (tx-db-persistent! %) (persistent! %))))
 
         :let [[entity & entities] es]
 
