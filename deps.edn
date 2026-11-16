@@ -7,7 +7,7 @@
 ;; over the Eve backend).
 ;;
 ;; priv-pin branch (John, 2026-11-15 21:47/22:24 ET): eve/eve below is
-;; johnmn3/atom.broker lane-m/eve-0932-priv-fixes-one403 (4dd50f31ba), the private
+;; johnmn3/atom.broker lane-m/eve-0932-priv-fixes-one403 (0276d961e9), the private
 ;; release/eve-0.9.3.2 line (e403178508) plus the fixes proposed for it, so
 ;; the full suites run against it. main keeps the release pin until the
 ;; private release lands; re-pinning main is a separate, explicit step.
@@ -21,7 +21,7 @@
 {:paths ["src"]
  :deps {org.clojure/clojure {:mvn/version "1.12.0"}
         eve/eve {:git/url "https://github.com/johnmn3/atom.broker"
-                 :git/sha "4dd50f31baba4d2172485b0a160b7f6ef25fec8d"}
+                 :git/sha "0276d961e9b10db2eb924e0874dd3c45d29554ac"}
         me.tonsky/persistent-sorted-set {:local/root "lib"}
         extend-clj/extend-clj {:local/root "lib-ds-deps"}}
  :aliases
