@@ -2295,6 +2295,20 @@
 
 (declare tx-db-persistent!)
 
+(defn- tx-attrs-by
+  "base's attrs-by, read once per property per transaction into a host set:
+   the schema cannot change inside one, and every datom asks (ref?,
+   multival?, unique?, ...) — on basilisp each ask decoded rschema's slab map
+   and set (~37% of a 20-entity transaction, py-spy 2026-11-16). The value
+   is materialized as it is (a set of attrs; :db/attrTuples a map)."
+  [base st property]
+  (let [c (:attrs-by @st)]
+    (if (contains? c property)
+      (get c property)
+      (let [v (some-> (-attrs-by base property) eve-data/eve->clj)]
+        (vswap! st assoc :attrs-by (assoc c property v))
+        v))))
+
 (defn- tx-lookup [^DB base st k nf]
   (case k
     :schema  (.-schema base)
@@ -2316,7 +2330,7 @@
 
   IDB
   (-schema [db] (-schema (.-base db)))
-  (-attrs-by [db property] (-attrs-by (.-base db) property))
+  (-attrs-by [_ property] (tx-attrs-by base st property))
 
   ISearch
   (-search [db pattern]
