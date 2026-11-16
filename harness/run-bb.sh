@@ -17,7 +17,12 @@ if [ -z "$EVE_LOCAL" ] || [ ! -f "$EVE_LOCAL/hosts.edn" ]; then
   echo "run-bb.sh: set EVE_LOCAL or EVE_ROOT to the Eve tree (release pin checkout)" >&2
   exit 9
 fi
-BB="${BB:-$HOME/workspace/tools/bin/bb}"
+# BB names the babashka binary. It must be a dynamically linked build: a
+# static bb cannot dlopen libatomic.so.1 (babashka.ffi), and Eve's regions
+# then fall back to lock-only CAS with a warning. Default: the dynamic bb on
+# this box, else bb on PATH.
+DYN_BB=/workspace/coord-campaign/contract-test/bin/bb
+BB="${BB:-$( [ -x "$DYN_BB" ] && echo "$DYN_BB" || command -v bb )}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 REPO="$(cd "$HERE/.." && pwd)"
 # Eve's own bb classpath (src + hosts.edn :bb roots), not a copied root

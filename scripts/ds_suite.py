@@ -32,7 +32,9 @@ def command(host):
         return ["nbb", "--classpath", cp, "-m", "contract.ds-suite"]
     expression = '(require (quote eve.host-completion)) (require (quote contract.ds-suite)) (apply (resolve (quote contract.ds-suite/-main)) *command-line-args*)'
     if host == "bb":
-        return ["bb", "-cp", cp, "-e", expression, "--"]
+        # BB names the babashka binary (default: bb on PATH); a static bb
+        # cannot dlopen libatomic for Eve's native CAS.
+        return [os.environ.get("BB", "bb"), "-cp", cp, "-e", expression, "--"]
     # Basilisp run's trailing arguments bind *command-line-args* too.
     paths = [arg for p in reversed(cp.split(":")) for arg in ("-p", p)]
     return ["basilisp", "run", *paths, "-c", expression, "--"]
