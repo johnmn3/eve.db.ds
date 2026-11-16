@@ -18,6 +18,8 @@
             [eve.clock :as clock]
             [eve.core :as e]
             [eve.db.ds.core :as d]
+            [eve.db.ds.db :as db]
+            [clojure.string]
             ;; clojerl's swap! takes a clojerl.Atom only; eve.host's takes an Eve atom
             #?(:clje [eve.host :refer [swap!]])))
 
@@ -35,17 +37,28 @@
                           extra)))
   (flush))
 
+(def ^:private ^:dynamic *copy?*
+  ;; the "-copy" cases: reads deref a delivered copy of the DB (the
+  ;; pre-read-region path), for before/after
+  false)
+
+(defn- rd
+  "f's reads of the stored DB: in place inside a read region (d/read-in),
+   or, under *copy?*, through plain derefs (each a delivered copy)."
+  [f]
+  (if *copy?* (f) (d/read-in f)))
+
 (defn- case-one [dir reopen?]
   (let [t0 (now)
         a  (open dir)
         t1 (now)
-        _  (when (nil? @a)
+        _  (when (rd (fn [] (nil? @a)))
              (when reopen?
                (throw (ex-info "smoke reopen: no durable DB at dir (run `one` on it first)" {:dir dir})))
              (swap! a (fn [_] (d/empty-db))))
         _  (swap! a (fn [db] (d/db-with db [{:name "one" :age 1}])))
         t2 (now)
-        n  (e/count (d/datoms @a :eavt))
+        n  (rd (fn [] (e/count (d/datoms @a :eavt))))
         t3 (now)]
     (done (if reopen? :reopen :one) t0 {:open (- t1 t0) :tx (- t2 t1) :q (- t3 t2)} {:datoms n})))
 
@@ -63,16 +76,25 @@
         t2 (now)
         ;; a plain find (no aggregate: bb's aggregate path is a known
         ;; suite red, not a startup measure)
-        r  (e/count (d/q '[:find ?e :where [?e :age ?a] [(< ?a 30)]] @a))
+        r  (rd (fn [] (e/count (d/q '[:find ?e :where [?e :age ?a] [(< ?a 30)]] @a))))
         t3 (now)
-        p  (d/pull @a [:name :age] [:name "p7"])
+        p  (rd (fn [] (d/pull @a [:name :age] [:name "p7"])))
         t4 (now)]
     (done :small t0 {:open (- t1 t0) :tx (- t2 t1) :q (- t3 t2) :pull (- t4 t3)}
-          {:datoms (e/count (d/datoms @a :eavt)) :q r :pull-age (:age p)})))
+          {:datoms (rd (fn [] (e/count (d/datoms @a :eavt)))) :q r :pull-age (:age p)
+           :escapes (d/region-escape-counts)})))
 
 (defn -main [& [case-name dir]]
-  (case case-name
-    "one"    (case-one dir false)
-    "reopen" (case-one dir true)
-    "small"  (case-small dir)
-    (println (pr-str {:fatal (str "unknown smoke case " case-name)}))))
+  ;; suffixes for before/after: "-copy" reads through plain derefs (each a
+  ;; delivered copy) instead of a read region; "-notx" transacts without
+  ;; the TxDB append overlay (a slab DB per datom)
+  (let [copy? (some? (re-find #"-copy" case-name))
+        notx? (some? (re-find #"-notx" case-name))
+        base  (first (clojure.string/split case-name #"-"))]
+    (binding [*copy?* copy?
+              db/*tx-overlay* (not notx?)]
+      (case base
+        "one"    (case-one dir false)
+        "reopen" (case-one dir true)
+        "small"  (case-small dir)
+        (println (pr-str {:fatal (str "unknown smoke case " case-name)}))))))

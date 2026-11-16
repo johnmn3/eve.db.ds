@@ -24,10 +24,73 @@
     [eve.db.ds.impl.entity :as de]
     [eve.db.ds.util :as util]
     [eve.thread :as thread]
+    [eve.read-region :as rr]
+    [eve.deftype-proto.data :as eve-data]
     [me.tonsky.persistent-sorted-set :as set]))
 
 (def ^:const ^:no-doc tx0 
   db/tx0)
+
+; Read regions: read the stored DB in place
+
+(defonce ^:private region-escapes
+  ;; {:db n :datom n :entity n :other n}: values that left a read region
+  ;; slab-backed and were copied out (delivered) at its exit
+  (atom {:db 0 :datom 0 :entity 0}))
+
+(defn region-escape-counts
+  "How many DBs, datoms and entities left a read region (and were copied
+   out at its exit) since the last reset."
+  []
+  @region-escapes)
+
+(defn reset-region-escape-counts! []
+  (reset! region-escapes {:db 0 :datom 0 :entity 0}))
+
+(def ^:private deliver-flat
+  ;; eve.flat.freeze/deliver-flat, reached as eve.atom reaches it (never a
+  ;; static require); nil where the host has none (deref there answers the
+  ;; value as is, and so does a region)
+  (delay
+    #?(:cljs nil
+       :default (try @(requiring-resolve 'eve.flat.freeze/deliver-flat)
+                     (catch #?(:clj Throwable :lpy python/BaseException :default :default) _ nil)))))
+
+(defn- escape-copy [k v]
+  (swap! region-escapes update k inc)
+  (if-let [f @deliver-flat] (f v) v))
+
+(defn- eve-coll? [x]
+  (or (satisfies? eve-data/IPlain x) (satisfies? eve-data/IsEve x)))
+
+(defn- region-materialize
+  "A read region's result made safe to hold after the region's pins go:
+   a DB, datom or entity read in place is copied out (the same delivery a
+   plain deref makes) and counted; everything else as eve->clj."
+  [x]
+  (cond
+    (nil? x) nil
+    (or (string? x) (number? x) (keyword? x) (boolean? x)) x
+    (db/db? x)    (if (identical? x (db/unfiltered-db x)) (escape-copy :db x) x)
+    (db/datom? x) (escape-copy :datom x)
+    (de/entity? x) (do (swap! region-escapes update :entity inc)
+                       (de/entity (escape-copy :db (.-db x))
+                                  (.-eid x)))
+    (map? x)    (if (eve-coll? x) (eve-data/eve->clj x) (into {} (map (fn [[k v]] [(region-materialize k) (region-materialize v)])) x))
+    (set? x)    (if (eve-coll? x) (eve-data/eve->clj x) (into #{} (map region-materialize) x))
+    (vector? x) (if (eve-coll? x) (eve-data/eve->clj x) (mapv region-materialize x))
+    (sequential? x) (doall (map region-materialize x))
+    :else (eve-data/eve->clj x)))
+
+(defn read-in
+  "(f) as an Eve read region (eve.alpha/$): every Eve atom deref'd in it
+   answers the stored DB in place — slab-backed, pinned until the region
+   exits, no copy — so q, pull, entity, datoms and index seeks over @a read
+   the stored indexes directly. The result is materialized before the
+   pins go; a DB, datom or entity that escapes is copied out then
+   (region-escape-counts). A region inside another joins it."
+  [f]
+  (rr/run f region-materialize))
 
 
 ; Entities
