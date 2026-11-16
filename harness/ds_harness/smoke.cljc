@@ -90,7 +90,7 @@
   ;; the TxDB append overlay (a slab DB per datom)
   (let [copy? (clojure.string/includes? case-name "-copy")
         notx? (clojure.string/includes? case-name "-notx")
-        base  (first (clojure.string/split case-name #"-"))]
+        base  (if-some [i (clojure.string/index-of case-name "-")] (subs case-name 0 i) case-name)]
     (binding [*copy?* copy?
               db/*tx-overlay* (not notx?)]
       (case base
