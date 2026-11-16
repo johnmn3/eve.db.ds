@@ -509,9 +509,15 @@
   (some #(contains? (:attrs rel) %) attrs))
 
 (defn- rel-prod-by-attrs [context attrs]
-  (let [rels       (filter #(rel-contains-attrs? % attrs) (:rels context))
-        production (reduce prod-rel rels)]
-    [(update context :rels #(remove (set rels) %)) production]))
+  ;; PORT: the consumed rels leave the context by identity, not through a
+  ;; hash set: (set rels) hashed every Relation, i.e. every tuple of every
+  ;; rel (on bb an Eve-typed tuple has no iterator for that hash: "Method
+  ;; not implemented: iterator"), to find objects taken from this very
+  ;; vector. Same result, no hashing.
+  (let [rels       (vec (filter #(rel-contains-attrs? % attrs) (:rels context)))
+        production (reduce prod-rel rels)
+        consumed?  (fn [r] (some #(identical? r %) rels))]
+    [(update context :rels #(remove consumed? %)) production]))
 
 (defn -call-fn [context rel f args]
   ;; PORT (PORTING-DS.md): static-args/tuples-args are da arrays — Eve
