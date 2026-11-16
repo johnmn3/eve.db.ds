@@ -2882,7 +2882,7 @@
               (not (::internal (meta entity)))
               (composite-tuple? db a))
             ;; allow transacting in tuples if they fully match already existing values
-            (let [tuple-attrs (get-in db [:schema a :db/tupleAttrs])]
+            (let [tuple-attrs (get-in (-schema db) [a :db/tupleAttrs])]
               (if (and
                     (= (count tuple-attrs) (count v))
                     (every? some? v)
