@@ -1,0 +1,9 @@
+;; The shootout's compiled `cljs` member (harness/run-cljs.sh builds it;
+;; the classpath is composed by that script from Eve's :node-test alias
+;; plus this repo, so no :deps / :source-paths here).
+{:builds
+ {:ds-cljs
+  {:target :node-script
+   :main ds-harness.cljs-main/main
+   :output-to "out/ds-cljs.js"
+   :compiler-options {:optimizations :simple}}}}

@@ -5,3 +5,4 @@
 .lpycache/
 perf-results/
 .jvm-aot/
+.cljs-build/

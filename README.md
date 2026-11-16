@@ -85,8 +85,8 @@ smoothed over.
   fresh-process readback against the same expected values.
 - **Shootout** — `scripts/perf_shootout.sh` over `harness/shootout.sh`:
   cold process, one datum on a disk-backed DB, cap 10,000 ms, median of
-  5, shipped form per host. Every member runs (jvm bb nbb lpy jolt jank
-  clje lg glj); a missing toolchain or a failing run prints a SKIP/FAIL
+  5, shipped form per host. Every member runs (jvm bb nbb cljs lpy jolt
+  jank clje lg glj); a missing toolchain or a failing run prints a SKIP/FAIL
   row with its reason.
 
   ```bash
@@ -104,7 +104,12 @@ smoothed over.
   runners keep (all keyed by the classpath's sources, so an edit means a
   fresh compile): `run-jvm.sh` AOT classes of Eve + the vendored libs
   (`JVM_AOT=0` to disable), `run-lpy.sh` basilisp's namespace cache
-  (`LPY_CACHE=0`), `run-nbb.sh` the Eve tree's own nbb (no npx).
+  (`LPY_CACHE=0`), `run-nbb.sh` the Eve tree's own nbb (no npx),
+  `run-cljs.sh` a shadow-cljs `:node-script` build of the harness
+  (`harness/cljs/shadow-cljs.edn`, in `.cljs-build/`) — the `cljs` member
+  is that compiled build on node, kept separate from the interpreted `nbb`
+  row. bb has no persisted analysis cache (an uberjar measured within
+  noise), so its ~0.8 s namespace load is SCI's, from source.
 - **Perf** — `harness/ds_harness/perf.cljc`: people-1k build with all
   seven build keys asserted exact against in-process ground truth,
   then find-datom / pull / datoms-sequence / transact timings.

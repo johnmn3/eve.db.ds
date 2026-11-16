@@ -22,12 +22,15 @@
 #                         plus a host-start column (the bare host, no Eve),
 #                         a warm-up column (one untimed run that fills the
 #                         host's durable code caches — JVM AOT, basilisp
-#                         .lpyc — once per source tree)
+#                         .lpyc, the cljs build — once per source tree)
 #                         and the in-process :main ms, so wall − main =
 #                         process start + namespace load.
 #
-# Members (HOSTS, default: every member): jvm bb nbb lpy jolt jank clje
-# lg glj. A member whose toolchain is missing, or whose run fails,
+# Members (HOSTS, default: every member): jvm bb nbb cljs lpy jolt jank
+# clje lg glj. `cljs` is Eve's :cljs host — the same harness compiled
+# ahead of time by shadow-cljs (harness/run-cljs.sh, a durable build per
+# source tree, built in the warm-up) and run on node; `nbb` stays the
+# SCI-interpreted row, so the two numbers are not conflated. A member whose toolchain is missing, or whose run fails,
 # prints a clear SKIP/FAIL row — never a silent hole.
 #
 # Env (set at filing time):
@@ -46,7 +49,7 @@ OUT="${OUT:-${DS_DIR:-.}/perf-results}"
 mkdir -p "$OUT"
 CAP_MS=10000
 LOAD1=$(cut -d' ' -f1 /proc/loadavg)
-ALL_HOSTS="jvm bb nbb lpy jolt jank clje lg glj"
+ALL_HOSTS="jvm bb nbb cljs lpy jolt jank clje lg glj"
 echo "PERF-SHOOTOUT mode=$([ "$SMOKE" = 1 ] && echo smoke || echo full) load1=$LOAD1 out=$OUT"
 
 verdict () { # median-ms-or-empty -> prints ms or 10s+
@@ -68,7 +71,7 @@ H="$DS_DIR/harness"
 
 bin_of () { # host -> the binary it needs (for the SKIP check)
   case "$1" in
-    jvm) echo clojure ;; bb) echo "$BB" ;; nbb) echo "${NBB:-npx}" ;;
+    jvm) echo clojure ;; bb) echo "$BB" ;; nbb) echo "${NBB:-npx}" ;; cljs) echo node ;;
     lpy) echo "${BASILISK:-basilisp}" ;; jolt) echo "${JOLT:-jolt}" ;;
     jank) echo "${JANK:-jank}" ;; clje) echo "${CLOJERL:-clojerl}" ;;
     lg) echo "${LG:-$EVE_DIR/target/lg-eve/lg-eve}" ;;
@@ -83,6 +86,7 @@ runner () { # host mode... -> the command (the domain prefix is appended by shoo
          else echo "bash $H/run-jvm.sh ds-harness.smoke ${*:2}"; fi ;;
     bb)  echo "bash $H/run-bb.sh $*" ;;
     nbb) echo "bash $H/run-nbb.sh $*" ;;
+    cljs) echo "bash $H/run-cljs.sh $*" ;;
     lpy) echo "bash $H/run-lpy.sh $*" ;;
     *)   echo "bash $H/run-host.sh $h $*" ;;
   esac
@@ -92,6 +96,7 @@ host_start () { # host -> a command that starts the bare host (no Eve), or empty
   case "$1" in
     jvm) echo "java -version" ;; bb) echo "$BB -e nil" ;;
     nbb) if [ -x "$EVE_DIR/node_modules/.bin/nbb" ]; then echo "$EVE_DIR/node_modules/.bin/nbb -e nil"; else echo "$(bin_of nbb) -y nbb@1.6.214 -e nil"; fi ;;
+    cljs) echo "node -e 0" ;;
     lpy) echo "$(bin_of lpy) run -c nil" ;; jolt) echo "$(bin_of jolt) -e nil" ;;
     *) echo "" ;;
   esac
@@ -133,7 +138,13 @@ for h in ${HOSTS:-$ALL_HOSTS}; do
     row="$row $(( ($(date +%s%N)-ws)/1000000 )) |"
     if ! grep -q ONE-DONE "$W0.log"; then
       # the warm-up already shows the member's failure: report it, skip its cases
-      why=$(sed 's/\x1b\[[0-9;]*m//g' "$W0.log" | grep -v -i -e reflection -e '^warning' | grep -i -m1 -e 'caused by' -e 'not found' -e 'could not' -e 'unable to' -e error -e exception | sed 's/^ *//; s/|/\//g' | cut -c1-160)
+      # the most specific line wins: a compiler's file:line message, then the usual causes
+      clean=$(sed 's/\x1b\[[0-9;]*m//g' "$W0.log" | grep -v -i -e reflection -e '^warning' -e '^-* *error -*$')
+      why=""
+      for pat in '\[line [0-9]*, col [0-9]*\]' 'caused by' 'not found' 'could not' 'unable to' error exception; do
+        why=$(printf '%s\n' "$clean" | grep -i -m1 -e "$pat") && break
+      done
+      why=$(printf '%s' "$why" | sed 's/^ *//; s/|/\//g' | cut -c1-160)
       row="$row FAIL: $why |"; echo "$row" >> "$T"; echo "HOST-DONE host=$h FAIL warm-up: $why"; continue
     fi
   fi
