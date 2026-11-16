@@ -628,6 +628,27 @@
 
 (defn datom? [x] (instance? Datom x))
 
+;; A search bound: the from/to datom of an index slice, never stored, never
+;; returned. On basilisp a Datom is slab-allocated and its fields decode
+;; from the slab on every comparator read: a transaction's search bounds
+;; were ~57% of a 20-entity transaction (py-spy, 2026-11-16). There the
+;; bound is a host value with the same fields (the comparators read
+;; .-e/.-a/.-v and datom-tx); every other host keeps the Datom (the JVM's
+;; comparators are hinted to Datom).
+#?(:lpy (host-deftype ProbeDatom [e a v tx idx]
+          IDatom
+          (datom-tx [_] (if (pos? tx) tx (- tx)))
+          (datom-added [_] (pos? tx))
+          (datom-get-idx [_] idx)
+          (datom-set-idx [_ _value]
+            (throw (ex-info "a search bound has no idx" {})))))
+
+(defn- probe-datom
+  "A slice bound with these components (see ProbeDatom)."
+  [e a v tx]
+  #?(:lpy (->ProbeDatom e a v tx 0)
+     :default (datom e a v tx)))
+
 (defn+ ^:private hash-datom [^Datom d]
   (-> (hash (.-e d))
     (combine-hashes (hash (.-a d)))
@@ -1104,32 +1125,32 @@
           pred       (vpred v)
           multival?  (contains? (-attrs-by db :db.cardinality/many) a)]
       (search-result (case-tree [e a (some? v) tx]
-        [(slice-fn eavt (datom e a v tx) (datom e a v tx))                   ;; e a v tx
-         (slice-fn eavt (datom e a v tx0) (datom e a v txmax))               ;; e a v _
-         (->> (slice-fn eavt (datom e a nil tx0) (datom e a nil txmax))      ;; e a _ tx
+        [(slice-fn eavt (probe-datom e a v tx) (probe-datom e a v tx))                   ;; e a v tx
+         (slice-fn eavt (probe-datom e a v tx0) (probe-datom e a v txmax))               ;; e a v _
+         (->> (slice-fn eavt (probe-datom e a nil tx0) (probe-datom e a nil txmax))      ;; e a _ tx
            (->Eduction (filter (fn [^Datom d] (= tx (datom-tx d))))))
-         (slice-fn eavt (datom e a nil tx0) (datom e a nil txmax))           ;; e a _ _
-         (->> (slice-fn eavt (datom e nil nil tx0) (datom e nil nil txmax))  ;; e _ v tx
+         (slice-fn eavt (probe-datom e a nil tx0) (probe-datom e a nil txmax))           ;; e a _ _
+         (->> (slice-fn eavt (probe-datom e nil nil tx0) (probe-datom e nil nil txmax))  ;; e _ v tx
            (->Eduction (filter (fn [^Datom d] (and (pred (.-v d))
                                                 (= tx (datom-tx d)))))))
-         (->> (slice-fn eavt (datom e nil nil tx0) (datom e nil nil txmax))  ;; e _ v _
+         (->> (slice-fn eavt (probe-datom e nil nil tx0) (probe-datom e nil nil txmax))  ;; e _ v _
            (->Eduction (filter (fn [^Datom d] (pred (.-v d))))))
-         (->> (slice-fn eavt (datom e nil nil tx0) (datom e nil nil txmax))  ;; e _ _ tx
+         (->> (slice-fn eavt (probe-datom e nil nil tx0) (probe-datom e nil nil txmax))  ;; e _ _ tx
            (->Eduction (filter (fn [^Datom d] (= tx (datom-tx d))))))
-         (slice-fn eavt (datom e nil nil tx0) (datom e nil nil txmax))       ;; e _ _ _
+         (slice-fn eavt (probe-datom e nil nil tx0) (probe-datom e nil nil txmax))       ;; e _ _ _
          (if (indexing? db a)                                                 ;; _ a v tx
-           (->> (slice-fn avet (datom e0 a v tx0) (datom emax a v txmax))      
+           (->> (slice-fn avet (probe-datom e0 a v tx0) (probe-datom emax a v txmax))      
              (->Eduction (filter (fn [^Datom d] (= tx (datom-tx d))))))
-           (->> (slice-fn aevt (datom e0 a nil tx0) (datom emax a nil txmax))
+           (->> (slice-fn aevt (probe-datom e0 a nil tx0) (probe-datom emax a nil txmax))
              (->Eduction (filter (fn [^Datom d] (and (pred (.-v d))
                                                   (= tx (datom-tx d))))))))
          (if (indexing? db a)                                                 ;; _ a v _
-           (slice-fn avet (datom e0 a v tx0) (datom emax a v txmax))
-           (->> (slice-fn aevt (datom e0 a nil tx0) (datom emax a nil txmax))
+           (slice-fn avet (probe-datom e0 a v tx0) (probe-datom emax a v txmax))
+           (->> (slice-fn aevt (probe-datom e0 a nil tx0) (probe-datom emax a nil txmax))
              (->Eduction (filter (fn [^Datom d] (pred (.-v d)))))))
-         (->> (slice-fn aevt (datom e0 a nil tx0) (datom emax a nil txmax))  ;; _ a _ tx
+         (->> (slice-fn aevt (probe-datom e0 a nil tx0) (probe-datom emax a nil txmax))  ;; _ a _ tx
            (->Eduction (filter (fn [^Datom d] (= tx (datom-tx d))))))
-         (slice-fn aevt (datom e0 a nil tx0) (datom emax a nil txmax))       ;; _ a _ _
+         (slice-fn aevt (probe-datom e0 a nil tx0) (probe-datom emax a nil txmax))       ;; _ a _ _
          (filter (fn [^Datom d] (and (pred (.-v d))
                                   (= tx (datom-tx d)))) (all-fn eavt))                 ;; _ _ v tx
          (filter (fn [^Datom d] (pred (.-v d))) (all-fn eavt))                         ;; _ _ v 
@@ -1242,14 +1263,14 @@
     (validate-indexed db index c0 c1 c2 c3)
     (set/slice (get db index)
       (components->pattern db index c0 c1 c2 c3 e0 tx0)
-      (datom emax nil nil txmax)))))
+      (probe-datom emax nil nil txmax)))))
 
   (-rseek-datoms [db index c0 c1 c2 c3]
     (call-in-db-domain db (fn []
     (validate-indexed db index c0 c1 c2 c3)
     (set/rslice (get db index)
       (components->pattern db index c0 c1 c2 c3 emax txmax)
-      (datom e0 nil nil tx0)))))
+      (probe-datom e0 nil nil tx0)))))
 
   (-index-range [db attr start end]
     (call-in-db-domain db (fn []
@@ -1562,7 +1583,7 @@
         max-eid (some->
                   (set/rslice eavt
                     (datom (dec tx0) nil nil txmax)
-                    (datom e0 nil nil tx0))
+                    (probe-datom e0 nil nil tx0))
                   first :e)
         res     (max e0 max-eid)
         max-ref (fn [attr]
@@ -1699,7 +1720,7 @@
 (defn+ resolve-datom [db e a v t default-e default-tx]
   (when (some? a)
     (validate-attr a (list 'resolve-datom 'db e a v t)))
-  (datom
+  (probe-datom
     (if (some? e) (entid-strict db e) default-e)
     a
     (cond
@@ -2315,13 +2336,13 @@
       (validate-indexed db index c0 c1 c2 c3)
       (seq (tx-slice (get @(.-st db) index)
              (components->pattern db index c0 c1 c2 c3 e0 tx0)
-             (datom emax nil nil txmax))))))
+             (probe-datom emax nil nil txmax))))))
   (-rseek-datoms [db index c0 c1 c2 c3]
     (call-in-db-domain (.-base db) (fn []
       (validate-indexed db index c0 c1 c2 c3)
       (seq (tx-rslice (get @(.-st db) index)
              (components->pattern db index c0 c1 c2 c3 emax txmax)
-             (datom e0 nil nil tx0))))))
+             (probe-datom e0 nil nil tx0))))))
   (-index-range [db attr start end]
     (call-in-db-domain (.-base db) (fn []
       (validate-indexed db :avet attr nil nil nil)
