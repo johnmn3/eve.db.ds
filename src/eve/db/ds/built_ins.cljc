@@ -126,7 +126,9 @@
 
 (defn- sqrt [x]
   ;; eve.math/sqrt: Eve's portable, correctly rounded binary64 sqrt.
-  (math/sqrt (double x)))
+  ;; eve.math/sqrt takes any number (it applies double itself; clojerl has
+  ;; no clojure.core/double)
+  (math/sqrt x))
 
 (defn- aggregate-stddev [coll]
   (sqrt (aggregate-variance coll)))

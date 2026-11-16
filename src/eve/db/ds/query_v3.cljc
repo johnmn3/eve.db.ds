@@ -17,7 +17,8 @@
     ;; interned the class, not the var). Type tokens below use
     ;; (type (dp/->Type ...)); factories stay qualified.
     [eve.db.ds.parser :as dp]
-    [eve.db.ds.util :as util]))
+    [eve.db.ds.util :as util]
+    [eve.host :as eh]))
 
 ;; Type tokens for parser AST types. eve.deftype interned the class
 ;; but not a var at eve.db.ds.parser/BindScalar, so instance? cannot
@@ -819,7 +820,10 @@
 
 ;; Query
 
-(def query-cache (db/call-in-parse-domain (fn [] (lru/cache lru-cache-size))))
+;; eve.host/defdelay, not (def .. (delay ..)) nor a value def: clojerl compiles a
+;; def's init into its module as a literal, and an Eve value or a delay is not
+;; one. defdelay is the seats' arrangement for that (made on first use).
+(eh/defdelay query-cache (db/call-in-parse-domain (fn [] (lru/cache lru-cache-size))))
 
 (declare q-impl)
 
@@ -833,7 +837,7 @@
       (db/call-in-parse-domain (fn [] (apply q-impl q inputs))))))
 
 (defn- q-impl [q & inputs]
-  (let [parsed-q (lru/-get query-cache q #(dp/parse-query q))
+  (let [parsed-q (lru/-get @query-cache q #(dp/parse-query q))
         context  {:rels    []
                   :consts  {}
                   :sources {}

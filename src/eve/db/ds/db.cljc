@@ -7,6 +7,7 @@
     [clojure.data]
     #?(:clj [eve.db.ds.inline :refer [update]])
     ;; PORT DELTA (F-CLJE-HOST-REFERS): see eve.db.ds.util
+    [eve.host :as eh]
     #?(:clje [eve.host :refer [transient persistent! conj! dissoc! long volatile!]])
     [eve.db.ds.lru :as lru]
     [eve.db.ds.util :as util]
@@ -144,8 +145,11 @@
     (f)
     (call-in-process-domain f)))
 
-(defonce ^:private parse-domain-sio
-  (delay (eve-alloc/heap-domain-sio! {})))
+;; eve.host/defdelay, not (def .. (delay ..)) nor a value def: clojerl compiles a
+;; def's init into its module as a literal, and an Eve value or a delay is not
+;; one. defdelay is the seats' arrangement for that (made on first use).
+(eh/defdelay ^:private parse-domain-sio
+  (eve-alloc/heap-domain-sio! {}))
 
 (defn call-in-parse-domain
   "Call f in the parse domain (see the construction-law note above)."
@@ -1022,8 +1026,9 @@
 ;; pull_api reads them from here), and hash-db computes on demand with
 ;; the same combine-hashes formula vanilla cached. FilteredDB stays a
 ;; host record: it is an ephemeral query view holding a host fn.
-(def pull-patterns-cache (call-in-parse-domain (fn [] (lru/cache 100))))
-(def pull-attrs-cache (call-in-parse-domain (fn [] (lru/cache 100))))
+;; defdelay: see parse-domain-sio (clojerl def literals)
+(eh/defdelay pull-patterns-cache (call-in-parse-domain (fn [] (lru/cache 100))))
+(eh/defdelay pull-attrs-cache (call-in-parse-domain (fn [] (lru/cache 100))))
 
 (defn- db-lookup [db k nf]
   (case k

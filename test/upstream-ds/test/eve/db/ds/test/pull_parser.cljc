@@ -43,7 +43,7 @@
       ;; :xform-id, both nil for a plain attr. A :xform arg here is
       ;; translated exactly as the parser translates it.
       {:name name :as name}
-      (when (db/ref? @*db name) {:pattern dpp/default-pattern-ref})
+      (when (db/ref? @*db name) {:pattern @dpp/default-pattern-ref})
       (if-some [x (:xform args)]
         (cond
           (symbol? x) {:xform-spec (str x)}
@@ -69,7 +69,7 @@
     ; refs
     [:ref]        (pattern :attrs [(attr :ref, :ref? true)])
     [:_ref]       (pattern :reverse-attrs [(attr :ref, :ref? true, :as :_ref, :reverse? true)])
-    [:component]  (pattern :attrs [(attr :component, :ref? true, :component? true, :pattern dpp/default-pattern-component)])
+    [:component]  (pattern :attrs [(attr :component, :ref? true, :component? true, :pattern @dpp/default-pattern-component)])
     [:_component] (pattern :reverse-attrs [(attr :component, :ref? true, :component? true, :as :_component, :reverse? true)])
 
     ; reverse

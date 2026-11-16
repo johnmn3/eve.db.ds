@@ -189,7 +189,7 @@
       ;; wildcard
       (and (:wildcard? pattern) (some? datom) attr-ahead?)
       (let [datom-attr (lru/-get
-                         db/pull-attrs-cache
+                         @db/pull-attrs-cache
                          (.-a datom)
                          ;; parse work: construct in the parse domain like
                          ;; every other parse-pattern output — the attr
@@ -384,7 +384,7 @@
 (defn parse-opts
   ([db pattern] (parse-opts db pattern nil))
   ([db pattern {:keys [visitor]}]
-   {:pattern (lru/-get db/pull-patterns-cache pattern #(dpp/parse-pattern db pattern))
+   {:pattern (lru/-get @db/pull-patterns-cache pattern #(dpp/parse-pattern db pattern))
     :context (->Context db visitor)}))
 
 (defn pull

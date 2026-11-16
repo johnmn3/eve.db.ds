@@ -45,8 +45,10 @@
       (when-not (== (if (pos? sign) x (- x)) 1.7976931348623157E308)
         x))))
 
-(def ^:private pos-inf (ieee-overflow 1.0))
-(def ^:private neg-inf (ieee-overflow -1.0))
+;; clojerl: the BEAM raises badarith on a float overflow (it does not
+;; saturate), so there are no infinities to make there.
+(def ^:private pos-inf #?(:clje nil :default (ieee-overflow 1.0)))
+(def ^:private neg-inf #?(:clje nil :default (ieee-overflow -1.0)))
 ;; jank: any arithmetic whose result is NaN ends the process (SIGSEGV:
 ;; measured, (- inf inf) and (* inf 0.0) on jank), so no NaN there, as on BEAM.
 (def ^:private nan-val
@@ -212,13 +214,14 @@
       "branching-factor" (:branching-factor settings)
       "ref-type"         (name (:ref-type settings)))))
 
-(def ^:private serializable-lock (eh/token))
+;; defdelay: clojerl def literals (see eve.db.ds.db parse-domain-sio)
+(eh/defdelay ^:private serializable-lock (eh/token))
 
 (defn serializable
   ;; Construction law: the frozen form's Eve arrays are constructed in
   ;; the serialized DB's own domain.
-  ([db] (eh/locking serializable-lock (db/call-in-db-domain db (fn [] (serializable-impl db {})))))
-  ([db opts] (eh/locking serializable-lock (db/call-in-db-domain db (fn [] (serializable-impl db opts))))))
+  ([db] (eh/locking @serializable-lock (db/call-in-db-domain db (fn [] (serializable-impl db {})))))
+  ([db opts] (eh/locking @serializable-lock (db/call-in-db-domain db (fn [] (serializable-impl db opts))))))
 
 (declare from-serializable-impl)
 

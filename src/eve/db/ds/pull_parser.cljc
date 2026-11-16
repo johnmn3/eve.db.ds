@@ -9,6 +9,7 @@
     [eve.db.ds.util :as util]
     ;; PORT DELTA (F-CLJE-HOST-REFERS): util/if+ expansions emit
     ;; (volatile! nil) into the using ns; see eve.db.ds.util
+    [eve.host :as eh]
     #?(:clje [eve.host :refer [volatile!]])))
 
 ;; PullAttr/PullPattern are Eve's slab eve.record types (the #56 record
@@ -69,17 +70,20 @@
 
 ;; Construction law: the default patterns are parse data, constructed
 ;; in the explicit parse domain (eve.db.ds.db).
-(def default-db-id-attr
+;; eve.host/defdelay, not (def .. (delay ..)) nor a value def: clojerl compiles a
+;; def's init into its module as a literal, and an Eve value or a delay is not
+;; one. defdelay is the seats' arrangement for that (made on first use).
+(eh/defdelay default-db-id-attr
   (db/call-in-parse-domain
     (fn [] (map->PullAttr {:name :db/id :as :db/id}))))
 
-(def default-pattern-ref
+(eh/defdelay default-pattern-ref
   (db/call-in-parse-domain
-    (fn [] (map->PullPattern {:attrs (list default-db-id-attr)}))))
+    (fn [] (map->PullPattern {:attrs (list @default-db-id-attr)}))))
 
-(def default-pattern-component
+(eh/defdelay default-pattern-component
   (db/call-in-parse-domain
-    (fn [] (e/assoc default-pattern-ref :wildcard? true))))
+    (fn [] (e/assoc @default-pattern-ref :wildcard? true))))
 
 (declare parse-pattern parse-pattern-impl parse-attr-spec)
 
@@ -114,9 +118,9 @@
        :component? (when component? true)
        :pattern    (cond
                      (not ref?) nil
-                     reverse?   default-pattern-ref
-                     component? default-pattern-component
-                     :else      default-pattern-ref)
+                     reverse?   @default-pattern-ref
+                     component? @default-pattern-component
+                     :else      @default-pattern-ref)
        :reverse?   (when reverse?
                      (check ref? "reverse attribute having :db.type/ref" attr-spec)
                      true)})))
@@ -259,7 +263,7 @@
             attrs       (if (and
                               (:wildcard? result)
                               (not (some db-id? (:attrs result))))
-                          (conj attrs default-db-id-attr)
+                          (conj attrs @default-db-id-attr)
                           attrs)
             attrs       (list* (sort-by key-fn attrs))
             datom-attrs (remove db-id? attrs)

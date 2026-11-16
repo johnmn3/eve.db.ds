@@ -21,6 +21,7 @@
     [eve.db.ds.pull-api :as dpa]
     [eve.db.ds.util :as util]
     ;; PORT DELTA (F-CLJE-HOST-REFERS): see eve.db.ds.util
+    [eve.host :as eh]
     #?(:clje [eve.host :refer [transient persistent! conj! assoc! volatile! to-array into-array long]]))
   #?(:clj
      (:import
@@ -35,8 +36,14 @@
 
 ;; ----------------------------------------------------------------------------
 
-(def ^:dynamic *query-cache*
+;; eve.host/defdelay, not (def .. (delay ..)) nor a value def: clojerl compiles a
+;; def's init into its module as a literal, and an Eve value or a delay is not
+;; one. defdelay is the seats' arrangement for that (made on first use).
+;; *query-cache* stays a rebindable dynamic var; nil means the default cache.
+(eh/defdelay ^:private default-query-cache
   (db/call-in-parse-domain (fn [] (lru/cache 100))))
+
+(def ^:dynamic *query-cache* nil)
 
 (declare -collect collect -resolve-clause resolve-clause)
 
@@ -1031,7 +1038,7 @@
       (db/call-in-parse-domain (fn [] (apply q-impl q inputs))))))
 
 (defn- q-impl [q & inputs]
-  (let [parsed-q      (lru/-get *query-cache* q #(dp/parse-query q))
+  (let [parsed-q      (lru/-get (or *query-cache* @default-query-cache) q #(dp/parse-query q))
         find          (:qfind parsed-q)
         find-elements (dp/find-elements find)
         find-vars     (dp/find-vars find)

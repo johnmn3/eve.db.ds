@@ -13,10 +13,13 @@
    counts) and the in-process phase ms (:open :tx :q :pull :main), where
    :main is -main entry to done; the shell's wall minus :main is process
    start + namespace load."
+  #?(:clje (:refer-clojure :exclude [swap!]))
   (:require [eve.atom :as atom]
             [eve.clock :as clock]
             [eve.core :as e]
-            [eve.db.ds.core :as d]))
+            [eve.db.ds.core :as d]
+            ;; clojerl's swap! takes a clojerl.Atom only; eve.host's takes an Eve atom
+            #?(:clje [eve.host :refer [swap!]])))
 
 (def ^:private atom-name "contract/ds-cli-update-db")
 
