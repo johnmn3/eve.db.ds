@@ -59,7 +59,7 @@
          t1# (now-ms)]
      [~label (- t1# t0#) r#]))
 
-(defn -main [& [dir label]]
+(defn -main [& [dir label mode]]
   (try
     (let [expected (build-keys (reduce (fn [db b]
                                          (d/db-with db (mapv person (range (inc (* b 100)) (inc (* (inc b) 100))))))
@@ -70,17 +70,22 @@
           [_ build-ms _] (timed :build
                            (doseq [b (range 10)]
                              (swap! a (fn [db] (d/db-with db (mapv person (range (inc (* b 100)) (inc (* (inc b) 100)))))))))
-          db @a
-          actual (build-keys db)
+          ;; the reads: over the stored DB in place inside a read region
+          ;; (d/read-in, the default), or over one deref'd copy ("copy")
+          reads (fn [db]
+                  (let [actual (build-keys db)
+                        [_ find-ms _] (timed :find-datom
+                                        (dotimes [i 1000]
+                                          (first (d/datoms db :avet :name (str "person-" (inc i))))))
+                        [_ pull-ms _] (timed :pull
+                                        (dotimes [i 1000]
+                                          (d/pull db [:name :age {:friend [:name]}] (inc i))))
+                        [_ seq-ms n] (timed :datoms-seq
+                                       (reduce (fn [c _] (inc c)) 0 (d/datoms db :eavt)))]
+                    [actual find-ms pull-ms seq-ms n]))
+          [_ read-ms [actual find-ms pull-ms seq-ms n]]
+          (timed :reads (if (= mode "copy") (reads @a) (d/read-in (fn [] (reads @a)))))
           keys-exact (= expected actual)
-          [_ find-ms _] (timed :find-datom
-                          (dotimes [i 1000]
-                            (first (d/datoms db :avet :name (str "person-" (inc i))))))
-          [_ pull-ms _] (timed :pull
-                          (dotimes [i 1000]
-                            (d/pull db [:name :age {:friend [:name]}] (inc i))))
-          [_ seq-ms n] (timed :datoms-seq
-                         (reduce (fn [c _] (inc c)) 0 (d/datoms db :eavt)))
           [_ tx-ms _] (timed :transact
                         (dotimes [i 100]
                           (swap! a (fn [db] (d/db-with db [[:db/add (inc i) :age (mod i 90)]])))))]
@@ -95,6 +100,9 @@
                         :pull-ms pull-ms
                         :datoms-seq-ms seq-ms
                         :transact-ms tx-ms
+                        :reads-ms read-ms
+                        :read-mode (or mode "read-in")
+                        :escapes (d/region-escape-counts)
                         :verdict (if keys-exact :PERF-OK :PERF-FAIL)})))
     (catch #?(:cljs :default :lpy python/Exception :default Exception) t
       (println (pr-str {:label (or label "jvm") :fatal (str t)})))))
