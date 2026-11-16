@@ -16,22 +16,9 @@ REPO="$(cd "$HERE/.." && pwd)"
 export PATH="$HOME/workspace/tools/bin:$PATH"   # fleet bb: eve_dev_cp.sh expands hosts.edn with it
 EVE_CP="$(EVE_ROOT="$EVE_ROOT" bash "$REPO/scripts/eve_dev_cp.sh" lpy)" || exit 8
 CP="$EVE_CP:$REPO/src:$REPO/lib:$REPO/lib-ds-deps:$REPO/test/drivers:$REPO/harness"
-# Startup: basilisp's namespace cache (.lpyc) checks a namespace's own
-# source only, not the macros it expanded from other namespaces, so a
-# cache is only safe for an unchanged tree. LPY_CACHE=1 (the default)
-# keeps a persistent cache keyed by every source file's path, size and
-# mtime on this classpath: any edit anywhere selects a fresh cache dir
-# (compiled afresh once), an unchanged tree reuses its compiled
-# namespaces. LPY_CACHE=0 is the old always-compile-afresh behaviour.
-if [ "${LPY_CACHE:-1}" = 1 ]; then
-  KEY=$(IFS=':'; for r in $CP; do [ -d "$r" ] && find "$r" \( -name '*.clj*' -o -name '*.lpy' \) -printf '%p %s %T@\n'; done | sort | md5sum | cut -c1-16)
-  export PYTHONPYCACHEPREFIX="${LPY_CACHE_DIR:-$REPO/.lpycache}/tree-$KEY"
-  unset BASILISP_DO_NOT_CACHE_NAMESPACES PYTHONDONTWRITEBYTECODE
-else
-  export BASILISP_DO_NOT_CACHE_NAMESPACES=true
-  export PYTHONDONTWRITEBYTECODE=1
-  export PYTHONPYCACHEPREFIX="${PYTHONPYCACHEPREFIX:-$REPO/.lpycache}"
-fi
+export BASILISP_DO_NOT_CACHE_NAMESPACES=true
+export PYTHONDONTWRITEBYTECODE=1
+export PYTHONPYCACHEPREFIX="${PYTHONPYCACHEPREFIX:-$REPO/.lpycache}"
 # ds_suite.py passes the classpath paths to basilisp in reverse order.
 PATHS=()
 IFS=':' read -ra PARTS <<< "$CP"

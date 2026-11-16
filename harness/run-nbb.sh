@@ -9,8 +9,7 @@
 # build/Release/*.node is absent this runner npm-installs there
 # (the scripts/ds_suite_grok.sh pattern). nbb runs FROM the Eve tree
 # (the one_nbb / ds_suite.py nbb cwd convention). NBB env names the
-# nbb binary; else the Eve tree's node_modules/.bin/nbb; else nbb on
-# PATH; when no nbb is installed, the npx shim nbb@1.6.214 is
+# nbb binary; when no nbb is installed, the npx shim nbb@1.6.214 is
 # used (also the ds_suite_grok.sh pattern).
 set -u
 EVE_ROOT="${EVE_ROOT:?run-nbb.sh: set EVE_ROOT to the Eve tree (release pin checkout)}"
@@ -24,10 +23,6 @@ if ! ls "$EVE_ROOT"/build/Release/*.node >/dev/null 2>&1; then
 fi
 if [ -n "${NBB:-}" ]; then
   NBB_BIN="$NBB"
-elif [ -x "$EVE_ROOT/node_modules/.bin/nbb" ]; then
-  # Startup: the Eve tree's own nbb (its npm install, pinned by Eve's
-  # package.json) — no npx resolution per launch (~0.4 s saved)
-  NBB_BIN="$EVE_ROOT/node_modules/.bin/nbb"
 elif command -v nbb >/dev/null 2>&1; then
   NBB_BIN=nbb
 else
