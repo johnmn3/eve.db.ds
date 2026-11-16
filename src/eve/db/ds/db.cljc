@@ -2237,8 +2237,8 @@
 (defn- tx-all [ix]
   (let [{:keys [base add rem cmp]} ix]
     (if (tx-index-dirty? ix)
-      (ov-merge cmp (seq base) (ov-seq add) rem cmp)
-      (seq base))))
+      (ov-merge cmp (e/seq base) (ov-seq add) rem cmp)
+      (e/seq base))))
 
 (defn- tx-index-add!
   "conj: a datom already in the merged view is a no-op, as set/conj."
@@ -2246,7 +2246,7 @@
   (let [{:keys [base add rem cmp]} ix]
     (cond
       (ov-remove! rem cmp d) nil                  ;; a retracted base datom, back
-      (contains? base d)     nil
+      (e/contains? base d)     nil
       :else                  (ov-add! add cmp d))))
 
 (defn- tx-index-remove!
@@ -2262,7 +2262,7 @@
   (let [{:keys [base add rem]} ix]
     (if-not (tx-index-dirty? ix)
       base
-      (let [nb (count base)
+      (let [nb (e/count base)
             nc (+ (ov-count add) (ov-count rem))]
         (if (or (zero? nb) (<= nb (* 4 nc)))
           ;; a fresh sorted build: every leaf and node written once
