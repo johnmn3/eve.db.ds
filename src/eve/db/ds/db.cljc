@@ -2274,21 +2274,21 @@
 
 (declare tx-db-persistent!)
 
-(defn- tx-lookup [db k nf]
+(defn- tx-lookup [^DB base st k nf]
   (case k
-    :schema  (.-schema ^DB (.-base db))
-    :rschema (.-rschema ^DB (.-base db))
-    :max-eid (:max-eid @(.-st db))
-    :max-tx  (:max-tx @(.-st db))
-    :eavt    (tx-all (:eavt @(.-st db)))
-    :aevt    (tx-all (:aevt @(.-st db)))
-    :avet    (tx-all (:avet @(.-st db)))
+    :schema  (.-schema base)
+    :rschema (.-rschema base)
+    :max-eid (:max-eid @st)
+    :max-tx  (:max-tx @st)
+    :eavt    (tx-all (:eavt @st))
+    :aevt    (tx-all (:aevt @st))
+    :avet    (tx-all (:avet @st))
     nf))
 
 (host-deftype TxDB [base st]
   ILookup
-  (-lookup [db k] (tx-lookup db k nil))
-  (-lookup [db k nf] (tx-lookup db k nf))
+  (-lookup [_ k] (tx-lookup base st k nil))
+  (-lookup [_ k nf] (tx-lookup base st k nf))
 
   ICounted
   (-count [db] (count (tx-all (:eavt @(.-st db)))))
@@ -2332,7 +2332,7 @@
 
 (defn- tx-db-set!
   "A TxDB's :max-eid / :max-tx, set in place (the transaction owns it)."
-  [db k v]
+  [^TxDB db k v]
   (vswap! (.-st db) assoc k v)
   db)
 
@@ -2349,7 +2349,7 @@
 (defn tx-db-persistent!
   "The DB after the transaction: each index's slab set written once, one
    DB constructed (in the base DB's domain unless one is bound)."
-  [txdb]
+  [^TxDB txdb]
   (let [^DB base (.-base txdb)
         m @(.-st txdb)]
     (call-in-db-domain base (fn []
@@ -2359,7 +2359,7 @@
             (tx-index-persistent! (:avet m) cmp-datoms-avet-quick)
             (:max-eid m) (:max-tx m) (.-rschema base) (.-meta base))))))
 
-(defn- tx-with-datom! [txdb ^Datom datom]
+(defn- tx-with-datom! [^TxDB txdb ^Datom datom]
   (validate-datom txdb datom)
   (let [indexing? (indexing? txdb (.-a datom))
         m @(.-st txdb)]
