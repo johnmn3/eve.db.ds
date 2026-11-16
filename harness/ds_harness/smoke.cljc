@@ -88,8 +88,8 @@
   ;; suffixes for before/after: "-copy" reads through plain derefs (each a
   ;; delivered copy) instead of a read region; "-notx" transacts without
   ;; the TxDB append overlay (a slab DB per datom)
-  (let [copy? (some? (re-find #"-copy" case-name))
-        notx? (some? (re-find #"-notx" case-name))
+  (let [copy? (clojure.string/includes? case-name "-copy")
+        notx? (clojure.string/includes? case-name "-notx")
         base  (first (clojure.string/split case-name #"-"))]
     (binding [*copy?* copy?
               db/*tx-overlay* (not notx?)]

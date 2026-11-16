@@ -54,7 +54,7 @@
   (delay
     #?(:cljs nil
        :default (try @(requiring-resolve 'eve.flat.freeze/deliver-flat)
-                     (catch #?(:clj Throwable :lpy python/BaseException :default :default) _ nil)))))
+                     (catch #?(:cljs :default :cljd dynamic :cljr Exception :lpy python/BaseException :clje _ :glj go/any :jank jank.runtime.object_ref :default Throwable) _ nil)))))
 
 (defn- escape-copy [k v]
   (swap! region-escapes update k inc)
