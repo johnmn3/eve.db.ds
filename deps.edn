@@ -7,9 +7,10 @@
 ;; over the Eve backend).
 ;;
 ;; priv-pin branch (John, 2026-11-15 21:47/22:24 ET): eve/eve below is
-;; johnmn3/atom.broker release/eve-0.9.3.2 at 7b6647d936 (landed 2026-11-16
-;; 01:56 ET: our fixes, the transfer hints, direct-placement zip-root! and
-;; the basilisp not= fix), so the full suites run against a release sha. main keeps the release pin until the
+;; johnmn3/atom.broker release/eve-0.9.3.2 at 5e005dcb93 (2026-11-16 02:39 ET:
+;; our fixes, the transfer hints, direct-placement zip-root!, the basilisp
+;; not= fix, the eve.record scalar fast path and explicit-domain
+;; hash-map/hash-set), so the full suites run against a release sha. main keeps the release pin until the
 ;; private release lands; re-pinning main is a separate, explicit step.
 ;;
 ;; Dev runs: there is no dev-pin alias. To run against an Eve dev
@@ -21,7 +22,7 @@
 {:paths ["src"]
  :deps {org.clojure/clojure {:mvn/version "1.12.0"}
         eve/eve {:git/url "https://github.com/johnmn3/atom.broker"
-                 :git/sha "7b6647d936ce9cd9aef8cae0556c589bbd43e41a"}
+                 :git/sha "5e005dcb93038bacb7b55a008b743c88a7f9bb3b"}
         me.tonsky/persistent-sorted-set {:local/root "lib"}
         extend-clj/extend-clj {:local/root "lib-ds-deps"}}
  :aliases
