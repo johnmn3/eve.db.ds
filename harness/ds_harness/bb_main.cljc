@@ -6,15 +6,17 @@
    completion's deftype presentation is not yet interned. With
    eve.host-completion required first, the whole port loads.
 
-   Usage: bb -m ds-harness.bb-main <contract|perf|one> <args...>"
+   Usage: bb -m ds-harness.bb-main <contract|perf|one|smoke> <args...>"
   (:require [eve.host-completion]
             [ds-harness.contract-check :as cc]
             [ds-harness.perf :as perf]
-            [contract.one :as one]))
+            [contract.one :as one]
+            [ds-harness.smoke :as smoke]))
 
 (defn -main [& [mode & args]]
   (case mode
     "contract" (apply cc/-main args)
     "perf" (apply perf/-main args)
     "one" (apply one/-main args)
+    "smoke" (apply smoke/-main args)
     (println (pr-str {:fatal (str "unknown mode " mode)}))))

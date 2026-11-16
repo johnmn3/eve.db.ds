@@ -83,8 +83,28 @@ smoothed over.
 - **Contract** — `harness/ds_harness/contract_check.cljc`: create →
   transact → query → pull against one journaled disk atom, then a
   fresh-process readback against the same expected values.
-- **Shootout** — `harness/shootout.sh`: cold process, one datum on a
-  disk-backed DB, cap 10,000 ms, median of 5, shipped form per host.
+- **Shootout** — `scripts/perf_shootout.sh` over `harness/shootout.sh`:
+  cold process, one datum on a disk-backed DB, cap 10,000 ms, median of
+  5, shipped form per host. Every member runs (jvm bb nbb lpy jolt jank
+  clje lg glj); a missing toolchain or a failing run prints a SKIP/FAIL
+  row with its reason.
+
+  ```bash
+  DS_DIR=$PWD EVE_DIR=<eve release checkout> scripts/perf_shootout.sh          # full (classic)
+  DS_DIR=$PWD EVE_DIR=<eve release checkout> scripts/perf_shootout.sh --smoke  # smoke: a few minutes
+  ```
+
+  `--smoke` (or `SMOKE=1`) runs `harness/ds_harness/smoke.cljc`'s short
+  cases ×3 per host — `one` (fresh domain, one datum), `reopen` (wake the
+  durable DB a prior `one` left, add a datum), `small` (20 entities, a
+  query, a pull) — with a bare host-start column, a warm-up column (fills
+  the durable code caches) and each case's in-process `:main` ms beside
+  its wall ms (wall − main = process start + namespace load). `HOSTS`,
+  `CASES`, `SHOOTOUT_RUNS` and `OUT` narrow a run. Startup caches the
+  runners keep (all keyed by the classpath's sources, so an edit means a
+  fresh compile): `run-jvm.sh` AOT classes of Eve + the vendored libs
+  (`JVM_AOT=0` to disable), `run-lpy.sh` basilisp's namespace cache
+  (`LPY_CACHE=0`), `run-nbb.sh` the Eve tree's own nbb (no npx).
 - **Perf** — `harness/ds_harness/perf.cljc`: people-1k build with all
   seven build keys asserted exact against in-process ground truth,
   then find-datom / pull / datoms-sequence / transact timings.

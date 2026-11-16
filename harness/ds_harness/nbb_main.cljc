@@ -5,15 +5,17 @@
    dispatches to the shared harness namespaces — the SAME
    ds-harness.perf / contract.one code the JVM and bb entries run.
 
-   Usage: nbb --classpath <eve :nbb roots>:<lib>:<drivers>:<harness> -m ds-harness.nbb-main <perf|one> <args...>"
+   Usage: nbb --classpath <eve :nbb roots>:<lib>:<drivers>:<harness> -m ds-harness.nbb-main <perf|one|smoke> <args...>"
   (:require #?(:cljs [eve.process-slab :as ps])
             [ds-harness.perf :as perf]
-            [contract.one :as one]))
+            [contract.one :as one]
+            [ds-harness.smoke :as smoke]))
 
 (defn- dispatch [mode args]
   (case mode
     "perf" (apply perf/-main args)
     "one" (apply one/-main args)
+    "smoke" (apply smoke/-main args)
     (println (pr-str {:fatal (str "unknown mode " mode)}))))
 
 (defn -main [& [mode & args]]

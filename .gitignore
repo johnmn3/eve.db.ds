@@ -4,3 +4,4 @@
 .shootout-runs/
 .lpycache/
 perf-results/
+.jvm-aot/
