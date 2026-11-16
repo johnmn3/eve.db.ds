@@ -42,14 +42,20 @@ else
   CP="$(clojure -Spath -Sdeps "$SDEPS")" || exit 8
   mkdir -p "$(dirname "$CPFILE")" && printf '%s' "$CP" > "$CPFILE"
 fi
-KEY=$( { echo "$NS ${JVM_AOT_DS:-1}"; IFS=':'; for r in $CP; do
+# Eve reaches its flat deref path by requiring-resolve (eve.atom ->
+# eve.flat.freeze -> eve.flat.transfer / chunk / stream), so compiling the
+# entry namespace never reaches them and the first deref loaded them from
+# source (~650 ms of the smoke's :q on `one`). They are compiled into the
+# cache too; a name the Eve tree lacks is skipped.
+AOT_LAZY="eve.flat.freeze eve.flat.transfer eve.flat.chunk eve.flat.stream"
+KEY=$( { echo "$NS ${JVM_AOT_DS:-1} $AOT_LAZY"; IFS=':'; for r in $CP; do
          if [ -d "$r" ]; then find "$r" \( -name '*.clj*' -o -name '*.class' \) -printf '%p %s %T@\n'; else echo "$r"; fi
        done; } | sort | md5sum | cut -c1-16)
 CACHE="${JVM_AOT_DIR:-$HERE/../.jvm-aot}/tree-$KEY"
 if [ ! -f "$CACHE/.done" ]; then
   rm -rf "$CACHE" && mkdir -p "$CACHE/classes"
   java "${JOPTS[@]}" -cp "$CACHE/classes:$CP" clojure.main \
-    -e "(binding [*compile-path* \"$CACHE/classes\"] (compile '$NS))" > "$CACHE/compile.log" 2>&1 \
+    -e "(binding [*compile-path* \"$CACHE/classes\"] (compile '$NS) (doseq [n '[$AOT_LAZY]] (try (compile n) (catch java.io.FileNotFoundException _ nil))))" > "$CACHE/compile.log" 2>&1 \
     || { echo "run-jvm.sh: AOT compile failed, see $CACHE/compile.log" >&2; rm -rf "$CACHE"; exit 8; }
   # JVM_AOT_DS=1 (the default): keep this repo's namespaces compiled too —
   # the Eve record AOT defect that forced source loading (->T rebinding
