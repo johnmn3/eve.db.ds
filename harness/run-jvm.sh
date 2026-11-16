@@ -31,8 +31,18 @@ fi
 # private slab factory under AOT; written up for eve-release), and code
 # compiled against the AOT record classes then misses the source-loaded
 # ones. JVM_AOT=0 is the plain `clojure -M -m` launch.
-CP="$(clojure -Spath -Sdeps "$SDEPS")" || exit 8
-KEY=$( { echo "$NS"; IFS=':'; for r in $CP; do
+# The classpath, cached: `clojure -Spath` costs ~1.4 s a launch even on a
+# CLI cache hit. Keyed by SDEPS and every deps.edn under this repo and the
+# Eve tree (path, size, mtime), so any deps change recomputes it.
+CPKEY=$( { echo "$SDEPS"; find "$HERE/.." "$EVE_LOCAL" -maxdepth 4 -name deps.edn -not -path '*/node_modules/*' -printf '%p %s %T@\n'; } | sort | md5sum | cut -c1-16)
+CPFILE="${JVM_AOT_DIR:-$HERE/../.jvm-aot}/cp-$CPKEY"
+if [ -s "$CPFILE" ]; then
+  CP="$(cat "$CPFILE")"
+else
+  CP="$(clojure -Spath -Sdeps "$SDEPS")" || exit 8
+  mkdir -p "$(dirname "$CPFILE")" && printf '%s' "$CP" > "$CPFILE"
+fi
+KEY=$( { echo "$NS ${JVM_AOT_DS:-1}"; IFS=':'; for r in $CP; do
          if [ -d "$r" ]; then find "$r" \( -name '*.clj*' -o -name '*.class' \) -printf '%p %s %T@\n'; else echo "$r"; fi
        done; } | sort | md5sum | cut -c1-16)
 CACHE="${JVM_AOT_DIR:-$HERE/../.jvm-aot}/tree-$KEY"
@@ -41,9 +51,15 @@ if [ ! -f "$CACHE/.done" ]; then
   java "${JOPTS[@]}" -cp "$CACHE/classes:$CP" clojure.main \
     -e "(binding [*compile-path* \"$CACHE/classes\"] (compile '$NS))" > "$CACHE/compile.log" 2>&1 \
     || { echo "run-jvm.sh: AOT compile failed, see $CACHE/compile.log" >&2; rm -rf "$CACHE"; exit 8; }
-  # keep Eve + vendored libs; this repo's own namespaces load from source
-  rm -rf "$CACHE/classes/eve/db" "$CACHE/classes/ds_harness" "$CACHE/classes/contract" \
-         "$CACHE"/classes/ds_harness*.class "$CACHE"/classes/contract*.class
+  # JVM_AOT_DS=1 (the default): keep this repo's namespaces compiled too —
+  # the Eve record AOT defect that forced source loading (->T rebinding
+  # lost the slab factory) is fixed on the pinned line (eve.record: rebind
+  # ->T with a named fn). JVM_AOT_DS=0 keeps the old split: Eve + vendored
+  # libs compiled, this repo's own namespaces loaded from source.
+  if [ "${JVM_AOT_DS:-1}" != 1 ]; then
+    rm -rf "$CACHE/classes/eve/db" "$CACHE/classes/ds_harness" "$CACHE/classes/contract" \
+           "$CACHE"/classes/ds_harness*.class "$CACHE"/classes/contract*.class
+  fi
   touch "$CACHE/.done"
 fi
 exec java "${JOPTS[@]}" -cp "$CACHE/classes:$CP" clojure.main -m "$NS" "$@"
