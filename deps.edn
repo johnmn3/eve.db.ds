@@ -7,12 +7,13 @@
 ;; over the Eve backend).
 ;;
 ;; priv-pin branch (John, 2026-11-15 21:47/22:24 ET): eve/eve below is
-;; johnmn3/atom.broker release/eve-0.9.3.2 at bc5c0d5b (2026-11-16 evening: everything at edcb4577 plus the demo/network
-;; landings — page isolation headers, cljs load-order registrations, wire
-;; create-retry, launcher start order, stall-abort v2, byte-array host
-;; routes; release smokes #23–#30 green. The bb flat delivery fixes
-;; (lane-m/eve-bb-delivery-fix) are NOT in this pin yet — they land with
-;; their collation, and the bb harness leg stays red until then), so the full suites run against a release sha. main keeps the release pin until the
+;; johnmn3/atom.broker release/eve-0.9.3.2 at a3904fa4 (2026-11-17: everything at bc5c0d5b plus the W1b shared-code flat
+;; handle fix, the slab-descriptor folder cleanup, and the demo CPU/page
+;; fix set; release smoke #31 green. Verified at this pin before the
+;; bump: canonical smoke SMOKE-ALL-OK, JVM contract probe green. The bb
+;; harness leg is still RED at this pin: eve.flat class-size dies under
+;; SCI at transfer.cljc:151 — the fixes sit on lane-m/eve-bb-delivery-fix,
+;; handed to the release seat 2026-11-16 and not yet collated), so the full suites run against a release sha. main keeps the release pin until the
 ;; private release lands; re-pinning main is a separate, explicit step.
 ;;
 ;; Dev runs: there is no dev-pin alias. To run against an Eve dev
@@ -24,7 +25,7 @@
 {:paths ["src"]
  :deps {org.clojure/clojure {:mvn/version "1.12.0"}
         eve/eve {:git/url "https://github.com/johnmn3/atom.broker"
-                 :git/sha "bc5c0d5b77dab2cf139ca5b7650572045cba990c"}
+                 :git/sha "a3904fa4ea232caa956be6cda35a44f6ef8c1284"}
         me.tonsky/persistent-sorted-set {:local/root "lib"}
         extend-clj/extend-clj {:local/root "lib-ds-deps"}}
  :aliases
