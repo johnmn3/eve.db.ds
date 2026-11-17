@@ -6,15 +6,15 @@
 ;; Eve) and every Clojure-like cohost supports (through cohost bodies
 ;; over the Eve backend).
 ;;
-;; priv-pin branch (John, 2026-11-15 21:47/22:24 ET): eve/eve below is
-;; johnmn3/atom.broker release/eve-0.9.3.2 at a3904fa4 (2026-11-17: everything at bc5c0d5b plus the W1b shared-code flat
-;; handle fix, the slab-descriptor folder cleanup, and the demo CPU/page
-;; fix set; release smoke #31 green. Verified at this pin before the
-;; bump: canonical smoke SMOKE-ALL-OK, JVM contract probe green. The bb
-;; harness leg is still RED at this pin: eve.flat class-size dies under
-;; SCI at transfer.cljc:151 — the fixes sit on lane-m/eve-bb-delivery-fix,
-;; handed to the release seat 2026-11-16 and not yet collated), so the full suites run against a release sha. main keeps the release pin until the
-;; private release lands; re-pinning main is a separate, explicit step.
+;; eve/eve below is the PUBLIC Eve release: SeniorCareMarket/eve
+;; v0.9.3.2 at e6cddc90 (John's order, 2026-11-17: rebase eve.db.ds on
+;; the public release). Verified at this pin before the rebase:
+;; canonical smoke SMOKE-ALL-OK, JVM contract probe green, full JVM
+;; suite battery at baseline. The bb harness leg is still RED at
+;; this pin, one defect closer than the private pin: the class-size
+;; SCI failure is fixed in 0.9.3.2, but delivered Eve values still
+;; lose their type on bb (eve.flat.sister own-type check) — the fix
+;; sits on atom.broker lane-m/eve-bb-delivery-fix, not in 0.9.3.2.
 ;;
 ;; Dev runs: there is no dev-pin alias. To run against an Eve dev
 ;; tree instead of the release pin, use the EVE_ROOT environment
@@ -24,8 +24,8 @@
 ;; :local/root deps inside this repository.
 {:paths ["src"]
  :deps {org.clojure/clojure {:mvn/version "1.12.0"}
-        eve/eve {:git/url "https://github.com/johnmn3/atom.broker"
-                 :git/sha "a3904fa4ea232caa956be6cda35a44f6ef8c1284"}
+        eve/eve {:git/url "https://github.com/SeniorCareMarket/eve"
+                 :git/sha "e6cddc906da3620b912287f30046ffb67058ac4e"}
         me.tonsky/persistent-sorted-set {:local/root "lib"}
         extend-clj/extend-clj {:local/root "lib-ds-deps"}}
  :aliases
