@@ -34,6 +34,10 @@
 #
 # Usage: scripts/vendor_upstream_ds.sh          # rewrite both trees
 #        scripts/vendor_upstream_ds.sh --check  # regenerate to a temp dir, diff, exit 1 on any difference
+#        scripts/vendor_upstream_ds.sh --emit-src DIR
+#                                               # write ONLY the renamed src baseline
+#                                               # (incl. UPSTREAM-SRC.txt) into DIR;
+#                                               # used by scripts/diff_upstream.sh
 set -euo pipefail
 TAG=1.8.1
 SHA=34915cf673c02cbc64779fe56e0288d70fea63f8
@@ -143,7 +147,13 @@ expected: those files are reference copies for the units that replace them.
 TXT
 
 # -------------------------------------------------------------------- modes
-if [ "${1:-}" = "--check" ]; then
+if [ "${1:-}" = "--emit-src" ]; then
+  EMIT=${2:?--emit-src needs a target dir}
+  mkdir -p "$EMIT"
+  cp -R "$SOUT/eve" "$EMIT/eve"
+  cp "$SOUT/data_readers.clj" "$SOUT/deps.cljs" "$SOUT/UPSTREAM-SRC.txt" "$EMIT/"
+  echo "UPSTREAM-DS-SRC-EMITTED tag=$TAG sha=$SHA -> $EMIT"
+elif [ "${1:-}" = "--check" ]; then
   ok=1
   diff -r "$OUT" "$DEST" || ok=0
   diff -r "$SOUT/eve/db/ds" "$SRCDEST/eve/db/ds" || ok=0
