@@ -1,20 +1,12 @@
 (ns eve.db.ds.conn
   (:require
-    ;; PORT DELTA (F-NBB-MACROS round): vanilla refers the DB types
-    ;; on :cljs; the interpreted seat (nbb/SCI) cannot refer a type
-    ;; name (a class entry, not a var), so the types are named
-    ;; qualified (db/DB) at their uses in this file
-    [eve.db.ds.db :as db]
-    ;; PORT: eve.deftype referred on every host — the refer is what
-    ;; extend/deftype-atom's expansion resolves `deftype` through on
-    ;; the interpreted seats; referring it unconditionally is the same
-    ;; wiring with no branch (this ns defines no deftype of its own).
-    [eve.deftype-proto.macros]
+    [eve.db.ds.db :as db #?@(:cljs [:refer [DB FilteredDB]])]
     [eve.db.ds.storage :as storage]
     [extend-clj.core :as extend]
-    [me.tonsky.persistent-sorted-set :as set]
-    ;; PORT DELTA (F-CLJE-HOST-REFERS): see eve.db.ds.util
-    #?(:clje [eve.host :refer [volatile! swap! reset! compare-and-set! locking]])))
+    [me.tonsky.persistent-sorted-set :as set])
+  #?(:clj
+     (:import
+       [eve.db.ds.db DB FilteredDB])))
 
 (extend/deftype-atom Conn [atom]
   (deref-impl [this]
@@ -22,12 +14,7 @@
   (compare-and-set-impl [this oldv newv]
     (compare-and-set!
       atom
-      ;; the expected state: when :db already holds oldv, reuse @atom so
-      ;; CAS compares against the atom's current identity. JVM/cljs
-      ;; array-maps already shortcut assoc to the same object; jank maps
-      ;; copy on assoc, so the explicit identical? is required there and
-      ;; is equivalent on hosts with the shortcut (F-JANK-CAS-ASSOC-IDENTITY).
-      (if (identical? (:db @atom) oldv) @atom (assoc @atom :db oldv))
+      (assoc @atom :db oldv)
       (assoc @atom :db newv))))
 
 (defn- make-conn [opts]
@@ -37,20 +24,11 @@
   ([db tx-data] (with db tx-data nil))
   ([db tx-data tx-meta]
    {:pre [(db/db? db)]}
-   (if (not (identical? db (db/unfiltered-db db)))
+   (if (instance? FilteredDB db)
      (throw (ex-info "Filtered DB cannot be modified" {:error :transaction/filtered}))
-     ;; Construction law: Conn is a host-atom-backed deftype (above) —
-     ;; verified 2026-11-11: its swap! is the HOST atom's swap and does
-     ;; NOT bind Eve's *domain-sio* (that binding exists only in
-     ;; eve.atom/swap-attempt!). So the transaction runs under an
-     ;; explicit binding of the DB's own domain: -transact! reaches this
-     ;; fn from inside Conn's swap!, and everything the transaction
-     ;; constructs (TxReport, the new DB, tempid maps) belongs to the
-     ;; DB's domain.
-     (db/call-in-db-domain db
-       (fn [] (db/transact-tx-data (db/->TxReport db db [] {} tx-meta) tx-data))))))
+     (db/transact-tx-data (db/->TxReport db db [] {} tx-meta) tx-data))))
 
-(defn db-with
+(defn ^DB db-with
   "Applies transaction to an immutable db value, returning new immutable db value. Same as `(:db-after (with db tx-data))`."
   [db tx-data]
   {:pre [(db/db? db)]}
@@ -58,7 +36,8 @@
 
 (defn conn? [conn]
   (and
-    (instance? Conn conn)
+    #?(:clj  (instance? clojure.lang.IDeref conn)
+       :cljs (satisfies? cljs.core/IDeref conn))
     (if-some [db @conn]
       (db/db? db)
       true)))
@@ -90,17 +69,16 @@
   ([schema opts]
    (conn-from-db (db/empty-db schema (storage/maybe-adapt-storage opts)))))
 
-(defn restore-conn
-  "On Eve, a DB lives in an Eve atom; there is no separate IStorage.
-   storage/restore-impl raises that guidance."
-  ([storage]
-   (restore-conn storage {}))
-  ([storage opts]
-   (when-some [[db tail] (storage/restore-impl storage opts)]
-     (make-conn
-       {:db (storage/db-with-tail db tail)
-        :tx-tail tail
-        :db-last-stored db}))))
+#?(:clj
+   (defn restore-conn
+     ([storage]
+      (restore-conn storage {}))
+     ([storage opts]
+      (when-some [[db tail] (storage/restore-impl storage opts)]
+        (make-conn
+          {:db (storage/db-with-tail db tail)
+           :tx-tail tail
+           :db-last-stored db})))))
 
 (defn ^:no-doc -transact! [conn tx-data tx-meta]
   {:pre [(conn? conn)]}
@@ -110,9 +88,23 @@
         (let [r (with db tx-data tx-meta)]
           (vreset! *report r)
           (:db-after r))))
-    ;; Persistence is the Eve atom that holds the DB. storage/storage is
-    ;; always nil here (no separate IStorage adapter), so the vanilla
-    ;; tail-store side channel is gone.
+    #?(:clj
+       (when (storage/storage @conn)
+         (let [{db :db-after
+                datoms :tx-data} @*report]
+           (when-not (empty? datoms)
+             (let [settings (set/settings (:eavt db))
+                   *atom    (:atom conn)
+                   tx-tail' (:tx-tail (swap! *atom update :tx-tail conj datoms))]
+               (if (> (transduce (map count) + 0 tx-tail') (:branching-factor settings))
+                 ;; overflow tail
+                 (do
+                   (storage/store-impl! db (storage/storage-adapter db) false)
+                   (swap! *atom assoc
+                     :tx-tail        []
+                     :db-last-stored db))
+                 ;; just update tail
+                 (storage/store-tail db tx-tail')))))))
     @*report))
 
 (defn transact!
@@ -156,7 +148,12 @@
 (defn reset-schema! [conn schema]
   {:pre [(conn? conn)]}
   (let [db (swap! conn db/with-schema schema)]
-    ;; Persistence is the Eve atom that holds the DB; no IStorage side channel.
+    #?(:clj
+       (when-some [storage (storage/storage @conn)]
+         (storage/store-impl! db (storage/storage-adapter db) true)
+         (swap! (:atom conn) assoc
+           :tx-tail []
+           :db-last-stored db)))
     db))
 
 (defn listen!

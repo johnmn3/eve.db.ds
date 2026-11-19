@@ -1,60 +1,40 @@
 (ns ^:no-doc eve.db.ds.query-v3
-  (:refer-clojure :exclude [deftype])
   (:require
     [clojure.set :as set]
-    [eve.core :as e]
-    [eve.map :as em]
-    [eve.vec :as ev]
-    [eve.set :as es]
-    [eve.deftype-proto.macros :refer [host-deftype]]
     [eve.db.ds.built-ins :as built-ins]
     [eve.db.ds.core :as d]
     [eve.db.ds.db :as db]
     [eve.db.ds.query :as dq]
     [eve.db.ds.lru :as lru]
     [me.tonsky.persistent-sorted-set.arrays :as da]
-    ;; Parser AST types have no var at dp/BindScalar (eve.deftype
-    ;; interned the class, not the var). Type tokens below use
-    ;; (type (dp/->Type ...)); factories stay qualified.
-    [eve.db.ds.parser :as dp]
-    [eve.db.ds.util :as util]
-    [eve.host :as eh]))
+    [eve.db.ds.parser :as dp #?@(:cljs [:refer [BindColl BindIgnore BindScalar BindTuple
+                                                 Constant DefaultSrc Pattern RulesVar SrcVar Variable
+                                                 Not Or And Predicate PlainSymbol]])]
+    [eve.db.ds.util :as util])
+  #?(:clj
+     (:import 
+       [eve.db.ds.parser
+        BindColl BindIgnore BindScalar BindTuple
+        Constant DefaultSrc Pattern RulesVar SrcVar Variable
+        Not Or And Predicate PlainSymbol]
+       [clojure.lang     IReduceInit Counted]
+       [eve.db.ds.db  Datom])))
 
-;; Type tokens for parser AST types. eve.deftype interned the class
-;; but not a var at eve.db.ds.parser/BindScalar, so instance? cannot
-;; use dp/BindScalar on the JVM. (type (factory ...)) is the class
-;; on JVM/CLR, the constructor on cljs/nbb, and bb's stamped :type
-;; token (host_completion rewrites type/instance? for SciMap).
-(def BindIgnore  (type (dp/->BindIgnore)))
-(def BindScalar  (type (dp/->BindScalar nil)))
-(def BindColl    (type (dp/->BindColl nil)))
-(def BindTuple   (type (dp/->BindTuple nil)))
-(def Variable    (type (dp/->Variable nil)))
-(def SrcVar      (type (dp/->SrcVar nil)))
-(def DefaultSrc  (type (dp/->DefaultSrc)))
-(def Constant    (type (dp/->Constant nil)))
-(def PlainSymbol (type (dp/->PlainSymbol nil)))
-(def Pattern     (type (dp/->Pattern nil nil)))
-(def Not         (type (dp/->Not nil nil nil)))
-(def Or          (type (dp/->Or nil nil nil)))
-(def And         (type (dp/->And nil)))
-(def Predicate   (type (dp/->Predicate nil nil)))
-
-(declare resolve-clauses collect-rel-xf collect-to -resolve-clause)
+(declare resolve-clauses collect-rel-xf collect-to)
 
 (def ^:const lru-cache-size 100)
 
 (defn mapa [f coll]
-  (vec (map f coll)))
+  (to-array (map f coll)))
 
 (defn arange [start end]
-  (vec (range start end)))
+  (to-array (range start end)))
 
 (defn subarr [arr start end]
   (da/acopy arr start end (da/make-array (- end start)) 0))
 
 (defn concatv [& xs]
-  (e/into [] cat xs))
+  (into [] cat xs))
 
 (defn zip
   ([a b] (map vector a b))
@@ -63,12 +43,117 @@
 (defn has? [coll el]
   (some #(= el %) coll))
 
-;; Query work collections live in Eve's normalized memory domain. Constructors
-;; return persistent values; mutation is explicit and transient scopes never
-;; escape into another collection's encoded values.
-(defn fast-map [] (em/empty-hash-map))
-(defn fast-arr [] (ev/empty-vec))
-(defn fast-set [] (es/empty-hash-set))
+(defprotocol NativeColl
+  (-native-coll [_]))
+
+(defn native-coll [xs]
+  (if (satisfies? NativeColl xs)
+    (-native-coll xs)
+    xs))
+
+(defn fast-map []
+  #?(:clj
+     (let [m (java.util.HashMap.)]
+       (reify
+         NativeColl
+         (-native-coll [_] m)
+         
+         clojure.lang.IEditableCollection
+         (asTransient [this] this)
+         
+         clojure.lang.ITransientAssociative
+         (assoc [this k v] (.put m k v) this)
+         
+         clojure.lang.ITransientCollection
+         (persistent [this] this)
+         
+         clojure.lang.IPersistentCollection
+         clojure.lang.Counted
+         (count [_] (.size m))
+         
+         clojure.lang.ILookup
+         (valAt [_ k] (.get m k))
+         (valAt [_ k nf] (or (.get m k) nf))))
+     :cljs {}))
+
+(defn fast-arr []
+  #?(:clj
+     (let [l (java.util.ArrayList.)]
+       (reify
+         NativeColl
+         (-native-coll [_] l)
+         
+         clojure.lang.IEditableCollection
+         (asTransient [this] this)
+         
+         clojure.lang.ITransientCollection
+         (conj [this v] (.add l v) this)
+         (persistent [this] this)
+         
+         clojure.lang.IPersistentCollection
+         clojure.lang.Counted
+         (count [_] (.size l))
+         
+         clojure.lang.IReduceInit
+         (reduce [_ f s]
+           (loop [i   0
+                  res s]
+             (if (< i (.size l))
+               (recur (inc i) (f res (.get l i)))
+               res)))))
+     :cljs
+     (let [arr (da/array)]
+       (reify
+         NativeColl
+         (-native-coll [_] arr)
+         
+         IEditableCollection
+         (-as-transient [this] this)
+         
+         ITransientCollection
+         (-conj! [this v] (.push arr v) this)
+         (-persistent! [this] this)
+         
+         ICounted
+         (-count [_] (alength arr))
+         
+         IReduce
+         (-reduce [_ f s]
+           (loop [i   0
+                  res s]
+             (if (< i (alength arr))
+               (recur (inc i) (f res (aget arr i)))
+               res)))))))
+
+(defn fast-set []
+  #?(:clj
+     (let [set (java.util.HashSet.)]
+       (reify
+         NativeColl
+         (-native-coll [_] set)
+         
+         clojure.lang.IEditableCollection
+         (asTransient [this] this)
+         
+         clojure.lang.ITransientCollection
+         (conj [this v] (.add set v) this)
+         (persistent [this] this)
+         
+         clojure.lang.IPersistentCollection
+         clojure.lang.IPersistentSet
+         (contains [_ k] (.contains set k))
+
+         clojure.lang.Counted
+         (count [_] (.size set))
+         
+         clojure.lang.IReduceInit
+         (reduce [_ f s]
+           (let [iter (.iterator set)]
+             (loop [acc s]
+               (if (.hasNext iter)
+                 (recur (f acc (.next iter)))
+                 acc))))))
+     :cljs #{}))
 
 ;; (defrecord Context [rels consts sources rules default-source-symbol])
 
@@ -134,45 +219,44 @@
 
 ;;; ArrayRelation
 
-(defn- pr-rel-str [type-name rel]
-  (str "#" type-name
-       "{:symbols " (pr-str (-symbols rel))
-       ", :coll " (pr-str (e/persistent! (-fold rel #(e/conj! %1 (seq %2)) (e/transient []))))
-       "}"))
+(defn pr-rel [rel ^java.io.Writer w]
+  (doto w
+    (.write "#")
+    (.write #?(:clj  (.getSimpleName ^Class (class rel))
+               :cljs (str (type rel))))
+    (.write "{:symbols ")
+    (.write (pr-str (-symbols rel)))
+    (.write ", :coll ")
+    (.write (pr-str (persistent! (-fold rel #(conj! %1 (seq %2)) (transient [])))))
+    (.write "}")))
 
-(host-deftype ArrayRelation [offset-map coll]
-  clojure.lang.ILookup
-  (valAt [_ k] (case k :offset-map offset-map :coll coll nil))
-  (valAt [_ k nf] (case k :offset-map offset-map :coll coll nf))
+(deftype ArrayRelation [offset-map coll]
   IRelation
   (-project [_ syms]
     (ArrayRelation. (select-keys offset-map syms) coll))
   (-alter-coll [_ f]
     (ArrayRelation. offset-map (f coll)))
   (-symbols [_] (keys offset-map))
-  (-arity   [_] (e/count offset-map))
-  (-fold [_ f init] (e/reduce f init coll))
-  (-size [_] (e/count coll))
+  (-arity   [_] (count offset-map))
+  (-fold [_ f init] (reduce f init coll))
+  (-size [_] (count coll))
   (-getter [_ symbol]
     (let [idx (offset-map symbol)]
       (fn [tuple]
-        (e/nth tuple idx))))
+        (da/aget tuple idx))))
   (-indexes [_ syms]
     (mapa offset-map syms))
   (-copy-tuple [_ tuple idxs target target-idxs]
-    (reduce (fn [target i]
-              (da/aset target (da/aget target-idxs i) (e/nth tuple (da/aget idxs i))))
-      target (range (da/alength idxs))))
+    (dotimes [i (da/alength idxs)]
+      (da/aset target (da/aget target-idxs i) (da/aget tuple (da/aget idxs i)))))
   (-union [_ rel]
     (assert (instance? ArrayRelation rel))
-    (assert (= offset-map (.-offset-map rel)))
-    (ArrayRelation. offset-map (concat coll (.-coll rel))))
-  Object
-  (toString [rel] (pr-rel-str "ArrayRelation" rel))
-  IPrintWithWriter
-  (-pr-writer [rel writer _opts]
-    (e/-write writer (pr-rel-str "ArrayRelation" rel))))
+    (assert (= offset-map (:offset-map rel)))
+    (ArrayRelation. offset-map (concat coll (:coll rel)))))
 
+#?(:clj
+   (defmethod print-method ArrayRelation [rel w]
+     (pr-rel rel w)))
 
 (defn array-rel [symbols coll]
   (->ArrayRelation (zipmap symbols (range)) coll))
@@ -180,39 +264,29 @@
 
 ;;; CollRelation
 
-(host-deftype CollRelation [offset-map coll]
-  clojure.lang.ILookup
-  (valAt [_ k] (case k :offset-map offset-map :coll coll nil))
-  (valAt [_ k nf] (case k :offset-map offset-map :coll coll nf))
+(deftype CollRelation [offset-map coll]
   IRelation
   (-project [_ syms]
     (CollRelation. (select-keys offset-map syms) coll))
   (-alter-coll [_ f]
     (CollRelation. offset-map (f coll)))
   (-symbols [_]        (keys offset-map))
-  (-arity   [_]        (e/count offset-map))
-  (-fold    [_ f init] (e/reduce f init coll))
-  (-size    [_]        (e/count coll)) ;; (if (instance? Iter coll) (btset/est-count coll) (e/count coll))
+  (-arity   [_]        (count offset-map))
+  (-fold    [_ f init] (reduce f init coll))
+  (-size    [_]        (count coll)) ;; (if (instance? Iter coll) (btset/est-count coll) (count coll))
   (-getter  [_ symbol]
     (let [idx (offset-map symbol)]
       (fn [tuple]
-        (e/nth tuple idx))))
+        (nth tuple idx))))
   (-indexes [_ syms]
     (mapa offset-map syms))
   (-copy-tuple [_ tuple idxs target target-idxs]
-    (reduce (fn [target i]
-              (da/aset target (da/aget target-idxs i) (e/nth tuple (da/aget idxs i))))
-      target (range (da/alength idxs))))
+    (dotimes [i (da/alength idxs)]
+      (da/aset target (da/aget target-idxs i) (nth tuple (da/aget idxs i)))))
   (-union [_ rel]
     (assert (instance? CollRelation rel))
-    (assert (= offset-map (.-offset-map rel)))
-    (CollRelation. offset-map (concat coll (.-coll rel))))
-  Object
-  (toString [rel] (pr-rel-str "CollRelation" rel))
-  IPrintWithWriter
-  (-pr-writer [rel writer _opts]
-    (e/-write writer (pr-rel-str "CollRelation" rel))))
-
+    (assert (= offset-map (:offset-map rel)))
+    (CollRelation. offset-map (concat coll (:coll rel)))))
 
 (defn coll-rel [symbols coll]
   (let [offset-map (reduce-kv
@@ -230,6 +304,9 @@
                      (zipmap symbols (range)))]
     (->CollRelation offset-map coll)))
 
+#?(:clj
+   (defmethod print-method CollRelation [rel w]
+     (pr-rel rel w)))
 
 
 ;;; ProdRelation
@@ -260,9 +337,9 @@
 ;;   (-indexes [_ syms]
 ;;     (let [[syms1 syms2] (split-with (set (-symbols rel1)) syms)]
 ;;       [(-indexes rel1 syms1)
-;;        (e/count syms1)
+;;        (count syms1)
 ;;        (-indexes rel2 syms2)
-;;        (e/count syms2)]))
+;;        (count syms2)]))
 ;;   (-copy-tuple [_ tuple idxs target target-idxs]
 ;;     (let [[idxs1 arity1 idxs2 arity2] idxs
 ;;           target-idxs1 (subarr target-idxs 0 arity1)
@@ -275,22 +352,14 @@
 
 ;;; SingletonRelation
 
-(host-deftype SingletonRelation []
+(deftype SingletonRelation []
   IRelation
-  ;; basilisp requires every protocol method at compile time. The
-  ;; original type only named the methods its call sites used; the
-  ;; four stubs keep the empty-symbol singleton semantics.
-  (-project    [_ _] (SingletonRelation.))
-  (-alter-coll [_ _] (SingletonRelation.))
   (-symbols    [_] [])
   (-arity      [_] 0)
-  (-fold       [_ f init] (f init []))
+  (-fold       [_ f init] (f init (to-array [])))
   (-size       [_] 1)
-  (-getter     [_ _] (fn [_]))
-  (-indexes    [_ _] [])
-  (-copy-tuple [_ _ _ target _] target)
-  (-union      [_ _] (SingletonRelation.)))
-
+  (-indexes    [_ _] (to-array []))
+  (-copy-tuple [_ _ _ _ _]))
 
 (def singleton-rel ->SingletonRelation)
 
@@ -301,8 +370,9 @@
                     arity
                     target-idxs1 target-idxs2]
   (let [arr (da/make-array arity)]
-    (-copy-tuple rel2 t2 idxs2
-      (-copy-tuple rel1 t1 idxs1 arr target-idxs1) target-idxs2)))
+    (-copy-tuple rel1 t1 idxs1 arr target-idxs1)
+    (-copy-tuple rel2 t2 idxs2 arr target-idxs2)
+    arr))
 
 (defn product [rel1 rel2]
   (let [idxs1  (-indexes rel1 (-symbols rel1))
@@ -316,42 +386,46 @@
                  (fn [acc t1]
                    (-fold rel2
                      (fn [acc t2]
-                       (e/conj! acc (join-tuples rel1 t1 idxs1
+                       (conj! acc (join-tuples rel1 t1 idxs1
                                     rel2 t2 idxs2
                                     arity
                                     target-idxs1
                                     target-idxs2)))
                      acc))
-                 (e/transient (fast-arr)))]
+                 (fast-arr))]
     (array-rel
       (concatv (-symbols rel1) (-symbols rel2))
-      (e/persistent! coll))))
+      (persistent! coll))))
 
 (defn product-all [rels]
-  (e/reduce product rels)) ;; TODO check for empty rels
+  (reduce product rels)) ;; TODO check for empty rels
 
 
 ;; hash-join
 
 (defn- key-fn [rel syms]
-  (let [arity (e/count syms)]
+  (let [arity (count syms)]
     (if (== arity 1)
       (-getter rel (first syms))
       (let [idxs        (-indexes rel syms)
             target-idxs (arange 0 arity)]
         (fn [t]
           (let [arr (da/make-array arity)]
-            (vec (-copy-tuple rel t idxs arr target-idxs))))))))
+            (-copy-tuple rel t idxs arr target-idxs)
+            (vec arr)))))))
 
 (defn hash-map-rel [rel syms]
   (let [key-fn (key-fn rel syms)]
-    (e/persistent!
+    (->>
       (-fold rel
         (fn [hash t]
           (let [key (key-fn t)
-                old (e/get hash key)]
-            (e/assoc! hash key (e/conj (or old (fast-arr)) t))))
-        (e/transient (fast-map))))))
+                old (get hash key)]
+            (if (nil? old)
+              (assoc! hash key (conj! (fast-arr) t))
+              (do (conj! old t) hash))))
+        (transient (fast-map)))
+      (persistent!))))
 
 (defn hash-join [rel1 hash1 join-syms rel2]
   (let [syms1       (-symbols rel1)
@@ -361,26 +435,26 @@
         idxs1       (-indexes rel1 syms1)
         idxs2       (-indexes rel2 keep-syms2)
         full-syms   (concatv syms1 keep-syms2)
-        arity1      (e/count syms1)
-        arity2      (e/count keep-syms2)
+        arity1      (count syms1)
+        arity2      (count keep-syms2)
         arity       (+ arity1 arity2)
         target-idxs1 (arange 0 arity1)
         target-idxs2 (arange arity1 arity)
         
         coll        (-fold rel2 ;; iterate over rel2
                       (fn [acc t2]
-                        (let [tuples1 (e/get hash1 (key-fn2 t2))]
+                        (let [tuples1 (get hash1 (key-fn2 t2))]
                           (if (nil? tuples1)
                             acc
-                            (e/reduce (fn [acc t1]
-                                      (e/conj! acc (join-tuples rel1 t1 idxs1
+                            (reduce (fn [acc t1]
+                                      (conj! acc (join-tuples rel1 t1 idxs1
                                                    rel2 t2 idxs2
                                                    arity
                                                    target-idxs1
                                                    target-idxs2)))
-                              acc tuples1))))
-                      (e/transient (fast-arr)))]
-    (array-rel full-syms (e/persistent! coll))))
+                              acc (persistent! tuples1)))))
+                      (fast-arr))]
+    (array-rel full-syms (persistent! coll))))
 
 
 ;; Bindings
@@ -393,18 +467,19 @@
 
     BindScalar
     (let [symbol (get-in binding [:variable :symbol])
-          idx    (e/get indexes symbol)]
-      (mapv #(da/aset % idx source) tuples))
+          idx    (get indexes symbol)]
+      (run! #(da/aset % idx source) tuples)
+      tuples)
 
     BindColl
     (if (not (db/seqable? source))
       (util/raise "Cannot bind value " source " to collection " (dp/source binding)
         {:error :query/binding, :value source, :binding (dp/source binding)})
       (let [inner-binding (:binding binding)]
-        (case (e/count source)
+        (case (count source)
           0 []
           1 (bind! tuples inner-binding (first source) indexes)
-          (e/into [] ;; TODO fast-arr
+          (into [] ;; TODO fast-arr
             (comp (map #(bind! tuples inner-binding % indexes))
               cat
               (map da/aclone))
@@ -415,10 +490,10 @@
       (when-not (db/seqable? source)
         (util/raise "Cannot bind value " source " to tuple " (dp/source binding)
           {:error :query/binding, :value source, :binding (dp/source binding)}))
-      (when (< (e/count source) (e/count bindings))
+      (when (< (count source) (count bindings))
         (util/raise "Not enough elements in a collection " source " to bind tuple " (dp/source binding)
           {:error :query/binding, :value source, :binding (dp/source binding)}))
-      (e/reduce (fn [ts [b s]]
+      (reduce (fn [ts [b s]]
                 (bind! ts b s indexes))
         tuples
         (zip bindings source)))
@@ -430,13 +505,13 @@
 (defn bind [binding source]
   (let [syms    (map :symbol (dp/collect-vars-distinct binding))
         indexes (zipmap syms (range))
-        tuples  (bind! [(da/make-array (e/count syms))] binding source indexes)]
+        tuples  (bind! [(da/make-array (count syms))] binding source indexes)]
     (array-rel syms tuples)))
 
 (defn- rel->consts [rel]
   {:pre [(== (-size rel) 1)]}
   (let [tuple (-fold rel (fn [_ t] t) nil)]
-    (e/into {}
+    (into {}
       (map #(vector % ((-getter rel %) tuple)) (-symbols rel)))))
 
 (defn- resolve-in [context [binding value]]
@@ -444,8 +519,8 @@
     (and (instance? BindScalar binding)
       (instance? SrcVar (:variable binding)))
     (update-in context [:sources] assoc (get-in binding [:variable :symbol]) value)
-    ;;     (and (instance? #?(:jank BindScalar :clj BindScalar :cljs BindScalar) binding)
-    ;;          (instance? #?(:jank dp/RulesVar :clj RulesVar :cljs dp/RulesVar) (:variable binding)))
+    ;;     (and (instance? BindScalar binding)
+    ;;          (instance? RulesVar (:variable binding)))
     ;;       (assoc context :rules (parse-rules value))
     :else
     (let [rel (bind binding value)]
@@ -454,21 +529,24 @@
         (update-in context [:rels] conj rel)))))
 
 (defn resolve-ins [context bindings values]
-  (when (not= (e/count bindings) (e/count values))
+  (when (not= (count bindings) (count values))
     (util/raise "Wrong number of arguments for bindings " (mapv dp/source bindings)
-      ", " (e/count bindings) " required, " (e/count values) " provided"
+      ", " (count bindings) " required, " (count values) " provided"
       {:error :query/binding, :binding (mapv dp/source bindings)}))
-  (e/reduce resolve-in context (zip bindings values)))
+  (reduce resolve-in context (zip bindings values)))
 
 
 ;;; Resolution
+
+(defprotocol IClause
+  (-resolve-clause [clause context]))
 
 (defn get-source [context source]
   (let [symbol (cond
                  (instance? SrcVar source)     (:symbol source)
                  (instance? DefaultSrc source) (:default-source-symbol context)
                  :else (util/raise "Source expected, got " source))]
-    (or (e/get (:sources context) symbol)
+    (or (get (:sources context) symbol)
       (util/raise "Source " symbol " is not defined"
         {:error :query/where, :symbol symbol}))))
     
@@ -486,12 +564,12 @@
   ;;   (when-not (db/seqable? tuple)
   ;;     (util/raise "Cannot match pattern " (dp/source clause) " because tuple is not a collection: " tuple
   ;;            {:error :query/where, :value tuple, :binding (dp/source clause)}))
-  ;;   (when (< (e/count tuple) (e/count (:pattern clause)))
+  ;;   (when (< (count tuple) (count (:pattern clause)))
   ;;     (util/raise "Not enough elements in a relation tuple " tuple " to match " (dp/source clause)
   ;;            {:error :query/where, :value tuple, :binding (dp/source clause)}))
   (reduce-kv
     (fn [_ i v]
-      (if (not= (e/nth tuple i) v) ;; nth?
+      (if (not= (nth tuple i) v) ;; nth?
         (reduced false)
         true))
     true
@@ -504,12 +582,12 @@
   (let [pattern (:pattern clause)
         idxs    (->> (map #(when (instance? Constant %1) [%2 (:value %1)]) pattern (range))
                   (remove nil?)
-                  (e/into {}))
+                  (into {}))
         data    (filter #(matches-pattern? idxs %) coll)]
     (coll-rel pattern data)))
 
 (defn clause-syms [clause]
-  (e/into #{} (map :symbol) (dp/collect #(instance? Variable %) clause #{})))
+  (into #{} (map :symbol) (dp/collect #(instance? Variable %) clause #{})))
 
 (defn substitute-constants [clause context]
   (let [syms   (clause-syms clause)
@@ -520,11 +598,8 @@
         (fn [form]
           (if (instance? Variable form)
             (let [sym (:symbol form)]
-              (if-let [subs (e/get (:consts context) (:symbol form))]
-                ;; PORT DELTA (F-NBB-MACROS round): as in
-                ;; eve.db.ds.core's FilteredDB — class constructor
-                ;; on :clj, factory var on :cljs
-                (dp/->Constant subs)
+              (if-let [subs (get (:consts context) (:symbol form))]
+                (Constant. subs)
                 form))
             form)))
       clause)))
@@ -583,7 +658,7 @@
 (defn project-context [context syms]
   (assoc context
     :consts (select-keys (:consts context) syms)
-    :rels   (e/into []
+    :rels   (into []
               (comp (map #(project-rel % syms))
                 (remove nil?))
               (:rels context))))
@@ -591,24 +666,24 @@
 (defn collect-opt
   "Collects values if only one symbol, vecs if many (compatible with key-fn)"
   [context syms]
-  (if (== 1 (e/count syms))
+  (if (== 1 (count syms))
     (let [sym (first syms)]
-      (if-let [val (e/get (:consts context) sym)]
-        (e/into (fast-set) [val])
+      (if-let [val (get (:consts context) sym)]
+        (into (fast-set) [val])
         (let [rel    (first (related-rels context [sym]))
               getter (-getter rel sym)]
           (->> (fast-set)
-            (e/transient)
+            (transient)
             (-fold rel
               (fn [set tuple]
-                (e/conj! set (getter tuple))))
-            (e/persistent!)))))
+                (conj! set (getter tuple))))
+            (persistent!)))))
     (collect-to context syms (fast-set) [(map vec)])))
 
 (defn subtract-from-rel [rel syms exclude-key-set]
   (let [key-fn1 (key-fn rel syms)
-        pred    (fn [t1] (e/contains? exclude-key-set (key-fn1 t1)))]
-    (-alter-coll rel #(e/into (fast-arr) (remove pred) %))))
+        pred    (fn [t1] (contains? exclude-key-set (key-fn1 t1)))]
+    (-alter-coll rel #(into (fast-arr) (remove pred) %))))
 
 (defn subtract-contexts [context1 context2 syms]
   (if (:empty? context2) ;; empty context2 means there’s nothing to subtract
@@ -632,9 +707,9 @@
 
 (defn check-bound [context syms form]
   (let [context-syms (-> #{}
-                       (e/into (keys (:consts context)))
-                       (e/into (mapcat -symbols) (:rels context))
-                       (e/into (keys (:sources context))))]
+                       (into (keys (:consts context)))
+                       (into (mapcat -symbols) (:rels context))
+                       (into (keys (:sources context))))]
     (when-not (set/subset? syms context-syms)
       (let [missing (set/difference (set syms) context-syms)]
         (throw (ex-info (str "Insufficient bindings: " missing " not bound in " form)
@@ -645,7 +720,7 @@
 
 (defn resolve-not [context clause]
   (let [{:keys [source vars clauses]} clause
-        syms      (e/into #{} (map :symbol) vars)
+        syms      (into #{} (map :symbol) vars)
         _         (check-bound context syms (dp/source clause))
         context*  (-> context
                     (project-context syms) ;; sub-context will only see symbols Not is joined by
@@ -657,7 +732,7 @@
   (let [{:keys [source rule-vars clauses]} clause
         {:keys [required free]}            rule-vars
         _    (check-bound context (map :symbol required) (dp/source clause))
-        syms (e/into #{} (map :symbol) (concat required free))
+        syms (into #{} (map :symbol) (concat required free))
         context*  (-> context
                     (project-context syms)
                     (upd-default-source clause))
@@ -670,35 +745,33 @@
         (if (empty? non-consts)
           context ;; join was by constants only, nothing changes
           (let [arrays (map #(collect-to % non-consts (fast-arr)) contexts)
-                rel    (array-rel non-consts (e/into (first arrays) cat (next arrays)))]
+                rel    (array-rel non-consts (into (first arrays) cat (next arrays)))]
             (hash-join-rel context rel)))))))
 
 (defn collect-args! [context args target form]
-  ;; Arrays in the port are persistent values, not mutable host buffers.
-  (let [consts (:consts context)
+  (let [consts  (:consts context)
         sources (:sources context)]
-    (reduce (fn [target [arg i]]
-              (let [sym (:symbol arg)]
-                (cond
-                  (instance? Variable arg)
-                  (if (contains? consts sym)
-                    (da/aset target i (e/get consts sym)) target)
-                  (instance? SrcVar arg)
-                  (if (contains? sources sym)
-                    (da/aset target i (e/get sources sym))
-                    (throw (ex-info (str "Unbound source variable: " sym " in " form)
-                             {:error :query/where, :form form, :var sym})))
-                  (instance? Constant arg) (da/aset target i (:value arg))
-                  :else target)))
-      target (zip args (range)))))
+    (doseq [[arg i] (zip args (range))
+            :let [sym (:symbol arg)]]
+      (cond
+        (instance? Variable arg)
+        (when (contains? consts sym)
+          (da/aset target i (get consts sym)))
+        (instance? SrcVar arg)
+        (if (contains? sources sym)
+          (da/aset target i (get sources sym))
+          (throw (ex-info (str "Unbound source variable: " sym " in " form)
+                   { :error :query/where, :form form, :var sym})))
+        (instance? Constant arg)
+        (da/aset target i (:value arg))))))
 
 (defn get-f [context fun form]
   (let [sym (:symbol fun)]
     (if (instance? PlainSymbol fun)
-      (or (e/get built-ins/query-fns sym)
+      (or (get built-ins/query-fns sym)
         (throw (ex-info (str "Unknown built-in " sym " in " form)
                  {:error :query/where, :form form, :var sym})))
-      (or (e/get (:consts context) sym) ;; variable then
+      (or (get (:consts context) sym) ;; variable then
         (throw (ex-info (str "Unknown function " sym " in " form)
                  {:error :query/where, :form form, :var sym}))))))
 
@@ -706,7 +779,8 @@
   (let [{fun :fn, args :args} clause
         form      (dp/source clause)
         f         (get-f context fun form)
-        args-arr  (collect-args! context args (da/make-array (e/count args)) form)
+        args-arr  (da/make-array (count args))
+        _         (collect-args! context args args-arr form)
         consts    (:consts context)
         sym+idx   (for [[arg i] (zip args (range))
                         :when   (instance? Variable arg)
@@ -721,11 +795,12 @@
         context
         empty-context)
       (let [[rels context*] (extract-rels context args-syms)]
-        (if (== 1 (e/count rels))
+        (if (== 1 (count rels))
           (let [rel  (first rels)
                 idxs (-indexes rel args-syms)
                 pred (fn [tuple]
-                       (apply f (vec (-copy-tuple rel tuple idxs args-arr args-idxs))))
+                       (-copy-tuple rel tuple idxs args-arr args-idxs)
+                       (apply f (vec args-arr)))
                 rel* (-alter-coll rel #(filterv pred %))]
             (join-unrelated context* rel*))
           (let [prod-syms    (mapcat -symbols rels)
@@ -735,29 +810,32 @@
 
                 idxs         (-indexes prod-rel args-syms)
                 pred         (fn [tuple]
-                               (apply f (vec (-copy-tuple prod-rel tuple idxs args-arr args-idxs))))
+                               (-copy-tuple prod-rel tuple idxs args-arr args-idxs)
+                               (apply f (vec args-arr)))
 
-                array        (e/into (fast-arr)
+                array        (into (fast-arr)
                                (apply comp (concat xfs [(filter pred)]))
-                               [(da/make-array (e/count prod-syms))])
+                               [(da/make-array (count prod-syms))])
                 prod-rel*    (array-rel prod-syms array)]
             (join-unrelated context* prod-rel*)))))))
 
 
-(defn -resolve-clause [clause context]
-  (cond
-    (instance? Pattern clause)
-    (resolve-pattern context clause)
-    (instance? Not clause)
-    (resolve-not context clause)
-    (instance? Or clause)
-    (resolve-or context clause)
-    (instance? And clause)
-    (resolve-clauses context (:clauses clause))
-    (instance? Predicate clause)
-    (resolve-predicate context clause)
-    :else
-    (throw (ex-info (str "No -resolve-clause impl for " (pr-str (type clause))) {:clause clause}))))
+(extend-protocol IClause
+  Pattern
+  (-resolve-clause [clause context]
+    (resolve-pattern context clause))
+  Not
+  (-resolve-clause [clause context]
+    (resolve-not context clause))
+  Or
+  (-resolve-clause [clause context]
+    (resolve-or context clause))
+  And
+  (-resolve-clause [clause context]
+    (resolve-clauses context (:clauses clause)))
+  Predicate
+  (-resolve-clause [clause context]
+    (resolve-predicate context clause)))
 
 (defn println-context [context]
   (print "{:rels")
@@ -769,7 +847,7 @@
     
 
 (defn resolve-clauses [context clauses]
-  (e/reduce (fn [context clause]
+  (reduce (fn [context clause]
             (let [context* (-resolve-clause clause context)]
               (if (:empty? context*)
                 (reduced context*)
@@ -780,11 +858,12 @@
     context clauses))
 
 (defn collect-consts [syms-indexed specimen consts]
-  (reduce (fn [specimen [sym i]]
-            (if (contains? consts sym)
-              (da/aset specimen i (e/get consts sym)) specimen))
-    specimen syms-indexed))
+  (doseq [[sym i] syms-indexed]
+    (when (contains? consts sym)
+      (let [val (get consts sym)]
+        (da/aset specimen i val)))))
 
+        
 (defn collect-rel-xf [syms-indexed rel]
   (let [sym+idx     (for [[sym i] syms-indexed
                           :when (has? (-symbols rel) sym)]
@@ -798,46 +877,34 @@
         ([result specimen]
          (-fold rel
            (fn [acc tuple]
-             (rf acc (-copy-tuple rel tuple idxs specimen target-idxs)))
+             (let [t (da/aclone specimen)]
+               (-copy-tuple rel tuple idxs t target-idxs)
+               (rf acc t)))
            result))))))
 
 (defn collect-to
   ([context syms acc]
-   (collect-to context syms acc [] (da/make-array (e/count syms))))
+   (collect-to context syms acc [] (da/make-array (count syms))))
   ([context syms acc xfs]
-   (collect-to context syms acc xfs (da/make-array (e/count syms))))
+   (collect-to context syms acc xfs (da/make-array (count syms))))
   ([context syms acc xfs specimen]
    ;; TODO don't collect if array-rel and matches symbols
    (if (:empty? context)
      acc
      (let [syms-indexed (vec (zip syms (range)))
-           specimen     (collect-consts syms-indexed specimen (:consts context))
+           _            (collect-consts syms-indexed specimen (:consts context))
            related-rels (related-rels context syms)
            xfs          (-> (map #(collect-rel-xf syms-indexed %) related-rels)
                           (concat xfs))]
-       (e/into acc (apply comp xfs) [specimen])))))
+       (into acc (apply comp xfs) [specimen])))))
 
 
 ;; Query
 
-;; eve.host/defdelay, not (def .. (delay ..)) nor a value def: clojerl compiles a
-;; def's init into its module as a literal, and an Eve value or a delay is not
-;; one. defdelay is the seats' arrangement for that (made on first use).
-(eh/defdelay query-cache (db/call-in-parse-domain (fn [] (lru/cache lru-cache-size))))
-
-(declare q-impl)
+(def query-cache (lru/cache lru-cache-size))
 
 (defn q [q & inputs]
-  ;; Construction law: relations and result collections are constructed
-  ;; in the queried DB's own domain; a query with no DB input uses the
-  ;; parse domain.
-  (let [db (first (filter #(or (db/db? %) (db/filtered-db? %)) inputs))]
-    (if (some? db)
-      (db/call-in-db-ish-domain db (fn [] (apply q-impl q inputs)))
-      (db/call-in-parse-domain (fn [] (apply q-impl q inputs))))))
-
-(defn- q-impl [q & inputs]
-  (let [parsed-q (lru/-get @query-cache q #(dp/parse-query q))
+  (let [parsed-q (lru/-get query-cache q #(dp/parse-query q))
         context  {:rels    []
                   :consts  {}
                   :sources {}
@@ -847,7 +914,7 @@
         context  (resolve-clauses context (:qwhere parsed-q))
         syms     (concat (dp/find-vars (:qfind parsed-q))
                    (map :symbol (:qwith parsed-q)))]
-    (collect-to context syms (fast-set) [(map vec)])))
+    (native-coll (collect-to context syms (fast-set) [(map vec)]))))
 
 
 (comment

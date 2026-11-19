@@ -1,101 +1,31 @@
 (ns eve.db.ds.core
   (:refer-clojure :exclude [filter])
   (:require
-    ;; Eve's EDN reader (registered Eve readers + exact number tokens on
-    ;; every host): one portable libspec, no per-host reader branch.
-    [eve.edn :as edn]
-    ;; bb: eve.host-completion must be loaded before eve.db.ds.conn
-    ;; expands extend/deftype-atom, so present-deftype-atom is in
-    ;; place. A same-file require inside conn.cljc is too late on
-    ;; SCI (the unpresented factory dies with "No value supplied
-    ;; for key: clojure.lang.Atom"). Keep this :bb-only; an
-    ;; unconditional require is harmful on basilisp.
-    #?(:bb [eve.host-completion])
+    [#?(:cljs cljs.reader :clj clojure.edn) :as edn]
     [eve.db.ds.conn :as conn]
-    ;; PORT DELTA (F-NBB-MACROS round): as in eve.db.ds.conn — no
-    ;; :cljs type refers; the types are named qualified at their uses
-    [eve.db.ds.db :as db]
-    ;; pprint.clj is JVM-only; jank reads :clj arms too, so skip it there
-    #?@(:jank [] :clj [[eve.db.ds.pprint]])
+    [eve.db.ds.db :as db #?@(:cljs [:refer [Datom DB FilteredDB]])]
+    #?(:clj [eve.db.ds.pprint])
     [eve.db.ds.pull-api :as dp]
     [eve.db.ds.serialize :as ds]
     [eve.db.ds.storage :as storage]
     [eve.db.ds.query :as dq]
     [eve.db.ds.impl.entity :as de]
     [eve.db.ds.util :as util]
-    [eve.thread :as thread]
-    [eve.read-region :as rr]
-    [eve.deftype-proto.data :as eve-data]
-    [me.tonsky.persistent-sorted-set :as set]))
+    [me.tonsky.persistent-sorted-set :as set])
+  #?(:clj
+     (:import
+       [eve.db.ds.db Datom DB FilteredDB]
+       [eve.db.ds.impl.entity Entity]
+       [java.util UUID])))
 
 (def ^:const ^:no-doc tx0 
   db/tx0)
 
-; Read regions: read the stored DB in place
-
-(defonce ^:private region-escapes
-  ;; {:db n :datom n :entity n :other n}: values that left a read region
-  ;; slab-backed and were copied out (delivered) at its exit
-  (atom {:db 0 :datom 0 :entity 0}))
-
-(defn region-escape-counts
-  "How many DBs, datoms and entities left a read region (and were copied
-   out at its exit) since the last reset."
-  []
-  @region-escapes)
-
-(defn reset-region-escape-counts! []
-  (reset! region-escapes {:db 0 :datom 0 :entity 0}))
-
-(def ^:private deliver-flat
-  ;; eve.flat.freeze/deliver-flat, reached as eve.atom reaches it (never a
-  ;; static require); nil where the host has none (deref there answers the
-  ;; value as is, and so does a region)
-  (delay
-    #?(:cljs nil
-       :default (try @(requiring-resolve 'eve.flat.freeze/deliver-flat)
-                     (catch #?(:cljs :default :cljd dynamic :cljr Exception :lpy python/BaseException :clje _ :glj go/any :jank jank.runtime.object_ref :default Throwable) _ nil)))))
-
-(defn- escape-copy [k v]
-  (swap! region-escapes update k inc)
-  (if-let [f @deliver-flat] (f v) v))
-
-(defn- eve-coll? [x]
-  (or (satisfies? eve-data/IPlain x) (satisfies? eve-data/IsEve x)))
-
-(defn- region-materialize
-  "A read region's result made safe to hold after the region's pins go:
-   a DB, datom or entity read in place is copied out (the same delivery a
-   plain deref makes) and counted; everything else as eve->clj."
-  [x]
-  (cond
-    (nil? x) nil
-    (or (string? x) (number? x) (keyword? x) (boolean? x)) x
-    (db/db? x)    (if (identical? x (db/unfiltered-db x)) (escape-copy :db x) x)
-    (db/datom? x) (escape-copy :datom x)
-    (de/entity? x) (do (swap! region-escapes update :entity inc)
-                       (de/entity (escape-copy :db (.-db x))
-                                  (.-eid x)))
-    (map? x)    (if (eve-coll? x) (eve-data/eve->clj x) (into {} (map (fn [[k v]] [(region-materialize k) (region-materialize v)])) x))
-    (set? x)    (if (eve-coll? x) (eve-data/eve->clj x) (into #{} (map region-materialize) x))
-    (vector? x) (if (eve-coll? x) (eve-data/eve->clj x) (mapv region-materialize x))
-    (sequential? x) (doall (map region-materialize x))
-    :else (eve-data/eve->clj x)))
-
-(defn read-in
-  "(f) as an Eve read region (eve.alpha/$): every Eve atom deref'd in it
-   answers the stored DB in place — slab-backed, pinned until the region
-   exits, no copy — so q, pull, entity, datoms and index seeks over @a read
-   the stored indexes directly. The result is materialized before the
-   pins go; a DB, datom or entity that escapes is copied out then
-   (region-escape-counts). A region inside another joins it."
-  [f]
-  (rr/run f region-materialize))
-
 
 ; Entities
 
-(def ^{:arglists '([db eid])
+(def ^{:tag Entity
+       :arglists '([db eid])
        :doc "Retrieves an entity by its id from database. Entities are lazy map-like structures to navigate DataScript database content.
 
              For `eid` pass entity id or lookup attr:
@@ -152,13 +82,14 @@
              If entity does not exist, returns `nil`."}
   entid db/entid)
 
-(defn entity-db
+(defn ^DB entity-db
   "Returns a db that entity was created from."
-  [entity]
+  [^Entity entity]
   {:pre [(de/entity? entity)]}
   (.-db entity))
 
-(def ^{:arglists '([e])
+(def ^{:tag Entity
+       :arglists '([e])
        :doc "Forces all entity attributes to be eagerly fetched and cached. Only usable for debug output.
 
              Usage:
@@ -217,7 +148,7 @@
 
 ; Creating DB
 
-(defn empty-db
+(defn ^DB empty-db
   "Creates an empty database with an optional schema.
 
    Usage:
@@ -248,7 +179,8 @@
        :doc "Returns `true` if the given value is an immutable database, `false` otherwise."}
   db? db/db?)
 
-(def ^{:arglists '([e a v] [e a v tx] [e a v tx added])
+(def ^{:tag Datom
+       :arglists '([e a v] [e a v tx] [e a v tx added])
        :doc "Low-level fn to create raw datoms.
 
              Optionally with transaction id (number) and `added` flag (`true` for addition, `false` for retraction).
@@ -260,7 +192,7 @@
        :doc "Returns `true` if the given value is a datom, `false` otherwise."}
   datom? db/datom?)
 
-(defn init-db
+(defn ^DB init-db
   "Low-level fn for creating database quickly from a trusted sequence of datoms.
    Does no validation on inputs, so `datoms` must be well-formed and match schema.
    Used internally in db (de)serialization. See also [[datom]].
@@ -286,7 +218,8 @@
              `pr-str` by default."}
   serializable ds/serializable)
 
-(def ^{:arglists '([serializable] [serializable opts])
+(def ^{:tag DB
+       :arglists '([serializable] [serializable opts])
        :doc "Creates db from a data structure (not string!) produced by serializable.
 
              Opts:
@@ -309,7 +242,7 @@
 (defn is-filtered
   "Returns `true` if this database was filtered using [[filter]], `false` otherwise."
   [x]
-  (not (identical? x (db/unfiltered-db x))))
+  (instance? FilteredDB x))
 
 (defn filter
   "Returns a view over database that has same interface but only includes datoms for which the `(pred db datom)` is true. Can be applied multiple times.
@@ -322,14 +255,12 @@
    - Does not support [[with]] and [[db-with]]."
   [db pred]
   {:pre [(db/db? db)]}
-  ;; No functions in Eve memory: the pred travels with this call and is
-  ;; registered host-side (see eve.db.ds.db/filter-db); the FilteredDB
-  ;; value carries only the registry id. Composition of nested filters
-  ;; happens inside db/filter-db.
   (if (is-filtered db)
-    (let [orig-db (db/unfiltered-db db)]
-      (db/filter-db db (fn [d] (pred orig-db d))))
-    (db/filter-db db (fn [d] (pred db d)))))
+    (let [^FilteredDB fdb db
+          orig-pred (.-pred fdb)
+          orig-db   (.-unfiltered-db fdb)]
+      (FilteredDB. orig-db #(and (orig-pred %) (pred orig-db %)) (atom 0)))
+    (FilteredDB. db #(pred db %) (atom 0))))
 
 
 ; Changing DB
@@ -338,11 +269,11 @@
   "Same as [[transact!]], but applies to an immutable database value. Returns transaction report (see [[transact!]])."
   conn/with)
 
-(def ^{:arglists '([db tx-data])} db-with
+(def ^{:arglists '([db tx-data]) :tag DB} db-with
   "Applies transaction to an immutable db value, returning new immutable db value. Same as `(:db-after (with db tx-data))`."
   conn/db-with)
 
-(defn with-schema
+(defn ^DB with-schema
   "Warning! No validation or conversion. Only change schema in a compatible way"
   [db schema]
   (db/with-schema db schema))
@@ -426,7 +357,7 @@
   ([db index c0 c1 c2]    {:pre [(db/db? db)]} (db/-datoms db index c0  c1  c2  nil))
   ([db index c0 c1 c2 c3] {:pre [(db/db? db)]} (db/-datoms db index c0  c1  c2  c3)))
 
-(defn find-datom
+(defn ^Datom find-datom
   "Same as [[datoms]], but only returns single datom. Faster than `(first (datoms ...))`"
   ([db index]             {:pre [(db/db? db)]} (db/find-datom db index nil nil nil nil))
   ([db index c0]          {:pre [(db/db? db)]} (db/find-datom db index c0  nil nil nil))
@@ -533,10 +464,11 @@
    If you specify `:storage` option, conn will be stored automatically after each transaction"
   conn/create-conn)
 
-(def ^{:arglists '([storage] [storage opts])} restore-conn
-  "On Eve, a DB lives in an Eve atom; there is no separate IStorage.
-   Calling this raises that guidance."
-  conn/restore-conn)
+#?(:clj
+   (def ^{:arglists '([storage] [storage opts])} restore-conn
+     "Lazy-load database from storage and make conn out of it.
+      Returns nil if there’s no database yet in storage"
+     conn/restore-conn))
 
 (def ^{:arglists '([conn tx-data] [conn tx-data tx-meta])} transact!
   "Applies transaction the underlying database value and atomically updates connection reference to point to the result of that transaction, new db value.
@@ -659,19 +591,6 @@
 #?(:cljs
    (doseq [[tag cb] data-readers] (edn/register-tag-parser! tag cb)))
 
-;; :lpy: register programmatically at load, twinning the :cljs arm.
-;; Basilisp's file route (load-data-readers scanning sys.path for
-;; data_readers.cljc) runs when basilisp.core loads — before a
-;; `basilisp run -p ...` staging's roots are on sys.path, the tags
-;; never register: measured in DISPATCH #58, where read-string of a
-;; printed DB still threw "No data reader found for tag
-;; #eve.db.ds/DB" with data_readers.cljc present at the src root
-;; (that file, added at f44d99ff7844, still serves the JVM RT route).
-;; eve.db.ds.db is loaded by now, so data-readers' values are the
-;; reader fns themselves.
-#?(:lpy
-   (alter-var-root #'*data-readers* (fn [m] (merge m data-readers))))
-
 
 ;; Datomic compatibility layer
 
@@ -697,7 +616,7 @@
   [_db tempids tempid]
   (get tempids tempid))
 
-(defn db
+(defn ^DB db
   "Returns the underlying immutable database value from a connection.
    
    Exists for Datomic API compatibility. Prefer using `@conn` directly if possible."
@@ -713,14 +632,46 @@
   ([conn tx-data tx-meta]
    {:pre [(conn? conn)]}
    (let [res (transact! conn tx-data tx-meta)]
-     (doto (thread/promise) (thread/deliver res)))))
+     #?(:cljs
+        (reify
+          IDeref
+          (-deref [_] res)
+          IDerefWithTimeout
+          (-deref-with-timeout [_ _ _] res)
+          IPending
+          (-realized? [_] true))
+        :clj
+        (reify
+          clojure.lang.IDeref
+          (deref [_] res)
+          clojure.lang.IBlockingDeref
+          (deref [_ _ _] res)
+          clojure.lang.IPending
+          (isRealized [_] true))))))
+
+
+;; ersatz future without proper blocking
+#?(:cljs
+   (defn- future-call [f]
+     (let [res      (atom nil)
+           realized (atom false)]
+       (js/setTimeout #(do (reset! res (f)) (reset! realized true)) 0)
+       (reify
+         IDeref
+         (-deref [_] @res)
+         IDerefWithTimeout
+         (-deref-with-timeout [_ _ timeout-val] (if @realized @res timeout-val))
+         IPending
+         (-realized? [_] @realized)))))
 
 (defn transact-async
-  "Calls [[transact!]] through eve.thread/future-call and returns that future."
+  "In CLJ, calls [[transact!]] on a future thread pool, returning immediately.
+  
+   In CLJS, just calls [[transact!]] and returns a realized future."
   ([conn tx-data] (transact-async conn tx-data nil))
   ([conn tx-data tx-meta]
    {:pre [(conn? conn)]}
-   (thread/future-call #(transact! conn tx-data tx-meta))))
+   (future-call #(transact! conn tx-data tx-meta))))
 
 
 ;; squuid
@@ -736,33 +687,55 @@
   util/squuid-time-millis)
 
 
-;; Storage. On Eve a DB lives in an Eve atom; these entry points exist
-;; so the vanilla names still resolve, and raise that guidance.
-(def ^{:arglists '([db])} storage
-  "On Eve, a DB carries no IStorage adapter; this always returns nil.
-   The DB's residence is whichever Eve atom holds it."
-  storage/storage)
+;; Storage
+#?(:clj
+   (def ^{:arglists '([db])} storage
+     "Returns IStorage used by DB instance"
+     storage/storage))
 
-(def ^{:arglists '([db] [db storage])} store
-  "On Eve, storing a DB is placing it in an Eve atom; this raises that guidance."
-  storage/store)
+#?(:clj
+   (def ^{:arglists '([db] [db storage])} store
+     "Stores databases to provided storage. If database was created
+      with :storage option or restored from storage, use single-argument version.
+      
+      Subsequent stores are incremental, i.e. only newly added nodes will be actually stored.
+      
+      Storing already stored dbs into another storage is not supported (may change)."
+     storage/store))
 
-(def ^{:arglists '([storage] [storage opts])} restore
-  "On Eve, a DB lives in an Eve atom; this raises that guidance."
-  storage/restore)
+#?(:clj 
+   (def ^{:arglists '([storage] [storage opts])} restore
+     "Lazy-loads database from storage. Ultra-fast, fetches the rest as it’s needed"
+     storage/restore))
 
-(defn addresses
-  "On Eve, a DB lives in an Eve atom; this raises that guidance."
-  [& dbs]
-  (storage/addresses dbs))
+#?(:clj
+   (defn addresses
+     "Returns all addresses in use by current db (as java.util.HashSet).
+      Anything that is not in the return set is safe to be deleted"
+     [& dbs]
+     (storage/addresses dbs)))
 
-(def ^{:arglists '([storage])} collect-garbage
-  "On Eve, a DB lives in an Eve atom; this raises that guidance."
-  storage/collect-garbage)
+#?(:clj
+   (def ^{:arglists '([storage])} collect-garbage
+     "Deletes all keys from storage that are not referenced by any of the currently alive db refs.
+      Has a side-effect of fully loading databases fully into memory, so, can be slow"
+     storage/collect-garbage))
 
-(def ^{:arglists '([dir] [dir opts])} file-storage
-  "On Eve, a DB lives in an Eve atom; this raises that guidance."
-  storage/file-storage)
+#?(:clj
+   (def ^{:arglists '([dir] [dir opts])} file-storage
+     "Default implementation that stores data in files in a dir.
+   
+   Options are:
+   
+   :freeze-fn :: (data)   -> String. A serialization function
+   :thaw-fn   :: (String) -> data. A deserialization function
+   :write-fn  :: (OutputStream data) -> void. Implement your own writer to FileOutputStream
+   :read-fn   :: (InputStream) -> Object. Implement your own reader from FileInputStream
+   :addr->filename-fn :: (UUID) -> String. Construct file name from address
+   :filename->addr-fn :: (String) -> UUID. Reconstruct address from file name
+   
+   All options are optional."
+     storage/file-storage))
 
 (defn settings [db]
   (set/settings (:eavt db)))

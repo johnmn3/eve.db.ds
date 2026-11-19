@@ -1,19 +1,38 @@
 #!/usr/bin/env bash
-# Regenerate (or --check) test/upstream-ds/ from DataScript's upstream test
-# tree. Upstream: https://github.com/tonsky/datascript tag 1.8.1
+# Regenerate (or --check) the vendored upstream DataScript 1.8.1 trees:
+#
+#   test/upstream-ds/   upstream TEST tree (test/datascript/**)
+#   src/eve/db/ds/      upstream SRC tree  (src/datascript/**) — the
+#                       baseline every DS-in-Eve rewrite unit builds on
+#                       (DS-IN-EVE-PLAN v2 §3), plus src/data_readers.clj
+#                       and src/deps.cljs.
+#
+# Upstream: https://github.com/tonsky/datascript tag 1.8.1
 # (commit 34915cf673c02cbc64779fe56e0288d70fea63f8). EPL-1.0; the upstream
-# LICENSE is copied verbatim beside the tree.
+# LICENSE is copied verbatim beside the test tree.
 #
 # The ONLY changes from upstream are this mechanical rename, applied to the
-# .clj/.cljc/.cljs files (test bodies and assertions are otherwise untouched):
-#   paths:       test/datascript/        -> test/eve/db/ds/
+# .clj/.cljc/.cljs files (bodies and assertions otherwise untouched):
+#   paths:       datascript/             -> eve/db/ds/   (src tree)
+#                test/datascript/        -> test/eve/db/ds/
 #   reader tags: #datascript/            -> #eve.db.ds/
 #   ns regexes:  datascript\.            -> eve\.db\.ds\.     (literal backslash-dot)
 #   namespaces:  datascript.             -> eve.db.ds.
-# test/js/ (the JS-release suite, not loaded by any Clojure host) is copied
-# verbatim. LICENSE is copied verbatim.
+# test/js/ (the JS-release suite, not loaded by any Clojure host) and
+# src/datascript/externs.js (Closure externs for the JS API; its names are
+# the published JS globals, not Clojure namespaces) are copied verbatim.
+# LICENSE is copied verbatim.
 #
-# Usage: scripts/vendor_upstream_ds.sh          # rewrite test/upstream-ds
+# Per DS-IN-EVE-PLAN v2 §3, src/datascript/storage.clj and storage.cljs are
+# NOT vendored: the storage class is deleted (persistence is the Eve disk
+# atom). conn.cljc / core.cljc / serialize.cljc still require the deleted
+# storage namespace upstream; they are vendored as reference copies for the
+# units that replace them (U3 conn, U5 serialize, U3/U7 core assembly) and
+# are marked as such in src/UPSTREAM-SRC.txt. The src regeneration replaces
+# the previous port's src/eve/db/** wholesale: the published port's source
+# is not an input to the rewrite.
+#
+# Usage: scripts/vendor_upstream_ds.sh          # rewrite both trees
 #        scripts/vendor_upstream_ds.sh --check  # regenerate to a temp dir, diff, exit 1 on any difference
 set -euo pipefail
 TAG=1.8.1
@@ -21,6 +40,7 @@ SHA=34915cf673c02cbc64779fe56e0288d70fea63f8
 URL=https://github.com/tonsky/datascript.git
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 DEST=$ROOT/test/upstream-ds
+SRCDEST=$ROOT/src
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 
@@ -30,16 +50,21 @@ got=$(git -C "$WORK/src" rev-parse 'FETCH_HEAD^{commit}')
 [ "$got" = "$SHA" ] || { echo "UPSTREAM-SHA-MISMATCH tag=$TAG want=$SHA got=$got" >&2; exit 2; }
 git -C "$WORK/src" checkout -q FETCH_HEAD
 
+rename_clj() { # rename_clj <dir> : apply the mechanical rename in place
+  find "$1" -type f \( -name '*.clj' -o -name '*.cljc' -o -name '*.cljs' \) -print0 |
+    xargs -0 sed -i -e 's|#datascript/|#eve.db.ds/|g' \
+                    -e 's|datascript\\\.|eve\\.db\\.ds\\.|g' \
+                    -e 's|datascript\.|eve.db.ds.|g'
+}
+
+# ---------------------------------------------------------------- test tree
 OUT=$WORK/out
 mkdir -p "$OUT/test/eve/db/ds"
 cp "$WORK/src/LICENSE" "$OUT/LICENSE"
 cp -R "$WORK/src/test/js" "$OUT/test/js"
 cp "$WORK/src/test/datascript/test.cljc" "$OUT/test/eve/db/ds/test.cljc"
 cp -R "$WORK/src/test/datascript/test" "$OUT/test/eve/db/ds/test"
-find "$OUT/test/eve" -type f \( -name '*.clj' -o -name '*.cljc' -o -name '*.cljs' \) -print0 |
-  xargs -0 sed -i -e 's|#datascript/|#eve.db.ds/|g' \
-                  -e 's|datascript\\\.|eve\\.db\\.ds\\.|g' \
-                  -e 's|datascript\.|eve.db.ds.|g'
+rename_clj "$OUT/test/eve"
 left=$(grep -rn 'datascript' "$OUT/test/eve" || true)
 [ -z "$left" ] || { echo "UNRENAMED-OCCURRENCES:"; echo "$left"; } >&2
 
@@ -55,9 +80,91 @@ Rename (mechanical, .clj/.cljc/.cljs only): test/datascript/ -> test/eve/db/ds/;
 test/js/ and LICENSE are verbatim. Test bodies and assertions are otherwise unchanged.
 TXT
 
+rename_src() { # like rename_clj, plus the tag/path shapes the src tree uses:
+  #   'datascript/Datom  {datascript/DB  :datascript/db  (quoted/bare reader
+  #   tags and keywords — datascript/ not preceded by a name character)
+  find "$1" -type f \( -name '*.clj' -o -name '*.cljc' -o -name '*.cljs' \) \
+       ! -name 'deps.cljs' -print0 |
+    xargs -0 sed -i -e 's|#datascript/|#eve.db.ds/|g' \
+                    -e 's|datascript\\\.|eve\\.db\\.ds\\.|g' \
+                    -e 's|datascript\.|eve.db.ds.|g' \
+                    -e 's|\([^A-Za-z0-9_.-]\)datascript/|\1eve.db.ds/|g'
+  # deps.cljs names a file PATH, renamed with slashes, not dots:
+  sed -i 's|datascript/externs\.js|eve/db/ds/externs.js|' "$1/deps.cljs"
+}
+
+# ----------------------------------------------------------------- src tree
+SOUT=$WORK/out-src
+mkdir -p "$SOUT/eve/db/ds/impl"
+for f in built_ins conn core datafy db lru parser pull_api pull_parser \
+         query query_v3 serialize util; do
+  cp "$WORK/src/src/datascript/$f.cljc" "$SOUT/eve/db/ds/$f.cljc"
+done
+for f in inline pprint; do
+  cp "$WORK/src/src/datascript/$f.clj" "$SOUT/eve/db/ds/$f.clj"
+done
+cp "$WORK/src/src/datascript/impl/entity.cljc" "$SOUT/eve/db/ds/impl/entity.cljc"
+cp "$WORK/src/src/datascript/js.cljs"          "$SOUT/eve/db/ds/js.cljs"
+cp "$WORK/src/src/datascript/externs.js"       "$SOUT/eve/db/ds/externs.js"
+cp "$WORK/src/src/data_readers.clj"            "$SOUT/data_readers.clj"
+cp "$WORK/src/src/deps.cljs"                   "$SOUT/deps.cljs"
+# storage.clj / storage.cljs intentionally NOT copied — v2 §3: deleted.
+rename_src "$SOUT"
+sleft=$(grep -rn 'datascript' "$SOUT" --include='*.clj' --include='*.cljc' --include='*.cljs' || true)
+[ -z "$sleft" ] || { echo "SRC-UNRENAMED-OCCURRENCES:"; echo "$sleft"; } >&2
+
+cat > "$SOUT/UPSTREAM-SRC.txt" <<TXT
+DataScript upstream SRC tree, vendored for eve.db.ds — the baseline every
+DS-in-Eve rewrite unit builds on (DS-IN-EVE-PLAN v2 §3).
+Upstream: $URL
+Tag:      $TAG
+Commit:   $SHA
+License:  EPL-1.0 (LICENSE in test/upstream-ds/, verbatim from upstream)
+Generated by scripts/vendor_upstream_ds.sh — do not edit by hand.
+Rename (mechanical, .clj/.cljc/.cljs only): src/datascript/ -> src/eve/db/ds/;
+  #datascript/ -> #eve.db.ds/; datascript\\. -> eve\\.db\\.ds\\.; datascript. -> eve.db.ds.
+externs.js is verbatim (Closure externs name the published JS globals).
+
+File classes (v2 §3):
+  verbatim            built_ins.cljc lru.cljc parser.cljc pull_parser.cljc
+                      util.cljc core.cljc query_v3.cljc inline.clj pprint.clj
+                      js.cljs data_readers.clj deps.cljs externs.js
+  verbatim + trap list only
+                      query.cljc pull_api.cljc impl/entity.cljc datafy.cljc
+  type swap (U2)      db.cljc
+  new — vendored as reference, marked for replacement
+                      conn.cljc (U3) serialize.cljc (U5)
+  deleted (not vendored, per v2 §3)
+                      storage.clj storage.cljs
+
+NOTE: upstream conn.cljc, core.cljc and serialize.cljc require the deleted
+eve.db.ds.storage namespace, so this baseline does not load as-is. That is
+expected: those files are reference copies for the units that replace them.
+TXT
+
+# -------------------------------------------------------------------- modes
 if [ "${1:-}" = "--check" ]; then
-  if diff -r "$OUT" "$DEST"; then echo "UPSTREAM-DS-CHECK OK tag=$TAG sha=$SHA"; else echo "UPSTREAM-DS-CHECK DIFF"; exit 1; fi
+  ok=1
+  diff -r "$OUT" "$DEST" || ok=0
+  diff -r "$SOUT/eve/db/ds" "$SRCDEST/eve/db/ds" || ok=0
+  diff "$SOUT/data_readers.clj" "$SRCDEST/data_readers.clj" || ok=0
+  diff "$SOUT/deps.cljs" "$SRCDEST/deps.cljs" || ok=0
+  diff "$SOUT/UPSTREAM-SRC.txt" "$SRCDEST/UPSTREAM-SRC.txt" || ok=0
+  for gone in "$SRCDEST/eve/db/ds/storage.cljc" "$SRCDEST/eve/db/ds/storage.clj" \
+              "$SRCDEST/eve/db/ds/storage.cljs" "$SRCDEST/eve/db.cljc" \
+              "$SRCDEST/eve/db/ds.cljc" "$SRCDEST/data_readers.cljc"; do
+    [ ! -e "$gone" ] || { echo "STALE-FILE-PRESENT: $gone"; ok=0; }
+  done
+  if [ "$ok" = 1 ]; then echo "UPSTREAM-DS-CHECK OK tag=$TAG sha=$SHA"; else echo "UPSTREAM-DS-CHECK DIFF"; exit 1; fi
 else
   rm -rf "$DEST"; mkdir -p "$(dirname "$DEST")"; cp -R "$OUT" "$DEST"
   echo "UPSTREAM-DS-VENDORED tag=$TAG sha=$SHA -> ${DEST#$ROOT/}"
+  rm -rf "$SRCDEST/eve/db" "$SRCDEST/eve/db.cljc" \
+         "$SRCDEST/data_readers.cljc" "$SRCDEST/data_readers.clj"
+  mkdir -p "$SRCDEST/eve/db"
+  cp -R "$SOUT/eve/db/ds" "$SRCDEST/eve/db/ds"
+  cp "$SOUT/data_readers.clj" "$SRCDEST/data_readers.clj"
+  cp "$SOUT/deps.cljs" "$SRCDEST/deps.cljs"
+  cp "$SOUT/UPSTREAM-SRC.txt" "$SRCDEST/UPSTREAM-SRC.txt"
+  echo "UPSTREAM-DS-SRC-VENDORED tag=$TAG sha=$SHA -> src/eve/db/ds (+ src/data_readers.clj, src/deps.cljs)"
 fi

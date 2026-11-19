@@ -1,7 +1,6 @@
 (ns eve.db.ds.built-ins
   (:require
     [clojure.string :as str]
-    [eve.math :as math]
     [eve.db.ds.db :as db]
     [eve.db.ds.impl.entity :as de]
     [eve.db.ds.util :as util]))
@@ -124,14 +123,8 @@
                  (* delta delta)))]
     (/ sum (count coll))))
 
-(defn- sqrt [x]
-  ;; eve.math/sqrt: Eve's portable, correctly rounded binary64 sqrt.
-  ;; eve.math/sqrt takes any number (it applies double itself; clojerl has
-  ;; no clojure.core/double)
-  (math/sqrt x))
-
 (defn- aggregate-stddev [coll]
-  (sqrt (aggregate-variance coll)))
+  (#?(:cljs js/Math.sqrt :clj Math/sqrt) (aggregate-variance coll)))
 
 (defn- aggregate-min
   ([coll]
