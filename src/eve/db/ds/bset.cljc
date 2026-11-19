@@ -157,7 +157,7 @@
             (eve/aset r1 (+ a1-l i) (eve/aget a2 i))
             (recur (inc i))))
         (loop [i 0]
-          (when (< i a2-l)
+          (when (< i r2-l)
             (eve/aset r2 i (eve/aget a2 (+ (- r1-l a1-l) i)))
             (recur (inc i)))))
       (do
@@ -232,6 +232,28 @@
           (recur (inc m) r)))
       l)))
 
+(defn- binary-search-l-off [cmp a off r k]
+  (loop [l (long off)
+         r (long r)]
+    (if (<= l r)
+      (let [m  (half (+ l r))
+            mk (eve/aget a m)]
+        (if (neg? (cmp mk k))
+          (recur (inc m) r)
+          (recur l (dec m))))
+      l)))
+
+(defn- binary-search-r-off [cmp a off r k]
+  (loop [l (long off)
+         r (long r)]
+    (if (<= l r)
+      (let [m  (half (+ l r))
+            mk (eve/aget a m)]
+        (if (pos? (cmp mk k))
+          (recur l (dec m))
+          (recur (inc m) r)))
+      l)))
+
 (defn- lookup-exact [cmp a key]
   (let [a-l (eve/alength a)
         idx (binary-search-l cmp a (dec a-l) key)]
@@ -270,6 +292,29 @@
 (defn- node-lims [node]
   (let [n (node-children-count node)]
     (sub-arr (.-slots node) n (* 2 n))))
+
+(defn- lim-idx-l
+  "Child index for key, searching the lim segment of node's slots in
+   place (all lims but the last, as upstream) — no scratch copy."
+  [node cmp key]
+  (let [n (node-children-count node)]
+    (- (binary-search-l-off cmp (.-slots node) n (- (* 2 n) 2) key) n)))
+
+(defn- lim-idx-r
+  "binary-search-r over the lim segment in place."
+  [node cmp key]
+  (let [n (node-children-count node)]
+    (- (binary-search-r-off cmp (.-slots node) n (- (* 2 n) 2) key) n)))
+
+(defn- lim-idx-range
+  "lookup-range over the lim segment in place: first child whose lim
+   is >= key, or -1."
+  [node cmp key]
+  (let [n   (node-children-count node)
+        idx (binary-search-l-off cmp (.-slots node) n (dec (* 2 n)) key)]
+    (if (== idx (* 2 n))
+      -1
+      (- idx n))))
 
 (defn- make-node
   "A Node over an Eve array of children; lim keys are computed."
@@ -328,7 +373,7 @@
     (let [idx (lookup-exact cmp (.-slots node) key)]
       (when-not (== -1 idx)
         (eve/aget (.-slots node) idx)))
-    (let [idx (lookup-range cmp (node-lims node) key)]
+    (let [idx (lim-idx-range node cmp key)]
       (when-not (== -1 idx)
         (node-lookup (node-child node idx) cmp key)))))
 
@@ -388,12 +433,12 @@
       (arr (->Leaf (splice slots idx idx (arr key)))))))
 
 (defn- node-conj* [node cmp key]
-  (let [lims     (node-lims node)
-        children (node-children node)
-        idx      (binary-search-l cmp lims (- (eve/alength lims) 2) key)
-        nodes    (node-conj (eve/aget children idx) cmp key)]
+  (let [idx   (lim-idx-l node cmp key)
+        nodes (node-conj (node-child node idx) cmp key)]
     (when nodes
-      (let [new-lims     (check-n-splice cmp lims     idx (inc idx) (arr-map node-lim-key nodes))
+      (let [lims         (node-lims node)
+            children     (node-children node)
+            new-lims     (check-n-splice cmp lims     idx (inc idx) (arr-map node-lim-key nodes))
             new-children (splice             children idx (inc idx) nodes)]
         (if (<= (eve/alength new-children) max-len)
           ;; ok as is
@@ -418,18 +463,18 @@
         (rotate (->Leaf new-keys) root? left right)))))
 
 (defn- node-disj* [node cmp key root? left right]
-  (let [lims     (node-lims node)
-        children (node-children node)
-        idx      (lookup-range cmp lims key)]
+  (let [idx (lim-idx-range node cmp key)]
     (when-not (== -1 idx) ;; short-circuit, key not here
-      (let [child       (eve/aget children idx)
+      (let [child       (node-child node idx)
             left-child  (when (>= (dec idx) 0)
-                          (eve/aget children (dec idx)))
-            right-child (when (< (inc idx) (eve/alength children))
-                          (eve/aget children (inc idx)))
+                          (node-child node (dec idx)))
+            right-child (when (< (inc idx) (node-children-count node))
+                          (node-child node (inc idx)))
             disjned     (node-disj child cmp key false left-child right-child)]
         (when disjned ;; short-circuit, key not here
-          (let [left-idx     (if left-child  (dec idx) idx)
+          (let [lims         (node-lims node)
+                children     (node-children node)
+                left-idx     (if left-child  (dec idx) idx)
                 right-idx    (if right-child (+ 2 idx) (+ 1 idx))
                 new-lims     (check-n-splice cmp lims     left-idx right-idx (arr-map node-lim-key disjned))
                 new-children (splice             children left-idx right-idx disjned)]
@@ -594,8 +639,7 @@
             (if (== keys-l idx)
               nil
               (path-set path 0 idx)))
-          (let [lims (node-lims node)
-                idx  (binary-search-l cmp lims (- keys-l 2) key)]
+          (let [idx (lim-idx-l node cmp key)]
             (recur
               (node-child node idx)
               (path-set path level idx)
@@ -616,9 +660,8 @@
           (let [keys (.-slots node)
                 idx  (binary-search-r cmp keys (dec keys-l) key)]
             (path-set path 0 idx))
-          (let [lims (node-lims node)
-                idx  (binary-search-r cmp lims (- keys-l 2) key)
-                res  (path-set path level idx)]
+          (let [idx (lim-idx-r node cmp key)
+                res (path-set path level idx)]
             (recur
               (node-child node idx)
               res
@@ -660,7 +703,7 @@
        (dropFirst [_]
          (if (== off end)
            (throw (ex-info "-drop-first of empty chunk" {}))
-           (->Chunk arr (inc off) end)))
+           (Chunk. arr (inc off) end)))
        clojure.lang.Indexed
        (nth [_ i]
          (eve/aget arr (+ off i)))
@@ -674,7 +717,7 @@
        (reduce [this f]
          (if (== off end)
            (f)
-           (clojure.core/reduce (->Chunk arr (inc off) end) f (eve/aget arr off))))
+           (clojure.core/reduce (Chunk. arr (inc off) end) f (eve/aget arr off))))
        (reduce [_ f start]
          (loop [val start
                 n   off]
@@ -689,7 +732,7 @@
        (-drop-first [_]
          (if (== off end)
            (throw (js/Error. "-drop-first of empty chunk"))
-           (->Chunk arr (inc off) end)))
+           (Chunk. arr (inc off) end)))
        IIndexed
        (-nth [_ i]
          (eve/aget arr (+ off i)))
@@ -703,7 +746,7 @@
        (-reduce [this f]
          (if (== off end)
            (f)
-           (-reduce (->Chunk arr (inc off) end) f (eve/aget arr off))))
+           (-reduce (Chunk. arr (inc off) end) f (eve/aget arr off))))
        (-reduce [_ f start]
          (loop [val start
                 n   off]
