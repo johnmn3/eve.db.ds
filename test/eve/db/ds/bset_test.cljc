@@ -112,7 +112,7 @@
   (let [a  (build cmp-s [[:a :b] [:b :x] [:b :q] [:a :d]])
         ds [[:a :b] [:b :x] [:b :q] [:a :d]]]
     (is (= (count ds)        ($ (bset/count @a))))
-    (is (= ds                (slice-vec a [nil nil] [nil nil] cmp-s)))
+    (is (= (all-vec a cmp-s) (slice-vec a [nil nil] [nil nil] cmp-s)))
     (is (= [[:a :b] [:a :d]] (slice-vec a [:a nil]  [:a nil]  cmp-s)))
     (is (= [[:b :q]]         (slice-vec a [:b :q]   [:b :q]   cmp-s)))
     (is (= [[:a :d] [:b :q]] (slice-vec a [:a :d]   [:b :q]   cmp-s)))
@@ -341,7 +341,7 @@
 (defn- reduce-chunked [f val coll]
   (if-some [s (seq coll)]
     (if (chunked-seq? s)
-      (recur f (reduce (chunk-first s) f val) (chunk-next s))
+      (recur f (reduce f val (chunk-first s)) (chunk-next s))
       (recur f (f val (first s)) (next s)))
     val))
 
