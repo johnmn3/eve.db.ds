@@ -6,15 +6,16 @@
 ;; Eve) and every Clojure-like cohost supports (through cohost bodies
 ;; over the Eve backend).
 ;;
-;; eve/eve below is the PUBLIC Eve release: SeniorCareMarket/eve
-;; v0.9.3.2 at e6cddc90 (John's order, 2026-11-17: rebase eve.db.ds on
-;; the public release). Verified at this pin before the rebase:
-;; canonical smoke SMOKE-ALL-OK, JVM contract probe green, full JVM
-;; suite battery at baseline. The bb harness leg is still RED at
-;; this pin, one defect closer than the private pin: the class-size
-;; SCI failure is fixed in 0.9.3.2, but delivered Eve values still
-;; lose their type on bb (eve.flat.sister own-type check) — the fix
-;; sits on atom.broker lane-m/eve-bb-delivery-fix, not in 0.9.3.2.
+;; eve/eve below is the PUBLIC Eve release line the DS-in-Eve rewrite
+;; targets (DS-IN-EVE-PLAN v2 §3): SeniorCareMarket/eve branch
+;; release/eve-0.9.3.3 at f4a1c3ae97ee76f2651ce600a857675aa5c227ef.
+;; This is the pre-fix pin of EVE-FIX-PLAN §0: the deftype/atom laws
+;; probe (test/eve/deftype_atom_laws_test.cljc) is red there on
+;; E1–E6 by measurement; the Eve seat lands F1–F3 on this line and
+;; this pin moves to the fixed sha when they tag it. The vendored
+;; src baseline (src/eve/db/ds) does not load against any Eve yet —
+;; upstream conn/core/serialize require the storage namespace the
+;; rewrite deletes (v2 §3); see src/UPSTREAM-SRC.txt.
 ;;
 ;; Dev runs: there is no dev-pin alias. To run against an Eve dev
 ;; tree instead of the release pin, use the EVE_ROOT environment
@@ -30,6 +31,9 @@
         extend-clj/extend-clj {:local/root "lib-ds-deps"}}
  :aliases
  {:test {:extra-paths ["test/drivers"]}
+  ;; Eve deftype/atom laws probe (EVE-FIX-PLAN §4), test/eve/**:
+  ;; clojure -M:laws -e "(require 'eve.deftype-atom-laws-test) ..."
+  :laws {:extra-paths ["test"]}
   ;; DataScript's upstream test suite (test/upstream-ds, tag 1.8.1, renamed
   ;; datascript. -> eve.db.ds.) + its JVM test deps:
   ;; clojure -M:ds-suite -m contract.ds-suite

@@ -1,57 +1,37 @@
 (ns ^:no-doc eve.db.ds.query
-  #?(:cljs (:require-macros [eve.record :as erecord]))
   (:require
-    ;; Eve's EDN reader: one portable libspec (see eve.db.ds.core).
-    [eve.edn :as edn]
-    [eve.core :as e]
+    [#?(:cljs cljs.reader :clj clojure.edn) :as edn]
     [clojure.set :as set]
     [clojure.string :as str]
     [clojure.walk :as walk]
     [eve.db.ds.built-ins :as built-ins]
     [eve.db.ds.db :as db]
-    [eve.record :as erecord]
-    #?(:cljs [eve.record])
     [me.tonsky.persistent-sorted-set.arrays :as da]
     [eve.db.ds.lru :as lru]
     [eve.db.ds.impl.entity :as de]
-    ;; PORT DELTA (F-NBB-MACROS round): as in eve.db.ds.conn — no
-    ;; :cljs type refers; parser types are named qualified (dp/...)
-    ;; at their uses in this file
-    [eve.db.ds.parser :as dp]
+    [eve.db.ds.parser :as dp #?@(:cljs [:refer [BindColl BindIgnore BindScalar BindTuple Constant
+                                                 FindColl FindRel FindScalar FindTuple PlainSymbol
+                                                 RulesVar SrcVar Variable]])]
     [eve.db.ds.pull-api :as dpa]
-    [eve.db.ds.util :as util]
-    ;; PORT DELTA (F-CLJE-HOST-REFERS): see eve.db.ds.util
-    [eve.host :as eh]
-    #?(:clje [eve.host :refer [transient persistent! conj! assoc! volatile! to-array into-array long]]))
+    [eve.db.ds.util :as util])
   #?(:clj
      (:import
-       [eve.db.ds.parser BindColl BindIgnore BindScalar BindTuple
-        Constant FindColl FindRel FindScalar FindTuple PlainSymbol
-        RulesVar SrcVar Variable]) :cljr (:import
+       [clojure.lang ILookup LazilyPersistentVector]
        [eve.db.ds.parser BindColl BindIgnore BindScalar BindTuple
         Constant FindColl FindRel FindScalar FindTuple PlainSymbol
         RulesVar SrcVar Variable])))
 
-#?(:clj (set! *warn-on-reflection* true) :cljr (set! *warn-on-reflection* true))
+#?(:clj (set! *warn-on-reflection* true))
 
 ;; ----------------------------------------------------------------------------
 
-;; eve.host/defdelay, not (def .. (delay ..)) nor a value def: clojerl compiles a
-;; def's init into its module as a literal, and an Eve value or a delay is not
-;; one. defdelay is the seats' arrangement for that (made on first use).
-;; *query-cache* stays a rebindable dynamic var; nil means the default cache.
-(eh/defdelay ^:private default-query-cache
-  (db/call-in-parse-domain (fn [] (lru/cache 100))))
-
-(def ^:dynamic *query-cache* nil)
+(def ^:dynamic *query-cache*
+  (lru/cache 100))
 
 (declare -collect collect -resolve-clause resolve-clause)
 
 ;; Records
 
-;; Context/Relation are HOST records (John, 2026-11-12): never put into
-;; an Eve atom; they hold call-time host values mid-query (user-supplied
-;; :in sources, tuples in flight) that a slab record rightly refuses.
 (defrecord Context [rels sources rules])
 
 ;; attrs:
@@ -67,12 +47,7 @@
      (.write w (pr-str (:attrs r)))
      (.write w ", :tuples [")
      (.write w (str/join " " (map seq (:tuples r))))
-     (.write w "]}")) :cljr (defmethod print-method Relation [r, ^System.IO.TextWriter w]
-     (.Write w "#Relation{:attrs ")
-     (.Write w (pr-str (:attrs r)))
-     (.Write w ", :tuples [")
-     (.Write w (str/join " " (map seq (:tuples r))))
-     (.Write w "]}")))
+     (.write w "]}")))
 
 
 ;; Utilities
@@ -125,41 +100,32 @@
 
 ;; Relation algebra
 
-#?(:clj (set! *unchecked-math* true) :cljr (set! *unchecked-math* true))
+#?(:clj (set! *unchecked-math* true))
 
-;; PORT DELTA (F-NBB-PRED-TUPLE, fix-for-release B-extra): vanilla's
-;; :cljs arm reads every relation tuple with a JS aget — an index into a
-;; JS array, or a property read on a Datom whose fields are named
-;; e/a/v/tx. In the port da/aget is nth on a vector, so a Datom tuple
-;; read by a field name threw "Index argument to nth must be a number"
-;; on nbb for every predicate / fn-binding clause and every join over a
-;; Datom relation. tuple-get reads a port array (vector) or a JS array by
-;; index and anything else (a Datom) by get, the :clj arm's read.
-;; PORT DELTA (F-NBB-PRED-TUPLE): read a port array (Eve vector) by
-;; index via da/aget and anything else (a Datom, or a JS array on cljs)
-;; via get. Lifted off the :cljs-only defn so the getter-fn call sites
-;; can share one portable helper. #274/#275/#277/#278 also read through
-;; this helper (array by index, Datom by get).
-(defn- tuple-get [t i]
-  (if (da/array? t)
-    (da/aget t i)
-    (get t i)))
+#?(:clj
+   (defn join-tuples [t1 ^{:tag "[[Ljava.lang.Object;"} idxs1
+                      t2 ^{:tag "[[Ljava.lang.Object;"} idxs2]
+     (let [l1  (alength idxs1)
+           l2  (alength idxs2)
+           res (da/make-array (+ l1 l2))]
+       (if (.isArray (.getClass ^Object t1))
+         (dotimes [i l1] (aset res i (aget ^objects t1 (aget idxs1 i))))
+         (dotimes [i l1] (aset res i (get t1 (aget idxs1 i)))))
+       (if (.isArray (.getClass ^Object t2))
+         (dotimes [i l2] (aset res (+ l1 i) (get ^objects t2 (aget idxs2 i))))
+         (dotimes [i l2] (aset res (+ l1 i) (get t2 (aget idxs2 i)))))
+       res))
+   :cljs
+   (defn join-tuples [t1 idxs1
+                      t2 idxs2]
+     (let [l1  (alength idxs1)
+           l2  (alength idxs2)
+           res (da/make-array (+ l1 l2))]
+       (dotimes [i l1] (aset res i (da/aget t1 (aget idxs1 i))))
+       (dotimes [i l2] (aset res (+ l1 i) (da/aget t2 (aget idxs2 i))))
+       res)))
 
-;; PORT (PORTING-DS.md / F-NBB-PRED-TUPLE): tuples and idx arrays are
-;; da arrays (Eve vectors) in this port, not host Object[]; writes are
-;; functional (da/aset returns the new array). tuple-get reads a port
-;; array by index and a Datom by get.
-(defn join-tuples [t1 idxs1 t2 idxs2]
-  (let [l1   (count idxs1)
-        l2   (count idxs2)
-        pick (fn [t idxs i] (tuple-get t (tuple-get idxs i)))
-        res  (reduce (fn [r i] (da/aset r i (pick t1 idxs1 i)))
-                     (da/make-array (+ l1 l2)) (range l1))
-        res  (reduce (fn [r i] (da/aset r (+ l1 i) (pick t2 idxs2 i)))
-                     res (range l2))]
-    res))
-
-#?(:clj (set! *unchecked-math* false) :cljr (set! *unchecked-math* false))
+#?(:clj (set! *unchecked-math* false))
 
 (defn- sum-rel* [attrs-a tuples-a attrs-b tuples-b]
   (let [idxb->idxa (vec (for [[sym idx-b] attrs-b]
@@ -168,25 +134,20 @@
         tuples' (persistent!
                   (reduce
                     (fn [acc tuple-b]
-                      ;; PORT (D2): tuple' is a da array (Eve vector);
-                      ;; vanilla's aset mutation becomes a threaded
-                      ;; da/aset reduce. Was the query-or suite error:
-                      ;; "No matching method aset found taking 3 args".
-                      (let [tuple' (reduce (fn [t [idx-b idx-a]]
-                                             (da/aset t idx-a (get tuple-b idx-b)))
-                                     (da/make-array tlen)
-                                     idxb->idxa)]
+                      (let [tuple' (da/make-array tlen)]
+                        (doseq [[idx-b idx-a] idxb->idxa]
+                          (aset tuple' idx-a (#?(:cljs da/aget :clj get) tuple-b idx-b)))
                         (conj! acc tuple')))
                     (transient (vec tuples-a))
                     tuples-b))]
-    (->Relation attrs-a tuples')))
+    (Relation. attrs-a tuples')))
 
 (defn sum-rel [a b]
   (let [{attrs-a :attrs, tuples-a :tuples} a
         {attrs-b :attrs, tuples-b :tuples} b]
     (cond
       (= attrs-a attrs-b)
-      (->Relation attrs-a (into (vec tuples-a) tuples-b))
+      (Relation. attrs-a (into (vec tuples-a) tuples-b))
 
       ;; BEFORE checking same-keys
       ;; because one rel could have had its resolution shortcircuited
@@ -207,13 +168,13 @@
 
 (defn prod-rel
   ([]
-   (->Relation {} [(da/make-array 0)]))
+   (Relation. {} [(da/make-array 0)]))
   ([rel1 rel2]
    (let [attrs1 (keys (:attrs rel1))
          attrs2 (keys (:attrs rel2))
          idxs1  (to-array (map (:attrs rel1) attrs1))
          idxs2  (to-array (map (:attrs rel2) attrs2))]
-     (->Relation
+     (Relation.
        (zipmap (concat attrs1 attrs2) (range))
        (persistent!
          (reduce
@@ -226,59 +187,60 @@
 ;;
 
 (defn parse-rules [rules]
-  (let [rules (if (string? rules) (edn/read-string rules) rules)] ;; for JS interop
+  (let [rules (if (string? rules) (edn/read-string rules) rules)] ;; for eve.db.ds.js interop
     (dp/parse-rules rules) ;; validation
     (group-by ffirst rules)))
 
 (defn empty-rel [binding]
   (let [vars (->> (dp/collect-vars-distinct binding)
                (map :symbol))]
-    (->Relation (zipmap vars (range)) [])))
+    (Relation. (zipmap vars (range)) [])))
 
-;; Dispatch via instance?, not extend-protocol: parser types are SciMap
-;; on bb (see eve.db.ds.parser/-find-vars).
-(defn in->rel [binding value]
-  (cond
-    (instance? #?(:jank dp/BindIgnore :clj BindIgnore :cljr BindIgnore :cljs dp/BindIgnore :clje dp/BindIgnore :lpy dp/BindIgnore) binding)
-    (prod-rel)
+(defprotocol IBinding
+  (in->rel [binding value]))
 
-    (instance? #?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/BindScalar :clje dp/BindScalar :lpy dp/BindScalar) binding)
-    (->Relation {(get-in binding [:variable :symbol]) 0} [(into-array [value])])
-
-    (instance? #?(:jank dp/BindColl :clj BindColl :cljr BindColl :cljs dp/BindColl :clje dp/BindColl :lpy dp/BindColl) binding)
+(extend-protocol IBinding
+  BindIgnore
+  (in->rel [_ _]
+    (prod-rel))
+  
+  BindScalar
+  (in->rel [binding value]
+    (Relation. {(get-in binding [:variable :symbol]) 0} [(into-array [value])]))
+  
+  BindColl
+  (in->rel [binding coll]
     (cond
-      (not (db/seqable? value))
-      (util/raise "Cannot bind value " value " to collection " (dp/source binding)
-        {:error :query/binding, :value value, :binding (dp/source binding)})
-      (empty? value)
+      (not (db/seqable? coll))
+      (util/raise "Cannot bind value " coll " to collection " (dp/source binding)
+        {:error :query/binding, :value coll, :binding (dp/source binding)})
+      (empty? coll)
       (empty-rel binding)
       :else
-      (->> value
+      (->> coll
         (map #(in->rel (:binding binding) %))
-        (reduce sum-rel)))
-
-    (instance? #?(:jank dp/BindTuple :clj BindTuple :cljr BindTuple :cljs dp/BindTuple :clje dp/BindTuple :lpy dp/BindTuple) binding)
+        (reduce sum-rel))))
+  
+  BindTuple
+  (in->rel [binding coll]
     (cond
-      (not (db/seqable? value))
-      (util/raise "Cannot bind value " value " to tuple " (dp/source binding)
-        {:error :query/binding, :value value, :binding (dp/source binding)})
-      (< (count value) (count (:bindings binding)))
-      (util/raise "Not enough elements in a collection " value " to bind tuple " (dp/source binding)
-        {:error :query/binding, :value value, :binding (dp/source binding)})
+      (not (db/seqable? coll))
+      (util/raise "Cannot bind value " coll " to tuple " (dp/source binding)
+        {:error :query/binding, :value coll, :binding (dp/source binding)})
+      (< (count coll) (count (:bindings binding)))
+      (util/raise "Not enough elements in a collection " coll " to bind tuple " (dp/source binding)
+        {:error :query/binding, :value coll, :binding (dp/source binding)})
       :else
       (reduce prod-rel
-        (map #(in->rel %1 %2) (:bindings binding) value)))
-
-    :else
-    (throw (ex-info (str "No in->rel impl for " (pr-str (type binding))) {:binding binding}))))
+        (map #(in->rel %1 %2) (:bindings binding) coll)))))
 
 (defn resolve-in [context [binding value]]
   (cond
-    (and (instance? #?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/BindScalar :clje dp/BindScalar :lpy dp/BindScalar) binding)
-      (instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar :clje dp/SrcVar :lpy dp/SrcVar) (:variable binding)))
+    (and (instance? BindScalar binding)
+      (instance? SrcVar (:variable binding)))
     (update context :sources assoc (get-in binding [:variable :symbol]) value)
-    (and (instance? #?(:jank dp/BindScalar :clj BindScalar :cljr BindScalar :cljs dp/BindScalar :clje dp/BindScalar :lpy dp/BindScalar) binding)
-      (instance? #?(:jank dp/RulesVar :clj RulesVar :cljr RulesVar :cljs dp/RulesVar :clje dp/RulesVar :lpy dp/RulesVar) (:variable binding)))
+    (and (instance? BindScalar binding)
+      (instance? RulesVar (:variable binding)))
     (assoc context :rules (parse-rules value))
     :else
     (update context :rels conj (in->rel binding value))))
@@ -315,7 +277,10 @@
       (if (int? idx)
         (let [idx (int idx)]
           (fn contained-int-getter-fn [tuple]
-            (let [eid (tuple-get tuple idx)]
+            (let [eid #?(:cljs (da/aget tuple idx)
+                         :clj (if (.isArray (.getClass ^Object tuple))
+                                (aget ^objects tuple idx)
+                                (nth tuple idx)))]
               (cond
                 (number? eid)     eid ;; quick path to avoid fn call
                 (sequential? eid) (resolve-fn eid)
@@ -323,9 +288,8 @@
                 :else             eid))))
         ;; If the index is not an int?, the target can never be an array
         (fn contained-getter-fn [tuple]
-          (let [eid (tuple-get tuple idx)]
-            ;; PORT DELTA (F-CLJE-GETTER-VALAT): a non-int idx is a
-            ;; datom component name, read via get (ILookup on clj).
+          (let [eid #?(:cljs (da/aget tuple idx)
+                       :clj (.valAt ^ILookup tuple idx))]
             (cond
               (number? eid)     eid ;; quick path to avoid fn call
               (sequential? eid) (resolve-fn eid)
@@ -334,26 +298,38 @@
       (if (int? idx)
         (let [idx (int idx)]
           (fn int-getter [tuple]
-            (tuple-get tuple idx)))
+            #?(:cljs (da/aget tuple idx)
+               :clj (if (.isArray (.getClass ^Object tuple))
+                      (aget ^objects tuple idx)
+                      (nth tuple idx)))))
         ;; If the index is not an int?, the target can never be an array
         (fn getter [tuple]
-          ;; PORT DELTA (F-CLJE-GETTER-VALAT): a non-int idx is a datom
-          ;; component name ("e"/"a"/"v"/"tx"); tuple-get uses get, the
-          ;; ILookup read, not nth.
-          (tuple-get tuple idx))))))
+          #?(:cljs (da/aget tuple idx)
+             :clj (.valAt ^ILookup tuple idx)))))))
 
 (defn tuple-key-fn
   [attrs common-attrs]
   (let [n (count common-attrs)]
     (if (== n 1)
       (getter-fn attrs (first common-attrs))
-      ;; Multi-attr join keys are a vector of the common attrs' values.
-      ;; :clje/:lpy already used mapv; the JVM/cljs/jank arms built a
-      ;; host Object[] and wrapped it (LazilyPersistentVector, list*,
-      ;; vec). mapv is the portable equivalent (hasheq-equal to those
-      ;; wrappers) and matches this port's functional arrays.
-      (let [getters (mapv #(getter-fn attrs %) common-attrs)]
-        (fn [tuple] (mapv #(% tuple) getters))))))
+      (let [^objects getters-arr #?(:clj (into-array Object common-attrs)
+                                    :cljs (into-array common-attrs))]
+        (loop [i 0]
+          (if (< i n)
+            (do
+              (aset getters-arr i (getter-fn attrs (aget getters-arr i)))
+              (recur (unchecked-inc i)))
+            #?(:clj
+               (fn [tuple]
+                 (let [^objects arr (make-array Object n)]
+                   (loop [i 0]
+                     (if (< i n)
+                       (do
+                         (aset arr i ((aget getters-arr i) tuple))
+                         (recur (unchecked-inc i)))
+                       (LazilyPersistentVector/createOwning arr)))))
+               :cljs (fn [tuple]
+                       (list* (.map getters-arr #(% tuple)))))))))))
 
 (defn -group-by
   [f init coll]
@@ -390,14 +366,14 @@
                         tuples2
                         (reduce (fn outer [acc tuple2]
                                   (let [key (key-fn2 tuple2)]
-                                    (if-some [tuples1 (get hash key)]
+                                    (if-some [tuples1 #?(:clj (hash key) :cljs (get hash key))]
                                       (reduce (fn inner [acc tuple1]
                                                 (conj! acc (join-tuples tuple1 keep-idxs1 tuple2 keep-idxs2)))
                                         acc tuples1)
                                       acc)))
                           (transient []))
                         (persistent!))]
-    (->Relation (zipmap (concat keep-attrs1 keep-attrs2) (range))
+    (Relation. (zipmap (concat keep-attrs1 keep-attrs2) (range))
       new-tuples)))
 
 (defn subtract-rel [a b]
@@ -419,7 +395,7 @@
       (when-some [tuple (first (:tuples rel))]
         (when (nil? (fnext (:tuples rel)))
           (let [idx (get (:attrs rel) pattern-el)]
-            (tuple-get tuple idx)))))))
+            (#?(:cljs da/aget :clj get) tuple idx)))))))
 
 (defn substitute-constants [context pattern]
   (mapv #(or (substitute-constant context %) %) pattern))
@@ -460,7 +436,7 @@
         attr->prop     (->> (map vector pattern ["e" "a" "v" "tx"])
                          (filter (fn [[s _]] (free-var? s)))
                          (into {}))]
-    (->Relation attr->prop datoms)))
+    (Relation. attr->prop datoms)))
 
 (defn matches-pattern? [pattern tuple]
   (loop [tuple   tuple
@@ -478,7 +454,7 @@
         attr->idx  (->> (map vector pattern (range))
                      (filter (fn [[s _]] (free-var? s)))
                      (into {}))]
-    (->Relation attr->idx (mapv to-array data)))) ;; FIXME to-array
+    (Relation. attr->idx (mapv to-array data)))) ;; FIXME to-array
 
 (defn normalize-pattern-clause [clause]
   (if (source? (first clause))
@@ -503,67 +479,53 @@
 (defn- context-resolve-val [context sym]
   (when-some [rel (rel-with-attr context sym)]
     (when-some [tuple (first (:tuples rel))]
-      (tuple-get tuple ((:attrs rel) sym)))))
+      (#?(:cljs da/aget :clj get) tuple ((:attrs rel) sym)))))
 
 (defn- rel-contains-attrs? [rel attrs]
   (some #(contains? (:attrs rel) %) attrs))
 
 (defn- rel-prod-by-attrs [context attrs]
-  ;; PORT: the consumed rels leave the context by identity, not through a
-  ;; hash set: (set rels) hashed every Relation, i.e. every tuple of every
-  ;; rel (on bb an Eve-typed tuple has no iterator for that hash: "Method
-  ;; not implemented: iterator"), to find objects taken from this very
-  ;; vector. Same result, no hashing.
-  (let [rels       (vec (filter #(rel-contains-attrs? % attrs) (:rels context)))
-        production (reduce prod-rel rels)
-        consumed?  (fn [r] (some #(identical? r %) rels))]
-    [(update context :rels #(remove consumed? %)) production]))
+  (let [rels       (filter #(rel-contains-attrs? % attrs) (:rels context))
+        production (reduce prod-rel rels)]
+    [(update context :rels #(remove (set rels) %)) production]))
 
 (defn -call-fn [context rel f args]
-  ;; PORT (PORTING-DS.md): static-args/tuples-args are da arrays — Eve
-  ;; vectors here — so the build threads da/aset results instead of
-  ;; mutating, and the per-call fill below builds the argument array
-  ;; functionally (vanilla mutates a shared static-args; the observable
-  ;; result per call is the same).
   (let [sources     (:sources context)
         attrs       (:attrs rel)
         len         (count args)
-        [static-args tuples-args]
-        (reduce
-          (fn [[sa ta] i]
-            (let [arg (nth args i)]
-              (if (symbol? arg)
-                (if-some [source (get sources arg)]
-                  [(da/aset sa i source) ta]
-                  [sa (da/aset ta i (get attrs arg))])
-                [(da/aset sa i arg) ta])))
-          [(da/make-array len) (da/make-array len)]
-          (range len))]
-    ;; issue-262 (cljs apply+vector aliasing a mutable args array) does
-    ;; not apply: da arrays are persistent Eve vectors (da/aset is assoc,
-    ;; da/aclone is identity), so one portable body is enough.
-    (fn [tuple]
-      ;; TODO raise if not all args are bound
-      (let [args (reduce
-                   (fn [a i]
-                     (if-some [tuple-idx (da/aget tuples-args i)]
-                       ;; vanilla reads via `get`: tuple may be a Datom
-                       ;; whose attrs are field names, not indexes.
-                       (da/aset a i (tuple-get tuple tuple-idx))
-                       a))
-                   static-args
-                   (range len))]
-        (apply f args)))))
+        static-args (da/make-array len)
+        tuples-args (da/make-array len)]
+    (dotimes [i len]
+      (let [arg (nth args i)]
+        (if (symbol? arg) 
+          (if-some [source (get sources arg)]
+            (da/aset static-args i source)
+            (da/aset tuples-args i (get attrs arg)))
+          (da/aset static-args i arg))))
+    ;; CLJS `apply` + `vector` will hold onto mutable array of arguments directly
+    ;; issue-262
+    (if #?(:clj  false
+           :cljs (identical? f vector))
+      (fn [tuple]
+        ;; TODO raise if not all args are bound
+        (let [args (da/aclone static-args)]
+          (dotimes [i len]
+            (when-some [tuple-idx (aget tuples-args i)]
+              (let [v (#?(:cljs da/aget :clj get) tuple tuple-idx)]
+                (da/aset args i v))))
+          (apply f args)))
+      (fn [tuple]
+        ;; TODO raise if not all args are bound
+        (dotimes [i len]
+          (when-some [tuple-idx (aget tuples-args i)]
+            (let [v (#?(:cljs da/aget :clj get) tuple tuple-idx)]
+              (da/aset static-args i v))))
+        (apply f static-args)))))
 
 (defn- resolve-sym [sym]
   #?(:cljs nil
      :clj (when (namespace sym)
-            (when-some [v (resolve sym)] @v)) :cljr (when (namespace sym)
-            (when-some [v (resolve sym)] @v))
-     :lpy (when (namespace sym)
-            (when-some [v (resolve sym)] @v))
-     :clje (when (namespace sym)
-             (when-some [v (resolve sym)] @v))))
+            (when-some [v (resolve sym)] @v))))
 
 (defn filter-by-pred [context clause]
   (let [[[f & args]] clause
@@ -597,7 +559,7 @@
                                         :when (not (nil? val))]
                                     (reduce prod-rel
                                       (collapse-rels
-                                         [(->Relation (:attrs production) [tuple])]
+                                         [(Relation. (:attrs production) [tuple])]
                                          (in->rel binding val))))]
                      (if (empty? rels)
                        (prod-rel
@@ -693,7 +655,7 @@
                         :clauses        [clause]
                         :used-args      {}
                         :pending-guards {}})
-           rel   (->Relation final-attrs-map [])]
+           rel   (Relation. final-attrs-map [])]
       (if-some [frame (first stack)]
         (let [[clauses [rule-clause & next-clauses]] (split-with #(not (rule? context %)) (:clauses frame))]
           (if (nil? rule-clause)
@@ -701,7 +663,7 @@
             ;; no rules -> expand, collect, sum
             (let [context (solve (:prefix-context frame) clauses)
                   tuples  (util/distinct-by vec (-collect context final-attrs))
-                  new-rel (->Relation final-attrs-map tuples)]
+                  new-rel (Relation. final-attrs-map tuples)]
               (recur (next stack) (sum-rel rel new-rel)))
 
             ;; has rule -> add guards -> check if dead -> expand rule -> push to stack, recur
@@ -876,7 +838,7 @@
   (if (some #(empty? (:tuples %)) (:rels context))
     (assoc context
       :rels
-      [(->Relation
+      [(Relation.
          (zipmap (mapcat #(keys (:attrs %)) (:rels context)) (range))
          [])])
     context))
@@ -901,19 +863,25 @@
   (->Eduction
     (comp
       (map
-        (fn [t1]
+        (fn [#?(:cljs t1
+                :clj ^{:tag "[[Ljava.lang.Object;"} t1)]
           (->Eduction
             (map
               (fn [t2]
-                ;; PORT (PORTING-DS.md): res is a da array (an Eve vector
-                ;; here); the copy loop threads da/aset functionally.
-                (reduce
-                  (fn [r i]
-                    (if-some [idx (da/aget copy-map i)]
-                      (da/aset r i (if (da/array? t2) (da/aget t2 idx) (get t2 idx)))
-                      r))
-                  (da/aclone t1)
-                  (range len))))
+                (let [res (aclone t1)]
+                  #?(:clj
+                     (if (.isArray (.getClass ^Object t2))
+                       (dotimes [i len]
+                         (when-some [idx (aget ^objects copy-map i)]
+                           (aset res i (aget ^objects t2 idx))))
+                       (dotimes [i len]
+                         (when-some [idx (aget ^objects copy-map i)]
+                           (aset res i (get t2 idx)))))
+                     :cljs
+                     (dotimes [i len]
+                       (when-some [idx (aget ^objects copy-map i)]
+                         (aset res i (da/aget ^objects t2 idx)))))
+                  res)))
             (:tuples rel))))
       cat)
     acc))
@@ -944,19 +912,23 @@
 (defn collect [context symbols]
   (into #{} (map vec) (-collect context symbols)))
 
-(defn -context-resolve [var context]
-  (cond
-    (instance? #?(:jank dp/Variable :clj Variable :cljr Variable :cljs dp/Variable :clje dp/Variable :lpy dp/Variable) var)
-    (context-resolve-val context (.-symbol var))
-    (instance? #?(:jank dp/SrcVar :clj SrcVar :cljr SrcVar :cljs dp/SrcVar :clje dp/SrcVar :lpy dp/SrcVar) var)
-    (get-in context [:sources (.-symbol var)])
-    (instance? #?(:jank dp/PlainSymbol :clj PlainSymbol :cljr PlainSymbol :cljs dp/PlainSymbol :clje dp/PlainSymbol :lpy dp/PlainSymbol) var)
+(defprotocol IContextResolve
+  (-context-resolve [var context]))
+
+(extend-protocol IContextResolve
+  Variable
+  (-context-resolve [var context]
+    (context-resolve-val context (.-symbol var)))
+  SrcVar
+  (-context-resolve [var context]
+    (get-in context [:sources (.-symbol var)]))
+  PlainSymbol
+  (-context-resolve [var _]
     (or (get built-ins/aggregates (.-symbol var))
-      (resolve-sym (.-symbol var)))
-    (instance? #?(:jank dp/Constant :clj Constant :cljr Constant :cljs dp/Constant :clje dp/Constant :lpy dp/Constant) var)
-    (.-value var)
-    :else
-    (throw (ex-info (str "No -context-resolve impl for " (pr-str (type var))) {:var var}))))
+      (resolve-sym (.-symbol var))))
+  Constant
+  (-context-resolve [var _]
+    (.-value var)))
 
 (defn -aggregate [find-elements context tuples]
   (mapv (fn [element fixed-value i]
@@ -995,26 +967,29 @@
           {} idxs))
       tuples)))
 
-(defn -post-process [find return-map tuples]
-  (cond
-    (instance? #?(:jank dp/FindRel :clj FindRel :cljr FindRel :cljs dp/FindRel :clje dp/FindRel :lpy dp/FindRel) find)
+(defprotocol IPostProcess
+  (-post-process [find return-map tuples]))
+
+(extend-protocol IPostProcess
+  FindRel
+  (-post-process [_ return-map tuples]
     (if (nil? return-map)
       tuples
-      (tuples->return-map return-map tuples))
+      (tuples->return-map return-map tuples)))
 
-    (instance? #?(:jank dp/FindColl :clj FindColl :cljr FindColl :cljs dp/FindColl :clje dp/FindColl :lpy dp/FindColl) find)
-    (into [] (map first) tuples)
+  FindColl
+  (-post-process [_ return-map tuples]
+    (into [] (map first) tuples))
 
-    (instance? #?(:jank dp/FindScalar :clj FindScalar :cljr FindScalar :cljs dp/FindScalar :clje dp/FindScalar :lpy dp/FindScalar) find)
-    (ffirst tuples)
+  FindScalar
+  (-post-process [_ return-map tuples]
+    (ffirst tuples))
 
-    (instance? #?(:jank dp/FindTuple :clj FindTuple :cljr FindTuple :cljs dp/FindTuple :clje dp/FindTuple :lpy dp/FindTuple) find)
+  FindTuple
+  (-post-process [_ return-map tuples]
     (if (some? return-map)
       (first (tuples->return-map return-map [(first tuples)]))
-      (first tuples))
-
-    :else
-    (throw (ex-info (str "No -post-process impl for " (pr-str (type find))) {:find find}))))
+      (first tuples))))
 
 (defn- pull [find-elements context resultset]
   (let [resolved (for [find find-elements]
@@ -1031,20 +1006,8 @@
         resolved
         tuple))))
 
-(declare q-impl)
-
 (defn q [q & inputs]
-  ;; Construction law: Relations, result sets and return maps are
-  ;; constructed in the queried DB's own domain (the aggregates in
-  ;; built-ins run inside this binding, so they inherit it); a query
-  ;; with no DB input constructs in the parse domain.
-  (let [db (first (filter #(or (db/db? %) (db/filtered-db? %)) inputs))]
-    (if (some? db)
-      (db/call-in-db-ish-domain db (fn [] (apply q-impl q inputs)))
-      (db/call-in-parse-domain (fn [] (apply q-impl q inputs))))))
-
-(defn- q-impl [q & inputs]
-  (let [parsed-q      (lru/-get (or *query-cache* @default-query-cache) q #(dp/parse-query q))
+  (let [parsed-q      (lru/-get *query-cache* q #(dp/parse-query q))
         find          (:qfind parsed-q)
         find-elements (dp/find-elements find)
         find-vars     (dp/find-vars find)
@@ -1055,7 +1018,7 @@
         q             (cond-> q
                         (sequential? q) dp/query->map)
         wheres        (:where q)
-        context       (-> (->Context [] {} {})
+        context       (-> (Context. [] {} {})
                         (resolve-ins (:qin parsed-q) inputs))
         resultset     (-> context
                         (-q wheres)
