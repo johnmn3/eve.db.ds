@@ -25,7 +25,7 @@
 {:paths ["src"]
  :deps {org.clojure/clojure {:mvn/version "1.12.0"}
         eve/eve {:git/url "https://github.com/SeniorCareMarket/eve"
-                 :git/sha "e6cddc906da3620b912287f30046ffb67058ac4e"}
+                 :git/sha "f4a1c3ae97ee76f2651ce600a857675aa5c227ef"}
         me.tonsky/persistent-sorted-set {:local/root "lib"}
         extend-clj/extend-clj {:local/root "lib-ds-deps"}}
  :aliases
