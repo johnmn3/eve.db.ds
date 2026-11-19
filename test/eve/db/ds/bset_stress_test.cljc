@@ -3,6 +3,13 @@
    to eve.db.ds.bset through the same swap!/$ harness as
    eve.db.ds.bset-test (see that ns for the adaptation rules).
 
+   Iteration counts are dynamic vars (*iters*, *rslice-iters*,
+   *overflow-len*) defaulting to upstream's exact numbers; a smoke
+   run binds them down (see eve.db.ds.bset-stress-smoke) — at the
+   pinned Eve's measured per-write cost on a shared cell, the full
+   counts are wall-clock-infeasible, and a bound-down run is reported
+   as a smoke, never as the full suite.
+
    Excluded, named: the \"bulk\" build method (upstream's
    from-sorted-array — §5 has no bulk constructor), the \"lazy\"
    storage-roundtrip method (no storage in §5), and the transient
@@ -36,7 +43,9 @@
 (defn- all-vec [a cmp]
   ($ (vec (bset/slice @a nil nil cmp))))
 
-(def ^:private iters 100)
+(def ^:dynamic *iters* 100)
+(def ^:dynamic *rslice-iters* 1000)
+(def ^:dynamic *overflow-len* 4000000)
 
 (defn- into-via-doseq [to from]
   (let [res (transient [])]
@@ -46,7 +55,7 @@
 
 (deftest stresstest-btset
   (println "  testing stresstest-btset...")
-  (dotimes [i iters]
+  (dotimes [i *iters*]
     (let [size      10000
           xs        (vec (repeatedly (+ 1 (rand-int size)) #(rand-int size)))
           xs-sorted (vec (distinct (sort xs)))
@@ -57,7 +66,7 @@
           a1        (disj-all! (build compare xs) compare rm)
           a3        (disj-all! (build compare xs) compare full-rm)]
       (testing
-        (str "Iter:" (inc i)  "/" iters
+        (str "Iter:" (inc i)  "/" *iters*
              " adds:" (str (count xs) " (" (count xs-sorted) " distinct),")
              " removals:" (str (count rm) " (down to " (count xs-rm) ")"))
         (testing "conj, seq"
@@ -77,7 +86,7 @@
 
 (deftest stresstest-slice
   (println "  testing stresstest-slice...")
-  (dotimes [i iters]
+  (dotimes [i *iters*]
     (let [xs        (repeatedly (+ 1 (rand-int 20000)) #(rand-int 20000))
           xs-sorted (distinct (sort xs))
           [from to] (sort [(- 10000 (rand-int 20000)) (+ 10000 (rand-int 20000))])
@@ -85,7 +94,7 @@
           a         (build compare xs)]
       (testing
         (str
-          "Iter: " (inc i) "/" iters
+          "Iter: " (inc i) "/" *iters*
           ", from:" (count xs-sorted) " elements"
           ", down to:" (count expected))
         (let [a2 (build compare (shuffle xs-sorted))]
@@ -99,21 +108,21 @@
 
 (deftest stresstest-rslice
   (println "  testing stresstest-rslice...")
-  (dotimes [i 1000]
+  (dotimes [i *rslice-iters*]
     (let [xs (vec (shuffle (range 0 (inc 3000))))
           a  (build compare xs)]
-      (testing (str "Iter: " i "/1000")
+      (testing (str "Iter: " i "/" *rslice-iters*)
         (is (= ($ (vec (bset/rslice @a (+ 3000 100) -100 compare)))
                ($ (some-> (bset/rslice @a (+ 3000 100) -100 compare) rseq reverse vec))))))))
 
 (deftest stresstest-seek
   (println "  testing stresstest-seek...")
-  (dotimes [i iters]
+  (dotimes [i *iters*]
     (let [xs        (repeatedly (inc (rand-int 20000)) #(rand-int 20000))
           xs-sorted (distinct (sort xs))
           seek-to   (rand-int 20000)
           a         (build compare xs-sorted)]
-      (testing (str "Iter: " i "/" iters ", seek to " seek-to)
+      (testing (str "Iter: " i "/" *iters* ", seek to " seek-to)
         (is (= (seq (drop-while #(< % seek-to) xs-sorted))
                ($ (seq (bset/seek (bset/slice @a nil nil compare) seek-to compare)))))
 
@@ -128,7 +137,7 @@
 
 (deftest test-overflow
   (println "  testing test-overflow...")
-  (let [len  4000000
+  (let [len  *overflow-len*
         part (quot len 100)
         xss  (partition-all part (shuffle (range 0 len)))
         a    (new-conn)]
