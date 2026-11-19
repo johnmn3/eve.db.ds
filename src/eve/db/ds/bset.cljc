@@ -448,8 +448,8 @@
             (arr
               (node-from-parts (sub-arr new-children 0 middle)
                                (sub-arr new-lims 0 middle))
-              (node-from-parts (sub-arr new-children middle)
-                               (sub-arr new-lims middle)))))))))
+              (node-from-parts (sub-arr new-children middle (eve/alength new-children))
+                               (sub-arr new-lims middle (eve/alength new-lims))))))))))
 
 (defn- node-conj [node cmp key]
   (if (leaf? node)
@@ -717,7 +717,7 @@
        (reduce [this f]
          (if (== off end)
            (f)
-           (clojure.core/reduce (Chunk. arr (inc off) end) f (eve/aget arr off))))
+           (clojure.core/reduce f (eve/aget arr off) (Chunk. arr (inc off) end))))
        (reduce [_ f start]
          (loop [val start
                 n   off]
@@ -998,7 +998,7 @@
      (f)
      (let [v (eve/aget (.-keys it) (.-idx it))]
        (if-some [nxt (-iter-next it)]
-         (clojure.core/reduce nxt f v)
+         (clojure.core/reduce f v nxt)
          v))))
   ([it f start]
    (loop [left (.-left it)
@@ -1032,7 +1032,7 @@
      (f)
      (let [v (eve/aget (.-keys it) (.-idx it))]
        (if-some [nxt (-riter-next it)]
-         (clojure.core/reduce nxt f v)
+         (clojure.core/reduce f v nxt)
          v))))
   ([it f start]
    (loop [right (.-right it)
