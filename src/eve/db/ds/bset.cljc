@@ -631,9 +631,19 @@
 ;; points into (nil when the iterator is exhausted). Iterators are
 ;; built and consumed inside $ regions; their seq/reduce/chunk
 ;; behavior is upstream's.
+;;
+;; The iterators are HOST deftypes, not eve/deftypes — measured, not
+;; preference: at the pinned Eve (f4a1c3a), constructing an
+;; eve/deftype inside a $ region routes through
+;; eve.flat.sister/construct-flat, which refuses fields held by
+;; reference ("a value held by reference cannot be packed") — and an
+;; iterator's fields are exactly live node/array handles. The set's
+;; own types (Leaf/Node) are eve/deftype and are only ever built
+;; inside swap! fns, where construction is slab construction and
+;; works. Provenance: U1 probe stack, 2026-11-19, this pin.
 
 (declare -iter-next -iter-chunked-next -iter-rseq iter-reduce
-         -riter-next -riter-rseq seq-equiv)
+         -riter-next -riter-rseq riter-reduce seq-equiv)
 
 (defn- seq-equiv [a b]
   (loop [sa (seq a)
@@ -644,7 +654,7 @@
       (= (first sa) (first sb)) (recur (next sa) (next sb))
       :else false)))
 
-(eve/deftype Chunk [arr off end]
+(deftype Chunk [arr off end]
   #?@(:clj
       [clojure.lang.IChunk
        (dropFirst [_]
@@ -704,7 +714,7 @@
                  (recur val' (inc n))))
              val)))]))
 
-(eve/deftype Iter [root shift left right keys idx]
+(deftype Iter [root shift left right keys idx]
   #?@(:clj
       [clojure.lang.ISeq
        (first [_]
@@ -719,6 +729,7 @@
        clojure.lang.Seqable
        (seq [this]
          (when keys this))
+       clojure.lang.Sequential
        clojure.lang.IPersistentCollection
        (count [_]
          (distance root shift left right))
@@ -743,7 +754,7 @@
          (-iter-chunked-next this))
        (chunkedMore [this]
          (or (-iter-chunked-next this) ()))
-       clojure.lang.IReversible
+       clojure.lang.Reversible
        (rseq [this]
          (when keys
            (-iter-rseq this)))
@@ -809,7 +820,7 @@
        IWithMeta
        (-with-meta [this _] this)]))
 
-(eve/deftype ReverseIter [root shift left right keys idx]
+(deftype ReverseIter [root shift left right keys idx]
   #?@(:clj
       [clojure.lang.ISeq
        (first [_]
@@ -824,6 +835,7 @@
        clojure.lang.Seqable
        (seq [this]
          (when keys this))
+       clojure.lang.Sequential
        clojure.lang.IPersistentCollection
        (count [_]
          (distance root shift left right))
@@ -833,7 +845,12 @@
        clojure.lang.IObj
        (meta [_] nil)
        (withMeta [this _] this)
-       clojure.lang.IReversible
+       clojure.lang.IReduce
+       (reduce [this f]
+         (riter-reduce this f))
+       (reduce [this f start]
+         (riter-reduce this f start))
+       clojure.lang.Reversible
        (rseq [this]
          (when keys
            (-riter-rseq this)))
@@ -962,6 +979,40 @@
            (let [left' (next-path (.-root it) (.-shift it) left)]
              (if (path-lt left' (.-right it))
                (recur left' (keys-for (.-root it) (.-shift it) left') (path-get left' 0) new-acc)
+               new-acc))))))))
+
+(defn- riter-reduce
+  ;; JVM parity only (upstream's JVM reverse seq is reducible; its
+  ;; cljs ReverseIter is not): a downward mirror of iter-reduce.
+  ([it f]
+   (if (nil? (.-keys it))
+     (f)
+     (let [v (eve/aget (.-keys it) (.-idx it))]
+       (if-some [nxt (-riter-next it)]
+         (clojure.core/reduce nxt f v)
+         v))))
+  ([it f start]
+   (loop [right (.-right it)
+          keys  (.-keys it)
+          idx   (.-idx it)
+          acc   start]
+     (if (nil? keys)
+       acc
+       (let [new-acc (f acc (eve/aget keys idx))]
+         (cond
+           (reduced? new-acc)
+           @new-acc
+
+           (> idx 0) ;; can use cached array to advance
+           (let [right' (path-dec right)]
+             (if (path-lt (.-left it) right')
+               (recur right' keys (dec idx) new-acc)
+               new-acc))
+
+           :else
+           (let [right' (prev-path (.-root it) (.-shift it) right)]
+             (if (path-lt (.-left it) right')
+               (recur right' (keys-for (.-root it) (.-shift it) right') (path-get right' 0) new-acc)
                new-acc))))))))
 
 (defn- -iter-rseq [it]
