@@ -11,26 +11,26 @@
           (keyword? eid))
     (db/entid db eid)))
 
-(defn entity [db eid]
-  {:pre [(db/db? db)]}
-  (when-let [e (entid db eid)]
-    (when (db/numeric-eid-exists? db e)
-      (->Entity db e (volatile! false) (volatile! {})))))
+(defn entity
+  ([db eid] (entity db eid nil))
+  ([db eid handle]
+   {:pre [(db/db? db)]}
+   (when-let [e (entid db eid)] (when (db/numeric-eid-exists? db e) (->Entity db e (volatile! false) (volatile! {}) handle)))))
 
-(defn- entity-attr [db a datoms]
+(defn- entity-attr [db handle a datoms]
   (if (db/multival? db a)
     (if (db/ref? db a)
-      (reduce #(conj %1 (entity db (:v %2))) #{} datoms)
+      (reduce #(conj %1 (entity db (:v %2) handle)) #{} datoms)
       (reduce #(conj %1 (:v %2)) #{} datoms))
     (if (db/ref? db a)
-      (entity db (:v (first datoms)))
+      (entity db (:v (first datoms)) handle)
       (:v (first datoms)))))
 
-(defn- -lookup-backwards [db eid attr not-found]
+(defn- -lookup-backwards [db handle eid attr not-found]
   (if-let [datoms (not-empty (db/-search db [nil attr eid]))]
     (if (db/component? db attr)
-      (entity db (:e (first datoms)))
-      (reduce #(conj %1 (entity db (:e %2))) #{} datoms))
+      (entity db (:e (first datoms)) handle)
+      (reduce #(conj %1 (entity db (:e %2) handle)) #{} datoms))
     not-found))
 
 #?(:cljs
@@ -55,7 +55,7 @@
      (fn []
        (this-as this# this#))))
 
-(deftype Entity [db eid touched cache]
+(deftype Entity [db eid touched cache handle]
   #?@(:cljs
       [Object
        (toString [this]
@@ -76,7 +76,7 @@
          (if (= attr ":db/id")
            eid
            (if (db/reverse-ref? attr)
-             (-> (-lookup-backwards db eid (db/reverse-ref attr) nil)
+             (-> (-lookup-backwards db handle eid (db/reverse-ref attr) nil)
                multival->js)
              (cond-> (lookup-entity this attr)
                (db/multival? db attr) multival->js))))
@@ -168,14 +168,14 @@
 (defn- equiv-entity [^Entity this that]
   (and
     (instance? Entity that)
-    (eve.alpha/same? (.-db this) (.-db ^Entity that)) ; block identity of the db: `=` and `hash` on db is expensive
+    (let [h1 (.-handle this) h2 (.-handle ^Entity that)] (if (and h1 h2) (and (identical? (:atom h1) (:atom h2)) (= (:tx h1) (:tx h2))) (eve.alpha/same? (.-db this) (.-db ^Entity that)))) ; db identity: the conn handle when both carry one (GAP-2), else block identity inside a region (GAP-1)
     (= (.-eid this) (.-eid ^Entity that))))
 
 (defn- hash-entity [^Entity e]
   (db/combine-hashes
     (hash (.-eid e))
-    ;; A hash compatible with `identical?`. Consistent with `=`.
-    (#?(:clj System/identityHashCode :cljs goog/getUid) (.-db e))))
+    ;; The handle's identity when present (region-free); else the DB version hash.
+    (if-some [h (.-handle e)] (hash [(#?(:clj System/identityHashCode :cljs goog/getUid) (:atom h)) (:tx h)]) (db/entity-db-hash (.-db e)))))
 
 (defn- lookup-entity
   ([this attr] (lookup-entity this attr nil))
@@ -183,13 +183,13 @@
    (if (= attr :db/id)
      (.-eid this)
      (if (db/reverse-ref? attr)
-       (-lookup-backwards (.-db this) (.-eid this) (db/reverse-ref attr) not-found)
+       (-lookup-backwards (.-db this) (.-handle this) (.-eid this) (db/reverse-ref attr) not-found)
        (if-some [v (@(.-cache this) attr)]
          v
          (if @(.-touched this)
            not-found
            (if-some [datoms (not-empty (db/-search (.-db this) [(.-eid this) attr]))]
-             (let [value (entity-attr (.-db this) attr datoms)]
+             (let [value (entity-attr (.-db this) (.-handle this) attr datoms)]
                (vreset! (.-cache this) (assoc @(.-cache this) attr value))
                value)
              not-found)))))))
@@ -205,10 +205,10 @@
           v)))
     {} a->v))
 
-(defn- datoms->cache [db datoms]
+(defn- datoms->cache [db handle datoms]
   (reduce (fn [acc part]
             (let [a (:a (first part))]
-              (assoc acc a (entity-attr db a part))))
+              (assoc acc a (entity-attr db handle a part))))
     {} (partition-by :a datoms)))
 
 (defn touch [^Entity e]
@@ -217,7 +217,7 @@
     (when-not @(.-touched e)
       (when-let [datoms (not-empty (db/-search (.-db e) [(.-eid e)]))]
         (vreset! (.-cache e) (->> datoms
-                               (datoms->cache (.-db e))
+                               (datoms->cache (.-db e) (.-handle e))
                                (touch-components (.-db e))))
         (vreset! (.-touched e) true)))
     e))
