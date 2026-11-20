@@ -28,4 +28,4 @@
               (if (= ~match m#)
                 (t/do-report {:type :pass, :message ~msg, :expected '~form, :actual e#})
                 (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual e#})))
-          e#)))
+          e#))))
