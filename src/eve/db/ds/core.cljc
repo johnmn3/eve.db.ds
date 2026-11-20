@@ -455,7 +455,9 @@
        ; find all entities with age in a specific range (inclusive)
        (->> (index-range db :age 18 60) (map :e))"
   [db attr start end]
-  {:pre [(db/db? db)]}
+  {:pre [(some? db)]} ;; U6: was (db/db? db) on the raw arg — the only
+  ;; precondition in core that rejected a §4 handle its own body
+  ;; resolves (every sibling: some? + resolve-db-arg in the body).
   (deliver-datoms (db/-index-range (resolve-db-arg db) attr start end)))
 
 ;; Conn

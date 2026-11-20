@@ -42,6 +42,7 @@
        "eve.db.ds.db.DB" "eve.db.ds.db.DB__Flat"
        "eve.db.ds.db.FilteredDB" "eve.db.ds.db.FilteredDB__Flat"
        "eve.db.ds.db.TxReport"
+       "eve.db.ds.conn.Conn"
        "eve.db.ds.impl.entity.Entity"}))
 
 #?(:clj
@@ -53,6 +54,9 @@
      (let [acc (volatile! [])]
        (letfn [(walk [v]
                  (cond
+                   ;; Functions are code, not data (data-readers' values
+                   ;; are the library's own reader fns, as upstream's).
+                   (fn? v) nil
                    ;; A §4 handle {:atom a :tx n} is a sanctioned leaf:
                    ;; the Eve atom inside it is the identity token the
                    ;; plan itself puts in users' hands, not a leak.
