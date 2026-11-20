@@ -2,16 +2,14 @@
   (:refer-clojure :exclude [filter])
   (:require
     [#?(:cljs cljs.reader :clj clojure.edn) :as edn]
+    [eve.alpha :as eve]
     [eve.db.ds.conn :as conn]
     [eve.db.ds.db :as db #?@(:cljs [:refer [Datom DB FilteredDB]])]
     #?(:clj [eve.db.ds.pprint])
     [eve.db.ds.pull-api :as dp]
-    [eve.db.ds.serialize :as ds]
-    [eve.db.ds.storage :as storage]
     [eve.db.ds.query :as dq]
     [eve.db.ds.impl.entity :as de]
-    [eve.db.ds.util :as util]
-    [me.tonsky.persistent-sorted-set :as set])
+    [eve.db.ds.util :as util])
   #?(:clj
      (:import
        [eve.db.ds.db Datom DB FilteredDB]
@@ -23,6 +21,29 @@
 
 
 ; Entities
+
+(defn- resolve-db-arg
+  "Public read fns take DB handles (plan v2 §4); resolve one to the
+   DB value it names. Non-handle values (a raw DB value, U4-internal
+   use) pass through unchanged."
+  [db]
+  (if (conn/handle? db)
+    (conn/resolve-db db)
+    db))
+
+(defn- deliver-datoms
+  "Realize an index iterator inside a read region so its Datoms
+   arrive in their host delivery form (plan v2 §4). Returns a
+   vector: upstream's lazy iterator cannot leave the region — its
+   elements are Eve values until delivered."
+  [iter]
+  (eve/$ (mapv identity iter)))
+
+(defn- deliver-datom
+  "Deliver a single Datom (or nil) in its host form."
+  [d]
+  (when (some? d)
+    (eve/$ (identity d))))
 
 (def ^{:tag Entity
        :arglists '([db eid])
@@ -74,13 +95,13 @@
              - Comparing entities just compares their ids. Be careful when comparing entities taken from different dbs or from different versions of the same db.
              - Accessed entity attributes are cached on entity itself (except backward references).
              - When printing, only cached attributes (the ones you have accessed before) are printed. See [[touch]]."}
-  entity de/entity)
+  entity (fn [db eid] (de/entity (resolve-db-arg db) eid)))
 
 (def ^{:arglists '([db eid])
        :doc "Given lookup ref `[unique-attr value]`, returns numberic entity id.
 
              If entity does not exist, returns `nil`."}
-  entid db/entid)
+  entid (fn [db eid] (db/entid (resolve-db-arg db) eid)))
 
 (defn ^DB entity-db
   "Returns a db that entity was created from."
@@ -115,7 +136,9 @@
                  ;     :name    \"Ivan\"
                  ;     :likes   [:pizza]
                  ;     :friends [{:db/id 2, :name \"Oleg\"}]}"}
-  pull dp/pull)
+  pull (fn
+         ([db selector eid] (dp/pull (resolve-db-arg db) selector eid))
+         ([db selector eid opts] (dp/pull (resolve-db-arg db) selector eid opts))))
 
 (def ^{:arglists '([db selector eids])
        :doc "Same as [[pull]], but accepts sequence of ids and returns sequence of maps.
@@ -127,7 +150,9 @@
              ; => [{:db/id 1, :name \"Ivan\"}
              ;     {:db/id 2, :name \"Oleg\"}]
              ```"}
-  pull-many dp/pull-many)
+  pull-many (fn
+              ([db selector eids] (dp/pull-many (resolve-db-arg db) selector eids))
+              ([db selector eids opts] (dp/pull-many (resolve-db-arg db) selector eids opts))))
 
 ; Query
 
@@ -143,41 +168,38 @@
              db)
           ; => #{[\"fries\"] [\"candy\"] [\"pie\"] [\"pizza\"]}
           ```"}
-  q dq/q)
+  q (fn [query & inputs]
+      (apply dq/q query (map resolve-db-arg inputs))))
 
 
 ; Creating DB
 
-(defn ^DB empty-db
-  "Creates an empty database with an optional schema.
+(defn empty-db
+  "Creates an empty database with an optional schema. The value
+   returned is a DB handle (plan v2 §4): underneath, a private
+   in-memory conn is created and the handle names its DB.
 
    Usage:
-   
+
    ```
-   (empty-db) ; => #eve.db.ds/DB {:schema {}, :datoms []}
+   (empty-db) ; => {:atom <eve atom> :tx tx0}
 
    (empty-db {:likes {:db/cardinality :db.cardinality/many}})
-   ; => #eve.db.ds/DB {:schema {:likes {:db/cardinality :db.cardinality/many}}
-   ;                    :datoms []}
    ```
-   
+
    Options are:
-   
-   :branching-factor <int>, default 512. B-tree max node length
-   :ref-type         :strong | :soft | :weak, default :soft. How will nodes that are already
-                     stored on disk be referenced. Soft or weak means they might be unloaded
-                     from memory under memory pressure and later fetched from storage again.
-   :storage          <IStorage>. Will be used to store this db later with `(d/store db)`"
+
+   :persistent <dir>. Back the private conn's atom by this directory."
   ([]
-   (db/empty-db nil {}))
+   (conn/empty-db nil {}))
   ([schema]
-   (db/empty-db schema {}))
+   (conn/empty-db schema {}))
   ([schema opts]
-   (db/empty-db schema (storage/maybe-adapt-storage opts))))
+   (conn/empty-db schema opts)))
 
 (def ^{:arglists '([x])
        :doc "Returns `true` if the given value is an immutable database, `false` otherwise."}
-  db? db/db?)
+  db? conn/handle?)
 
 (def ^{:tag Datom
        :arglists '([e a v] [e a v tx] [e a v tx added])
@@ -192,49 +214,27 @@
        :doc "Returns `true` if the given value is a datom, `false` otherwise."}
   datom? db/datom?)
 
-(defn ^DB init-db
+(defn init-db
   "Low-level fn for creating database quickly from a trusted sequence of datoms.
    Does no validation on inputs, so `datoms` must be well-formed and match schema.
    Used internally in db (de)serialization. See also [[datom]].
-   For options, see [[empty-db]]"
+   Returns a DB handle into a fresh private conn (plan v2 §4)."
   ([datoms]
-   (db/init-db datoms nil {}))
+   (conn/init-db datoms nil))
   ([datoms schema]
-   (db/init-db datoms schema {}))
-  ([datoms schema opts]
-   (db/init-db datoms schema (storage/maybe-adapt-storage opts))))
+   (conn/init-db datoms schema)))
 
-(def ^{:arglists '([db] [db opts])
-       :doc "Converts db into a data structure (not string!) that can be fed to serializer
-             of your choice (e.g. `js/JSON.stringify` in CLJS, `cheshire.core/generate-string`
-             or `jsonista.core/write-value-as-string` in CLJ).
-
-             On JVM, `serializable` holds a global lock that prevents any two serializations
-             to run in parallel (an implementation constraint, be aware).
-
-             Options:
-
-             `:freeze-fn` Non-primitive values will be serialized using this. Optional.
-             `pr-str` by default."}
-  serializable ds/serializable)
-
-(def ^{:tag DB
-       :arglists '([serializable] [serializable opts])
-       :doc "Creates db from a data structure (not string!) produced by serializable.
-
-             Opts:
-
-             `:thaw-fn` Non-primitive values will be deserialized using this.
-             Must match :freeze-fn from serializable. Optional. `clojure.edn/read-string`
-             by default."}
-  from-serializable ds/from-serializable)
+;; serializable / from-serializable are U5's surface (plan v2 §3:
+;; serialize is a new file). Their defs return when U5 lands the new
+;; serialize namespace; the baseline defs pointed at a serialize that
+;; required the deleted storage namespace.
 
 
 ; Schema
 
 (def ^{:arglists '([db])
        :doc "Returns a schema of a database."}
-  schema db/-schema)
+  schema (fn [db] (if (conn/handle? db) (conn/schema-of db) (db/-schema db))))
 
 
 ; Filtered db
@@ -242,25 +242,24 @@
 (defn is-filtered
   "Returns `true` if this database was filtered using [[filter]], `false` otherwise."
   [x]
-  (instance? FilteredDB x))
+  (conn/is-filtered x))
 
 (defn filter
   "Returns a view over database that has same interface but only includes datoms for which the `(pred db datom)` is true. Can be applied multiple times.
-   
+
    Filtered DB gotchas:
 
    - All operations on filtered database are proxied to original DB, then filter pred is applied.
    - Not cached. You pay filter penalty every time.
    - Supports entities, pull, queries, index access.
-   - Does not support [[with]] and [[db-with]]."
+   - Does not support [[with]] and [[db-with]].
+
+   PARKED at the current Eve pin: FilteredDB's ^:host pred field
+   reads null on every construction path (U2 probe2), so a filtered
+   DB cannot be constructed yet; this throws :eve.db.ds/filter-blocked
+   until the Eve fix lands. See eve.db.ds.conn/filter."
   [db pred]
-  {:pre [(db/db? db)]}
-  (if (is-filtered db)
-    (let [^FilteredDB fdb db
-          orig-pred (.-pred fdb)
-          orig-db   (.-unfiltered-db fdb)]
-      (FilteredDB. orig-db #(and (orig-pred %) (pred orig-db %)) (atom 0)))
-    (FilteredDB. db #(pred db %) (atom 0))))
+  (conn/filter db pred))
 
 
 ; Changing DB
@@ -273,10 +272,12 @@
   "Applies transaction to an immutable db value, returning new immutable db value. Same as `(:db-after (with db tx-data))`."
   conn/db-with)
 
-(defn ^DB with-schema
+(defn with-schema
   "Warning! No validation or conversion. Only change schema in a compatible way"
   [db schema]
-  (db/with-schema db schema))
+  (if (conn/handle? db)
+    (conn/with-schema db schema)
+    (db/with-schema db schema)))
 
 ; Index lookups
 
@@ -351,19 +352,19 @@
    - Will not return datoms that are not part of the index (e.g. attributes with no `:db/index` in schema when querying `:avet` index).
      - `:eavt` and `:aevt` contain all datoms.
      - `:avet` only contains datoms for references, `:db/unique` and `:db/index` attributes."
-  ([db index]             {:pre [(db/db? db)]} (db/-datoms db index nil nil nil nil))
-  ([db index c0]          {:pre [(db/db? db)]} (db/-datoms db index c0  nil nil nil))
-  ([db index c0 c1]       {:pre [(db/db? db)]} (db/-datoms db index c0  c1  nil nil))
-  ([db index c0 c1 c2]    {:pre [(db/db? db)]} (db/-datoms db index c0  c1  c2  nil))
-  ([db index c0 c1 c2 c3] {:pre [(db/db? db)]} (db/-datoms db index c0  c1  c2  c3)))
+  ([db index]             {:pre [(some? db)]} (deliver-datoms (db/-datoms (resolve-db-arg db) index nil nil nil nil)))
+  ([db index c0]          {:pre [(some? db)]} (deliver-datoms (db/-datoms (resolve-db-arg db) index c0  nil nil nil)))
+  ([db index c0 c1]       {:pre [(some? db)]} (deliver-datoms (db/-datoms (resolve-db-arg db) index c0  c1  nil nil)))
+  ([db index c0 c1 c2]    {:pre [(some? db)]} (deliver-datoms (db/-datoms (resolve-db-arg db) index c0  c1  c2  nil)))
+  ([db index c0 c1 c2 c3] {:pre [(some? db)]} (deliver-datoms (db/-datoms (resolve-db-arg db) index c0  c1  c2  c3))))
 
 (defn ^Datom find-datom
   "Same as [[datoms]], but only returns single datom. Faster than `(first (datoms ...))`"
-  ([db index]             {:pre [(db/db? db)]} (db/find-datom db index nil nil nil nil))
-  ([db index c0]          {:pre [(db/db? db)]} (db/find-datom db index c0  nil nil nil))
-  ([db index c0 c1]       {:pre [(db/db? db)]} (db/find-datom db index c0  c1  nil nil))
-  ([db index c0 c1 c2]    {:pre [(db/db? db)]} (db/find-datom db index c0  c1  c2  nil))
-  ([db index c0 c1 c2 c3] {:pre [(db/db? db)]} (db/find-datom db index c0  c1  c2  c3)))
+  ([db index]             {:pre [(some? db)]} (deliver-datom (db/find-datom (resolve-db-arg db) index nil nil nil nil)))
+  ([db index c0]          {:pre [(some? db)]} (deliver-datom (db/find-datom (resolve-db-arg db) index c0  nil nil nil)))
+  ([db index c0 c1]       {:pre [(some? db)]} (deliver-datom (db/find-datom (resolve-db-arg db) index c0  c1  nil nil)))
+  ([db index c0 c1 c2]    {:pre [(some? db)]} (deliver-datom (db/find-datom (resolve-db-arg db) index c0  c1  c2  nil)))
+  ([db index c0 c1 c2 c3] {:pre [(some? db)]} (deliver-datom (db/find-datom (resolve-db-arg db) index c0  c1  c2  c3))))
 
 (defn seek-datoms
   "Similar to [[datoms]], but will return datoms starting from specified components and including rest of the database until the end of the index.
@@ -396,19 +397,19 @@
        (seek-datoms db :eavt 2 :likes \"fish\")
        ; => (#eve.db.ds/Datom [2 :likes \"pie\"]
        ;     #eve.db.ds/Datom [2 :likes \"pizza\"])"
-  ([db index]             {:pre [(db/db? db)]} (db/-seek-datoms db index nil nil nil nil))
-  ([db index c0]          {:pre [(db/db? db)]} (db/-seek-datoms db index c0  nil nil nil))
-  ([db index c0 c1]       {:pre [(db/db? db)]} (db/-seek-datoms db index c0  c1  nil nil))
-  ([db index c0 c1 c2]    {:pre [(db/db? db)]} (db/-seek-datoms db index c0  c1  c2  nil))
-  ([db index c0 c1 c2 c3] {:pre [(db/db? db)]} (db/-seek-datoms db index c0  c1  c2  c3)))
+  ([db index]             {:pre [(some? db)]} (deliver-datoms (db/-seek-datoms (resolve-db-arg db) index nil nil nil nil)))
+  ([db index c0]          {:pre [(some? db)]} (deliver-datoms (db/-seek-datoms (resolve-db-arg db) index c0  nil nil nil)))
+  ([db index c0 c1]       {:pre [(some? db)]} (deliver-datoms (db/-seek-datoms (resolve-db-arg db) index c0  c1  nil nil)))
+  ([db index c0 c1 c2]    {:pre [(some? db)]} (deliver-datoms (db/-seek-datoms (resolve-db-arg db) index c0  c1  c2  nil)))
+  ([db index c0 c1 c2 c3] {:pre [(some? db)]} (deliver-datoms (db/-seek-datoms (resolve-db-arg db) index c0  c1  c2  c3))))
 
 (defn rseek-datoms
   "Same as [[seek-datoms]], but goes backwards until the beginning of the index."
-  ([db index]             {:pre [(db/db? db)]} (db/-rseek-datoms db index nil nil nil nil))
-  ([db index c0]          {:pre [(db/db? db)]} (db/-rseek-datoms db index c0  nil nil nil))
-  ([db index c0 c1]       {:pre [(db/db? db)]} (db/-rseek-datoms db index c0  c1  nil nil))
-  ([db index c0 c1 c2]    {:pre [(db/db? db)]} (db/-rseek-datoms db index c0  c1  c2  nil))
-  ([db index c0 c1 c2 c3] {:pre [(db/db? db)]} (db/-rseek-datoms db index c0  c1  c2  c3)))
+  ([db index]             {:pre [(some? db)]} (deliver-datoms (db/-rseek-datoms (resolve-db-arg db) index nil nil nil nil)))
+  ([db index c0]          {:pre [(some? db)]} (deliver-datoms (db/-rseek-datoms (resolve-db-arg db) index c0  nil nil nil)))
+  ([db index c0 c1]       {:pre [(some? db)]} (deliver-datoms (db/-rseek-datoms (resolve-db-arg db) index c0  c1  nil nil)))
+  ([db index c0 c1 c2]    {:pre [(some? db)]} (deliver-datoms (db/-rseek-datoms (resolve-db-arg db) index c0  c1  c2  nil)))
+  ([db index c0 c1 c2 c3] {:pre [(some? db)]} (deliver-datoms (db/-rseek-datoms (resolve-db-arg db) index c0  c1  c2  c3))))
 
 (defn index-range
   "Returns part of `:avet` index between `[_ attr start]` and `[_ attr end]` in AVET sort order.
@@ -436,7 +437,7 @@
        (->> (index-range db :age 18 60) (map :e))"
   [db attr start end]
   {:pre [(db/db? db)]}
-  (db/-index-range db attr start end))
+  (deliver-datoms (db/-index-range (resolve-db-arg db) attr start end)))
 
 ;; Conn
 
@@ -464,11 +465,25 @@
    If you specify `:storage` option, conn will be stored automatically after each transaction"
   conn/create-conn)
 
-#?(:clj
-   (def ^{:arglists '([storage] [storage opts])} restore-conn
-     "Lazy-load database from storage and make conn out of it.
-      Returns nil if there’s no database yet in storage"
-     conn/restore-conn))
+(def ^{:arglists '([conn db])} keep!
+  "Pin the DB the handle names in its conn's atom, so reads through
+   the handle keep resolving after the conn moves on (plan v2 §4).
+   The DB must still be reachable — current, or already kept.
+   Additive in this rewrite; upstream has no equivalent."
+  conn/keep!)
+
+(def ^{:arglists '([conn db])} release!
+  "Remove the DB the handle names from its conn's atom :kept map.
+   Afterwards, reads through the handle throw :eve.db.ds/db-not-kept
+   unless the DB is the conn's current one again. Additive in this
+   rewrite; upstream has no equivalent."
+  conn/release!)
+
+(def ^{:arglists '([conn])} close-conn!
+  "Release the conn's Eve atom (and, for a :persistent conn, its
+   backing domain). Additive in this rewrite; upstream has no
+   equivalent."
+  conn/close-conn!)
 
 (def ^{:arglists '([conn tx-data] [conn tx-data tx-meta])} transact!
   "Applies transaction the underlying database value and atomically updates connection reference to point to the result of that transaction, new db value.
@@ -591,6 +606,21 @@
 #?(:cljs
    (doseq [[tag cb] data-readers] (edn/register-tag-parser! tag cb)))
 
+;; STOPGAP (U3, for the coordinator/db.cljc): db.cljc registers
+;; print-method for the slab Datom class only. A delivered Datom is
+;; the flat sister class (Datom__Flat), which misses that dispatch,
+;; falls to Object/toString, whose body is (pr-str d) — infinite
+;; recursion, StackOverflowError on any print of a delivered Datom
+;; (measured, u3-logs/smoke1.log). Until db.cljc registers the
+;; sister classes next to its own defmethods (the same gap exists
+;; for DB at db.cljc's print-method DB), register the sister here.
+#?(:clj
+   (defmethod print-method (Class/forName "eve.db.ds.db.Datom__Flat")
+     [d, ^java.io.Writer w]
+     (.write w (str "#eve.db.ds/Datom "))
+     (binding [*out* w]
+       (pr [(.-e d) (.-a d) (.-v d) (db/datom-tx d) (db/datom-added d)]))))
+
 
 ;; Datomic compatibility layer
 
@@ -651,7 +681,10 @@
 
 
 ;; ersatz future without proper blocking
-#?(:cljs
+#?(:clj
+   (defn- future-call [f]
+     (future (f)))
+   :cljs
    (defn- future-call [f]
      (let [res      (atom nil)
            realized (atom false)]
@@ -687,55 +720,14 @@
   util/squuid-time-millis)
 
 
-;; Storage
-#?(:clj
-   (def ^{:arglists '([db])} storage
-     "Returns IStorage used by DB instance"
-     storage/storage))
+;; Storage: the baseline storage namespace is deleted (plan v2 §3).
+;; Persistence is create-conn with :persistent (see GUIDE §8); there
+;; is no storage object, and no storage/store/restore/file-storage
+;; surface in this rewrite.
 
-#?(:clj
-   (def ^{:arglists '([db] [db storage])} store
-     "Stores databases to provided storage. If database was created
-      with :storage option or restored from storage, use single-argument version.
-      
-      Subsequent stores are incremental, i.e. only newly added nodes will be actually stored.
-      
-      Storing already stored dbs into another storage is not supported (may change)."
-     storage/store))
-
-#?(:clj 
-   (def ^{:arglists '([storage] [storage opts])} restore
-     "Lazy-loads database from storage. Ultra-fast, fetches the rest as it’s needed"
-     storage/restore))
-
-#?(:clj
-   (defn addresses
-     "Returns all addresses in use by current db (as java.util.HashSet).
-      Anything that is not in the return set is safe to be deleted"
-     [& dbs]
-     (storage/addresses dbs)))
-
-#?(:clj
-   (def ^{:arglists '([storage])} collect-garbage
-     "Deletes all keys from storage that are not referenced by any of the currently alive db refs.
-      Has a side-effect of fully loading databases fully into memory, so, can be slow"
-     storage/collect-garbage))
-
-#?(:clj
-   (def ^{:arglists '([dir] [dir opts])} file-storage
-     "Default implementation that stores data in files in a dir.
-   
-   Options are:
-   
-   :freeze-fn :: (data)   -> String. A serialization function
-   :thaw-fn   :: (String) -> data. A deserialization function
-   :write-fn  :: (OutputStream data) -> void. Implement your own writer to FileOutputStream
-   :read-fn   :: (InputStream) -> Object. Implement your own reader from FileInputStream
-   :addr->filename-fn :: (UUID) -> String. Construct file name from address
-   :filename->addr-fn :: (String) -> UUID. Reconstruct address from file name
-   
-   All options are optional."
-     storage/file-storage))
-
-(defn settings [db]
-  (set/settings (:eavt db)))
+(defn settings
+  "The DB's settings map. The indexes are eve.db.ds.bset trees; the
+   one setting that survives the port is the branching factor — a
+   bset leaf holds up to 32 keys (plan v2 §5)."
+  [db]
+  {:branching-factor 32})
