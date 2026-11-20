@@ -7,6 +7,10 @@
    This is the single re-point site for DB construction when U2/U3 land."
   (:require
     [clojure.test :as t]
+    [eve.alpha :as eve] ; loaded before impl.entity compiles: entity's
+                        ; trap-row replacement calls eve.alpha/same?
+                        ; fully qualified (post-U2, db.cljc's own require
+                        ; of eve.alpha guarantees this order in the lib)
     [eve.db.ds.db :as db]))
 
 (defn empty-db
@@ -22,6 +26,12 @@
   "Baseline conn/db-with: (:db-after (with db tx-data))."
   [db tx-data]
   (:db-after (with db tx-data)))
+
+(defn filter-db
+  "Baseline core/filter, verbatim shape (core.cljc L247ff): a FilteredDB
+   whose pred wraps the caller's [db datom] pred."
+  [db pred]
+  (db/->FilteredDB db #(pred db %) (atom 0)))
 
 (defn no-namespace-maps [f]
   (binding [*print-namespace-maps* false]

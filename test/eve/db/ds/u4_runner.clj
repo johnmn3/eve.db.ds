@@ -8,6 +8,11 @@
 
 (defn -main [& args]
   (let [ns-sym (symbol (or (first args) "eve.db.ds.entity-test"))]
+    ;; eve.alpha must be loaded before eve.db.ds.impl.entity compiles:
+    ;; its trap-row replacement calls eve.alpha/same? fully qualified.
+    ;; Post-U2 this order is structural (entity requires db, db will
+    ;; require eve.alpha); at baseline the runner guarantees it.
+    (require 'eve.alpha)
     (require ns-sym)
     (let [res (if (next args)
                 (let [vars (map #(ns-resolve ns-sym (symbol %)) (next args))]
