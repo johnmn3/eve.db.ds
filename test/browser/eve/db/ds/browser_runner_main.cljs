@@ -11,7 +11,27 @@
   (:require [cljs.test :as t]
             [eve.thread-host :as h]
             [eve.deftype-atom-laws-test]
-            [eve.db.ds.bset-test]))
+            [eve.db.ds.bset-test]
+            ;; U6 acceptance arms: the U2/U3/U4/U5 suite groups.
+            [eve.db.ds.db-test]
+            [eve.db.ds.index-test]
+            [eve.db.ds.components-test]
+            [eve.db.ds.test.conn]
+            [eve.db.ds.test.listen]
+            [eve.db.ds.test.upsert]
+            [eve.db.ds.test.transact]
+            [eve.db.ds.entity-test]
+            [eve.db.ds.datafy-test]
+            [eve.db.ds.pull-api-test]
+            [eve.db.ds.query-test]
+            [eve.db.ds.query-aggregates-test]
+            [eve.db.ds.query-find-specs-test]
+            [eve.db.ds.query-fns-test]
+            [eve.db.ds.query-not-test]
+            [eve.db.ds.query-or-test]
+            [eve.db.ds.query-pull-test]
+            [eve.db.ds.query-return-map-test]
+            [eve.db.ds.test.serialize]))
 
 (def ^:private report-to (atom nil))
 (def ^:private failures (atom []))
@@ -42,7 +62,20 @@
   (reset! report-to (:reply boot))
   (case (:suite boot)
     "laws" (t/run-tests 'eve.deftype-atom-laws-test)
-    "bset" (t/run-tests 'eve.db.ds.bset-test)))
+    "bset" (t/run-tests 'eve.db.ds.bset-test)
+    ;; U6 arms. "u3" includes test.transact whole: its GAP-U3-5 park
+    ;; (test-db-ident-fn, stored :db/fn) is a JVM runner park; in the
+    ;; browser it surfaces as that one named error — parity is read
+    ;; against the JVM table with the park named. "u4" excludes
+    ;; query-rules-test: its rule-performance deftest builds 50,000
+    ;; datoms (a venue leg on both hosts, U6 item 4).
+    "u2" (t/run-tests 'eve.db.ds.db-test 'eve.db.ds.index-test 'eve.db.ds.components-test)
+    "u3" (t/run-tests 'eve.db.ds.test.conn 'eve.db.ds.test.listen 'eve.db.ds.test.upsert 'eve.db.ds.test.transact)
+    "u4" (t/run-tests 'eve.db.ds.entity-test 'eve.db.ds.datafy-test 'eve.db.ds.pull-api-test
+                      'eve.db.ds.query-test 'eve.db.ds.query-aggregates-test 'eve.db.ds.query-find-specs-test
+                      'eve.db.ds.query-fns-test 'eve.db.ds.query-not-test 'eve.db.ds.query-or-test
+                      'eve.db.ds.query-pull-test 'eve.db.ds.query-return-map-test)
+    "u5" (t/run-tests 'eve.db.ds.test.serialize)))
 
 (defn- post! [result]
   (js/fetch "/result" #js {:method "POST" :body (pr-str result)}))
