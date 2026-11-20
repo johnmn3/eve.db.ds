@@ -73,7 +73,7 @@
 
 #?(:clj
    (deftest test-api-returns-host-data-only
-     (let [schema {:name   {:db/unique :db.unique/identity}
+     (let [schema {:name   {:db/unique :db.unique/identity :db/index true}
                    :friend {:db/valueType :db.type/ref
                             :db/cardinality :db.cardinality/many}}
            conn   (d/create-conn schema)
