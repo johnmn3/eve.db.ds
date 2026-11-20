@@ -854,6 +854,7 @@
        IChunkedNext
        (-chunked-next [this]
          (-iter-chunked-next this))
+       ISequential
        IReversible
        (-rseq [this]
          (when keys
@@ -934,6 +935,7 @@
        IHash
        (-hash [this]
          (hash-ordered-coll this))
+       ISequential
        IReversible
        (-rseq [this]
          (when keys
