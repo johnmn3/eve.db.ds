@@ -13,7 +13,8 @@
    - thrown-msg?: upstream's assert-expr, unchanged."
   (:require
     [clojure.test :as t]
-    [eve.db.ds.core :as d]))
+    [eve.db.ds.core :as d])
+  #?(:cljs (:require-macros [eve.db.ds.test-macros])))
 
 (defn all-datoms [db]
   (into #{} (map (juxt :e :a :v)) (d/datoms db :eavt)))
@@ -21,7 +22,14 @@
 (defn entity-map [db eid]
   (into {:db/id eid} (d/entity db eid)))
 
-;; upstream test.core's thrown-msg? assert-expr, verbatim
+;; upstream test.core's thrown-msg? assert-expr, verbatim (JVM arm).
+;; The cljs registration lives in eve.db.ds.test-macros (a macro
+;; namespace): cljs.test/assert-expr is compile-time only in modern
+;; ClojureScript, and a runtime :cljs defmethod here compiled to an
+;; add-method call on undefined that killed the browser page at
+;; load (U6, 2026-11-20). This ns pulls the macro file in via
+;; :require-macros (see the ns form) so the method is registered
+;; before test namespaces' `is` forms macroexpand.
 #?(:clj
    (defmethod t/assert-expr 'thrown-msg? [msg form]
      (let [[_ match & body] form]
@@ -29,17 +37,6 @@
              (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual nil})
              (catch Throwable e#
                (let [m# (.getMessage e#)]
-                 (if (= ~match m#)
-                   (t/do-report {:type :pass, :message ~msg, :expected '~form, :actual e#})
-                   (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual e#})))
-               e#))))
-   :cljs
-   (defmethod t/assert-expr 'thrown-msg? [msg form]
-     (let [[_ match & body] form]
-       `(try ~@body
-             (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual nil})
-             (catch :default e#
-               (let [m# (.-message e#)]
                  (if (= ~match m#)
                    (t/do-report {:type :pass, :message ~msg, :expected '~form, :actual e#})
                    (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual e#})))

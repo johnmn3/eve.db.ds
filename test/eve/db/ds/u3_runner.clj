@@ -1,14 +1,16 @@
 (ns eve.db.ds.u3-runner
   "U3 slice runner (JVM): the conn, listen, upsert slices in full,
-   plus the transact slice's runnable deftests. Two transact parks,
-   both printed on every run so neither exclusion is silent:
+   plus the transact slice's runnable deftests and the stored
+   :db/fn feature slice (eve.db.ds.test.db-fn). One transact park
+   remains, printed on every run so the exclusion is not silent:
 
    - GAP-U3-1 (query.cljc's tuple shape — U4's file): the
      q-dependent deftests throw ClassCastException at this pin.
-   - GAP-U3-5 (stored :db/fn): test-db-ident-fn stores a host fn as
-     a datom value; a fn is not an Eve value (delivery pack throws
-     the flat-chunk unwritable error), so an Eve-resident DB cannot hold
-     it. See U3-STATUS.md.
+
+   GAP-U3-5 (stored :db/fn) is RESOLVED (John's ruling,
+   2026-11-20; DB-FN-STATUS.md): test-db-ident-fn is unparked,
+   reshaped to run in both stored modes, and eve.db.ds.test.db-fn
+   carries the feature proofs.
 
    Run: clojure -Sdeps '{:paths [\"src\" \"test\"]}' -M -m eve.db.ds.u3-runner
    Exit code is 0 only when every run test passes."
@@ -17,18 +19,17 @@
     [eve.db.ds.test.conn]
     [eve.db.ds.test.listen]
     [eve.db.ds.test.upsert]
+    [eve.db.ds.test.db-fn]
     [eve.db.ds.test.transact]))
 
 (def parked-transact
-  "Transact deftests parked on GAP-U3-1 (d/q ClassCastException)
-   and GAP-U3-5 (stored :db/fn)."
+  "Transact deftests parked on GAP-U3-1 (d/q ClassCastException)."
   '[test-with
     test-retract-fns
     test-transact!
     test-db-fn
     test-resolve-eid-refs
-    test-resolve-current-tx
-    test-db-ident-fn])
+    test-resolve-current-tx])
 
 (defn- test-vars-in [ns-sym]
   (->> (ns-interns ns-sym)
@@ -36,9 +37,9 @@
     (filter (fn [v] (:test (meta v))))))
 
 (defn -main [& _]
-  (println "PARKED (GAP-U3-1 query tuples / GAP-U3-5 stored :db/fn):"
+  (println "PARKED (GAP-U3-1 query tuples):"
     (mapv #(symbol "eve.db.ds.test.transact" (str %)) parked-transact))
-  (let [s1 (t/run-tests 'eve.db.ds.test.conn 'eve.db.ds.test.listen 'eve.db.ds.test.upsert)
+  (let [s1 (t/run-tests 'eve.db.ds.test.conn 'eve.db.ds.test.listen 'eve.db.ds.test.upsert 'eve.db.ds.test.db-fn)
         transact-vars (remove (fn [v] (contains? (set parked-transact) (:name (meta v))))
                         (test-vars-in 'eve.db.ds.test.transact))
         counters (binding [t/*report-counters* (ref t/*initial-report-counters*)]

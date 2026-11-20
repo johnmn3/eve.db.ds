@@ -16,15 +16,14 @@
    deleting the names from u3_runner.clj's parked list once
    query.cljc accepts the vector tuples bset iterators yield.
 
-   Also PARKED, on GAP-U3-5: test-db-ident-fn stores a host fn as a
-   :db/fn datom value. A fn is not an Eve value — delivering the
-   tx-report packs it and throws the flat-chunk unwritable error
-   (exact ex-data keyword in U3-STATUS GAP-U3-5)
-   (measured, u3-logs/slices1.log) — so an Eve-resident DB cannot
-   hold stored :db/fn values at this pin. Whether the rewrite
-   drops stored :db/fn or scopes it is an open question for the
-   coordinator/John (U3-STATUS.md); the deftest is ported in full
-   below and excluded by the runner."
+   GAP-U3-5 RESOLVED (John's ruling, 2026-11-20; DB-FN-STATUS.md):
+   test-db-ident-fn no longer stores a host fn as the :db/fn value
+   — a fn is not an Eve value and an Eve-resident DB cannot hold
+   one. A stored :db/fn is data now ({:db.fn/kind :sci|:resolve,
+   ...}); the deftest below is RESHAPED to run upstream's scenario
+   in both stored modes with upstream's assertions intact, plus
+   the original host-fn form asserting the named pre-commit
+   rejection (:eve.db.ds/db-fn-host-fn) and an unchanged DB."
   (:require
     [clojure.test :as t :refer [is are deftest testing]]
     [eve.db.ds.core :as d]
@@ -261,30 +260,68 @@
           e (d/entity db-after (tempids -1))]
       (is (= "Vera" (:name e))))))
 
+(defn- db-ident-fn-scenario
+  "Upstream test-db-ident-fn's scenario and assertions, run
+   against a conn whose :inc-age ident carries the stored db fn
+   `stored`."
+  [conn stored]
+  (d/transact! conn [{:db/id    1
+                      :name     "Petr"
+                      :age      31
+                      :db/ident :Petr}
+                     {:db/ident :inc-age
+                      :db/fn    stored}])
+  (is (thrown-msg? "Can’t find entity for transaction fn :unknown-fn"
+        (d/transact! conn [[:unknown-fn]])))
+  (is (thrown-msg? "Entity :Petr expected to have :db/fn attribute with fn? value"
+        (d/transact! conn [[:Petr]])))
+  (is (thrown-msg? "No entity with name: Bob"
+        (d/transact! conn [[:inc-age "Bob"]])))
+  (d/transact! conn [[:inc-age "Petr"]])
+  (let [e (d/entity @conn 1)]
+    (is (= (:age e) 32))
+    (is (:had-birthday e))))
+
 (deftest test-db-ident-fn
-  (let [conn    (d/create-conn {:name {:db/unique :db.unique/identity}})
-        inc-age (fn [db name]
-                  (if-some [ent (d/entity db [:name name])]
-                    [{:db/id (:db/id ent)
-                      :age   (inc (:age ent))}
-                     [:db/add (:db/id ent) :had-birthday true]]
-                    (throw (ex-info (str "No entity with name: " name) {}))))]
-    (d/transact! conn [{:db/id    1
-                        :name     "Petr"
-                        :age      31
-                        :db/ident :Petr}
-                       {:db/ident :inc-age
-                        :db/fn    inc-age}])
-    (is (thrown-msg? "Can’t find entity for transaction fn :unknown-fn"
-          (d/transact! conn [[:unknown-fn]])))
-    (is (thrown-msg? "Entity :Petr expected to have :db/fn attribute with fn? value"
-          (d/transact! conn [[:Petr]])))
-    (is (thrown-msg? "No entity with name: Bob"
-          (d/transact! conn [[:inc-age "Bob"]])))
-    (d/transact! conn [[:inc-age "Petr"]])
-    (let [e (d/entity @conn 1)]
-      (is (= (:age e) 32))
-      (is (:had-birthday e)))))
+  ;; Reshaped per John's ruling (2026-11-20): the feature stays,
+  ;; as stored DATA, in both invocation kinds. Upstream's host-fn
+  ;; install form is the third section: it must now fail BEFORE
+  ;; commit with the named error, leaving the DB unchanged.
+  (testing "SCI kind (d/db-fn macro)"
+    (db-ident-fn-scenario
+      (d/create-conn {:name {:db/unique :db.unique/identity}})
+      (d/db-fn [db name]
+        (if-some [ent (d/entity db [:name name])]
+          [{:db/id (:db/id ent)
+            :age   (inc (:age ent))}
+           [:db/add (:db/id ent) :had-birthday true]]
+          (throw (ex-info (str "No entity with name: " name) {}))))))
+  (testing "resolve kind (d/fn-ref + registry)"
+    (let [inc-age (fn [db name]
+                    (if-some [ent (d/entity db [:name name])]
+                      [{:db/id (:db/id ent)
+                        :age   (inc (:age ent))}
+                       [:db/add (:db/id ent) :had-birthday true]]
+                      (throw (ex-info (str "No entity with name: " name) {}))))]
+      (d/register-fn! 'eve.db.ds.test.transact/inc-age inc-age)
+      (try
+        (db-ident-fn-scenario
+          (d/create-conn {:name {:db/unique :db.unique/identity}})
+          (d/fn-ref 'eve.db.ds.test.transact/inc-age))
+        (finally
+          (d/unregister-fn! 'eve.db.ds.test.transact/inc-age)))))
+  (testing "host fn form: named pre-commit rejection, DB unchanged"
+    (let [conn    (d/create-conn {:name {:db/unique :db.unique/identity}})
+          inc-age (fn [db name] [])
+          before  @conn
+          err     (try (d/transact! conn [{:db/ident :inc-age
+                                           :db/fn    inc-age}])
+                       nil
+                       (catch #?(:clj Throwable :cljs :default) e e))]
+      (is (some? err))
+      (is (= :eve.db.ds/db-fn-host-fn (:error (ex-data err))))
+      (is (= (:tx before) (:tx @conn)))
+      (is (nil? (d/entid @conn :inc-age))))))
 
 (deftest test-resolve-eid
   (let [db (d/empty-db {:name {:db/unique :db.unique/identity}
