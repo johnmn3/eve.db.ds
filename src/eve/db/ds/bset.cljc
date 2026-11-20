@@ -772,6 +772,9 @@
        clojure.lang.Seqable
        (seq [this]
          (when keys this))
+       java.lang.Iterable
+       (iterator [this]
+         (clojure.lang.SeqIterator. (.seq this)))
        clojure.lang.Sequential
        clojure.lang.IPersistentCollection
        (count [_]
@@ -824,6 +827,13 @@
        ISeqable
        (-seq [this]
          (when keys this))
+       IIterable
+       ;; cljs's -iterator contract is the hasNext/next Iterator
+       ;; (iter-reduce and TransformerIterator call .hasNext on it),
+       ;; NOT the ES2015 {value,done} shape: seq-iter is the mirror
+       ;; of the :clj arm's SeqIterator over the seq.
+       (-iterator [this]
+         (seq-iter this))
        ICollection
        (-conj [this x]
          (clojure.core/cons x this))
@@ -879,6 +889,9 @@
        clojure.lang.Seqable
        (seq [this]
          (when keys this))
+       java.lang.Iterable
+       (iterator [this]
+         (clojure.lang.SeqIterator. (.seq this)))
        clojure.lang.Sequential
        clojure.lang.IPersistentCollection
        (count [_]
@@ -921,6 +934,13 @@
        ISeqable
        (-seq [this]
          (when keys this))
+       IIterable
+       ;; cljs's -iterator contract is the hasNext/next Iterator
+       ;; (iter-reduce and TransformerIterator call .hasNext on it),
+       ;; NOT the ES2015 {value,done} shape: seq-iter is the mirror
+       ;; of the :clj arm's SeqIterator over the seq.
+       (-iterator [this]
+         (seq-iter this))
        ICollection
        (-conj [this x]
          (clojure.core/cons x this))
