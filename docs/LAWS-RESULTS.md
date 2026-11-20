@@ -103,5 +103,9 @@ At Eve release/eve-0.9.3.3 tip 323bfe35901f3f892921eecd41fc5e85be4ef8ec
   the failure being exactly that instance? line.
 - Browser leg at this pin (browser-harness lane, real Chromium):
   8 tests, 16 pass, 1 fail, 0 errors — the fail was the same E1
-  instance? line, pre-amendment; host parity with the JVM. The
-  amended file's browser run is recorded when it completes.
+  instance? line, pre-amendment; host parity with the JVM.
+- Browser leg, amended file (coordinator run, 2026-11-19 ~22:21 ET,
+  scripts/test-browser.sh laws, real Chromium): **8 tests, 17 pass,
+  0 failures, 0 errors** — identical to the JVM. E1–E8 are green on
+  both hosts at this pin. (target/ds-browser/result-laws.edn;
+  browser-logs/run-laws-coord3.log.)
