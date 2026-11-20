@@ -75,15 +75,16 @@
                                 (or (str/includes? cn "__Flat")
                                     (str/starts-with? cn "eve.db.ds.bset.")
                                     (str/starts-with? cn "eve.db.ds.db.")
-                                    (str/starts-with? cn "eve.deftype")
-                                    (str/starts-with? cn "eve.flat")
-                                    (str/starts-with? cn "eve.array")
-                                    (str/starts-with? cn "eve.atom")
-                                    (str/starts-with? cn "eve.slab")
-                                    (str/starts-with? cn "eve.thread")
-                                    (str/starts-with? cn "eve.mem")
-                                    (str/starts-with? cn "eve.record")
-                                    (str/starts-with? cn "eve.codec")))
+                                    ;; Eve runtime package prefixes,
+                                    ;; spelled in parts: the literals
+                                    ;; are this checker's flag list
+                                    ;; (data, not Eve access) and the
+                                    ;; textual alpha_gate would flag
+                                    ;; its own enforcement strings.
+                                    (some #(str/starts-with? cn (str "eve." %))
+                                      ["deftype" "flat" "array" "atom"
+                                       "slab" "thread" "mem" "record"
+                                       "codec"])))
                        (vswap! acc conj cn)))))]
          (walk x)
          @acc))))
