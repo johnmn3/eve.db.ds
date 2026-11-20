@@ -9,7 +9,7 @@
 ;; eve/eve below is the PUBLIC Eve release line the DS-in-Eve rewrite
 ;; targets (DS-IN-EVE-PLAN v2 §3): SeniorCareMarket/eve branch
 ;; release/eve-0.9.3.3, re-pinned 2026-11-19 to the current release tip 323bfe35901f3f892921eecd41fc5e85be4ef8ec (F3/eve-same? measured in; E1 delivered-type question open with the Eve seat).
-;; Re-pinned 2026-11-20 ET to Eve main 5a037ef (every eve-deftype: one fast type check, one fast field lookup over both forms), after 47e6dae (fast paths for every value written) and e21be6b: Eve main
+;; Re-pinned 2026-11-20 ET to Eve main abba331 (commit bookkeeping per block, delivery per value), after 5a037ef (every eve-deftype: one fast type check, one fast field lookup over both forms), 47e6dae (fast paths for every value written) and e21be6b: Eve main
 ;; (dcba2ee, release/eve-0.9.3.4) plus the won-swap leak fix (a transact's intermediate index versions were
 ;; never freed) and the JVM byte-array typing (value-array slot writes and eve.codec stopped reflecting:
 ;; 53% of a build's samples). test/drivers/cliff has the measurements' drivers.
@@ -30,7 +30,7 @@
 {:paths ["src"]
  :deps {org.clojure/clojure {:mvn/version "1.12.0"}
         eve/eve {:git/url "https://github.com/SeniorCareMarket/eve"
-                 :git/sha "5a037ef3c3e7e15cf20479b89dfba02f20d25ffc"}
+                 :git/sha "abba331f78dfe08ff84e692edc4442c962120ef4"}
         me.tonsky/persistent-sorted-set {:local/root "lib"}
         extend-clj/extend-clj {:local/root "lib-ds-deps"}}
  :aliases

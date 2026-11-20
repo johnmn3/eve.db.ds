@@ -6,7 +6,7 @@
 # that env override is how dev runs point at a non-release Eve tree.
 set -euo pipefail
 HOST="${1:?usage: scripts/eve_dev_cp.sh <jvm|bb|nbb|lpy>}"
-SHA=5a037ef3c3e7e15cf20479b89dfba02f20d25ffc
+SHA=abba331f78dfe08ff84e692edc4442c962120ef4
 URL=https://github.com/SeniorCareMarket/eve.git
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
