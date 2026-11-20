@@ -6,7 +6,7 @@
     [clojure.walk :as walk]
     [eve.db.ds.built-ins :as built-ins]
     [eve.db.ds.db :as db]
-    [me.tonsky.persistent-sorted-set.arrays :as da]
+    [eve.db.ds.arrays :as da]
     [eve.db.ds.lru :as lru]
     [eve.db.ds.impl.entity :as de]
     [eve.db.ds.parser :as dp #?@(:cljs [:refer [BindColl BindIgnore BindScalar BindTuple Constant

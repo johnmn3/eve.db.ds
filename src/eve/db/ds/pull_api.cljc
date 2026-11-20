@@ -5,7 +5,7 @@
     [eve.db.ds.db :as db #?@(:cljs [:refer [DB]])]
     [eve.db.ds.lru :as lru]
     [eve.db.ds.util :as util]
-    [me.tonsky.persistent-sorted-set :as set])
+    [eve.db.ds.bset :as set])
   #?(:clj
      (:import
        [clojure.lang ISeq]
@@ -13,6 +13,15 @@
        [eve.db.ds.pull_parser PullAttr PullPattern])))
 
 (declare pull-impl attrs-frame ref-frame ->ReverseAttrsFrame)
+
+;; App-level parse caches (DS-IN-EVE rewrite): upstream kept these
+;; LRUs in DB fields (pull-patterns / pull-attrs, (lru/cache 100)
+;; each); plan v2 §2 fixes DB's fields and removes the caches from
+;; the DB, so they live here, keyed by [schema key] — parse results
+;; depend only on the schema (parse-pattern / parse-attr-name read
+;; db solely through the schema predicates ref?/component?/multival?).
+(defonce ^:private pattern-cache (lru/cache 100))
+(defonce ^:private attr-cache    (lru/cache 100))
 
 (defn- first-seq [#?(:clj ^ISeq xs :cljs ^seq xs)]
   (if (nil? xs)
@@ -148,8 +157,8 @@
         ;; wildcard
         (and (.-wildcard? pattern) (some? datom) attr-ahead?)
         (let [datom-attr (lru/-get
-                           (.-pull-attrs (db/unfiltered-db (.-db ^Context context)))
-                           (:a datom)
+                           attr-cache
+                           [(:schema (db/unfiltered-db (.-db ^Context context))) (:a datom)]
                            #(dpp/parse-attr-name (.-db ^Context context) (:a datom)))]
           (recur acc datom-attr (when attr (conj-seq attrs attr)) datoms))
 
@@ -219,7 +228,7 @@
         :let [name   (.-name attr)
               db     (.-db ^Context context)
               datoms (if (instance? DB db)
-                       (set/slice (.-avet ^DB db) (db/datom db/e0 name id db/tx0) (db/datom db/emax name id db/txmax))
+                       (set/slice (.-avet ^DB db) (db/datom db/e0 name id db/tx0) (db/datom db/emax name id db/txmax) db/cmp-datoms-avet)
                        (db/-search db [nil name id]))]
 
         :do (visit context :db.pull/reverse nil name id)
@@ -274,7 +283,7 @@
   (let [db (.-db context)
         datoms (util/cond+
                  (and (.-wildcard? pattern) (instance? DB db))
-                 (set/slice (.-eavt ^DB db) (db/datom id nil nil db/tx0) (db/datom id nil nil db/txmax))
+                 (set/slice (.-eavt ^DB db) (db/datom id nil nil db/tx0) (db/datom id nil nil db/txmax) db/cmp-datoms-eavt)
                  
                  (.-wildcard? pattern)
                  (db/-search db [id])
@@ -286,7 +295,7 @@
                        to   (.-name ^PullAttr (.-last-attr pattern))]
                  
                  (instance? DB db)
-                 (set/slice (.-eavt ^DB db) (db/datom id from nil db/tx0) (db/datom id to nil db/txmax))
+                 (set/slice (.-eavt ^DB db) (db/datom id from nil db/tx0) (db/datom id to nil db/txmax) db/cmp-datoms-eavt)
 
                  :else
                  (->> (db/-seek-datoms db :eavt id nil nil nil))
@@ -331,7 +340,7 @@
 (defn parse-opts
   ([db pattern] (parse-opts db pattern nil))
   ([db pattern {:keys [visitor]}]
-   {:pattern (lru/-get (.-pull-patterns (db/unfiltered-db db)) pattern #(dpp/parse-pattern db pattern))
+   {:pattern (lru/-get pattern-cache [(:schema (db/unfiltered-db db)) pattern] #(dpp/parse-pattern db pattern))
     :context (Context. db visitor)}))
 
 (defn pull
