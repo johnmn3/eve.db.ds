@@ -772,6 +772,9 @@
        clojure.lang.Seqable
        (seq [this]
          (when keys this))
+       java.lang.Iterable
+       (iterator [this]
+         (clojure.lang.SeqIterator. (.seq this)))
        clojure.lang.Sequential
        clojure.lang.IPersistentCollection
        (count [_]
@@ -824,6 +827,9 @@
        ISeqable
        (-seq [this]
          (when keys this))
+       IIterable
+       (-iterator [this]
+         (es6-iterator this))
        ICollection
        (-conj [this x]
          (clojure.core/cons x this))
@@ -879,6 +885,9 @@
        clojure.lang.Seqable
        (seq [this]
          (when keys this))
+       java.lang.Iterable
+       (iterator [this]
+         (clojure.lang.SeqIterator. (.seq this)))
        clojure.lang.Sequential
        clojure.lang.IPersistentCollection
        (count [_]
@@ -921,6 +930,9 @@
        ISeqable
        (-seq [this]
          (when keys this))
+       IIterable
+       (-iterator [this]
+         (es6-iterator this))
        ICollection
        (-conj [this x]
          (clojure.core/cons x this))
