@@ -21,7 +21,7 @@
 
 (deftest test-joins
   (let [a (sup/new-conn)]
-    ($ (let [db (sup/build! a nil [{:db/id 1, :name  "Ivan", :age   15}
+    ($ (let [db (sup/built-db a nil [{:db/id 1, :name  "Ivan", :age   15}
                                    {:db/id 2, :name  "Petr", :age   37}
                                    {:db/id 3, :name  "Ivan", :age   37}
                                    {:db/id 4, :age 15}])]
@@ -47,7 +47,7 @@
 
 (deftest test-q-many
   (let [a (sup/new-conn)]
-    ($ (let [db (sup/build! a {:aka {:db/cardinality :db.cardinality/many}}
+    ($ (let [db (sup/built-db a {:aka {:db/cardinality :db.cardinality/many}}
                           [[:db/add 1 :name "Ivan"]
                            [:db/add 1 :aka  "ivolga"]
                            [:db/add 1 :aka  "pi"]
@@ -87,7 +87,7 @@
 
 (deftest test-q-in
   (let [a (sup/new-conn)]
-    ($ (let [db (sup/build! a nil [{:db/id 1, :name  "Ivan", :age   15}
+    ($ (let [db (sup/built-db a nil [{:db/id 1, :name  "Ivan", :age   15}
                                    {:db/id 2, :name  "Petr", :age   37}
                                    {:db/id 3, :name  "Ivan", :age   37}])
              query '{:find  [?e]
@@ -137,7 +137,7 @@
 
 (deftest test-bindings
   (let [a (sup/new-conn)]
-    ($ (let [db (sup/build! a nil [{:db/id 1, :name  "Ivan", :age   15}
+    ($ (let [db (sup/built-db a nil [{:db/id 1, :name  "Ivan", :age   15}
                                    {:db/id 2, :name  "Petr", :age   37}
                                    {:db/id 3, :name  "Ivan", :age   37}])]
     (testing "Relation binding"
@@ -253,7 +253,7 @@
                     :where [?e :person/name ?name]
                     [(?my-fn) ?result]
                     [(< ?result 3)]]
-               (sup/build! a nil [{:person/name "Joe"}])
+               (sup/built-db a nil [{:person/name "Joe"}])
                (fn [] 5)))))))
 
 (deftest ^{:doc "issue-425"} test-symbol-comparison
@@ -264,7 +264,7 @@
           '[[1 :s a]
             [2 :s b]])))
   (let [a (sup/new-conn)]
-    ($ (let [db (sup/build! a nil '[{:db/id 1, :s a}
+    ($ (let [db (sup/built-db a nil '[{:db/id 1, :s a}
                                     {:db/id 2, :s b}])]
          (is (= [2]
                (dq/q
@@ -288,7 +288,7 @@
              schema {:a {:db/index true}
                      :b {:db/index true}
                      :c {:db/index true}}
-             db     (sup/build! a schema
+             db     (sup/built-db a schema
                       (for [eid  (range 1 11)
                             attr [:a :b :c]]
                         [:db/add eid attr (str eid (name attr))]))]

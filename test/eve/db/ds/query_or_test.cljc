@@ -2,9 +2,12 @@
   "U4 slice: port of upstream eve.db.ds.test.query-or (DataScript 1.8.1),
    adapted like entity-test: d/q -> eve.db.ds.query/q, DB construction
    via u4-support, d/entity -> eve.db.ds.impl.entity/entity,
-   d/filter -> u4-support/filter-db."
+   d/filter -> u4-support/filter-db.
+   U4 EXECUTION port: shared DB built inside swap! on an Eve atom at load
+   (sup/init-tx-conn); every deftest runs inside one ($ ...) region."
   (:require
     [clojure.test :as t :refer [is are deftest testing]]
+    [eve.alpha :as eve :refer [$]]
     [eve.db.ds.query :as dq]
     [eve.db.ds.db :as db]
     [eve.db.ds.impl.entity :as de]
@@ -13,18 +16,18 @@
      (:import
        [clojure.lang ExceptionInfo])))
 
-(def *test-db
-  (delay
-    (sup/db-with (sup/empty-db)
-      [{:db/id 1 :name "Ivan" :age 10}
-       {:db/id 2 :name "Ivan" :age 20}
-       {:db/id 3 :name "Oleg" :age 10}
-       {:db/id 4 :name "Oleg" :age 20}
-       {:db/id 5 :name "Ivan" :age 10}
-       {:db/id 6 :name "Ivan" :age 20}])))
+(def *test-conn
+  (sup/init-tx-conn nil
+    [{:db/id 1 :name "Ivan" :age 10}
+     {:db/id 2 :name "Ivan" :age 20}
+     {:db/id 3 :name "Oleg" :age 10}
+     {:db/id 4 :name "Oleg" :age 20}
+     {:db/id 5 :name "Ivan" :age 10}
+     {:db/id 6 :name "Ivan" :age 20}]))
 
 (deftest test-or
-  (are [q res] (= (dq/q (concat '[:find ?e :where] (quote q)) @*test-db)
+  ($ (let [db (:db @*test-conn)]
+    (are [q res] (= (dq/q (concat '[:find ?e :where] (quote q)) db)
                  (into #{} (map vector) res))
 
     ;; intersecting results
@@ -79,10 +82,11 @@
        (and [?e :age 20]
          [?e :name ?n]))
      [(ground "Ivan") ?n]]
-    #{2 6}))
+    #{2 6}))))
 
 (deftest test-or-join
-  (are [q res] (= (dq/q (concat '[:find ?e :where] (quote q)) @*test-db)
+  ($ (let [db (:db @*test-conn)]
+    (are [q res] (= (dq/q (concat '[:find ?e :where] (quote q)) db)
                  (into #{} (map vector) res))
     [(or-join [?e]
        [?e :name ?n]
@@ -113,7 +117,7 @@
                :where (or
                         [?e :age ?a]
                         [?e :name "Oleg"])]
-          @*test-db 10)))
+          db 10)))
 
   ;; issue-348
   (is (= #{[1] [3] [4] [5]}
@@ -122,7 +126,7 @@
                :where (or-join [?e ?a]
                         [?e :age ?a]
                         [?e :name "Oleg"])]
-          @*test-db 10)))
+          db 10)))
 
   ;; issue-348
   (is (= #{[1] [3] [4] [5]}
@@ -131,7 +135,7 @@
                :where (or-join [[?a] ?e]
                         [?e :age ?a]
                         [?e :name "Oleg"])]
-          @*test-db 10)))
+          db 10)))
 
   (is (= #{[:a1 :b1 :c1]
            [:a2 :b2 :c2]}
@@ -154,15 +158,17 @@
                         [$xs ?a ?b ?c] ; rel with hole (?b gets dropped, leaving {?a 0 ?c 2} and 3-element tuples)
                         [$ys ?a ?c])]
           [[:a1 :b1 :c1]]
-          [[:a2 :c2]]))))
+          [[:a2 :c2]]))))))
 
 (deftest test-default-source
-  (let [db1 (sup/db-with (sup/empty-db)
-              [[:db/add 1 :name "Ivan"]
-               [:db/add 2 :name "Oleg"]])
-        db2 (sup/db-with (sup/empty-db)
-              [[:db/add 1 :age 10]
-               [:db/add 2 :age 20]])]
+  (let [a1 (sup/new-conn)
+        a2 (sup/new-conn)]
+    ($ (let [db1 (sup/built-db a1 nil
+                   [[:db/add 1 :name "Ivan"]
+                    [:db/add 2 :name "Oleg"]])
+             db2 (sup/built-db a2 nil
+                   [[:db/add 1 :age 10]
+                    [:db/add 2 :age 20]])]
     (are [q res] (= (dq/q (concat '[:find ?e :in $ $2 :where] (quote q)) db1 db2)
                    (into #{} (map vector) res))
       ;; OR inherits default source
@@ -193,13 +199,14 @@
       ;; can override nested OR source
       [[?e :name]
        ($2 or ($ or [?e :name "Ivan"]))]
-      #{1})))
+      #{1})))))
 
 (deftest ^{:doc "issue-468, issue-469"} test-const-substitution
-  (let [db (-> (sup/empty-db {:parent {:db/valueType :db.type/ref}})
-             (sup/db-with [{:db/id "Ivan" :name "Ivan"}
-                         {:db/id "Oleg" :name "Oleg" :parent "Ivan"}
-                         {:db/id "Petr" :name "Petr" :parent "Oleg"}]))]
+  (let [a (sup/new-conn)]
+    ($ (let [db (sup/built-db a {:parent {:db/valueType :db.type/ref}}
+                          [{:db/id "Ivan" :name "Ivan"}
+                           {:db/id "Oleg" :name "Oleg" :parent "Ivan"}
+                           {:db/id "Petr" :name "Petr" :parent "Oleg"}])]
     (is (= #{["Ivan" 1 2]}
           (dq/q '[:find ?name ?x ?y
                  :in $ ?name
@@ -222,17 +229,18 @@
                      [?x :parent ?z]
                      [?z :parent ?y])
                    [?x :parent ?y])]
-            db "Ivan")))))
+            db "Ivan")))))))
 
 (deftest test-errors
-  (is (thrown-with-msg? ExceptionInfo #"All clauses in 'or' must use same set of free vars, had \[#\{\?e\} #\{(\?a \?e|\?e \?a)\}\] in \(or \[\?e :name _\] \[\?e :age \?a\]\)"
-        (dq/q '[:find ?e
-               :where (or [?e :name _]
-                        [?e :age ?a])]
-          @*test-db)))
+  ($ (let [db (:db @*test-conn)]
+       (is (thrown-with-msg? ExceptionInfo #"All clauses in 'or' must use same set of free vars, had \[#\{\?e\} #\{(\?a \?e|\?e \?a)\}\] in \(or \[\?e :name _\] \[\?e :age \?a\]\)"
+             (dq/q '[:find ?e
+                    :where (or [?e :name _]
+                             [?e :age ?a])]
+               db)))
 
-  (is (thrown-msg? "Insufficient bindings: #{?e} not bound in (or-join [[?e]] [?e :name \"Ivan\"])"
-        (dq/q '[:find ?e
-               :where (or-join [[?e]]
-                        [?e :name "Ivan"])]
-          @*test-db))))
+       (is (thrown-msg? "Insufficient bindings: #{?e} not bound in (or-join [[?e]] [?e :name \"Ivan\"])"
+             (dq/q '[:find ?e
+                    :where (or-join [[?e]]
+                             [?e :name "Ivan"])]
+               db))))))

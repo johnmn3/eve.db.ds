@@ -60,6 +60,19 @@
    a)
   ([a txs] (build! a nil txs)))
 
+(defn build1!
+  "build! with a single tx-data collection."
+  [a schema tx-data]
+  (build! a schema [tx-data]))
+
+(defn built-db
+  "Build a DB from a single tx-data collection inside swap! on atom a
+   and return the DB itself. Call INSIDE ($ ...) so the returned DB is
+   the live slab value, not a flat sister."
+  [a schema tx-data]
+  (build1! a schema tx-data)
+  (:db @a))
+
 (defn init-tx-conn
   "Build a DB from tx-data inside swap! on a fresh Eve atom, at namespace
    load (outside any region); returns the atom. Read the DB inside
@@ -67,7 +80,7 @@
    values are constructed in the atom's domain."
   [schema tx-data]
   (let [a (new-conn)]
-    (build! a schema tx-data)
+    (build1! a schema tx-data)
     a))
 
 (defn init-conn

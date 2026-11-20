@@ -2,9 +2,12 @@
   "U4 slice: port of upstream eve.db.ds.test.query-fns (DataScript 1.8.1),
    adapted like entity-test: d/q -> eve.db.ds.query/q, DB construction
    via u4-support, d/entity -> eve.db.ds.impl.entity/entity,
-   d/filter -> u4-support/filter-db."
+   d/filter -> u4-support/filter-db.
+   U4 EXECUTION port: DBs are built inside swap! on a fresh Eve atom and
+   every query runs inside one ($ ...) region."
   (:require
     [clojure.test :as t :refer [is are deftest testing]]
+    [eve.alpha :as eve :refer [$]]
     [eve.db.ds.query :as dq]
     [eve.db.ds.db :as db]
     [eve.db.ds.impl.entity :as de]
@@ -14,16 +17,17 @@
        [clojure.lang ExceptionInfo])))
 
 (deftest test-query-fns
-  (testing "predicate without free variables"
-    (is (= (dq/q '[:find ?x
-                  :in [?x ...]
-                  :where [(> 2 1)]] [:a :b :c])
-          #{[:a] [:b] [:c]})))
+  (let [a (sup/new-conn)]
+    ($ (testing "predicate without free variables"
+         (is (= (dq/q '[:find ?x
+                       :in [?x ...]
+                       :where [(> 2 1)]] [:a :b :c])
+               #{[:a] [:b] [:c]})))
 
-  (let [db (-> (sup/empty-db {:parent {:db/valueType :db.type/ref}})
-             (sup/db-with [{:db/id 1, :name  "Ivan",  :age   15}
-                         {:db/id 2, :name  "Petr",  :age   22, :height 240, :parent 1}
-                         {:db/id 3, :name  "Slava", :age   37, :parent 2}]))]
+       (let [db (sup/built-db a {:parent {:db/valueType :db.type/ref}}
+                             [{:db/id 1, :name  "Ivan",  :age   15}
+                              {:db/id 2, :name  "Petr",  :age   22, :height 240, :parent 1}
+                              {:db/id 3, :name  "Slava", :age   37, :parent 2}])]
 
     (testing "ground"
       (is (= (dq/q '[:find ?vowel
@@ -236,7 +240,7 @@
                     :in [?in ...]
                     :where [(ground ?in) _]]
                [])
-            #{})))))
+            #{})))))))
 
 ;; issue-490
 (deftest test-fn-call-results-unification
@@ -253,11 +257,12 @@
           second))))
 
 (deftest test-predicates
-  (let [entities [{:db/id 1 :name "Ivan" :age 10}
-                  {:db/id 2 :name "Ivan" :age 20}
-                  {:db/id 3 :name "Oleg" :age 10}
-                  {:db/id 4 :name "Oleg" :age 20}]
-        db (sup/db-with (sup/empty-db) entities)]
+  (let [a (sup/new-conn)]
+    ($ (let [entities [{:db/id 1 :name "Ivan" :age 10}
+                       {:db/id 2 :name "Ivan" :age 20}
+                       {:db/id 3 :name "Oleg" :age 10}
+                       {:db/id 4 :name "Oleg" :age 20}]
+             db (sup/built-db a nil entities)]
     (are [q res] (= (dq/q (quote q) db) res)
       ;; plain predicate
       [:find  ?e ?a
@@ -306,7 +311,7 @@
                     :where [?e :age ?a]
                     [(?pred $ ?e 10)]]
                db pred)
-            #{[1] [3]})))))
+            #{[1] [3]})))))))
 
 (deftest test-exceptions
   (is (thrown-msg? "Unknown predicate 'fun in [(fun ?e)]"
@@ -339,12 +344,13 @@
                :where [$2 ?x] [(zero? $ ?x)]]))))
 
 (deftest test-issue-180
-  (is (= #{}
-        (dq/q '[:find ?e ?a
-               :where [_ :pred ?pred]
-               [?e :age ?a]
-               [(?pred ?a)]]
-          (sup/db-with (sup/empty-db) [[:db/add 1 :age 20]])))))
+  (let [a (sup/new-conn)]
+    ($ (is (= #{}
+             (dq/q '[:find ?e ?a
+                    :where [_ :pred ?pred]
+                    [?e :age ?a]
+                    [(?pred ?a)]]
+               (sup/built-db a nil [[:db/add 1 :age 20]])))))))
 
 (defn sample-query-fn []
   42)
@@ -352,12 +358,13 @@
 #?(:clj
    (deftest test-symbol-resolution
      (is (= 42 (dq/q '[:find ?x .
-                      :where [(eve.db.ds.test.query-fns/sample-query-fn) ?x]])))))
+                      :where [(eve.db.ds.query-fns-test/sample-query-fn) ?x]])))))
 
 (deftest test-issue-445
-  (let [db (-> (sup/empty-db {:name {:db/unique :db.unique/identity}})
-             (sup/db-with [{:db/id 1 :name "Ivan" :age 15}
-                         {:db/id 2 :name "Petr" :age 22 :height 240}]))]
+  (let [a (sup/new-conn)]
+    ($ (let [db (sup/built-db a {:name {:db/unique :db.unique/identity}}
+                              [{:db/id 1 :name "Ivan" :age 15}
+                               {:db/id 2 :name "Petr" :age 22 :height 240}])]
     (testing "get-else using lookup ref"
       (is (= "Unknown"
             (dq/q '[:find ?height .
@@ -372,4 +379,4 @@
                    :in $ ?e
                    :where [(get-some $ ?e :weight :age :height) [?a ?v]]]
               db
-              [:name "Petr"]))))))
+              [:name "Petr"]))))))))

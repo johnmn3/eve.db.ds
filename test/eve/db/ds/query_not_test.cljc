@@ -101,10 +101,10 @@
 (deftest test-default-source
   (let [a1 (sup/new-conn)
         a2 (sup/new-conn)]
-    ($ (let [db1 (sup/build! a1 nil
+    ($ (let [db1 (sup/built-db a1 nil
                    [[:db/add 1 :name "Ivan"]
                     [:db/add 2 :name "Oleg"]])
-             db2 (sup/build! a2 nil
+             db2 (sup/built-db a2 nil
                    [[:db/add 1 :age 10]
                     [:db/add 2 :age 20]])]
     (are [q res] (= (set (dq/q (concat '[:find [?e ...]
