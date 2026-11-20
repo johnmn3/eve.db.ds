@@ -114,13 +114,13 @@
 (defn conn? [x]
   (instance? Conn x))
 
-(defn- check-open [conn]
+(defn- check-open [^Conn conn]
   (when @(.-closed conn)
     (util/raise "Conn is closed" {:error :eve.db.ds/conn-closed})))
 
 (defn db
   "The handle to the conn's current DB. Same as @conn."
-  [conn]
+  [^Conn conn]
   {:pre [(conn? conn)]}
   (current-handle (.-eve-atom conn)))
 
@@ -183,7 +183,7 @@
    backing atom domain. After close, conn operations throw
    :eve.db.ds/conn-closed and the conn's handles are not guaranteed
    to resolve."
-  [conn]
+  [^Conn conn]
   {:pre [(conn? conn)]}
   (reset! (.-closed conn) true)
   (when (.-persistent conn)
@@ -198,7 +198,7 @@
    The DB must still be reachable (current, or already kept): an
    unkept, non-current DB is gone, and keep! on its handle throws
    :eve.db.ds/db-not-kept. Returns the handle."
-  [conn db-handle]
+  [^Conn conn db-handle]
   {:pre [(conn? conn)]}
   (ensure-handle db-handle)
   (when-not (identical? (:atom db-handle) (.-eve-atom conn))
@@ -213,7 +213,7 @@
   "Remove the DB the handle names from its atom's :kept map, in one
    swap!. The current DB is unaffected (it resolves as current, not
    via :kept). Returns the handle."
-  [conn db-handle]
+  [^Conn conn db-handle]
   {:pre [(conn? conn)]}
   (ensure-handle db-handle)
   (swap! (.-eve-atom conn)
@@ -233,7 +233,7 @@
     :db-after  {:atom a :tx (:max-tx (:db-after raw))}
     :tx-data   ($ (mapv identity (:tx-data raw)))))
 
-(defn -transact! [conn tx-data tx-meta]
+(defn -transact! [^Conn conn tx-data tx-meta]
   (check-open conn)
   (let [a     (.-eve-atom conn)
         *raw  (volatile! nil)]
@@ -248,9 +248,9 @@
     (deliver-report a @*raw)))
 
 (defn transact!
-  ([conn tx-data]
+  ([^Conn conn tx-data]
    (transact! conn tx-data nil))
-  ([conn tx-data tx-meta]
+  ([^Conn conn tx-data tx-meta]
    {:pre [(conn? conn)]}
    (locking conn
      (let [report (-transact! conn tx-data tx-meta)]
@@ -299,9 +299,9 @@
    exactly one DB version (GAP-2). The report's :db-before names
    the outgoing DB: it resolves only if that DB stays reachable —
    keep! it first if it must outlive the reset (§7.1)."
-  ([conn db-handle]
+  ([^Conn conn db-handle]
    (reset-conn! conn db-handle nil))
-  ([conn db-handle tx-meta]
+  ([^Conn conn db-handle tx-meta]
    {:pre [(conn? conn)]}
    (check-open conn)
    (ensure-handle db-handle)
@@ -329,14 +329,14 @@
                  ;; tx so the invariant holds.
                  ceil      (reduce max (:max-tx db-before) (keys (:kept m)))
                  db-after  (if (<= (:max-tx db-after0) ceil)
-                             (db/->DB (.-schema db-after0) (.-eavt db-after0)
-                               (.-aevt db-after0) (.-avet db-after0)
-                               (.-max-eid db-after0) (inc ceil)
-                               (.-rschema db-after0))
+                             (db/->DB (:schema db-after0) (:eavt db-after0)
+                               (:aevt db-after0) (:avet db-after0)
+                               (:max-eid db-after0) (inc ceil)
+                               (:rschema db-after0))
                              db-after0)
                  tx-data   (into []
                              (concat
-                               (map (fn [d] (db/datom (.-e d) (.-a d) (.-v d) (db/datom-tx d) false))
+                               (map (fn [d] (db/datom (:e d) (:a d) (:v d) (db/datom-tx d) false))
                                  (db/-datoms db-before :eavt nil nil nil nil))
                                (db/-datoms db-after :eavt nil nil nil nil)))]
              (vreset! *raw {:before-tx (:max-tx db-before)
@@ -371,7 +371,7 @@
           (not-kept! (:tx db-handle) (:max-tx (:db m)))))))
   db-handle)
 
-(defn reset-schema! [conn schema]
+(defn reset-schema! [^Conn conn schema]
   {:pre [(conn? conn)]}
   (check-open conn)
   (swap! (.-eve-atom conn)
@@ -382,15 +382,15 @@
 ;; Listeners (host-side, as upstream)
 
 (defn listen!
-  ([conn callback]
+  ([^Conn conn callback]
    (listen! conn (rand) callback))
-  ([conn key callback]
+  ([^Conn conn key callback]
    {:pre [(conn? conn)]}
    (check-open conn)
    (swap! (.-listeners conn) assoc key callback)
    key))
 
-(defn unlisten! [conn key]
+(defn unlisten! [^Conn conn key]
   {:pre [(conn? conn)]}
   (swap! (.-listeners conn) dissoc key))
 

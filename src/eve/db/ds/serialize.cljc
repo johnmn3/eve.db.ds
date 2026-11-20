@@ -127,8 +127,8 @@
       :max-eid max-eid
       :max-tx  max-tx
       :datoms  (mapv (fn [d]
-                       [(.-e d) (str (.-a d))
-                        (write-v freeze-fn (.-v d))
+                       [(:e d) (str (:a d))
+                        (write-v freeze-fn (:v d))
                         (db/datom-tx d)])
                  (conn/datoms-of db-handle))})))
 

@@ -107,7 +107,7 @@
                       t2 ^{:tag "[[Ljava.lang.Object;"} idxs2]
      (let [l1  (alength idxs1)
            l2  (alength idxs2)
-           res (da/make-array (+ l1 l2))]
+           ^objects res (da/make-array (+ l1 l2))]
        (if (.isArray (.getClass ^Object t1))
          (dotimes [i l1] (aset res i (aget ^objects t1 (aget idxs1 i))))
          (dotimes [i l1] (aset res i (get t1 (aget idxs1 i)))))
@@ -134,7 +134,7 @@
         tuples' (persistent!
                   (reduce
                     (fn [acc tuple-b]
-                      (let [tuple' (da/make-array tlen)]
+                      (let [^objects tuple' (da/make-array tlen)]
                         (doseq [[idx-b idx-a] idxb->idxa]
                           (aset tuple' idx-a (#?(:cljs da/aget :clj get) tuple-b idx-b)))
                         (conj! acc tuple')))
@@ -494,7 +494,7 @@
         attrs       (:attrs rel)
         len         (count args)
         static-args (da/make-array len)
-        tuples-args (da/make-array len)]
+        ^objects tuples-args (da/make-array len)]
     (dotimes [i len]
       (let [arg (nth args i)]
         (if (symbol? arg) 
