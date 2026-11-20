@@ -83,8 +83,11 @@
     (boolean? v) v
     (number? v)  v
     (nil? v)     nil
-    (sequential? v)
-    (let [[marker payload] v]
+    ;; a marker vector — coerced with vec first: a bare-mapper
+    ;; Jackson read returns java.util.ArrayList rows, a cljs
+    ;; JSON.parse returns JS arrays; neither is `sequential?`
+    :else
+    (let [[marker payload] (vec v)]
       (condp == marker
         marker-kw        (thaw-kw payload)
         marker-other     (thaw-fn payload)
@@ -92,19 +95,21 @@
         marker-minus-inf ##-Inf
         marker-nan       ##NaN
         (util/raise "Unexpected value marker " marker " in " (pr-str v)
-          {:error :serialize :value v})))
-    :else
-    (util/raise "Unexpected value type " (type v) " (" (pr-str v) ")"
-      {:error :serialize :value v})))
+          {:error :serialize :value v})))))
 
 (defn- field
-  "Top-level form access tolerant of a JSON round-trip, which
-   stringifies the keyword keys."
+  "Top-level form access tolerant of JSON round-trips: keys may
+   come back as keywords, as \"name\" strings (cheshire/jsonista
+   defaults), or as \":name\" strings (a bare Jackson
+   ObjectMapper writes a keyword key by its toString)."
   [form k]
   (let [v (get form k)]
     (if (some? v)
       v
-      (get form (name k)))))
+      (let [v (get form (name k))]
+        (if (some? v)
+          v
+          (get form (str k)))))))
 
 (defn serializable
   "Captures the DB a handle names as plain host data (see the ns

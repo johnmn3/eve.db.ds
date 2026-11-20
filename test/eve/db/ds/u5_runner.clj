@@ -1,6 +1,8 @@
 (ns eve.db.ds.u5-runner
   "U5 runner: serialize + persistence slices (JVM).
-   Run: clojure -Sdeps '{:paths [\"src\" \"test\"]}' -M:ds-suite -m eve.db.ds.u5-runner
+   Run: clojure -Sdeps '{:paths [\"src\" \"test\"] :deps {com.cognitect/transit-clj {:mvn/version \"1.0.333\"} cheshire/cheshire {:mvn/version \"5.13.0\"} metosin/jsonista {:mvn/version \"0.3.13\"}}}' -M -m eve.db.ds.u5-runner
+   (NOT -M:ds-suite: that alias puts test/upstream-ds/test on the
+   path, whose eve.db.ds.test.serialize shadows this unit's port.)
 
    Named, not silent — what is NOT in this runner:
    - upstream test-pr-read / test-init-db / test-max-eid-from-refs:
@@ -16,12 +18,14 @@
     [eve.db.ds.test.serialize]
     [eve.db.ds.test.persistence]))
 
-(defn -main []
+(defn -main [& args]
   (println "U5 parked/excluded: upstream print-read + init-db deftests"
     "(U2/U3 surfaces); persistent close-conn! (GAP-U5-1); cliff anchors"
     "(generator not in repo — synthetic digests instead).")
-  (let [{:keys [fail error] :as res}
-        (t/run-tests 'eve.db.ds.test.serialize
-          'eve.db.ds.test.persistence)]
+  (let [nss (if (seq args)
+              (mapv symbol args)
+              ['eve.db.ds.test.serialize 'eve.db.ds.test.persistence])
+        {:keys [fail error] :as res}
+        (apply t/run-tests nss)]
     (println "U5-RESULT" res)
     (System/exit (if (zero? (+ fail error)) 0 1))))
