@@ -24,7 +24,10 @@
    §5). The stress suite lives in eve.db.ds.bset-stress-test."
   (:require [eve.alpha :as eve :refer [$]]
             [eve.db.ds.bset :as bset]
-            [clojure.test :as t :refer [is are deftest testing]]))
+            [clojure.test :as t :refer [is are deftest testing]])
+  #?(:clj
+     (:import
+       [clojure.lang ExceptionInfo])))
 
 ;; ---------------------------------------------------------------------------
 ;; harness
