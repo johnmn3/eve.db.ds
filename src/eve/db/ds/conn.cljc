@@ -11,6 +11,12 @@
    Eve values inside that atom — built inside swap!, read inside a
    read region ($). Nothing else in this library holds a database.
 
+   The private conns behind conn-less values (empty-db, init-db)
+   carry one more key, :chain — the chain bookkeeping that implements
+   the release policy for db-with chains (see with). Explicit conns
+   (create-conn and friends) have no :chain key and behave exactly as
+   before: everything kept until release!.
+
    A DB value at the public boundary is a HANDLE: a plain host map
    {:atom a :tx n} naming one DB version in one conn's atom. Reads
    resolve the handle against the atom at the moment of the read:
@@ -137,17 +143,30 @@
 (defn- make-conn
   "Create the Eve atom and install {:db (build-fn) :kept {}} with one
    swap!. If the atom already holds a DB (a reopened persistent
-   conn), it is adopted untouched."
-  [build-fn opts]
-  (let [a    (if-some [dir (:persistent opts)]
-               (eve/atom {:id (new-conn-id opts) :persistent (str dir)} nil)
-               (eve/atom {:id (new-conn-id opts)} nil))
-        conn (->Conn a (atom {}) (atom false) (boolean (:persistent opts)))]
-    (swap! a (fn [m]
-               (if (and (map? m) (some? (:db m)))
-                 m
-                 {:db (build-fn) :kept {}})))
-    conn))
+   conn), it is adopted untouched.
+
+   With chain? (the private conns behind conn-less values), the
+   installed value also carries :chain — a marks map
+   {tx {:parent tx-or-nil :children n :held bool}} opened with the
+   seed DB's mark. An adopted value is left untouched, so a chain
+   atom whose value predates the marks simply runs without them
+   (with then keeps the legacy keep-everything behavior)."
+  ([build-fn opts]
+   (make-conn build-fn opts false))
+  ([build-fn opts chain?]
+   (let [a    (if-some [dir (:persistent opts)]
+                (eve/atom {:id (new-conn-id opts) :persistent (str dir)} nil)
+                (eve/atom {:id (new-conn-id opts)} nil))
+         conn (->Conn a (atom {}) (atom false) (boolean (:persistent opts)))]
+     (swap! a (fn [m]
+                (if (and (map? m) (some? (:db m)))
+                  m
+                  (let [seed (build-fn)]
+                    (cond-> {:db seed :kept {}}
+                      chain? (assoc :chain {(:max-tx seed) {:parent   nil
+                                                            :children 0
+                                                            :held     false}}))))))
+     conn)))
 
 (defn create-conn
   "Create a conn over a fresh empty DB. Options:
@@ -193,32 +212,73 @@
 ;; ---------------------------------------------------------------------------
 ;; Keeping old DBs (§7.1: retention is reachability inside the atom)
 
+(defn- keep-in
+  "The keep! state change against an atom value map: pin the DB at
+   tx in :kept, and on a chain atom mark it held — a held chain DB
+   is never auto-released (see with)."
+  [m tx]
+  (cond-> (assoc-in m [:kept tx] (resolve-in-map m tx))
+    (contains? m :chain)
+    (update :chain
+      (fn [marks]
+        (assoc marks tx (assoc (get marks tx {:parent nil :children 0})
+                          :held true))))))
+
 (defn keep!
   "Pin the DB the handle names in its atom's :kept map, in one swap!.
    The DB must still be reachable (current, or already kept): an
    unkept, non-current DB is gone, and keep! on its handle throws
-   :eve.db.ds/db-not-kept. Returns the handle."
-  [^Conn conn db-handle]
-  {:pre [(conn? conn)]}
-  (ensure-handle db-handle)
-  (when-not (identical? (:atom db-handle) (.-eve-atom conn))
-    (util/raise "Handle does not belong to this conn"
-      {:error :eve.db.ds/keep-wrong-conn}))
-  (swap! (.-eve-atom conn)
-    (fn [m] (assoc-in m [:kept (:tx db-handle)]
-              (resolve-in-map m (:tx db-handle)))))
-  db-handle)
+   :eve.db.ds/db-not-kept. Returns the handle.
+
+   The one-argument form pins in the handle's own atom — the form
+   for conn-less values, whose holder has a handle but no conn.
+   On a chain atom, keep! also marks the DB held: a held chain DB
+   is never auto-released when the chain advances past it."
+  ([db-handle]
+   (ensure-handle db-handle)
+   (swap! (:atom db-handle) (fn [m] (keep-in m (:tx db-handle))))
+   db-handle)
+  ([^Conn conn db-handle]
+   {:pre [(conn? conn)]}
+   (ensure-handle db-handle)
+   (when-not (identical? (:atom db-handle) (.-eve-atom conn))
+     (util/raise "Handle does not belong to this conn"
+       {:error :eve.db.ds/keep-wrong-conn}))
+   (swap! (.-eve-atom conn) (fn [m] (keep-in m (:tx db-handle))))
+   db-handle))
+
+(defn- release-in
+  "The release! state change against an atom value map: remove the
+   DB at tx from :kept. On a chain atom, also drop its mark and
+   take it out of its parent's chain-child count, so the parent's
+   auto-release eligibility counts only live children."
+  [m tx]
+  (cond-> (update m :kept dissoc tx)
+    (contains? m :chain)
+    (update :chain
+      (fn [marks]
+        (let [parent (:parent (get marks tx))]
+          (cond-> (dissoc marks tx)
+            (and (some? parent) (contains? marks parent))
+            (update-in [parent :children] (fn [n] (max 0 (dec n))))))))))
 
 (defn release!
   "Remove the DB the handle names from its atom's :kept map, in one
    swap!. The current DB is unaffected (it resolves as current, not
-   via :kept). Returns the handle."
-  [^Conn conn db-handle]
-  {:pre [(conn? conn)]}
-  (ensure-handle db-handle)
-  (swap! (.-eve-atom conn)
-    (fn [m] (update m :kept dissoc (:tx db-handle))))
-  db-handle)
+   via :kept). Returns the handle.
+
+   The one-argument form removes from the handle's own atom — the
+   form for conn-less values, whose holder has a handle but no
+   conn."
+  ([db-handle]
+   (ensure-handle db-handle)
+   (swap! (:atom db-handle) (fn [m] (release-in m (:tx db-handle))))
+   db-handle)
+  ([^Conn conn db-handle]
+   {:pre [(conn? conn)]}
+   (ensure-handle db-handle)
+   (swap! (.-eve-atom conn) (fn [m] (release-in m (:tx db-handle))))
+   db-handle))
 
 ;; ---------------------------------------------------------------------------
 ;; Transactions
@@ -265,9 +325,30 @@
    replaced — for a conn, use transact!. Returns the tx-report,
    whose :db-before and :db-after are handles.
 
-   RELEASE POLICY for conn-less values is OPEN (plan §8, awaiting
-   John's ruling, blocked on EVE-FIX F5): this is the mechanism only
-   — kept entries accumulate until release! removes them."
+   RELEASE POLICY for conn-less values (John's §8 ruling,
+   2026-11-20): explicit release is the rule, and chains auto-close
+   their superseded intermediates — the with-open strategy. On a
+   chain atom (the private conns behind empty-db/init-db; explicit
+   conns are untouched), each chain DB records its parent and its
+   chain-child count in the atom's :chain marks. When the chain
+   advances — this call builds a successor of the handle's DB — the
+   DB before the handle's DB is released in the same swap! if it
+   has exactly one chain child (the handle's DB) and was never
+   keep!'d: a linear chain therefore retains the head and its
+   parent, and an intermediate is gone once the chain has moved
+   two steps past it. A DB with two or more chain children (a
+   fork) is never auto-released, and a keep!'d DB is never
+   auto-released; release! removes any of them at once. Using a
+   released handle afterwards throws :eve.db.ds/db-not-kept —
+   keep! is how an intermediate is held.
+
+   Chain DBs are also made unique here: transact-tx-data derives
+   the new DB's max-tx from its base, so two successors of one
+   base would collide on (atom, tx) in :kept — the second fork
+   silently overwrote the first (measured at b1c739c). On a chain
+   atom the new DB's max-tx is bumped above every reachable tx
+   when it would collide, the same GAP-2 repair reset-conn!
+   already makes; the datoms keep the tx they were stamped with."
   ([db tx-data] (with db tx-data nil))
   ([db tx-data tx-meta]
    (ensure-handle db)
@@ -279,9 +360,44 @@
                report (db/transact-tx-data
                         (db/->TxReport base base [] {} tx-meta)
                         tx-data)
-               after  (:db-after report)]
-           (vreset! *raw report)
-           (update m :kept assoc (:max-tx after) after))))
+               after0 (:db-after report)]
+           (if (contains? m :chain)
+             ;; chain atom: bump max-tx on collision, record the
+             ;; successor's mark, count it on the base, and release
+             ;; the base's parent when it is a single-child,
+             ;; never-kept chain DB.
+             (let [ceil     (reduce max (:max-tx (:db m)) (keys (:kept m)))
+                   after    (if (<= (:max-tx after0) ceil)
+                              (db/->DB (:schema after0) (:eavt after0)
+                                (:aevt after0) (:avet after0)
+                                (:max-eid after0) (inc ceil)
+                                (:rschema after0))
+                              after0)
+                   after-tx (:max-tx after)
+                   base-tx  (:tx db)
+                   marks    (-> (:chain m)
+                              (assoc after-tx {:parent   base-tx
+                                               :children 0
+                                               :held     false})
+                              (cond-> (contains? (:chain m) base-tx)
+                                (update-in [base-tx :children] inc)))
+                   p-tx     (get-in marks [base-tx :parent])
+                   p-mark   (get marks p-tx)
+                   release? (and (some? p-tx)
+                              (contains? (:kept m) p-tx)
+                              (= 1 (:children p-mark))
+                              (not (:held p-mark)))]
+               (vreset! *raw (if (identical? after after0)
+                               report
+                               (assoc report :db-after after)))
+               (cond-> (-> m
+                         (update :kept assoc after-tx after)
+                         (assoc :chain (if release?
+                                         (dissoc marks p-tx)
+                                         marks)))
+                 release? (update :kept dissoc p-tx)))
+             (do (vreset! *raw report)
+                 (update m :kept assoc (:max-tx after0) after0))))))
      (deliver-report a @*raw))))
 
 (defn db-with
@@ -399,21 +515,23 @@
 ;; the value you get back is a handle into it.
 
 (defn empty-db
-  "An empty DB as a handle into a fresh private conn."
+  "An empty DB as a handle into a fresh private conn. The private
+   conn is a chain atom: db-with chains over the handle auto-close
+   their superseded intermediates (see with)."
   ([]
    (empty-db nil {}))
   ([schema]
    (empty-db schema {}))
   ([schema opts]
-   (db (create-conn schema opts))))
+   (db (make-conn #(db/empty-db schema {}) opts true))))
 
 (defn init-db
   "A DB built from host Datoms, as a handle into a fresh private
-   conn."
+   conn (a chain atom, like empty-db)."
   ([datoms]
    (init-db datoms nil))
   ([datoms schema]
-   (db (conn-from-datoms datoms schema))))
+   (db (make-conn #(db/init-db datoms schema {}) {} true))))
 
 ;; ---------------------------------------------------------------------------
 ;; Filtered DBs — PARKED at this Eve pin.
