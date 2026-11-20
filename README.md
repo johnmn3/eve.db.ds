@@ -1,120 +1,111 @@
 # eve.db.ds
 
-**One Datalog codebase. Every host, both planes.**
+DataScript 1.8.1 (by Nikita Prokopov), rebuilt so the database lives in a
+real Eve atom.
 
-derived from DataScript (tonsky/datascript), EPL
+**Status: ground-up rewrite in progress.** This branch
+(`lane-m/ds-in-eve-rewrite`) replaces the previously published port. The
+published version claimed the DB lived in an Eve atom while the connection
+in fact wrapped a host atom. That claim was false, and this rewrite exists
+to make it true. Until the acceptance unit (U6) is green on the JVM and in
+the browser, treat everything here as in progress: sections of the guide
+whose implementing unit has not landed are marked *(in progress)* rather
+than described as working.
 
-`eve.db.ds` is the Datalog database ported onto Eve's value substrate
-(its upstream is DataScript 1.8.1, by Nikita Prokopov) — the same public
-API under the `eve.db.ds.*` namespaces, the upstream test suite as its
-conformance bar — maintained here as a
-single `.cljc` codebase that spans **both** host sets:
+## The model, exactly
 
-- **Plane A — directly on Eve.** Every Clojure-like Eve supports loads
-  this library as-is; host differences are absorbed by Eve's per-seat
-  completion layers, never by forking the library. A database is an
-  Eve value: it can live in a persistent Eve atom, in a journaled
-  domain on disk, shared by other processes — including processes on
-  *different host runtimes at once*, all reading back byte-identical
-  state (the flagship contract, `test/drivers/contract/ds_flagship.cljc`).
-- **Plane B — through cohost.** Every Clojure-like cohost supports
-  runs the same library inside a cohost body (stock Clojure `core.clj`
-  hosted by the body) over the Eve data backend. Bodies are separate
-  processes opening the same Eve domain file; the same database is
-  transacted through any body and read back through any other.
+- **The connection holds a real Eve atom, and the DB lives inside it.**
+  A `conn` is a host object holding an Eve atom (plus the listener
+  registry). The atom's value is a plain map `{:db DB :kept {…}}`. There
+  is no host atom standing in for the database, and no second copy of the
+  DB outside the Eve atom.
+- **`@conn` and `(d/db conn)` return a handle, not the DB.** A handle is
+  a small host value `{:atom a :tx n}` — a pointer to the conn's atom and
+  the transaction number the handle refers to. Every read through a
+  handle resolves it against the atom at read time.
+- **`d/q`, `d/pull`, `d/entity`, `d/datoms` and friends take DB values
+  (handles), not conns** — the same call shapes as upstream DataScript,
+  with the handle in the position upstream puts the DB.
+- **Retention is reachability inside the atom.** Nothing pins old DB
+  values for you. If you want an old DB to stay referable, keep it:
 
-One library, written once, as plain `.cljc` — running everywhere both
-substrates run. Where it came from and under what license:
-[docs/PROVENANCE-DS.md](docs/PROVENANCE-DS.md). The full guide:
-[docs/GUIDE.md](docs/GUIDE.md). Measured results, per host per plane:
-[RESULTS.md](RESULTS.md).
+  ```clojure
+  (d/keep! conn db)      ;; the DB stays readable through its handle
+  (d/release! conn db)   ;; let it go
+  ```
 
-## Layout
+  Reading a handle whose DB was neither kept nor is current throws
+  `:eve.db.ds/db-not-kept`, naming the handle's transaction number and
+  the conn's current one. An atom can do the job of a garbage collector,
+  as long as the things that must refer to a value also live in the atom
+  — that is what `:kept` is.
+- **Every public function returns host data only.** No Eve types appear
+  in results. Datoms come out as ordinary host Datoms, the upstream type.
+- **Persistence is the atom's, not a storage layer.** Create a conn with
+  `:persistent dir` and its Eve atom is backed by that directory. The old
+  port's `storage` namespace is gone; there is nothing to configure
+  separately. *(in progress — U5)*
 
-| Path | What |
-|---|---|
-| `src/` | The library: `eve/db/ds/*` (namespaces `eve.db.ds.*`) and `data_readers.cljc`. Consume this. |
-| `lib/` | `me.tonsky/persistent-sorted-set`, the Eve port — DataScript's index substrate. |
-| `lib-ds-deps/` | `extend-clj`, the protocol-extension overlay the port builds on. |
-| `test/drivers/` | The shipped contract drivers (flagship, one-datum, suites) — the lib's conformance proof. |
-| `harness/` | This repo's own drivers: contract check, people-1k perf, shootout runners. |
-| `docs/` | Guide, porting notes, provenance, licenses. |
-
-## Consume it
-
-```clojure
-;; deps.edn
-eve.db.ds/eve.db.ds {:git/url "https://github.com/johnmn3/eve.db.ds"
-                     :git/sha "<pin>"}
-```
+## Quick start
 
 ```clojure
 (require '[eve.db.ds.core :as d])
-(d/db-with (d/empty-db) [{:db/id 1 :name "Ivan"}])
+
+(def conn (d/create-conn {:name {:db/unique :db.unique/identity}}))
+
+(d/transact! conn [{:db/id 1 :name "Ivan"} {:db/id 2 :name "Petr"}])
+
+(d/q '[:find ?n :where [?e :name ?n]] (d/db conn))
+;; => #{["Ivan"] ["Petr"]}
+
+(def before (d/db conn))          ;; a handle to the current DB
+(d/keep! conn before)             ;; keep it referable…
+(d/transact! conn [{:db/id 3 :name "Oleg"}])
+(d/q '[:find ?n :where [?e :name ?n]] before)   ;; …and it still reads
+(d/release! conn before)          ;; done with it
 ```
 
-Eve itself is a dependency of the library, pinned in
-`deps.edn` to the shipped Eve tree
-(`SeniorCareMarket/eve` release/eve-0.9.3.2). Bumping Eve is a one-line pin
-change here — never a copy.
+*(in progress — U3: conn and handles; U2: the DB types underneath.)*
 
-## Support matrix
+## Conn-less DB values
 
-Status as measured in [RESULTS.md](RESULTS.md); a row exists only
-where a run backs it, and a failure is recorded with its wall, never
-smoothed over.
+`empty-db`, `init-db`, `db-with`, `with` and `filter` work without an
+explicit conn, as upstream. Underneath, each `empty-db`/`init-db` makes a
+private in-memory conn, and `db-with` adds the new DB to that conn's kept
+set and returns a handle to it — so the handle stays readable exactly as
+long as the kept set holds it. Whether conn-less values are released
+explicitly by the caller or reclaimed by the host is an open item in the
+plan (§8); the mechanism above is the contract, the release policy is
+*(in progress — awaiting the plan's §8 ruling)*.
 
-| Host | Plane A (on Eve) | Plane B (cohost body) |
-|---|---|---|
-| JVM (Clojure) | see RESULTS | see RESULTS |
-| Babashka | see RESULTS | — |
-| Basilisk (lpy) | see RESULTS (defect D1) | see RESULTS |
-| Jolt | carried from the Eve 0.9.3.1 record | — |
-| nbb / ClojureScript | carried from the Eve 0.9.3.1 record | — |
-| Glojure | carried from the Eve 0.9.3.1 record | — |
-| Jank | carried from the Eve 0.9.3.1 record | — |
-| ClojureCLR | carried from the Eve 0.9.3.1 record | — |
-| ClojureDart (cljd) | the port is being folded there (separate lane) | — |
-| let-go (lg) | Eve seat in progress (separate lane) | — |
-| ClojureScript (browser) | persistent writes proven on Node; browser seat not attempted | — |
+## API
 
-## The proofs that live here
+The public surface is upstream DataScript 1.8.1's `datascript.core`,
+under `eve.db.ds.core` — 44 vars — plus three additive vars of this
+rewrite: `keep!`, `release!`, `close-conn!`. The full guide, with the
+handle semantics spelled out per function, is [docs/GUIDE.md](docs/GUIDE.md).
 
-- **Contract** — `harness/ds_harness/contract_check.cljc`: create →
-  transact → query → pull against one journaled disk atom, then a
-  fresh-process readback against the same expected values.
-- **Shootout** — `scripts/perf_shootout.sh` over `harness/shootout.sh`:
-  cold process, one datum on a disk-backed DB, cap 10,000 ms, median of
-  5, shipped form per host (jvm bb nbb lpy). This is the original
-  harness (restored 2026-11-16; the Nov 15 rewrite that replaced it is
-  retired — the operator's ruling: use the old one).
+| Group | Vars |
+|---|---|
+| Connections | `create-conn`, `conn?`, `conn-from-db`, `conn-from-datoms`, `close-conn!` *(additive)* |
+| Transacting | `transact!`, `transact`, `transact-async`, `listen!`, `unlisten!`, `reset-conn!`, `reset-schema!`, `resolve-tempid`, `tempid` |
+| DB values | `db`, `db?`, `keep!` *(additive)*, `release!` *(additive)*, `empty-db`, `init-db`, `db-with`, `with`, `filter`, `is-filtered`, `with-schema`, `schema` |
+| Query & indexes | `q`, `datoms`, `seek-datoms`, `rseek-datoms`, `find-datom`, `index-range`, `entid` |
+| Entities & pull | `entity`, `entity-db`, `touch`, `pull`, `pull-many` |
+| Datoms & misc | `datom`, `datom?`, `serializable`, `from-serializable`, `data-readers`, `settings`, `squuid`, `squuid-time-millis`, `tx0` |
 
-  ```bash
-  DS_DIR=$PWD EVE_DIR=<eve release checkout> scripts/perf_shootout.sh
-  ```
+## What is landed, what is not
 
-  `harness/ds_harness/smoke.cljc` holds short cases — `one` (fresh
-  domain, one datum), `reopen` (wake the durable DB a prior `one` left,
-  add a datum), `small` (20 entities, a query, a pull) — run through the
-  host mains. Startup caches the runners keep (all keyed by the
-  classpath's sources, so an edit means a fresh compile): `run-jvm.sh`
-  AOT classes of Eve + the vendored libs (`JVM_AOT=0` to disable),
-  `run-lpy.sh` basilisp's namespace cache (`LPY_CACHE=0`), `run-nbb.sh`
-  the Eve tree's own nbb (no npx). bb has no persisted analysis cache
-  (an uberjar measured within noise), so its ~0.8 s namespace load is
-  SCI's, from source.
-- **Perf** — `harness/ds_harness/perf.cljc`: people-1k build with all
-  seven build keys asserted exact against in-process ground truth,
-  then find-datom / pull / datoms-sequence / transact timings.
+- **Landed:** the upstream source baseline, the frozen trap list and the
+  API list (U0); the persistent sorted set that backs the indexes,
+  `eve.db.ds.bset`, green on the JVM (U1).
+- **In progress:** the DB/Datom types as Eve types (U2); the conn and
+  handle layer (U3); query, pull, entity and datafy (U4); serialization
+  and persistence (U5); the acceptance run on both hosts (U6).
+- Eve itself is a dependency, pinned in `deps.edn` to the public Eve
+  release line (`SeniorCareMarket/eve`, `release/eve-0.9.3.3`).
 
-## Source of this tree
+## License
 
-`eve.db.ds` is the home of this library (operator, 2026-11-10: "We'll call it eve.db.ds"). The initial import on `main` (`ea64dfb0`) was the DataScript port tree exactly as staged:
-- johnmn3/cohost.cljc, example branch, commit `2cc5e3d5` (the staged port tree, as-is from the hatch box), 89 files.
-- That tree is byte-identical to SeniorCareMarket/eve 0.9.3.1's contract-test DataScript set plus the D1 fix (db.cljc :lpy arm, `^Boolean` dropped); Eve is pinned as a git dep at SeniorCareMarket/eve @ `4a921298` (see deps.edn).
-
-The namespaces were renamed to `eve.db.ds.*` (files under `src/eve/db/ds/`) in the commit after the import; there is no compatibility with the old names. `me.tonsky.persistent-sorted-set` and `extend-clj` are separate libraries and keep their names.
-
-Reconciled against, not yet imported (each waits on proof; see RELEASE-COLLATION.md): lane-m/perf-doc-0931-lpyfix `9edd792e`, lane-m/ds-stage2 `df7b1966`, lane-m/compiled-cljd.
-
-License: EPL-1.0 (upstream DataScript); notices preserved in LICENSE and docs/NOTICE-eve-db-ds-epl-1.0.txt.
+EPL-1.0 (upstream DataScript); notices in LICENSE and
+docs/NOTICE-eve-db-ds-epl-1.0.txt. Provenance: docs/PROVENANCE-DS.md.
