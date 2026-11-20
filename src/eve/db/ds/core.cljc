@@ -60,8 +60,11 @@
   (swap! region-escapes update k inc)
   (if-let [f @deliver-flat] (f v) v))
 
-(defn- eve-coll? [x]
-  (or (satisfies? eve-data/IPlain x) (satisfies? eve-data/IsEve x)))
+(defn- eve-coll?
+  "x is Eve data read in place (Eve removed IPlain: eve->clj is one generic
+   function, and any persistent Eve value is its to convert)."
+  [x]
+  (or (satisfies? eve-data/IsEve x) (satisfies? eve-data/IEveRoot x)))
 
 (defn- region-materialize
   "A read region's result made safe to hold after the region's pins go:
@@ -82,6 +85,13 @@
     (sequential? x) (doall (map region-materialize x))
     :else (eve-data/eve->clj x)))
 
+(def ^:private region-off-setting
+  (delay #?(:clj (= "off" (or (System/getenv "EVE_REGION") (System/getProperty "eve.region")))
+            :cljs (and (exists? js/process) (= "off" (aget (.-env js/process) "EVE_REGION")))
+            :default false)))
+
+(defn- region-off? [] @region-off-setting)
+
 (defn read-in
   "(f) as an Eve read region (eve.alpha/$): every Eve atom deref'd in it
    answers the stored DB in place — slab-backed, pinned until the region
@@ -90,7 +100,11 @@
    pins go; a DB, datom or entity that escapes is copied out then
    (region-escape-counts). A region inside another joins it."
   [f]
-  (rr/run f region-materialize))
+  ;; EVE_REGION=off (Eve's measurement switch): the body runs as a plain call,
+  ;; its reads answering Eve's views (how much works without a region)
+  (if (region-off?)
+    (region-materialize (f))
+    (rr/run f region-materialize)))
 
 
 ; Entities

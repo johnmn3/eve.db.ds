@@ -543,8 +543,6 @@
       (e/hash-unordered-coll (e/seq this))))
 
   ;; what a deref of an atom holding it answers: a Clojure sorted set
-  d/IPlain
-  (-plain [this] (into (clojure.core/sorted-set) (map d/eve->clj) (e/seq this)))
 
   IPrintWithWriter
   (-pr-writer [this w _] (e/-write w (print-btset this)))
