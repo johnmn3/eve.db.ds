@@ -29,13 +29,18 @@ row_covered() { # file line
 }
 
 # gated classes (v2 §3 + src/UPSTREAM-SRC.txt)
+# U6 addendum: core.cljc is REPORT_ONLY, not gated — plan §3 never
+# classified it (U3's filing; see docs/TRAP-LIST.md's addendum). It
+# is the rewrite's adapter surface (conn resolution, delivery, the
+# §4 handle API and additive vars), rebuilt wholesale like the
+# type-swap/new classes below, not a verbatim file with trap hunks.
 GATED="eve/db/ds/built_ins.cljc eve/db/ds/lru.cljc eve/db/ds/parser.cljc
-eve/db/ds/pull_parser.cljc eve/db/ds/util.cljc eve/db/ds/core.cljc
+eve/db/ds/pull_parser.cljc eve/db/ds/util.cljc
 eve/db/ds/query_v3.cljc eve/db/ds/inline.clj eve/db/ds/pprint.clj
 eve/db/ds/js.cljs eve/db/ds/query.cljc eve/db/ds/pull_api.cljc
 eve/db/ds/impl/entity.cljc eve/db/ds/datafy.cljc
 eve/db/ds/externs.js data_readers.clj deps.cljs"
-REPORT_ONLY="eve/db/ds/db.cljc eve/db/ds/conn.cljc eve/db/ds/serialize.cljc"
+REPORT_ONLY="eve/db/ds/db.cljc eve/db/ds/conn.cljc eve/db/ds/serialize.cljc eve/db/ds/core.cljc"
 
 fail=0
 check_file() { # relpath gated?

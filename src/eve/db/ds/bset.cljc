@@ -639,7 +639,8 @@
 ;; The iterators are HOST deftypes, not eve/deftypes — measured, not
 ;; preference: at the pinned Eve (f4a1c3a), constructing an
 ;; eve/deftype inside a $ region routes through
-;; eve.flat.sister/construct-flat, which refuses fields held by
+;; construct-flat, the flat layer's sister constructor, which
+;; refuses fields held by
 ;; reference ("a value held by reference cannot be packed") — and an
 ;; iterator's fields are exactly live node/array handles. The set's
 ;; own types (Leaf/Node) are eve/deftype and are only ever built

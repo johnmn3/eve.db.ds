@@ -2,9 +2,9 @@
   "U6 acceptance (plan v2 §4 gate): the public API surface — every var
    in docs/API-VARS.md (44 upstream vars) plus the rewrite's additive
    keep!/release!/close-conn! — exists, is callable with upstream
-   shapes, and returns HOST DATA ONLY: no Eve type (eve.flat.*,
-   Eve deftype sisters outside this library's own public host types,
-   bset internals, Eve atoms) appears in any result. The library's
+   shapes, and returns HOST DATA ONLY: no Eve type (flat-layer
+   types, Eve deftype sisters outside this library's own public host
+   types, bset internals, Eve atoms) appears in any result. The library's
    own public host types are the sanctioned exceptions: Datom
    (slab or delivered sister), DB / FilteredDB (ditto), TxReport,
    and Entity.

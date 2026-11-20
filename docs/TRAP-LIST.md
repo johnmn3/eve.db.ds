@@ -294,3 +294,80 @@ Replacement: The slice result must not escape unrealized: realize it inside the 
 | `src/eve/db/ds/db.cljc` | 1032 | `(set/rslice eavt` |
 | `src/eve/db/ds/db.cljc` | 1039 | `(set/rslice avet` |
 
+
+## Addendum (U6, acceptance) — rows the frozen derivation could not foresee
+
+The frozen list above was derived mechanically (U0) from trap
+PATTERNS. Three bodies of work changed baseline lines no pattern
+named; their rows are recorded here, each with its owning unit and
+gap id, so the diff gate passes for the right reason — documented
+hunks, not silence. The frozen 195 rows are untouched.
+
+### core.cljc — reclassified GATED → REPORT_ONLY (U6, per U3's filing)
+
+Plan v2 §3 never classified core.cljc; U0's vendor step gated it by
+default. It is the rewrite's adapter surface, not a verbatim file:
+U3 rebuilt it around the conn (resolve-db-arg, deliver-datoms, the
+§4 handle API, keep!/release!/close-conn! — the additive vars are
+listed in docs/API-VARS.md), and U6 removed U3's GAP-U3-3 stopgap
+from it and threaded the handle through its entity wrapper. Like
+db.cljc/conn.cljc/serialize.cljc (the §3 type-swap/new classes), it
+is reported by the gate, not line-gated. Recorded in
+scripts/diff_upstream.sh's class lists.
+
+### pull_api.cljc — GAP-3 re-point + §2 cache-field removal (U3/U4)
+
+U2's GAP-3 spec, adopted verbatim by U3 and confirmed by U4: the
+LRU cache FIELDS the baseline read off the DB (.-pull-attrs,
+.-pull-patterns) do not exist on the Eve DB (the §3 type swap
+removed the cache fields with the hash caches), so the caches move
+to pull_api's own Context; and the me.tonsky set/slice reads
+re-point at the §5 bset (db/-datoms slices).
+
+| `src/eve/db/ds/pull_api.cljc` | 8 | `[me.tonsky.persistent-sorted-set :as set])` |
+| `src/eve/db/ds/pull_api.cljc` | 150 | `(let [datom-attr (lru/-get` |
+| `src/eve/db/ds/pull_api.cljc` | 151 | `(.-pull-attrs (db/unfiltered-db (.-db ^Context context)))` |
+| `src/eve/db/ds/pull_api.cljc` | 222 | `(set/slice (.-avet ^DB db) (db/datom db/e0 name id db/tx0) (db/datom db/emax name id db/txmax))` |
+| `src/eve/db/ds/pull_api.cljc` | 277 | `(set/slice (.-eavt ^DB db) (db/datom id nil nil db/tx0) (db/datom id nil nil db/txmax))` |
+| `src/eve/db/ds/pull_api.cljc` | 289 | `(set/slice (.-eavt ^DB db) (db/datom id from nil db/tx0) (db/datom id to nil db/txmax))` |
+| `src/eve/db/ds/pull_api.cljc` | 334 | `{:pattern (lru/-get (.-pull-patterns (db/unfiltered-db db)) pattern #(dpp/parse-pattern db pattern))` |
+
+### query.cljc — GAP-5 require re-point (U4)
+
+Line 9 required me.tonsky.persistent-sorted-set.arrays, whose
+make-array is an Eve vector in the vendored port, while query's
+tuple machinery expects native arrays; GAP-5's arrays.cljc restores
+the native contract and the require re-points at it.
+
+| `src/eve/db/ds/query.cljc` | 9 | `[me.tonsky.persistent-sorted-set.arrays :as da]` |
+
+### impl/entity.cljc — GAP-1/GAP-2 handle wiring (U6, item 6)
+
+Entity equiv/hash keyed on the delivered DB value cannot work
+(U4's probe4: equiv throws :eve/no-identity outside a region; hash
+differs across deliveries of the same version). U6 threads U3's
+§4 handle ({:atom a :tx n}) through Entity as a fifth field:
+entity gains a 3-arity form, entity-attr / -lookup-backwards /
+datoms->cache take the handle, equiv keys on (atom, tx) when both
+sides carry one (else the baseline's same? fallback), and hash
+keys on the handle's identity (else db/entity-db-hash). Every
+change is line-for-line against the baseline lines below;
+baseline line 171 (the equiv same? line) was already a frozen row.
+
+| `src/eve/db/ds/impl/entity.cljc` | 14 | `(defn entity [db eid]` |
+| `src/eve/db/ds/impl/entity.cljc` | 15 | `{:pre [(db/db? db)]}` |
+| `src/eve/db/ds/impl/entity.cljc` | 16 | `(when-let [e (entid db eid)]` |
+| `src/eve/db/ds/impl/entity.cljc` | 20 | `(defn- entity-attr [db a datoms]` |
+| `src/eve/db/ds/impl/entity.cljc` | 23 | `(reduce #(conj %1 (entity db (:v %2))) #{} datoms)` |
+| `src/eve/db/ds/impl/entity.cljc` | 26 | `(entity db (:v (first datoms)))` |
+| `src/eve/db/ds/impl/entity.cljc` | 29 | `(defn- -lookup-backwards [db eid attr not-found]` |
+| `src/eve/db/ds/impl/entity.cljc` | 32 | `(entity db (:e (first datoms)))` |
+| `src/eve/db/ds/impl/entity.cljc` | 33 | `(reduce #(conj %1 (entity db (:e %2))) #{} datoms))` |
+| `src/eve/db/ds/impl/entity.cljc` | 58 | `(deftype Entity [db eid touched cache]` |
+| `src/eve/db/ds/impl/entity.cljc` | 79 | `(-> (-lookup-backwards db eid (db/reverse-ref attr) nil)` |
+| `src/eve/db/ds/impl/entity.cljc` | 178 | `(#?(:clj System/identityHashCode :cljs goog/getUid) (.-db e))))` |
+| `src/eve/db/ds/impl/entity.cljc` | 186 | `(-lookup-backwards (.-db this) (.-eid this) (db/reverse-ref attr) not-found)` |
+| `src/eve/db/ds/impl/entity.cljc` | 192 | `(let [value (entity-attr (.-db this) attr datoms)]` |
+| `src/eve/db/ds/impl/entity.cljc` | 208 | `(defn- datoms->cache [db datoms]` |
+| `src/eve/db/ds/impl/entity.cljc` | 211 | `(assoc acc a (entity-attr db a part))))` |
+| `src/eve/db/ds/impl/entity.cljc` | 220 | `(datoms->cache (.-db e))` |
