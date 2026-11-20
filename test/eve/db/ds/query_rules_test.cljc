@@ -183,11 +183,12 @@
             [] []))))
 
   (testing "Rule vars validation"
-    (is (thrown-msg? "Cannot parse var, expected symbol starting with ?, got: $e1" ;; issue-300
-          (dq/q '[:find ?e :in $ % :where [?e]]
-            (sup/empty-db)
-            '[[(rule $e1 ?e2)
-               [?e1 :ref ?e2]]])))))
+    (let [a (sup/new-conn)]
+      ($ (is (thrown-msg? "Cannot parse var, expected symbol starting with ?, got: $e1" ;; issue-300
+               (dq/q '[:find ?e :in $ % :where [?e]]
+                 (sup/built-db a nil [])
+                 '[[(rule $e1 ?e2)
+                    [?e1 :ref ?e2]]])))))))
 
 ;; issue-218
 (deftest test-false-arguments
