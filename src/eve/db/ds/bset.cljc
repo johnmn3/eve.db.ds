@@ -87,25 +87,14 @@
   [a from to]
   (let [n (- to from)
         r (eve/make-array n)]
-    (loop [i 0]
-      (when (< i n)
-        (eve/aset r i (eve/aget a (+ from i)))
-        (recur (inc i))))
-    r))
+    (eve/array-copy a from r 0 n)))
 
 (defn- arr-concat [a b]
   (let [la (eve/alength a)
         lb (eve/alength b)
         r  (eve/make-array (+ la lb))]
-    (loop [i 0]
-      (when (< i la)
-        (eve/aset r i (eve/aget a i))
-        (recur (inc i))))
-    (loop [i 0]
-      (when (< i lb)
-        (eve/aset r (+ la i) (eve/aget b i))
-        (recur (inc i))))
-    r))
+    (eve/array-copy a 0 r 0 la)
+    (eve/array-copy b 0 r la lb)))
 
 (defn- arr-map [f a]
   (let [n (eve/alength a)
@@ -121,19 +110,9 @@
         l1   (- splice-from cut-from)
         l2   (- cut-to splice-to)
         r    (eve/make-array (+ l1 xs-l l2))]
-    (loop [i 0]
-      (when (< i l1)
-        (eve/aset r i (eve/aget a (+ cut-from i)))
-        (recur (inc i))))
-    (loop [i 0]
-      (when (< i xs-l)
-        (eve/aset r (+ l1 i) (eve/aget xs i))
-        (recur (inc i))))
-    (loop [i 0]
-      (when (< i l2)
-        (eve/aset r (+ l1 xs-l i) (eve/aget a (+ splice-to i)))
-        (recur (inc i))))
-    r))
+    (eve/array-copy a cut-from r 0 l1)
+    (eve/array-copy xs 0 r l1 xs-l)
+    (eve/array-copy a splice-to r (+ l1 xs-l) l2)))
 
 (defn- splice [a splice-from splice-to xs]
   (cut-n-splice a 0 (eve/alength a) splice-from splice-to xs))
@@ -148,31 +127,13 @@
         r2      (eve/make-array r2-l)]
     (if (<= a1-l r1-l)
       (do
-        (loop [i 0]
-          (when (< i a1-l)
-            (eve/aset r1 i (eve/aget a1 i))
-            (recur (inc i))))
-        (loop [i 0]
-          (when (< i (- r1-l a1-l))
-            (eve/aset r1 (+ a1-l i) (eve/aget a2 i))
-            (recur (inc i))))
-        (loop [i 0]
-          (when (< i r2-l)
-            (eve/aset r2 i (eve/aget a2 (+ (- r1-l a1-l) i)))
-            (recur (inc i)))))
+        (eve/array-copy a1 0 r1 0 a1-l)
+        (eve/array-copy a2 0 r1 a1-l (- r1-l a1-l))
+        (eve/array-copy a2 (- r1-l a1-l) r2 0 r2-l))
       (do
-        (loop [i 0]
-          (when (< i r1-l)
-            (eve/aset r1 i (eve/aget a1 i))
-            (recur (inc i))))
-        (loop [i 0]
-          (when (< i (- a1-l r1-l))
-            (eve/aset r2 i (eve/aget a1 (+ r1-l i)))
-            (recur (inc i))))
-        (loop [i 0]
-          (when (< i a2-l)
-            (eve/aset r2 (+ (- a1-l r1-l) i) (eve/aget a2 i))
-            (recur (inc i))))))
+        (eve/array-copy a1 0 r1 0 r1-l)
+        (eve/array-copy a1 r1-l r2 0 (- a1-l r1-l))
+        (eve/array-copy a2 0 r2 (- a1-l r1-l) a2-l)))
     (arr r1 r2)))
 
 (defn- eq-arr [cmp a1 a1-from a1-to a2 a2-from a2-to]

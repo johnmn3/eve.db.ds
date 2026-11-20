@@ -75,7 +75,8 @@
   (ensure-handle handle)
   (let [{:keys [atom tx]} handle
         *db (volatile! nil)]
-    ($ (vreset! *db (resolve-in-map @atom tx)))
+    ;; the region's body answers nil: $ materializes what its body answers, and the DB itself would be packed whole
+    ($ (do (vreset! *db (resolve-in-map @atom tx)) nil))
     @*db))
 
 (defn current-handle
