@@ -828,8 +828,12 @@
        (-seq [this]
          (when keys this))
        IIterable
+       ;; cljs's -iterator contract is the hasNext/next Iterator
+       ;; (iter-reduce and TransformerIterator call .hasNext on it),
+       ;; NOT the ES2015 {value,done} shape: seq-iter is the mirror
+       ;; of the :clj arm's SeqIterator over the seq.
        (-iterator [this]
-         (es6-iterator this))
+         (seq-iter this))
        ICollection
        (-conj [this x]
          (clojure.core/cons x this))
@@ -931,8 +935,12 @@
        (-seq [this]
          (when keys this))
        IIterable
+       ;; cljs's -iterator contract is the hasNext/next Iterator
+       ;; (iter-reduce and TransformerIterator call .hasNext on it),
+       ;; NOT the ES2015 {value,done} shape: seq-iter is the mirror
+       ;; of the :clj arm's SeqIterator over the seq.
        (-iterator [this]
-         (es6-iterator this))
+         (seq-iter this))
        ICollection
        (-conj [this x]
          (clojure.core/cons x this))
