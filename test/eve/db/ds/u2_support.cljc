@@ -7,7 +7,8 @@
    $ (fully realized) and compare outside it."
   (:require [clojure.test :as t]
             [eve.alpha :as eve :refer [$]]
-            [eve.db.ds.db :as db]))
+            [eve.db.ds.db :as db])
+  #?(:cljs (:require-macros [eve.db.ds.test-macros])))
 
 ;; thrown-msg? — same assert-expr the upstream suite uses (defined
 ;; there in eve.db.ds.test.core, which cannot load until core does).
