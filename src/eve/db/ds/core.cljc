@@ -8,6 +8,7 @@
     #?(:clj [eve.db.ds.pprint])
     [eve.db.ds.pull-api :as dp]
     [eve.db.ds.query :as dq]
+    [eve.db.ds.serialize :as serialize]
     [eve.db.ds.impl.entity :as de]
     [eve.db.ds.util :as util])
   #?(:clj
@@ -224,10 +225,28 @@
   ([datoms schema]
    (conn/init-db datoms schema)))
 
-;; serializable / from-serializable are U5's surface (plan v2 §3:
-;; serialize is a new file). Their defs return when U5 lands the new
-;; serialize namespace; the baseline defs pointed at a serialize that
-;; required the deleted storage namespace.
+;; serializable / from-serializable (plan v2 §3: serialize is a new
+;; namespace, eve.db.ds.serialize — datoms out inside $, datoms in
+;; through a transact; the baseline defs pointed at a serialize that
+;; required the deleted storage namespace).
+
+(defn serializable
+  "Captures the DB a handle names as plain host data: schema,
+   max-eid, max-tx and the datoms as [e a v tx] vectors with values
+   encoded to survive EDN/transit/JSON round-trips. See
+   eve.db.ds.serialize for the form."
+  ([db]
+   (serialize/serializable db))
+  ([db opts]
+   (serialize/serializable db opts)))
+
+(defn from-serializable
+  "Rebuilds a DB from serializable's form and returns its handle:
+   the datoms are transacted into a fresh private conn."
+  ([form]
+   (serialize/from-serializable form))
+  ([form opts]
+   (serialize/from-serializable form opts)))
 
 
 ; Schema
