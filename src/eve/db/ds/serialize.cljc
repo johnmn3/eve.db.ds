@@ -1,19 +1,51 @@
 (ns eve.db.ds.serialize
-  (:refer-clojure :exclude [amap array?])
+  "DB -> plain data and back, over datoms (DS-IN-EVE-PLAN v2 §3).
+
+   A serialized DB is data — no Eve internals, no slab formats:
+
+     {:schema  (freeze-fn schema)      ; a string
+      :max-eid <long>
+      :max-tx  <long>
+      :datoms  [[e a v' tx] ...]}      ; :eavt order
+
+   `serializable` takes a DB handle (plan v2 §4): the schema and
+   datoms are read from the DB inside its atom (datoms via
+   eve.db.ds.conn/datoms-of, which reads inside a $ region) and
+   come out as host data. `from-serializable` thaws the schema,
+   creates a fresh private conn with it, transacts the datoms in
+   as host Datoms — each datom keeps its own tx, which
+   db/transact-tx-data honors — and returns the new conn's DB
+   handle.
+
+   Value encoding (upstream's marker scheme; the keyword payload
+   is inlined instead of held in an intern table): strings,
+   booleans and finite numbers travel as-is; a keyword travels as
+   [0 \":kw\"]; ##Inf as [2], ##-Inf as [3], ##NaN as [4];
+   everything else (maps, vectors, sets, ratios, bigints,
+   bigdecimals, nil, ...) travels as [1 (freeze-fn v)] and is
+   restored with thaw-fn. Real data vectors are always frozen
+   under marker 1, so the markers are unambiguous. Attribute
+   keywords travel as their str (\":name\") and are re-keywordized
+   on thaw. The form therefore survives EDN, transit and JSON
+   round-trips; from-serializable accepts keyword or string
+   top-level keys (a JSON round-trip stringifies them).
+
+   freeze-fn / thaw-fn mirror upstream's opts: freeze-fn defaults
+   to pr-str, thaw-fn to clojure.edn/read-string.
+
+   :max-eid / :max-tx are carried for parity with upstream's form.
+   The rebuild derives its own by transaction: datom content and
+   max-tx match the source exactly (measured, U5 probes/slices);
+   a source max-eid above every live datom eid (fully retracted
+   entities) is not preserved — the transaction that would install
+   it does not exist in the public API."
   (:require
     [clojure.edn :as edn]
     [clojure.string :as str]
-    [eve.db.ds.db :as db #?@(:cljs [:refer [Datom]])]
-    [eve.db.ds.lru :as lru]
-    [eve.db.ds.storage :as storage]
-    [eve.db.ds.util :as util]
-    [me.tonsky.persistent-sorted-set :as set]
-    [me.tonsky.persistent-sorted-set.arrays :as arrays])
-  #?(:cljs (:require-macros [eve.db.ds.serialize :refer [array dict]]))
-  #?(:clj
-     (:import
-       [eve.db.ds.db Datom]
-       [me.tonsky.persistent_sorted_set PersistentSortedSet])))
+    [eve.alpha :as eve :refer [$]]
+    [eve.db.ds.conn :as conn]
+    [eve.db.ds.db :as db]
+    [eve.db.ds.util :as util]))
 
 (def ^:const ^:private marker-kw 0)
 (def ^:const ^:private marker-other 1)
@@ -21,226 +53,102 @@
 (def ^:const ^:private marker-minus-inf 3)
 (def ^:const ^:private marker-nan 4)
 
-(defn- if-cljs [env then else]
-  (if (:ns env) then else))
-
-#?(:clj
-   (defmacro array
-     "Platform-native array representation (java.util.List on JVM, Array on JS)"
-     [& args]
-     (if-cljs &env
-       (list* 'js* (str "[" (str/join "," (repeat (count args) "~{}")) "]") args)
-       (vec args))))
-
-#?(:clj
-   (defmacro dict
-     "Platform-native dictionary representation (java.util.Map on JVM, Object on JS)"
-     [& args]
-     (if-cljs &env
-       (list* 'js* (str "{" (str/join "," (repeat (/ (count args) 2) "~{}:~{}")) "}") args)
-       `(array-map ~@args))))
-
-(defn- array-get [d i]
-  #?(:clj  (.get ^java.util.List d (int i))
-     :cljs (if (cljs.core/array? d) (arrays/aget d i) (nth d i))))
-
-(defn- dict-get [d k]
-  #?(:clj  (.get ^java.util.Map d k)
-     :cljs (if (map? d) (d k) (arrays/aget d k))))
-
-(defn- array? [a]
-  #?(:clj  (instance? java.util.List a)
-     :cljs (or (cljs.core/array? a) (vector? a))))
-
-(defn- amap [f xs]
-  #?(:clj
-     (let [arr (java.util.ArrayList. (count xs))]
-       (reduce (fn [idx x] (.add arr (f x)) (inc idx)) 0 xs)
-       arr)
-     :cljs
-     (let [arr (js/Array. (count xs))]
-       (reduce (fn [idx x] (arrays/aset arr idx (f x)) (inc idx)) 0 xs)
-       arr)))
-
-(defn- amap-indexed [f xs]
-  #?(:clj
-     (let [arr (java.util.ArrayList. (count xs))]
-       (reduce (fn [idx x] (.add arr (f idx x)) (inc idx)) 0 xs)
-       arr)
-     :cljs
-     (let [arr (js/Array. (count xs))]
-       (reduce (fn [idx x] (arrays/aset arr idx (f idx x)) (inc idx)) 0 xs)
-       arr)))
-
-(defn- attr-comparator
-  "Looks for a datom with attribute exactly bigger than the given one"
-  [^Datom d1 ^Datom d2]
-  (cond 
-    (nil? (.-a d2)) -1
-    (<= (compare (.-a d1) (.-a d2)) 0) -1
-    true 1))
-
-(defn- all-attrs
-  "All attrs in a DB, distinct, sorted"
-  [db]
-  (if (empty? (:aevt db))
-    []
-    (loop [attrs (transient [(:a (first (:aevt db)))])]
-      (let [attr      (nth attrs (dec (count attrs)))
-            left      (db/datom 0 attr nil)
-            right     (db/datom db/emax nil nil)
-            next-attr (:a (first (set/slice (:aevt db) left right attr-comparator)))]
-        (if (some? next-attr)
-          (recur (conj! attrs next-attr))
-          (persistent! attrs))))))
-
-(def ^{:arglists '([kw])} freeze-kw str)
+(defn- write-v [freeze-fn v]
+  (cond
+    (string? v)  v
+    (boolean? v) v
+    (keyword? v) [marker-kw (str v)]
+    (number? v)
+    (cond
+      #?@(:clj [(or (instance? java.math.BigInteger v)
+                  (instance? java.math.BigDecimal v)
+                  (instance? clojure.lang.Ratio v)
+                  (instance? clojure.lang.BigInt v))
+                [marker-other (freeze-fn v)]])
+      (== ##Inf v)  [marker-inf]
+      (== ##-Inf v) [marker-minus-inf]
+      #?(:clj  (and (instance? Double v) (Double/isNaN ^double v))
+         :cljs (js/isNaN v)) [marker-nan]
+      :else v)
+    :else [marker-other (freeze-fn v)]))
 
 (defn- thaw-kw [s]
-  (if (str/starts-with? s ":")
+  (if (and (string? s) (str/starts-with? s ":"))
     (keyword (subs s 1))
     s))
 
-(defn- serializable-impl
-  "Serialized structure breakdown:
+(defn- read-v [thaw-fn v]
+  (cond
+    (string? v)  v
+    (boolean? v) v
+    (number? v)  v
+    (nil? v)     nil
+    (sequential? v)
+    (let [[marker payload] v]
+      (condp == marker
+        marker-kw        (thaw-kw payload)
+        marker-other     (thaw-fn payload)
+        marker-inf       ##Inf
+        marker-minus-inf ##-Inf
+        marker-nan       ##NaN
+        (util/raise "Unexpected value marker " marker " in " (pr-str v)
+          {:error :serialize :value v})))
+    :else
+    (util/raise "Unexpected value type " (type v) " (" (pr-str v) ")"
+      {:error :serialize :value v})))
 
-   count    :: number    
-   tx0      :: number
-   max-eid  :: number
-   max-tx   :: number
-   schema   :: freezed :schema
-   attrs    :: [keywords ...]
-   keywords :: [keywords ...]
-   eavt     :: [[e a-idx v dtx] ...]
-   a-idx    :: index in attrs
-   v        :: (string | number | boolean | [0 <index in keywords>] | [1 <freezed v>])
-   dtx      :: tx - tx0
-   aevt     :: [<index in eavt> ...]
-   avet     :: [<index in eavt> ...]"
-  [db {:keys [freeze-fn freeze-kw]
-       :or   {freeze-fn pr-str
-              freeze-kw freeze-kw}}]
-  (when (storage/storage db)
-    (throw (ex-info "serializable doesn't work with databases that have :storage" {})))
-  (let [attrs       (all-attrs db)
-        attrs-map   (into {} (map vector attrs (range)))
-        *kws        (volatile! (transient []))
-        *kw-map     (volatile! (transient {}))
-        write-kw    (fn [kw]
-                      (let [idx (or
-                                  (get @*kw-map kw)
-                                  (let [keywords (vswap! *kws conj! kw)
-                                        idx      (dec (count keywords))]
-                                    (vswap! *kw-map assoc! kw idx)
-                                    idx))]
-                        (array marker-kw idx)))
-        write-other (fn [v] (array marker-other (freeze-fn v)))
-        write-v     (fn [v]
-                      (cond
-                        (string? v)  v
-                        #?@(:clj [(or
-                                    (instance? BigInteger v)
-                                    (instance? BigDecimal v)
-                                    (instance? clojure.lang.Ratio v)
-                                    (instance? clojure.lang.BigInt v))
-                                  (write-other v)])
-                        
-                        (number? v)  
-                        (cond
-                          (== ##Inf v)  (array marker-inf)
-                          (== ##-Inf v) (array marker-minus-inf)
-                          #?(:clj (Double/isNaN v) :cljs (js/isNaN v)) (array marker-nan)
-                          :else v)
+(defn- field
+  "Top-level form access tolerant of a JSON round-trip, which
+   stringifies the keyword keys."
+  [form k]
+  (let [v (get form k)]
+    (if (some? v)
+      v
+      (get form (name k)))))
 
-                        (boolean? v) v
-                        (keyword? v) (write-kw v)
-                        true         (write-other v)))
-        eavt        (amap-indexed
-                      (fn [idx ^Datom d]
-                        (db/datom-set-idx d idx)
-                        (let [e  (.-e d)
-                              a  (attrs-map (.-a d))
-                              v  (write-v (.-v d))
-                              tx (- (.-tx d) db/tx0)]
-                          (array e a v tx)))
-                      (:eavt db))
-        aevt        (amap-indexed (fn [_ ^Datom d] (db/datom-get-idx d)) (:aevt db))
-        avet        (amap-indexed (fn [_ ^Datom d] (db/datom-get-idx d)) (:avet db))
-        schema      (freeze-fn (:schema db))
-        attrs       (amap freeze-kw attrs)
-        kws         (amap freeze-kw (persistent! @*kws))
-        #?@(:clj
-            [settings (set/settings (:eavt db))])]
-    (dict
-      "count"    (count (:eavt db))
-      "tx0"      db/tx0
-      "max-eid"  (:max-eid db)
-      "max-tx"   (:max-tx db)
-      "schema"   schema
-      "attrs"    attrs
-      "keywords" kws
-      "eavt"     eavt
-      "aevt"     aevt
-      "avet"     avet
-      #?@(:clj
-          ["branching-factor" (:branching-factor settings)
-           "ref-type"         (name (:ref-type settings))]))))
-
-#?(:clj
-   (let [lock (Object.)]
-     (defn serializable
-       ([db] (locking lock (serializable-impl db {})))
-       ([db opts] (locking lock (serializable-impl db opts)))))
-   :cljs
-   (defn serializable
-     ([db] (serializable-impl db {}))
-     ([db opts] (serializable-impl db opts))))
+(defn serializable
+  "Captures the DB a handle names as plain host data (see the ns
+   docstring for the form). The handle must resolve — serializing
+   an unkept, non-current DB throws :eve.db.ds/db-not-kept, like
+   any other read."
+  ([db-handle]
+   (serializable db-handle {}))
+  ([db-handle {:keys [freeze-fn] :or {freeze-fn pr-str}}]
+   (conn/ensure-handle db-handle)
+   (let [dbv     (conn/resolve-db db-handle)
+         max-eid ($ (:max-eid dbv))
+         max-tx  ($ (:max-tx dbv))]
+     {:schema  (freeze-fn (conn/schema-of db-handle))
+      :max-eid max-eid
+      :max-tx  max-tx
+      :datoms  (mapv (fn [d]
+                       [(.-e d) (str (.-a d))
+                        (write-v freeze-fn (.-v d))
+                        (db/datom-tx d)])
+                 (conn/datoms-of db-handle))})))
 
 (defn from-serializable
-  ([from] 
-   (from-serializable from {}))
-  ([from {:keys [thaw-fn thaw-kw]
-          :or   {thaw-fn edn/read-string
-                 thaw-kw thaw-kw}
-          :as opts}]
-   (let [tx0      (dict-get from "tx0")
-         schema   (thaw-fn (dict-get from "schema"))
-         _        (#'db/validate-schema schema)
-         attrs    (->> (dict-get from "attrs") (mapv thaw-kw))
-         keywords (->> (dict-get from "keywords") (mapv thaw-kw))
-         eavt     (->> (dict-get from "eavt")
-                    (amap (fn [arr]
-                            (let [e  (array-get arr 0)
-                                  a  (nth attrs (array-get arr 1))
-                                  v  (array-get arr 2)
-                                  v  (cond
-                                       (number? v)  v
-                                       (string? v)  v
-                                       (boolean? v) v
-                                       (array? v) (let [marker (array-get v 0)]
-                                                    (condp == marker
-                                                      marker-kw    (nth keywords (array-get v 1))
-                                                      marker-other (thaw-fn (array-get v 1))
-                                                      marker-inf   ##Inf
-                                                      marker-minus-inf ##-Inf
-                                                      marker-nan   ##NaN
-                                                      (util/raise "Unexpected value marker " marker " in " (pr-str v)
-                                                        {:error :serialize :value v})))
-                                       true (util/raise "Unexpected value type " (type v) " (" (pr-str v) ")"
-                                              {:error :serialize :value v}))
-                                  tx (+ tx0 (array-get arr 3))]
-                              (db/datom e a v tx))))
-                    #?(:clj arrays/into-array))
-         aevt     (some->> (dict-get from "aevt") (amap #(arrays/aget eavt %)) #?(:clj arrays/into-array))
-         avet     (some->> (dict-get from "avet") (amap #(arrays/aget eavt %)) #?(:clj arrays/into-array))
-         settings (merge
-                    {:branching-factor (dict-get from "branching-factor")
-                     :ref-type         (some-> (dict-get from "ref-type") keyword)}
-                    (select-keys opts [:branching-factor :ref-type]))]
-     (db/restore-db
-       {:schema  schema
-        :eavt    (set/from-sorted-array db/cmp-datoms-eavt eavt (arrays/alength eavt) settings)
-        :aevt    (set/from-sorted-array db/cmp-datoms-aevt aevt (arrays/alength aevt) settings)
-        :avet    (set/from-sorted-array db/cmp-datoms-avet avet (arrays/alength avet) settings)
-        :max-eid (dict-get from "max-eid")
-        :max-tx  (dict-get from "max-tx")}))))
+  "Rebuilds a DB from serializable's form: thaws the schema,
+   creates a fresh private conn with it, transacts the datoms in
+   (one transact!, datoms keep their txs) and returns the new
+   conn's DB handle.
+
+   The transact's tx-data is [:db/add e a v tx] vectors carrying
+   the thawed HOST values, not host Datoms: at this Eve pin,
+   transacting a Datom entity whose v is an already-flat
+   collection (a map/vector value read back from a DB) corrupts
+   the stored v — it reads back as the datom itself (GAP-U5-2,
+   U5-STATUS.md; scalar values are unaffected). The vector form
+   with host values is the measured-good path."
+  ([form]
+   (from-serializable form {}))
+  ([form {:keys [thaw-fn] :or {thaw-fn edn/read-string}}]
+   (let [schema (thaw-fn (field form :schema))
+         tx-data (mapv (fn [row]
+                         (let [[e a v tx] row]
+                           [:db/add e (thaw-kw a) (read-v thaw-fn v) tx]))
+                   (field form :datoms))
+         conn   (conn/create-conn schema)]
+     (when (seq tx-data)
+       (conn/transact! conn tx-data))
+     (conn/db conn))))
