@@ -7,15 +7,19 @@
    in-process eve/atom holding {:db (->Box ...)} where Box is an
    eve/deftype built inside swap!.
 
-   Expected state at the pre-fix Eve pin (release/eve-0.9.3.3
-   f4a1c3ae97ee76f2651ce600a857675aa5c227ef): E1–E6 red, E7 green —
-   that red is the Eve seat's backlog (EVE-FIX F1–F3), not a defect
-   in this file. Do not work around a red row from this repo.
+   Measured state at the pre-fix Eve pin (release/eve-0.9.3.3
+   f4a1c3ae97ee76f2651ce600a857675aa5c227ef): E1/E2/E4/E5/E7/E8
+   green, E3 red in altered form (compare-and-set! returns false —
+   a delivered value is a fresh copy per read, so it can never
+   identity-match the stored root; plan v2 §2 bans CAS on the conn
+   atom for this reason), E6 pending (eve/same? absent).
 
-   E6 asserts eve/same?, which does not exist in eve.alpha until
-   EVE-FIX F3 lands. Until the var resolves, the E6 deftest reports
-   itself pending and passes vacuously; the moment F3 ships, the
-   same file asserts the real behaviour with no edit here.
+   At the fixed pin (release tip 323bfe3, F3 landed): E6 asserts
+   the real eve/same? behaviour. E1 asserts the Eve seat's ruling
+   (2026-11-19): a delivered deftype value is the flat sister type,
+   not the host class — delivery is by value, and the delivered
+   value answers the type's protocols. Do not work around a red
+   row from this repo.
 
    Run on the JVM:
      clojure -M:laws -e \"(require 'eve.deftype-atom-laws-test)
@@ -41,12 +45,14 @@
 
 (deftest e1-deref-returns-deftype-value
   ;; E1: @a on an atom holding an eve/deftype value returns the value
-  ;; (flat packing, EVE-FIX F1). Today: throws
-  ;; "flat chunk: a value held by reference cannot be packed".
+  ;; (flat packing, EVE-FIX F1). Per the Eve seat's ruling the
+  ;; delivered value is the flat sister type, not the host class:
+  ;; what is asserted is that the delivered value answers the
+  ;; type's protocols, not host-class identity.
   (let [a (fresh-atom ::e1)
         m @a]
     (is (map? m))
-    (is (instance? Box (:db m)))
+    (is (satisfies? IBox (:db m)))
     (is (= 1 (-n (:db m))))))
 
 (deftest e2-add-watch-then-swap

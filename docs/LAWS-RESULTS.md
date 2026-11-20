@@ -86,3 +86,22 @@ repeated reads), 2026-11-19.
 - A disk (`:persistent`) atom — §0 likewise left it unmeasured.
 - EVE-FIX F5 (lifetime of values built outside every `swap!`) —
   U3's dependency, not probed here.
+
+## Coordinator addendum — fixed pin 323bfe3 (2026-11-19, ~20:20 ET)
+
+At Eve release/eve-0.9.3.3 tip 323bfe35901f3f892921eecd41fc5e85be4ef8ec
+(the pin in deps.edn), after the Eve seat's fixes landed:
+
+- JVM, committed test file as amended below: **8 tests, 17
+  assertions, 0 failures, 0 errors.** E6 green against the real
+  eve/same? (F3 landed in alpha). E3 passes at this pin.
+- E1 amended per the Eve seat's ruling (2026-11-19): a delivered
+  deftype value is the flat sister type, not the host class; the
+  row now asserts the delivered value answers the type's protocols
+  (satisfies? + the protocol fn) instead of instance? of the host
+  class. Before the amendment the same run read 16 pass / 1 fail,
+  the failure being exactly that instance? line.
+- Browser leg at this pin (browser-harness lane, real Chromium):
+  8 tests, 16 pass, 1 fail, 0 errors — the fail was the same E1
+  instance? line, pre-amendment; host parity with the JVM. The
+  amended file's browser run is recorded when it completes.
