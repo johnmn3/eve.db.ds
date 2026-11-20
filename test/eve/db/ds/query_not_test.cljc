@@ -2,9 +2,12 @@
   "U4 slice: port of upstream eve.db.ds.test.query-not (DataScript 1.8.1),
    adapted like entity-test: d/q -> eve.db.ds.query/q, DB construction
    via u4-support, d/entity -> eve.db.ds.impl.entity/entity,
-   d/filter -> u4-support/filter-db."
+   d/filter -> u4-support/filter-db.
+   U4 EXECUTION port: shared DB built inside swap! on an Eve atom at load
+   (sup/init-tx-conn); every deftest runs inside one ($ ...) region."
   (:require
     [clojure.test :as t :refer [is are deftest testing]]
+    [eve.alpha :as eve :refer [$]]
     [eve.db.ds.query :as dq]
     [eve.db.ds.db :as db]
     [eve.db.ds.impl.entity :as de]
@@ -13,18 +16,18 @@
      (:import
        [clojure.lang ExceptionInfo])))
 
-(def *test-db
-  (delay
-    (sup/db-with (sup/empty-db)
-      [{:db/id 1 :name "Ivan" :age 10}
-       {:db/id 2 :name "Ivan" :age 20}
-       {:db/id 3 :name "Oleg" :age 10}
-       {:db/id 4 :name "Oleg" :age 20}
-       {:db/id 5 :name "Ivan" :age 10}
-       {:db/id 6 :name "Ivan" :age 20}])))
+(def *test-conn
+  (sup/init-tx-conn nil
+    [{:db/id 1 :name "Ivan" :age 10}
+     {:db/id 2 :name "Ivan" :age 20}
+     {:db/id 3 :name "Oleg" :age 10}
+     {:db/id 4 :name "Oleg" :age 20}
+     {:db/id 5 :name "Ivan" :age 10}
+     {:db/id 6 :name "Ivan" :age 20}]))
 
 (deftest test-not
-  (are [q res] (= (set (dq/q (concat '[:find [?e ...] :where] (quote q)) @*test-db))
+  ($ (let [db (:db @*test-conn)]
+    (are [q res] (= (set (dq/q (concat '[:find [?e ...] :where] (quote q)) db))
                  res)
     [[?e :name]
      (not [?e :name "Ivan"])]
@@ -68,10 +71,11 @@
     [[?e :name ?a]
      (not [?e :age ?f]
        [?e :age 10])]
-    #{2 4 6}))
+    #{2 4 6}))))
 
 (deftest test-not-join
-  (are [q res] (= res (dq/q (concat '[:find ?e ?a :where] (quote q)) @*test-db))
+  ($ (let [db (:db @*test-conn)]
+    (are [q res] (= res (dq/q (concat '[:find ?e ?a :where] (quote q)) db))
     [[?e :name]
      [?e :age  ?a]
      (not-join [?e]
@@ -92,15 +96,17 @@
      (not-join [?a]
        [?e :name "Petr"]
        [?e :age ?a])]
-    #{[1 10] [2 20] [3 10] [4 20] [5 10] [6 20]}))
-  
+    #{[1 10] [2 20] [3 10] [4 20] [5 10] [6 20]}))))
+
 (deftest test-default-source
-  (let [db1 (sup/db-with (sup/empty-db)
-              [[:db/add 1 :name "Ivan"]
-               [:db/add 2 :name "Oleg"]])
-        db2 (sup/db-with (sup/empty-db)
-              [[:db/add 1 :age 10]
-               [:db/add 2 :age 20]])]
+  (let [a1 (sup/new-conn)
+        a2 (sup/new-conn)]
+    ($ (let [db1 (sup/built-db a1 nil
+                   [[:db/add 1 :name "Ivan"]
+                    [:db/add 2 :name "Oleg"]])
+             db2 (sup/built-db a2 nil
+                   [[:db/add 1 :age 10]
+                    [:db/add 2 :age 20]])]
     (are [q res] (= (set (dq/q (concat '[:find [?e ...]
                                         :in   $ $2
                                         :where]
@@ -135,10 +141,13 @@
       ;; can override nested NOT source
       [[?e :name]
        ($2 not ($ not [?e :name "Ivan"]))]
-      #{1})))
+      #{1})))))
+
+
 
 (deftest test-impl-edge-cases
-  (are [q res] (= (dq/q (quote q) @*test-db)
+  ($ (let [db (:db @*test-conn)]
+    (are [q res] (= (dq/q (quote q) db)
                  res)
     ;; const \ empty
     [:find ?e
@@ -182,11 +191,12 @@
      [?e2 :name "Oleg"]
      (not [?e :age 10]
        [?e2 :age 20])]
-    #{[4 3] [3 3] [4 4]}))
+    #{[4 3] [3 3] [4 4]}))))
 
 (deftest test-insufficient-bindings
-  (are [q msg] (thrown-msg? msg
-                 (dq/q (concat '[:find ?e :where] (quote q)) @*test-db))
+  ($ (let [db (:db @*test-conn)]
+    (are [q msg] (thrown-msg? msg
+                 (dq/q (concat '[:find ?e :where] (quote q)) db))
     [(not [?e :name "Ivan"])
      [?e :name]]
     "Insufficient bindings: none of #{?e} is bound in (not [?e :name \"Ivan\"])"
@@ -199,4 +209,4 @@
     
     [[?e :name]
      (not [?a :name "Ivan"])]
-    "Insufficient bindings: none of #{?a} is bound in (not [?a :name \"Ivan\"])"))
+    "Insufficient bindings: none of #{?a} is bound in (not [?a :name \"Ivan\"])"))))

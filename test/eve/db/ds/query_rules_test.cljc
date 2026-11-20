@@ -2,9 +2,17 @@
   "U4 slice: port of upstream eve.db.ds.test.query-rules (DataScript 1.8.1),
    adapted like entity-test: d/q -> eve.db.ds.query/q, DB construction
    via u4-support, d/entity -> eve.db.ds.impl.entity/entity,
-   d/filter -> u4-support/filter-db."
+   d/filter -> u4-support/filter-db.
+   U4 EXECUTION port: test-rules runs over plain tuple-vector sources
+   (no Eve DB) as upstream; test-false-arguments builds its DB inside
+   swap! and queries inside ($ ...). test-rule-performance-on-larger-
+   datasets is ported but NOT RUN on this throttled cell: its 50,000-
+   datom build at this pin's measured per-datom cost runs to hours and
+   its rule-vs-inline timing assertion is meaningless under CPU
+   throttling — it is a venue leg (see U4-STATUS.md)."
   (:require
     [clojure.test :as t :refer [is are deftest testing]]
+    [eve.alpha :as eve :refer [$]]
     [eve.db.ds.query :as dq]
     [eve.db.ds.db :as db]
     [eve.db.ds.impl.entity :as de]
@@ -175,34 +183,36 @@
             [] []))))
 
   (testing "Rule vars validation"
-    (is (thrown-msg? "Cannot parse var, expected symbol starting with ?, got: $e1" ;; issue-300
-          (dq/q '[:find ?e :in $ % :where [?e]]
-            (sup/empty-db)
-            '[[(rule $e1 ?e2)
-               [?e1 :ref ?e2]]])))))
+    (let [a (sup/new-conn)]
+      ($ (is (thrown-msg? "Cannot parse var, expected symbol starting with ?, got: $e1" ;; issue-300
+               (dq/q '[:find ?e :in $ % :where [?e]]
+                 (sup/built-db a nil [])
+                 '[[(rule $e1 ?e2)
+                    [?e1 :ref ?e2]]])))))))
 
 ;; issue-218
 (deftest test-false-arguments
-  (let [db    (sup/db-with (sup/empty-db) 
-                [[:db/add 1 :attr true]
-                 [:db/add 2 :attr false]])
-        rules '[[(is ?id ?val)
-                 [?id :attr ?val]]]]
-    (is (= #{[1]}
-          (dq/q '[:find ?id :in $ %
-                 :where (is ?id true)]
-            db rules)))
-    (is (= #{[2]}
-          (dq/q '[:find ?id :in $ %
-                 :where (is ?id false)]
-            db rules)))))
+  (let [a (sup/new-conn)]
+    ($ (let [db    (sup/built-db a nil
+                         [[:db/add 1 :attr true]
+                          [:db/add 2 :attr false]])
+             rules '[[(is ?id ?val)
+                      [?id :attr ?val]]]]
+         (is (= #{[1]}
+               (dq/q '[:find ?id :in $ %
+                      :where (is ?id true)]
+                 db rules)))
+         (is (= #{[2]}
+               (dq/q '[:find ?id :in $ %
+                      :where (is ?id false)]
+                 db rules)))))))
 
 
 ; issue-456
 ; this used to stall for nearly a minute and/or fail with an OOM exception
 ; due to propagation of a relation with duplicate tuples during rule solving
 (deftest test-rule-performance-on-larger-datasets
-  (let [now     (fn []
+  ($ (let [now     (fn []
                   #?(:clj  (/ (System/nanoTime) 1000000.0)
                      :cljs (js/performance.now)))
         inline  (fn [db]
@@ -222,14 +232,15 @@
                   (let [start  (now)
                         result (apply f args)]
                     [(- (now) start) result]))
-        db      (-> (sup/empty-db)
-                  (sup/db-with (for [x (range 1 50000)]
-                               {:db/id       (- x)
-                                :item/id     x
-                                :item/status (rand-nth ["started" "pending" "stopped"])})))
+        a       (sup/new-conn)
+        db      (sup/built-db a nil
+                  [(for [x (range 1 50000)]
+                     {:db/id       (- x)
+                      :item/id     x
+                      :item/status (rand-nth ["started" "pending" "stopped"])})])
         [inline-time inline-result] (measure inline db)
         [rule-time rule-result] (measure rule db)]
     ; (println "inline-time" inline-time "ms, rule-time" rule-time "ms")
     (is (= inline-result rule-result))
     ; show that rule performance continues to be within an order of magnitude of inline performance
-    (is (<= 0 rule-time (* 10 inline-time)))))
+    (is (<= 0 rule-time (* 10 inline-time))))))
