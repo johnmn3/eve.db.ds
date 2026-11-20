@@ -6,6 +6,7 @@
     [eve.alpha :as eve]
     #?(:clj [eve.db.ds.inline :refer [update]])
     [eve.db.ds.util :as util]
+    [eve.db.ds.db-fn :as db-fn]
     [eve.db.ds.bset :as set])
   #?(:clj (:import clojure.lang.IFn$OOL))
   #?(:cljs (:require-macros [eve.db.ds.db :refer [case-tree combine-cmp defn+ defcomp defrecord-updatable int-compare validate-attr validate-val]]))
@@ -1965,15 +1966,15 @@
           (util/cond+
             (= op :db.fn/call)
             (let [[_ f & args] entity]
-              (recur report (concat (assoc-auto-tempids db (apply f db args)) entities)))
+              (recur report (concat (assoc-auto-tempids db (db-fn/invoke db f args)) entities)))
             
             (and (keyword? op)
               (not (builtin-fn? op)))
             (if-some [ident (entid db op)]
               (let [fun  (:v (fsearch db [ident :db/fn]))
                     args (next entity)]
-                (if (fn? fun)
-                  (recur report (concat (apply fun db args) entities))
+                (if (db-fn/invocable? fun)
+                  (recur report (concat (db-fn/invoke db fun args) entities))
                   (util/raise "Entity " op " expected to have :db/fn attribute with fn? value"
                     {:error :transact/syntax, :operation :db.fn/call, :tx-data entity})))
               (util/raise "Can’t find entity for transaction fn " op

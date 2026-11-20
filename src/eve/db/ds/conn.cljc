@@ -27,6 +27,7 @@
   (:require
     [eve.alpha :as eve :refer [$]]
     [eve.db.ds.db :as db]
+    [eve.db.ds.db-fn :as db-fn]
     [eve.db.ds.util :as util]))
 
 ;; ---------------------------------------------------------------------------
@@ -235,6 +236,11 @@
 
 (defn -transact! [^Conn conn tx-data tx-meta]
   (check-open conn)
+  ;; No functions in Eve memory, enforced BEFORE the swap: a host
+  ;; fn stored as a value (e.g. as :db/fn) used to commit and then
+  ;; throw while the report was delivered (GAP-U3-5). Stored db
+  ;; fns are data now — see eve.db.ds.db-fn.
+  (db-fn/validate-tx-data! tx-data)
   (let [a     (.-eve-atom conn)
         *raw  (volatile! nil)]
     (swap! a
@@ -271,6 +277,7 @@
   ([db tx-data] (with db tx-data nil))
   ([db tx-data tx-meta]
    (ensure-handle db)
+   (db-fn/validate-tx-data! tx-data)
    (let [a     (:atom db)
          *raw  (volatile! nil)]
      (swap! a

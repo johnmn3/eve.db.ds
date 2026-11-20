@@ -5,6 +5,7 @@
     [eve.alpha :as eve]
     [eve.db.ds.conn :as conn]
     [eve.db.ds.db :as db #?@(:cljs [:refer [Datom DB FilteredDB]])]
+    [eve.db.ds.db-fn :as dbfn]
     #?(:clj [eve.db.ds.pprint])
     [eve.db.ds.pull-api :as dp]
     [eve.db.ds.query :as dq]
@@ -726,6 +727,72 @@
    (future-call #(transact! conn tx-data tx-meta))))
 
 
+; Transaction functions (stored :db/fn)
+
+#?(:clj
+   (defmacro db-fn
+     "Builds a stored transaction function as DATA: the fn body is
+      sourcified at macro time into a SCI stored db fn
+      ({:db.fn/kind :sci, :db.fn/params params, :db.fn/code \"<body>\"}),
+      safe to transact as a :db/fn value — it lives in the DB as
+      data and is evaluated by SCI, sandboxed, at transact time.
+
+      Usage:
+
+          (transact! conn [{:db/ident :inc-age
+                            :db/fn    (db-fn [db name]
+                                        (if-some [ent (entity db [:name name])]
+                                          [{:db/id (:db/id ent)
+                                            :age   (inc (:age ent))}]
+                                          (throw (ex-info \"No entity\" {}))))}])
+          (transact! conn [[:inc-age \"Petr\"]])
+
+      Inside the body, the DB read API ([[entity]], [[entid]], [[q]],
+      [[datoms]], [[seek-datoms]], [[pull]], [[pull-many]]) is
+      available unqualified, as d/<name>, or fully qualified. See
+      GUIDE §5 for the two stored-fn kinds and their trade-offs."
+     {:arglists '([params & body])}
+     [params & body]
+     (list 'eve.db.ds.db-fn/sci-fn
+       (list 'quote params)
+       (apply str (interpose "\n" (map pr-str body))))))
+
+(def ^{:arglists '([sym])
+       :doc "Builds a stored transaction function that resolves a
+             host fn by name at transact time:
+             {:db.fn/kind :resolve, :db.fn/sym sym}. The DB stays
+             pure data; the named fn is found through the registry
+             ([[register-fn!]], both hosts) or, on the JVM, by
+             requiring-resolve. The fn receives the DB value and
+             the call args and returns tx-data, at host speed.
+
+             Usage:
+
+                 (register-fn! 'my.app/inc-age inc-age)
+                 (transact! conn [{:db/ident :inc-age
+                                   :db/fn    (fn-ref 'my.app/inc-age)}])"}
+  fn-ref dbfn/resolve-fn)
+
+(def ^{:arglists '([m])
+       :doc "The explicit stored-fn map form (Datomic's function
+             shape): (function {:lang :clojure, :params [db & args],
+             :code \"<body>\"}) normalizes to a SCI stored db fn.
+             :code may be a string or a single form, which is
+             sourcified. See [[db-fn]] for the macro form."}
+  function dbfn/function)
+
+(def ^{:arglists '([sym f])} register-fn!
+  "Registers host fn f under fully-qualified symbol sym for
+   :resolve stored db fns (see [[fn-ref]]). The registry is the
+   portable path: it works on both hosts, unlike JVM-only
+   requiring-resolve. Returns sym."
+  dbfn/register-fn!)
+
+(def ^{:arglists '([sym])} unregister-fn!
+  "Removes sym from the :resolve db-fn registry. Returns sym."
+  dbfn/unregister-fn!)
+
+
 ;; squuid
 
 (def ^{:arglists '([] [msec])} squuid
@@ -750,3 +817,16 @@
    bset leaf holds up to 32 keys (plan v2 §5)."
   [db]
   {:branching-factor 32})
+
+;; The SCI stored-fn read surface: a SCI transaction function
+;; receives the in-transaction DB value (a raw DB, not a handle —
+;; resolve-db-arg passes it through) and calls these public read
+;; fns. Registered on load; see eve.db.ds.db-fn.
+(dbfn/register-sci-surface!
+  {'entity     entity
+   'entid      entid
+   'q          q
+   'datoms     datoms
+   'seek-datoms seek-datoms
+   'pull       pull
+   'pull-many  pull-many})
