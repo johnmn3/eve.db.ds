@@ -65,8 +65,25 @@
                    (doseq [e (if (map? v) (concat (keys v) (vals v)) v)] (walk e))
                    (some? v)
                    (let [cn (.getName (class v))]
-                     (when (and (str/starts-with? cn "eve.")
-                                (not (contains? allowed-host-types cn)))
+                     ;; An Eve type = a value that lives in Eve
+                     ;; memory: a delivered flat sister (__Flat), a
+                     ;; bset/db internal, or a class from Eve's own
+                     ;; runtime packages. Host classes of this
+                     ;; library that are not Eve values (e.g. the
+                     ;; realized future d/transact returns) pass.
+                     (when (and (not (contains? allowed-host-types cn))
+                                (or (str/includes? cn "__Flat")
+                                    (str/starts-with? cn "eve.db.ds.bset.")
+                                    (str/starts-with? cn "eve.db.ds.db.")
+                                    (str/starts-with? cn "eve.deftype")
+                                    (str/starts-with? cn "eve.flat")
+                                    (str/starts-with? cn "eve.array")
+                                    (str/starts-with? cn "eve.atom")
+                                    (str/starts-with? cn "eve.slab")
+                                    (str/starts-with? cn "eve.thread")
+                                    (str/starts-with? cn "eve.mem")
+                                    (str/starts-with? cn "eve.record")
+                                    (str/starts-with? cn "eve.codec")))
                        (vswap! acc conj cn)))))]
          (walk x)
          @acc))))
@@ -94,7 +111,7 @@
        (check "db?" (d/db? db0))
        (check "db-with" db0)
        (check "with" (d/with db0 [[:db/add 3 :name "Petr"]]))
-       (check "with-schema" (d/with-schema db0 {:age {}}))
+       (check "with-schema" (d/with-schema db0 (assoc schema :age {})))
        (check "datom" (d/datom 1 :name "Ivan"))
        (check "datom?" (d/datom? (d/datom 1 :name "Ivan")))
        (check "datoms" (d/datoms db0 :eavt))
@@ -120,13 +137,13 @@
        (check "tempid" (d/tempid :db.part/user))
        (check "resolve-tempid"
          (let [r (d/transact! (d/create-conn schema) [{:db/id -1 :name "Temp"}])]
-           (d/resolve-tempid r -1)))
+           (d/resolve-tempid (:db-after r) (:tempids r) -1)))
        (check "squuid" (d/squuid))
        (check "squuid-time-millis" (d/squuid-time-millis (d/squuid)))
        (check "listen!" (d/listen! conn :surface (fn [_ _])))
        (check "unlisten!" (d/unlisten! conn :surface))
        (check "reset-conn!" (d/reset-conn! (d/create-conn schema) db0))
        (check "reset-schema!" (d/reset-schema! (d/create-conn schema) schema))
-       (check "keep!" (d/keep! conn))
-       (check "release!" (d/release! conn (d/keep! conn)))
+       (check "keep!" (d/keep! conn (d/db conn)))
+       (check "release!" (d/release! conn (d/db conn)))
        (check "close-conn!" (d/close-conn! (d/create-conn schema))))))
