@@ -6,3 +6,5 @@
 perf-results/
 .jvm-aot/
 .cljs-build/
+target/
+.shadow-cljs/
