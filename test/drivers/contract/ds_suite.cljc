@@ -205,7 +205,10 @@
    the async require cannot be covered by a synchronous binding, so
    only the run is wrapped there."
   [f]
-  (ds-db/call-in-process-domain f))
+  ;; 2026-11-20 ET: eve.db.ds no longer binds Eve's domain itself (the DS-in-Eve rewrite removed
+  ;; call-in-process-domain; ds uses Eve's public API only), and Eve's constructors outside a swap!
+  ;; build the flat form (Eve, 2026-11-14) -- the construction law needs no binding here.
+  (f))
 
 #?(:cljs
    (defn- run-one

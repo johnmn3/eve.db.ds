@@ -242,37 +242,37 @@
 ;; Node slot layout: [child_0 .. child_{n-1} lim_0 .. lim_{n-1}]
 
 (defn- node-children-count [node]
-  (quot (eve/alength (.-slots node)) 2))
+  (quot (eve/alength (:slots node)) 2))
 
 (defn- node-child [node i]
-  (eve/aget (.-slots node) i))
+  (eve/aget (:slots node) i))
 
 (defn- node-children [node]
-  (sub-arr (.-slots node) 0 (node-children-count node)))
+  (sub-arr (:slots node) 0 (node-children-count node)))
 
 (defn- node-lims [node]
   (let [n (node-children-count node)]
-    (sub-arr (.-slots node) n (* 2 n))))
+    (sub-arr (:slots node) n (* 2 n))))
 
 (defn- lim-idx-l
   "Child index for key, searching the lim segment of node's slots in
    place (all lims but the last, as upstream) — no scratch copy."
   [node cmp key]
   (let [n (node-children-count node)]
-    (- (binary-search-l-off cmp (.-slots node) n (- (* 2 n) 2) key) n)))
+    (- (binary-search-l-off cmp (:slots node) n (- (* 2 n) 2) key) n)))
 
 (defn- lim-idx-r
   "binary-search-r over the lim segment in place."
   [node cmp key]
   (let [n (node-children-count node)]
-    (- (binary-search-r-off cmp (.-slots node) n (- (* 2 n) 2) key) n)))
+    (- (binary-search-r-off cmp (:slots node) n (- (* 2 n) 2) key) n)))
 
 (defn- lim-idx-range
   "lookup-range over the lim segment in place: first child whose lim
    is >= key, or -1."
   [node cmp key]
   (let [n   (node-children-count node)
-        idx (binary-search-l-off cmp (.-slots node) n (dec (* 2 n)) key)]
+        idx (binary-search-l-off cmp (:slots node) n (dec (* 2 n)) key)]
     (if (== idx (* 2 n))
       -1
       (- idx n))))
@@ -288,7 +288,7 @@
         (recur (inc i))))
     (loop [i 0]
       (when (< i n)
-        (eve/aset slots (+ n i) (alast (.-slots (eve/aget children i))))
+        (eve/aset slots (+ n i) (alast (:slots (eve/aget children i))))
         (recur (inc i))))
     (->Node slots)))
 
@@ -308,21 +308,21 @@
 
 (defn- node-lim-key [node]
   ;; Leaf: last key. Node: last lim, which is the last child's lim key.
-  (alast (.-slots node)))
+  (alast (:slots node)))
 
 (defn- node-len [node]
   (if (leaf? node)
-    (eve/alength (.-slots node))
+    (eve/alength (:slots node))
     (node-children-count node)))
 
 (defn- node-merge [node next]
   (if (leaf? node)
-    (->Leaf (arr-concat (.-slots node) (.-slots next)))
+    (->Leaf (arr-concat (:slots node) (:slots next)))
     (make-node (arr-concat (node-children node) (node-children next)))))
 
 (defn- node-merge-n-split [node next]
   (if (leaf? node)
-    (let [ks (merge-n-split (.-slots node) (.-slots next))]
+    (let [ks (merge-n-split (:slots node) (:slots next))]
       (return-array (->Leaf (eve/aget ks 0))
                     (->Leaf (eve/aget ks 1))))
     (let [cs (merge-n-split (node-children node) (node-children next))]
@@ -331,9 +331,9 @@
 
 (defn- node-lookup [node cmp key]
   (if (leaf? node)
-    (let [idx (lookup-exact cmp (.-slots node) key)]
+    (let [idx (lookup-exact cmp (:slots node) key)]
       (when-not (== -1 idx)
-        (eve/aget (.-slots node) idx)))
+        (eve/aget (:slots node) idx)))
     (let [idx (lim-idx-range node cmp key)]
       (when-not (== -1 idx)
         (node-lookup (node-child node idx) cmp key)))))
@@ -414,7 +414,7 @@
 
 (defn- node-conj [node cmp key]
   (if (leaf? node)
-    (leaf-conj (.-slots node) cmp key)
+    (leaf-conj (:slots node) cmp key)
     (node-conj* node cmp key)))
 
 (defn- leaf-disj [slots cmp key root? left right]
@@ -443,7 +443,7 @@
 
 (defn- node-disj [node cmp key root? left right]
   (if (leaf? node)
-    (leaf-disj (.-slots node) cmp key root? left right)
+    (leaf-disj (:slots node) cmp key root? left right)
     (node-disj* node cmp key root? left right)))
 
 ;; ---------------------------------------------------------------------------
@@ -465,7 +465,7 @@
     (if (pos? level)
       (recur (dec level)
              (node-child node (path-get path level)))
-      (.-slots node))))
+      (:slots node))))
 
 (defn- -next-path [node path level]
   (let [idx (path-get path level)]
@@ -482,7 +482,7 @@
           ;; keep current idx
           (path-set sub-path level idx)))
       ;; leaf
-      (if (< (inc idx) (eve/alength (.-slots node)))
+      (if (< (inc idx) (eve/alength (:slots node)))
         ;; advance leaf idx
         (path-set empty-path 0 (inc idx))
         ;; leaf overflow
@@ -499,7 +499,7 @@
         (node-child node (dec (node-children-count node)))
         (path-set path level (dec (node-children-count node)))
         (dec level))
-      (path-set path 0 (dec (eve/alength (.-slots node)))))))
+      (path-set path 0 (dec (eve/alength (:slots node)))))))
 
 (defn- next-path
   "Path representing the next item after `path` in natural traversal
@@ -595,7 +595,7 @@
            level shift]
       (let [keys-l (node-len node)]
         (if (== 0 level)
-          (let [keys (.-slots node)
+          (let [keys (:slots node)
                 idx  (binary-search-l cmp keys (dec keys-l) key)]
             (if (== keys-l idx)
               nil
@@ -618,7 +618,7 @@
            level shift]
       (let [keys-l (node-len node)]
         (if (== 0 level)
-          (let [keys (.-slots node)
+          (let [keys (:slots node)
                 idx  (binary-search-r cmp keys (dec keys-l) key)]
             (path-set path 0 idx))
           (let [idx (lim-idx-r node cmp key)
@@ -935,17 +935,17 @@
 (defn- make-riter [root shift l r]
   (->ReverseIter root shift l r (keys-for root shift r) (path-get r 0)))
 
-(defn- iter-copy [it l r]
+(defn- iter-copy [^Iter it l r]
   (->Iter (.-root it) (.-shift it) l r
           (keys-for (.-root it) (.-shift it) l)
           (path-get l 0)))
 
-(defn- riter-copy [it l r]
+(defn- riter-copy [^ReverseIter it l r]
   (->ReverseIter (.-root it) (.-shift it) l r
                  (keys-for (.-root it) (.-shift it) r)
                  (path-get r 0)))
 
-(defn- -iter-next [it]
+(defn- -iter-next [^Iter it]
   (when (.-keys it)
     (if (< (inc (.-idx it)) (eve/alength (.-keys it)))
       ;; can use cached array to move forward
@@ -957,7 +957,7 @@
         (when (path-lt left' (.-right it))
           (iter-copy it left' (.-right it)))))))
 
-(defn- -riter-next [it]
+(defn- -riter-next [^ReverseIter it]
   (when (.-keys it)
     (if (> (.-idx it) 0)
       ;; can use cached array to advance
@@ -969,21 +969,21 @@
         (when (path-lt (.-left it) right')
           (riter-copy it (.-left it) right'))))))
 
-(defn- -iter-chunked-next [it]
+(defn- -iter-chunked-next [^Iter it]
   (let [last  (path-set (.-left it) 0 (dec (eve/alength (.-keys it))))
         left' (next-path (.-root it) (.-shift it) last)]
     (when (path-lt left' (.-right it))
       (iter-copy it left' (.-right it)))))
 
 (defn- iter-reduce
-  ([it f]
+  ([^Iter it f]
    (if (nil? (.-keys it))
      (f)
      (let [v (eve/aget (.-keys it) (.-idx it))]
        (if-some [nxt (-iter-next it)]
          (clojure.core/reduce f v nxt)
          v))))
-  ([it f start]
+  ([^Iter it f start]
    (loop [left (.-left it)
           keys (.-keys it)
           idx  (.-idx it)
@@ -1010,14 +1010,14 @@
 (defn- riter-reduce
   ;; JVM parity only (upstream's JVM reverse seq is reducible; its
   ;; cljs ReverseIter is not): a downward mirror of iter-reduce.
-  ([it f]
+  ([^ReverseIter it f]
    (if (nil? (.-keys it))
      (f)
      (let [v (eve/aget (.-keys it) (.-idx it))]
        (if-some [nxt (-riter-next it)]
          (clojure.core/reduce f v nxt)
          v))))
-  ([it f start]
+  ([^ReverseIter it f start]
    (loop [right (.-right it)
           keys  (.-keys it)
           idx   (.-idx it)
@@ -1041,12 +1041,12 @@
                (recur right' (keys-for (.-root it) (.-shift it) right') (path-get right' 0) new-acc)
                new-acc))))))))
 
-(defn- -iter-rseq [it]
+(defn- -iter-rseq [^Iter it]
   (make-riter (.-root it) (.-shift it)
               (prev-path (.-root it) (.-shift it) (.-left it))
               (prev-path (.-root it) (.-shift it) (.-right it))))
 
-(defn- -riter-rseq [it]
+(defn- -riter-rseq [^ReverseIter it]
   (make-iter (.-root it) (.-shift it)
              (next-path (.-root it) (.-shift it) (.-left it))
              (next-path (.-root it) (.-shift it) (.-right it))))
@@ -1057,7 +1057,7 @@
       (when (path-lt path till-path)
         (make-iter root shift path till-path)))))
 
-(defn- iter-seek [it key cmp]
+(defn- iter-seek [^Iter it key cmp]
   (cond
     (nil? key)
     (throw (ex-info "seek can't be called with a nil key!" {:key key}))
@@ -1071,7 +1071,7 @@
               (keys-for (.-root it) (.-shift it) left')
               (path-get left' 0)))))
 
-(defn- riter-seek [it key cmp]
+(defn- riter-seek [^ReverseIter it key cmp]
   (cond
     (nil? key)
     (throw (ex-info "seek can't be called with a nil key!" {:key key}))
@@ -1142,7 +1142,7 @@
    keep it beside the root (upstream kept it in the BTSet wrapper)."
   [root]
   (if (leaf? root)
-    (eve/alength (.-slots root))
+    (eve/alength (:slots root))
     (loop [i 0
            s 0]
       (if (< i (node-children-count root))
@@ -1179,5 +1179,5 @@
   "Estimated number of elements remaining in an iterator
    (upstream's distance heuristic: exact at the edges, avg-len
    based in between)."
-  [it]
+  [^Iter it]
   (distance (.-root it) (.-shift it) (.-left it) (.-right it)))

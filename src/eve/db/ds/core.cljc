@@ -638,7 +638,7 @@
      [d, ^java.io.Writer w]
      (.write w (str "#eve.db.ds/Datom "))
      (binding [*out* w]
-       (pr [(.-e d) (.-a d) (.-v d) (db/datom-tx d) (db/datom-added d)]))))
+       (pr [(:e d) (:a d) (:v d) (db/datom-tx d) (db/datom-added d)]))))
 
 
 ;; Datomic compatibility layer
