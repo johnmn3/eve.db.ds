@@ -3,14 +3,15 @@
 DataScript 1.8.1 (by Nikita Prokopov), rebuilt so the database lives in a
 real Eve atom.
 
-**Status: ground-up rewrite in progress.** This branch
-(`lane-m/ds-in-eve-rewrite`) replaces the previously published port. The
-published version claimed the DB lived in an Eve atom while the connection
-in fact wrapped a host atom. That claim was false, and this rewrite exists
-to make it true. Until the acceptance unit (U6) is green on the JVM and in
-the browser, treat everything here as in progress: sections of the guide
-whose implementing unit has not landed are marked *(in progress)* rather
-than described as working.
+**Status: the rewrite is landed and acceptance-measured.** The
+previously published port claimed the DB lived in an Eve atom while the
+connection in fact wrapped a host atom; that claim was false, and this
+rewrite makes it true. The acceptance unit (U6, 2026-11-20) ran the
+full battery on the JVM and in a real browser at the pinned Eve
+(below): every suite green on both hosts except the rows named under
+"What is landed, what is not" — each traces to a filed gap with an
+owner. Sections still marked *(in progress)* are exactly the open
+items listed there, nothing else.
 
 ## The model, exactly
 
@@ -44,7 +45,12 @@ than described as working.
 - **Persistence is the atom's, not a storage layer.** Create a conn with
   `:persistent dir` and its Eve atom is backed by that directory. The old
   port's `storage` namespace is gone; there is nothing to configure
-  separately. *(in progress — U5)*
+  separately. Measured at acceptance (U5/U6): reopen-by-adopt and
+  cross-process round-trips are digest-identical both directions; an
+  in-memory conn persists nothing. One caveat, filed as GAP-U5-1:
+  `close-conn!` on a `:persistent` conn throws inside Eve's close path
+  at the pinned Eve — the data is not corrupted, and process exit or
+  adopt-reopen are the measured working closes.
 
 ## Quick start
 
@@ -64,8 +70,6 @@ than described as working.
 (d/q '[:find ?n :where [?e :name ?n]] before)   ;; …and it still reads
 (d/release! conn before)          ;; done with it
 ```
-
-*(in progress — U3: conn and handles; U2: the DB types underneath.)*
 
 ## Conn-less DB values
 
@@ -96,14 +100,33 @@ handle semantics spelled out per function, is [docs/GUIDE.md](docs/GUIDE.md).
 
 ## What is landed, what is not
 
-- **Landed:** the upstream source baseline, the frozen trap list and the
-  API list (U0); the persistent sorted set that backs the indexes,
-  `eve.db.ds.bset`, green on the JVM (U1).
-- **In progress:** the DB/Datom types as Eve types (U2); the conn and
+- **Landed:** everything the plan names — the upstream source baseline,
+  trap list and API list (U0); the persistent sorted set backing the
+  indexes (U1); the DB/Datom types as Eve types (U2); the conn and
   handle layer (U3); query, pull, entity and datafy (U4); serialization
-  and persistence (U5); the acceptance run on both hosts (U6).
-- Eve itself is a dependency, pinned in `deps.edn` to the public Eve
-  release line (`SeniorCareMarket/eve`, `release/eve-0.9.3.3`).
+  and persistence (U5); docs (U7); and the U6 acceptance battery: JVM
+  and browser suites at parity, zero assertion failures, the public-API
+  surface test (44 vars + `keep!`/`release!`/`close-conn!`) proving
+  host-data-only returns, and the cliff instruments re-measured at the
+  pin (the swap leak is flat; the build probe's slab cost is a constant
+  ~134 B/datom with no deceleration separable from box load).
+- **Open, each with an owner:** `filter` is not constructible at the
+  pinned Eve — FilteredDB's `^:host` pred field reads null on every
+  construction path (GAP-6, Eve seat; `d/filter` throws a named error
+  rather than building a broken DB, and the query/pull rows that need
+  a filtered DB carry the same named error). `close-conn!` on a
+  `:persistent` conn throws in Eve's close path (GAP-U5-1, Eve seat).
+  Stored `:db/fn` values are not Eve values and cannot be stored
+  (GAP-U3-5 — a ruling is owed on whether the rewrite drops them).
+  The conn-less-values release policy awaits the plan's §8 ruling.
+  Writing against a DB value captured inside a read region fails in
+  the set layer (filed with U6, Eve seat, F5 family). In the browser,
+  the serialize suite's synthetic-digest comparison is intermittent
+  (a delivered nested value can read empty mid-comparison; JVM is
+  deterministic green) — filed with U6's probe evidence.
+- Eve itself is a dependency, pinned in `deps.edn` to
+  `SeniorCareMarket/eve` main at `e21be6b` (0.9.3.4 plus the won-swap
+  freeing and JVM byte-array typing commits).
 
 ## License
 
