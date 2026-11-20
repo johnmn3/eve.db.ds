@@ -89,7 +89,7 @@
     #?(:clj
        (is (roundtrips-to? db (-> db d/serializable cheshire/generate-string cheshire/parse-string d/from-serializable))))
     #?(:cljs
-       (is (roundtrips-to? db (-> db d/serializable js/JSON.stringify js/JSON.parse d/from-serializable))))))
+       (is (roundtrips-to? db (-> db d/serializable js/JSON.stringify js/JSON.parse (js->clj :keywordize-keys true) d/from-serializable))))))
 
 (deftest test-nan
   (let [db (d/db-with
@@ -110,7 +110,7 @@
     #?(:clj
        (is (valid? (-> db d/serializable cheshire/generate-string cheshire/parse-string d/from-serializable))))
     #?(:cljs
-       (is (valid? (-> db d/serializable js/JSON.stringify js/JSON.parse d/from-serializable))))))
+       (is (valid? (-> db d/serializable js/JSON.stringify js/JSON.parse (js->clj :keywordize-keys true) d/from-serializable))))))
 
 (deftest test-synthetic-digest-roundtrip
   (let [conn (d/create-conn u5s/gen-schema)]
