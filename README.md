@@ -73,10 +73,18 @@ than described as working.
 explicit conn, as upstream. Underneath, each `empty-db`/`init-db` makes a
 private in-memory conn, and `db-with` adds the new DB to that conn's kept
 set and returns a handle to it — so the handle stays readable exactly as
-long as the kept set holds it. Whether conn-less values are released
-explicitly by the caller or reclaimed by the host is an open item in the
-plan (§8); the mechanism above is the contract, the release policy is
-*(in progress — awaiting the plan's §8 ruling)*.
+long as the kept set holds it.
+
+The release policy (plan §8, ruled 2026-11-20): explicit release is the
+rule, and chains auto-close their superseded intermediates — the
+`with-open` strategy. Once a chain has advanced two steps past a chain
+DB, that DB is released automatically, unless it was pinned with
+`keep!` or it has more than one chain successor (a fork is never
+auto-released). `keep!` any intermediate you still need — a chain DB
+can be pinned from its handle alone, `(d/keep! db)` — and `release!`
+removes one immediately. Reading a released handle throws
+`:eve.db.ds/db-not-kept`. Explicit conns are unchanged: their DBs stay
+kept until `release!`.
 
 ## API
 
