@@ -511,30 +511,25 @@
               (invokePrim [this# ~a1 ~a2]
                 (.compare this# ~a1 ~a2))))))))
 
-;; PERF PROBE (scratch): a hinted field read for the slab Datom, reflection otherwise
-#?(:clj (defmacro ^:private dfield [d f]
-           (let [s (gensym "d") acc (symbol (str ".-" (name f)))]
-             `(let [~s ~d] (if (instance? Datom ~s) (~acc ~(with-meta s {:tag (quote Datom)})) (~acc ~s))))))
-
 (defcomp cmp-datoms-eavt ^long [d1, d2]
   (combine-cmp
-    (int-compare (dfield d1 e) (dfield d2 e))
-    (cmp (dfield d1 a) (dfield d2 a))
-    (value-cmp (dfield d1 v) (dfield d2 v))
+    (int-compare (.-e d1) (.-e d2))
+    (cmp (.-a d1) (.-a d2))
+    (value-cmp (.-v d1) (.-v d2))
     (int-compare (datom-tx d1) (datom-tx d2))))
 
 (defcomp cmp-datoms-aevt ^long [d1, d2]
   (combine-cmp
-    (cmp (dfield d1 a) (dfield d2 a))
-    (int-compare (dfield d1 e) (dfield d2 e))
-    (value-cmp (dfield d1 v) (dfield d2 v))
+    (cmp (.-a d1) (.-a d2))
+    (int-compare (.-e d1) (.-e d2))
+    (value-cmp (.-v d1) (.-v d2))
     (int-compare (datom-tx d1) (datom-tx d2))))
 
 (defcomp cmp-datoms-avet ^long [d1, d2]
   (combine-cmp
-    (cmp (dfield d1 a) (dfield d2 a))
-    (value-cmp (dfield d1 v) (dfield d2 v))
-    (int-compare (dfield d1 e) (dfield d2 e))
+    (cmp (.-a d1) (.-a d2))
+    (value-cmp (.-v d1) (.-v d2))
+    (int-compare (.-e d1) (.-e d2))
     (int-compare (datom-tx d1) (datom-tx d2))))
 
 ;; fast versions without nil checks
@@ -555,29 +550,29 @@
 
 (defcomp cmp-datoms-eav-quick ^long [d1, d2]
   (combine-cmp
-    (int-compare (dfield d1 e) (dfield d2 e))
-    (cmp-attr-quick (dfield d1 a) (dfield d2 a))
-    (value-compare (dfield d1 v) (dfield d2 v))))
+    (int-compare (.-e d1) (.-e d2))
+    (cmp-attr-quick (.-a d1) (.-a d2))
+    (value-compare (.-v d1) (.-v d2))))
 
 (defcomp cmp-datoms-eavt-quick ^long [d1, d2]
   (combine-cmp
-    (int-compare (dfield d1 e) (dfield d2 e))
-    (cmp-attr-quick (dfield d1 a) (dfield d2 a))
-    (value-compare (dfield d1 v) (dfield d2 v))
+    (int-compare (.-e d1) (.-e d2))
+    (cmp-attr-quick (.-a d1) (.-a d2))
+    (value-compare (.-v d1) (.-v d2))
     (int-compare (datom-tx d1) (datom-tx d2))))
 
 (defcomp cmp-datoms-aevt-quick ^long [d1, d2]
   (combine-cmp
-    (cmp-attr-quick (dfield d1 a) (dfield d2 a))
-    (int-compare (dfield d1 e) (dfield d2 e))
-    (value-compare (dfield d1 v) (dfield d2 v))
+    (cmp-attr-quick (.-a d1) (.-a d2))
+    (int-compare (.-e d1) (.-e d2))
+    (value-compare (.-v d1) (.-v d2))
     (int-compare (datom-tx d1) (datom-tx d2))))
 
 (defcomp cmp-datoms-avet-quick ^long [d1, d2]
   (combine-cmp
-    (cmp-attr-quick (dfield d1 a) (dfield d2 a))
-    (value-compare (dfield d1 v) (dfield d2 v))
-    (int-compare (dfield d1 e) (dfield d2 e))
+    (cmp-attr-quick (.-a d1) (.-a d2))
+    (value-compare (.-v d1) (.-v d2))
+    (int-compare (.-e d1) (.-e d2))
     (int-compare (datom-tx d1) (datom-tx d2))))
 
 (defn- diff-sorted [a b cmp]
