@@ -1,0 +1,14 @@
+;; The DS browser test page (scripts/test-browser.clj drives the build and the browser).
+;; One build serves every suite: the runner (test/browser/eve/db/ds/browser_runner_main.cljs)
+;; picks the suite from window.DS_SUITE, which the driver's generated index.html sets.
+;; :simple with no output wrapper, as in Eve's browser builds, so the kernel a worker
+;; importScripts keeps its names global (eve.thread-host resolves a thread's entry by name).
+;; The classpath is composed by scripts/test-browser.clj (Eve's :browser roots at the
+;; deps.edn pin + this repo's src, test and test/browser); no :deps key here on purpose.
+{:builds
+ {:ds-browser
+  {:target :browser
+   :output-dir "target/ds-browser/public/js"
+   :asset-path "/js"
+   :modules {:main {:init-fn eve.db.ds.browser-runner-main/init}}
+   :compiler-options {:optimizations :simple :output-wrapper false :load-tests true}}}}
