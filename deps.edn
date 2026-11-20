@@ -8,7 +8,7 @@
 ;;
 ;; eve/eve below is the PUBLIC Eve release line the DS-in-Eve rewrite
 ;; targets (DS-IN-EVE-PLAN v2 §3): SeniorCareMarket/eve branch
-;; release/eve-0.9.3.3 at f4a1c3ae97ee76f2651ce600a857675aa5c227ef.
+;; release/eve-0.9.3.3, re-pinned 2026-11-19 to the current release tip 323bfe35901f3f892921eecd41fc5e85be4ef8ec (F3/eve-same? measured in; E1 delivered-type question open with the Eve seat).
 ;; This is the pre-fix pin of EVE-FIX-PLAN §0: the deftype/atom laws
 ;; probe (test/eve/deftype_atom_laws_test.cljc) is red there on
 ;; E1–E6 by measurement; the Eve seat lands F1–F3 on this line and
@@ -26,7 +26,7 @@
 {:paths ["src"]
  :deps {org.clojure/clojure {:mvn/version "1.12.0"}
         eve/eve {:git/url "https://github.com/SeniorCareMarket/eve"
-                 :git/sha "f4a1c3ae97ee76f2651ce600a857675aa5c227ef"}
+                 :git/sha "323bfe35901f3f892921eecd41fc5e85be4ef8ec"}
         me.tonsky/persistent-sorted-set {:local/root "lib"}
         extend-clj/extend-clj {:local/root "lib-ds-deps"}}
  :aliases
