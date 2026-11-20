@@ -62,19 +62,19 @@
       (util/cond+
         :let [^Datom datom (first-seq datoms)]
 
-        (or (nil? datom) (not= (.-a datom) (.-name attr)))
+        (or (nil? datom) (not= (:a datom) (.-name attr)))
         [(ResultFrame. (not-empty (persistent! acc)) (or datoms ()))]
 
         ; got limit, skip rest of the datoms
         (and (.-limit attr) (>= (count acc) (.-limit attr)))
         (loop [datoms datoms]
           (let [^Datom datom (first-seq datoms)]
-            (if (or (nil? datom) (not= (.-a datom) (.-name attr)))
+            (if (or (nil? datom) (not= (:a datom) (.-name attr)))
               [(ResultFrame. (persistent! acc) (or datoms ()))]
               (recur (next-seq datoms)))))
 
         :else
-        (recur (conj! acc (.-v datom)) (next-seq datoms)))))
+        (recur (conj! acc (:v datom)) (next-seq datoms)))))
   
   (-str [this]
     (str "MultivalAttrFrame<attr=" (attr-str attr) ">")))
@@ -94,18 +94,18 @@
     (util/cond+
       :let [^Datom datom (first-seq datoms)]
 
-      (or (nil? datom) (not= (.-a datom) (.-name attr)))
+      (or (nil? datom) (not= (:a datom) (.-name attr)))
       [(ResultFrame. (not-empty (persistent! acc)) (or datoms ()))]
 
       ; got limit, skip rest of the datoms
       (and (.-limit attr) (>= (count acc) (.-limit attr)))
       (loop [datoms datoms]
         (let [^Datom datom (first-seq datoms)]
-          (if (or (nil? datom) (not= (.-a datom) (.-name attr)))
+          (if (or (nil? datom) (not= (:a datom) (.-name attr)))
             [(ResultFrame. (persistent! acc) (or datoms ()))]
             (recur (next-seq datoms)))))
 
-      :let [id (if (.-reverse? attr) (.-e datom) (.-v datom))]
+      :let [id (if (.-reverse? attr) (:e datom) (:v datom))]
 
       :else
       [this (ref-frame context seen recursion-limits pattern attr id)]))
@@ -141,7 +141,7 @@
 
         :let [^Datom datom (first-seq datoms)
               cmp          (when (and datom attr)
-                             (compare (.-name attr) (.-a datom)))
+                             (compare (.-name attr) (:a datom)))
               attr-ahead?  (or (nil? attr) (and cmp (pos? cmp)))
               datom-ahead? (or (nil? datom) (and cmp (neg? cmp)))]
 
@@ -149,8 +149,8 @@
         (and (.-wildcard? pattern) (some? datom) attr-ahead?)
         (let [datom-attr (lru/-get
                            (.-pull-attrs (db/unfiltered-db (.-db ^Context context)))
-                           (.-a datom)
-                           #(dpp/parse-attr-name (.-db ^Context context) (.-a datom)))]
+                           (:a datom)
+                           #(dpp/parse-attr-name (.-db ^Context context) (:a datom)))]
           (recur acc datom-attr (when attr (conj-seq attrs attr)) datoms))
 
         ;; advance datom
@@ -184,11 +184,11 @@
 
         (.-ref? attr)
         [(AttrsFrame. seen recursion-limits acc pattern attr attrs datoms id)
-         (ref-frame context seen recursion-limits pattern attr (.-v datom))]
+         (ref-frame context seen recursion-limits pattern attr (:v datom))]
 
         :else
         (recur
-          (assoc! acc (.-as attr) ((.-xform attr) (.-v datom)))
+          (assoc! acc (.-as attr) ((.-xform attr) (:v datom)))
           (first-seq attrs)
           (next-seq attrs)
           (next-seq datoms)))))
@@ -232,7 +232,7 @@
 
         (.-component? attr)
         [(ReverseAttrsFrame. seen recursion-limits acc pattern attr attrs id)
-         (ref-frame context seen recursion-limits pattern attr (.-e ^Datom (first-seq datoms)))]
+         (ref-frame context seen recursion-limits pattern attr (:e ^Datom (first-seq datoms)))]
 
         :else
         [(ReverseAttrsFrame. seen recursion-limits acc pattern attr attrs id)
@@ -293,8 +293,8 @@
                  (take-while
                    (fn [^Datom d]
                      (and
-                       (= (.-e d) id)
-                       (<= (compare (.-a d) to) 0)))))]
+                       (= (:e d) id)
+                       (<= (compare (:a d) to) 0)))))]
     (when (.-wildcard? pattern)
       (visit context :db.pull/wildcard id nil nil))
     (AttrsFrame.

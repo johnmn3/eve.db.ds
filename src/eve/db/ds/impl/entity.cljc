@@ -168,7 +168,7 @@
 (defn- equiv-entity [^Entity this that]
   (and
     (instance? Entity that)
-    (identical? (.-db this) (.-db ^Entity that)) ; `=` and `hash` on db is expensive
+    (eve.alpha/same? (.-db this) (.-db ^Entity that)) ; block identity of the db: `=` and `hash` on db is expensive
     (= (.-eid this) (.-eid ^Entity that))))
 
 (defn- hash-entity [^Entity e]
