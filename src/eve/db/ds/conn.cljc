@@ -290,6 +290,14 @@
   (:db-after (with db tx-data)))
 
 (defn reset-conn!
+  "Replace the conn's DB with the one the handle names, in one
+   swap!. A handle from another atom is copied in by value (schema
+   + delivered datoms, rebuilt by init-db inside this atom). The
+   installed DB's max-tx is bumped above every tx reachable in this
+   atom when it would otherwise collide — (atom, tx) must name
+   exactly one DB version (GAP-2). The report's :db-before names
+   the outgoing DB: it resolves only if that DB stays reachable —
+   keep! it first if it must outlive the reset (§7.1)."
   ([conn db-handle]
    (reset-conn! conn db-handle nil))
   ([conn db-handle tx-meta]
@@ -307,9 +315,24 @@
        (swap! a
          (fn [m]
            (let [db-before (:db m)
-                 db-after  (if same-atom
+                 db-after0 (if same-atom
                              (resolve-in-map m (:tx db-handle))
                              (db/init-db src-datoms src-schema {}))
+                 ;; GAP-2's premise is that (atom, tx) names exactly
+                 ;; one DB version. An init-db'd DB carries its
+                 ;; datoms' max tx, which can collide with a version
+                 ;; already reachable in this atom (measured: two
+                 ;; init-dbs both at tx0 — the reset report's
+                 ;; db-before then resolved to the AFTER db). Bump
+                 ;; the installed DB's max-tx above every reachable
+                 ;; tx so the invariant holds.
+                 ceil      (reduce max (:max-tx db-before) (keys (:kept m)))
+                 db-after  (if (<= (:max-tx db-after0) ceil)
+                             (db/->DB (.-schema db-after0) (.-eavt db-after0)
+                               (.-aevt db-after0) (.-avet db-after0)
+                               (.-max-eid db-after0) (inc ceil)
+                               (.-rschema db-after0))
+                             db-after0)
                  tx-data   (into []
                              (concat
                                (map (fn [d] (db/datom (.-e d) (.-a d) (.-v d) (db/datom-tx d) false))
