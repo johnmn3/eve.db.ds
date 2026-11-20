@@ -14,15 +14,6 @@
 
 (declare pull-impl attrs-frame ref-frame ->ReverseAttrsFrame)
 
-;; App-level parse caches (DS-IN-EVE rewrite): upstream kept these
-;; LRUs in DB fields (pull-patterns / pull-attrs, (lru/cache 100)
-;; each); plan v2 §2 fixes DB's fields and removes the caches from
-;; the DB, so they live here, keyed by [schema key] — parse results
-;; depend only on the schema (parse-pattern / parse-attr-name read
-;; db solely through the schema predicates ref?/component?/multival?).
-(defonce ^:private pattern-cache (lru/cache 100))
-(defonce ^:private attr-cache    (lru/cache 100))
-
 (defn- first-seq [#?(:clj ^ISeq xs :cljs ^seq xs)]
   (if (nil? xs)
     nil
@@ -156,10 +147,7 @@
 
         ;; wildcard
         (and (.-wildcard? pattern) (some? datom) attr-ahead?)
-        (let [datom-attr (lru/-get
-                           attr-cache
-                           [(:schema (db/unfiltered-db (.-db ^Context context))) (:a datom)]
-                           #(dpp/parse-attr-name (.-db ^Context context) (:a datom)))]
+        (let [datom-attr (dpp/parse-attr-name (.-db ^Context context) (:a datom))]
           (recur acc datom-attr (when attr (conj-seq attrs attr)) datoms))
 
         ;; advance datom
@@ -340,7 +328,7 @@
 (defn parse-opts
   ([db pattern] (parse-opts db pattern nil))
   ([db pattern {:keys [visitor]}]
-   {:pattern (lru/-get pattern-cache [(:schema (db/unfiltered-db db)) pattern] #(dpp/parse-pattern db pattern))
+   {:pattern (dpp/parse-pattern db pattern)
     :context (Context. db visitor)}))
 
 (defn pull

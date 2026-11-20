@@ -104,7 +104,7 @@
               result))
         
         #?(:clj
-           (is (= (set (dq/q '[:find ?color (eve.db.ds.test.query-aggregates/sort-reverse ?x)
+           (is (= (set (dq/q '[:find ?color (eve.db.ds.query-aggregates-test/sort-reverse ?x)
                               :in   [[?color ?x]]]
                          data))
                  result)))))))

@@ -60,6 +60,29 @@
    a)
   ([a txs] (build! a nil txs)))
 
+(defn init-tx-conn
+  "Build a DB from tx-data inside swap! on a fresh Eve atom, at namespace
+   load (outside any region); returns the atom. Read the DB inside
+   ($ ...) as (:db @atom). The tx-data is consumed inside the swap!, so
+   values are constructed in the atom's domain."
+  [schema tx-data]
+  (let [a (new-conn)]
+    (build! a schema tx-data)
+    a))
+
+(defn init-conn
+  "A fresh Eve atom whose DB is (db/init-db (datoms-fn) schema {}).
+   datoms-fn is a 0-arg fn invoked INSIDE swap!: Datom values are
+   domain-bound — a datom allocated in one atom's domain (or the
+   process domain) cannot be conjed into another atom's indexes
+   (codec refuses, u4-logs/pull-exec1), and a lazy datom seq cached
+   across atoms poisons every later consumer. Constructing the
+   datoms inside the target atom's swap! is the lawful shape."
+  [datoms-fn schema]
+  (let [a (new-conn)]
+    (swap! a (fn [_] {:db (db/init-db (datoms-fn) schema {})}))
+    a))
+
 (defn advance!
   "Transact tx into the atom's current DB, inside swap!. Lawful
    inside a $ body too (measured, u4-logs/probe4 S1); re-read

@@ -2,9 +2,15 @@
   "U4 slice: port of upstream eve.db.ds.test.query (DataScript 1.8.1),
    adapted like entity-test: d/q -> eve.db.ds.query/q, DB construction
    via u4-support, d/entity -> eve.db.ds.impl.entity/entity,
-   d/filter -> u4-support/filter-db."
+   d/filter -> u4-support/filter-db.
+   U4 EXECUTION port (measured, see U4-STATUS.md): DBs are built inside
+   swap! on a fresh Eve atom and every query runs inside one ($ ...) region
+   with the DB version bound once — host-built DB values arrive as flat
+   sisters whose index reads throw, and queries over a slab DB outside a
+   region hit the same wall."
   (:require
     [clojure.test :as t :refer [is are deftest testing]]
+    [eve.alpha :as eve :refer [$]]
     [eve.db.ds.query :as dq]
     [eve.db.ds.db :as db]
     [eve.db.ds.impl.entity :as de]
@@ -14,11 +20,11 @@
        [clojure.lang ExceptionInfo])))
 
 (deftest test-joins
-  (let [db (-> (sup/empty-db)
-             (sup/db-with [{:db/id 1, :name  "Ivan", :age   15}
-                         {:db/id 2, :name  "Petr", :age   37}
-                         {:db/id 3, :name  "Ivan", :age   37}
-                         {:db/id 4, :age 15}]))]
+  (let [a (sup/new-conn)]
+    ($ (let [db (sup/build! a nil [{:db/id 1, :name  "Ivan", :age   15}
+                                   {:db/id 2, :name  "Petr", :age   37}
+                                   {:db/id 3, :name  "Ivan", :age   37}
+                                   {:db/id 4, :age 15}])]
     (is (= (dq/q '[:find ?e
                   :where [?e :name]] db)
           #{[1] [2] [3]}))
@@ -37,16 +43,17 @@
                   [?e2 :name ?n]] db)
           #{[1 1 "Ivan"]
             [3 3 "Ivan"]
-            [3 2 "Petr"]}))))
+            [3 2 "Petr"]}))))))
 
 (deftest test-q-many
-  (let [db (-> (sup/empty-db {:aka {:db/cardinality :db.cardinality/many}})
-             (sup/db-with [[:db/add 1 :name "Ivan"]
-                         [:db/add 1 :aka  "ivolga"]
-                         [:db/add 1 :aka  "pi"]
-                         [:db/add 2 :name "Petr"]
-                         [:db/add 2 :aka  "porosenok"]
-                         [:db/add 2 :aka  "pi"]]))]
+  (let [a (sup/new-conn)]
+    ($ (let [db (sup/build! a {:aka {:db/cardinality :db.cardinality/many}}
+                          [[:db/add 1 :name "Ivan"]
+                           [:db/add 1 :aka  "ivolga"]
+                           [:db/add 1 :aka  "pi"]
+                           [:db/add 2 :name "Petr"]
+                           [:db/add 2 :aka  "porosenok"]
+                           [:db/add 2 :aka  "pi"]])]
     (is (= (dq/q '[:find  ?n1 ?n2
                   :where [?e1 :aka ?x]
                   [?e2 :aka ?x]
@@ -55,7 +62,7 @@
           #{["Ivan" "Ivan"]
             ["Petr" "Petr"]
             ["Ivan" "Petr"]
-            ["Petr" "Ivan"]}))))
+            ["Petr" "Ivan"]}))))))
 
 (deftest test-q-coll
   (let [db [[1 :name "Ivan"]
@@ -79,13 +86,13 @@
             #{[1 :age 39 999]})))))
 
 (deftest test-q-in
-  (let [db (-> (sup/empty-db)
-             (sup/db-with [{:db/id 1, :name  "Ivan", :age   15}
-                         {:db/id 2, :name  "Petr", :age   37}
-                         {:db/id 3, :name  "Ivan", :age   37}]))
-        query '{:find  [?e]
-                :in    [$ ?attr ?value]
-                :where [[?e ?attr ?value]]}]
+  (let [a (sup/new-conn)]
+    ($ (let [db (sup/build! a nil [{:db/id 1, :name  "Ivan", :age   15}
+                                   {:db/id 2, :name  "Petr", :age   37}
+                                   {:db/id 3, :name  "Ivan", :age   37}])
+             query '{:find  [?e]
+                     :in    [$ ?attr ?value]
+                     :where [[?e ?attr ?value]]}]
     (is (= (dq/q query db :name "Ivan")
           #{[1] [3]}))
     (is (= (dq/q query db :age 37)
@@ -126,13 +133,13 @@
           (dq/q '[:find ?e :where [?e]] db db)))
 
     (is (thrown-msg? "Extra inputs passed, expected: [$ $2], got: 3"
-          (dq/q '[:find ?e :in $ $2 :where [?e]] db db db)))))
+          (dq/q '[:find ?e :in $ $2 :where [?e]] db db db)))))))
 
 (deftest test-bindings
-  (let [db (-> (sup/empty-db)
-             (sup/db-with [{:db/id 1, :name  "Ivan", :age   15}
-                         {:db/id 2, :name  "Petr", :age   37}
-                         {:db/id 3, :name  "Ivan", :age   37}]))]
+  (let [a (sup/new-conn)]
+    ($ (let [db (sup/build! a nil [{:db/id 1, :name  "Ivan", :age   15}
+                                   {:db/id 2, :name  "Petr", :age   37}
+                                   {:db/id 3, :name  "Ivan", :age   37}])]
     (testing "Relation binding"
       (is (= (dq/q '[:find  ?e ?email
                     :in    $ [[?n ?email]]
@@ -191,8 +198,8 @@
       (is (thrown-with-msg? ExceptionInfo #"Cannot bind value :a to collection \[\?a \.\.\.\]"
             (dq/q '[:find ?a :in [?a ...]] :a)))
       (is (thrown-with-msg? ExceptionInfo #"Not enough elements in a collection \[:a\] to bind tuple \[\?a \?b\]"
-            (dq/q '[:find ?a ?b :in [?a ?b]] [:a]))))))
-        
+            (dq/q '[:find ?a ?b :in [?a ?b]] [:a]))))))))
+
 (deftest test-nested-bindings
   (is (= (dq/q '[:find  ?k ?v
                 :in    [[?k ?v] ...]
@@ -239,14 +246,15 @@
         #{[{:d 2} 2]})))
 
 (deftest ^{:doc "issue-385"} test-join-unrelated
-  (is (= #{}
-        (dq/q '[:find ?name
-               :in $ ?my-fn
-               :where [?e :person/name ?name]
-               [(?my-fn) ?result]
-               [(< ?result 3)]]
-          (sup/db-with (sup/empty-db) [{:person/name "Joe"}])
-          (fn [] 5)))))
+  (let [a (sup/new-conn)]
+    ($ (is (= #{}
+             (dq/q '[:find ?name
+                    :in $ ?my-fn
+                    :where [?e :person/name ?name]
+                    [(?my-fn) ?result]
+                    [(< ?result 3)]]
+               (sup/build! a nil [{:person/name "Joe"}])
+               (fn [] 5)))))))
 
 (deftest ^{:doc "issue-425"} test-symbol-comparison
   (is (= [2]
@@ -255,32 +263,35 @@
             :where [?e :s b]]
           '[[1 :s a]
             [2 :s b]])))
-  (let [db (-> (sup/empty-db)
-             (sup/db-with '[{:db/id 1, :s a}
-                          {:db/id 2, :s b}]))]
-    (is (= [2]
-          (dq/q
-            '[:find [?e ...]
-              :where [?e :s b]]
-            db)))))
+  (let [a (sup/new-conn)]
+    ($ (let [db (sup/build! a nil '[{:db/id 1, :s a}
+                                    {:db/id 2, :s b}])]
+         (is (= [2]
+               (dq/q
+                 '[:find [?e ...]
+                   :where [?e :s b]]
+                 db)))))))
 
 (deftest ^{:doc "issue-462"} test-constant-substitution
-  (let [cnt+q (fn [query db & sources]
-                (let [*cnt (volatile! 0)
-                      db'  (sup/filter-db db
-                             (fn [db datom]
-                               (vswap! *cnt inc)
-                               true))
-                      res  (apply dq/q query db' sources)]
-                  [@*cnt res]))
-        schema {:a {:db/index true}
-                :b {:db/index true}
-                :c {:db/index true}}
-        db     (-> (sup/empty-db schema)
-                 (sup/db-with
-                   (for [eid  (range 1 11)
-                         attr [:a :b :c]]
-                     [:db/add eid attr (str eid (name attr))])))]
+  ;; NOTE (U4 execution): every leg queries a FilteredDB; FilteredDB pred
+  ;; reads are blocked at this Eve pin (GAP-6, U4-STATUS.md) — the rows
+  ;; below error until the pin answers ^:host fields.
+  (let [a (sup/new-conn)]
+    ($ (let [cnt+q (fn [query db & sources]
+                     (let [*cnt (volatile! 0)
+                           db'  (sup/filter-db db
+                                  (fn [db datom]
+                                    (vswap! *cnt inc)
+                                    true))
+                           res  (apply dq/q query db' sources)]
+                       [@*cnt res]))
+             schema {:a {:db/index true}
+                     :b {:db/index true}
+                     :c {:db/index true}}
+             db     (sup/build! a schema
+                      (for [eid  (range 1 11)
+                            attr [:a :b :c]]
+                        [:db/add eid attr (str eid (name attr))]))]
     (is (= [1 #{["5b"]}] (cnt+q '[:find ?v :where [5 :b ?v]] db)))
     (is (= [1 #{[:b]}]   (cnt+q '[:find ?a :where [5 ?a "5b"]] db)))
     (is (= [1 #{[5]}]    (cnt+q '[:find ?e :where [?e :b "5b"]] db)))
@@ -290,4 +301,4 @@
     (is (= [1 #{[5 :b]}] (cnt+q '[:find ?e ?a :where [?e ?a "5b"]] db)))
     (is (= [1 #{[5 :b]}] (cnt+q '[:find ?e ?a :in $ ?v :where [?e ?a ?v]] db "5b")))
     (is (= [1 #{[5 :b]}] (cnt+q '[:find ?e ?a :in $ [?v ...] :where [?e ?a ?v]] db ["5b"])))
-    (is (= [1 #{[5 :b]}] (cnt+q '[:find ?e ?a :where [(ground "5b") ?v] [?e ?a ?v]] db)))))
+    (is (= [1 #{[5 :b]}] (cnt+q '[:find ?e ?a :where [(ground "5b") ?v] [?e ?a ?v]] db)))))))
