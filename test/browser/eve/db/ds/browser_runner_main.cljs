@@ -5,13 +5,20 @@
    by the fat-kernel route — and the page polls for its summary and POSTs it to /result.
 
    The suite is chosen by window.DS_SUITE, set by the driver's generated index.html: \"laws\" (the
-   deftype/atom laws probe, test/eve) or \"bset\" (U1's sorted-set suite, test/eve/db/ds). The test
+   deftype/atom laws probe, test/eve), \"bset\" (U1's sorted-set suite, test/eve/db/ds) or \"u3\"
+   (the U3 slices — conn/listen/upsert/transact whole, plus the stored-:db/fn feature slice; the
+   GAP-U3-1 parks are a JVM-runner notion, the browser runs the namespaces as they stand). The test
    namespaces themselves touch Eve through eve.alpha only; eve.thread-host here is the harness's own
    plumbing, exactly as in Eve's runner."
   (:require [cljs.test :as t]
             [eve.thread-host :as h]
             [eve.deftype-atom-laws-test]
-            [eve.db.ds.bset-test]))
+            [eve.db.ds.bset-test]
+            [eve.db.ds.test.conn]
+            [eve.db.ds.test.listen]
+            [eve.db.ds.test.upsert]
+            [eve.db.ds.test.transact]
+            [eve.db.ds.test.db-fn]))
 
 (def ^:private report-to (atom nil))
 (def ^:private failures (atom []))
@@ -42,7 +49,8 @@
   (reset! report-to (:reply boot))
   (case (:suite boot)
     "laws" (t/run-tests 'eve.deftype-atom-laws-test)
-    "bset" (t/run-tests 'eve.db.ds.bset-test)))
+    "bset" (t/run-tests 'eve.db.ds.bset-test)
+    "u3" (t/run-tests 'eve.db.ds.test.conn 'eve.db.ds.test.listen 'eve.db.ds.test.upsert 'eve.db.ds.test.transact 'eve.db.ds.test.db-fn)))
 
 (defn- post! [result]
   (js/fetch "/result" #js {:method "POST" :body (pr-str result)}))

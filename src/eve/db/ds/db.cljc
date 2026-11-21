@@ -881,8 +881,8 @@
 
        IEmptyableCollection (-empty [_]         (throw (js/Error. "-empty is not supported on FilteredDB")))
 
-       ILookup              (-lookup ([_ _]     (throw (js/Error. "-lookup is not supported on FilteredDB")))
-                              ([_ _ _]   (throw (js/Error. "-lookup is not supported on FilteredDB"))))
+       ILookup              (-lookup [_ _]     (throw (js/Error. "-lookup is not supported on FilteredDB")))
+                            (-lookup [_ _ _]   (throw (js/Error. "-lookup is not supported on FilteredDB")))
 
        IAssociative         (-contains-key? [_ _] (throw (js/Error. "-contains-key? is not supported on FilteredDB")))
        (-assoc [_ _ _]       (throw (js/Error. "-assoc is not supported on FilteredDB")))]

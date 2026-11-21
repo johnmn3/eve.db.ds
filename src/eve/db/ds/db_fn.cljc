@@ -8,9 +8,9 @@
    :db/fn datom, so it must be a legal Eve value — a plain map of
    keywords, symbols, strings and vectors. A host fn is NOT an Eve
    value (\"no functions in Eve memory\", ONE-EVE #56): at the old
-   pin, transacting one committed and then threw
-   :eve.flat.chunk/unwritable while the tx-report was being
-   delivered (GAP-U3-5). Host fns are now rejected BEFORE commit
+   pin, transacting one committed and then threw the flat-chunk
+   unwritable error while the tx-report was being delivered
+   (GAP-U3-5). Host fns are now rejected BEFORE commit
    (see validate-tx-data!, called by eve.db.ds.conn before its
    swap!), and this namespace's invoke validates what a db fn
    returns the same way, so no path can smuggle a fn into a DB.
@@ -92,7 +92,7 @@
   (when-not (and (vector? params) (every? symbol? params))
     (util/raise "db fn :params must be a vector of symbols, got " (pr-str params)
       {:error :eve.db.ds/db-fn-malformed :params params}))
-  (when-not (or (string? code) (seq? code) (symbol? code))
+  (when-not (or (string? code) (sequential? code) (symbol? code))
     (util/raise "db fn :code must be a string or a form, got " (pr-str code)
       {:error :eve.db.ds/db-fn-malformed :code code}))
   (sci-fn params (if (string? code) code (pr-str code))))

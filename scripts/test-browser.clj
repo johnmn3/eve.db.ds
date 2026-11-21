@@ -1,4 +1,4 @@
-;; scripts/test-browser.sh [laws|bset] — a DS suite in a real browser.
+;; scripts/test-browser.sh [laws|bset|u3] — a DS suite in a real browser.
 ;;
 ;; Modeled on Eve's scripts/test-browser.clj (bb test:browser), adapted to this repo:
 ;; builds the page with shadow-cljs (the :ds-browser build in shadow-cljs.edn, at :simple with no
@@ -19,8 +19,8 @@
 
 (def root (str (fs/absolutize ".")))
 (def suite (or (first *command-line-args*) "laws"))
-(when-not (#{"laws" "bset"} suite)
-  (println "test-browser: unknown suite" (pr-str suite) "— expected laws or bset")
+(when-not (#{"laws" "bset" "u3"} suite)
+  (println "test-browser: unknown suite" (pr-str suite) "— expected laws, bset or u3")
   (System/exit 2))
 
 (def out (str root "/target/ds-browser"))
