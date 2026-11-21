@@ -1,8 +1,12 @@
 (ns eve.db.ds.db-fn
-  "Stored transaction functions (:db/fn) — John's ruling, 2026-11-20:
-   the feature stays, with two invocation kinds, both tested, and a
-   provisional default picked from measurements (see DB-FN-STATUS.md
-   and GUIDE §5).
+  "Stored transaction functions (:db/fn) — John's rulings,
+   2026-11-20: the feature stays, with two invocation kinds, both
+   tested (18:34 ET); and the default is the host kind (20:49 ET:
+   \"Let's default to host fns and let you opt into sci fns\") —
+   eve.db.ds.core/db-fn builds a :resolve fn (its expansion defines
+   and registers a host fn and stores its name); the SCI kind is
+   the opt-in, via eve.db.ds.core/sci-fn or the function map form
+   below. See DB-FN-STATUS.md and GUIDE §5.
 
    A stored db fn is DATA. It lives in the DB as the value of a
    :db/fn datom, so it must be a legal Eve value — a plain map of
@@ -49,7 +53,14 @@
    :resolve fns are looked up by symbol: first in this namespace's
    registry (register-fn! — the portable path, both hosts), then,
    on the JVM only, by requiring-resolve. An unresolvable symbol
-   throws :eve.db.ds/db-fn-unresolved at transact time."
+   throws :eve.db.ds/db-fn-unresolved at transact time. The usual
+   way in is eve.db.ds.core/db-fn (the default): its expansion
+   defines the body as a var in the caller's namespace under a
+   content-addressed name (db-fn-<hash> of the caller's ns and
+   the printed form) and registers it, so the registration runs
+   wherever the defining form is evaluated — on ClojureScript,
+   where there is no requiring-resolve, that registration is the
+   path."
   #?(:cljs (:require-macros [eve.db.ds.util :as util]))
   (:require
     [eve.db.ds.util :as util]
@@ -61,7 +72,9 @@
 (defn sci-fn
   "The stored representation of a SCI db fn: params is a vector of
    symbols ([db & args]), code is the fn body as a string (one or
-   more forms). Pure data — safe to transact as a :db/fn value."
+   more forms). Pure data — safe to transact as a :db/fn value.
+   Built by eve.db.ds.core/sci-fn (the opt-in macro) and by
+   function below."
   [params code]
   {:pre [(vector? params) (every? symbol? params) (string? code)]}
   {:db.fn/kind   :sci
@@ -84,8 +97,8 @@
   "The explicit map form (Datomic's function shape): normalizes
    {:lang :clojure, :params [db & args], :code <body>} to a stored
    SCI db fn. :code may be a string (the body) or a single form,
-   which is sourcified with pr-str. This is the explicit path; the
-   eve.db.ds.core/db-fn macro is the sourcifying one."
+   which is sourcified with pr-str. This is the explicit map path;
+   eve.db.ds.core/sci-fn is the sourcifying macro."
   [{:keys [lang params code]}]
   (when-not (contains? #{:clojure "clojure" nil} lang)
     (util/raise "db fn :lang must be :clojure, got " (pr-str lang)
@@ -126,9 +139,13 @@
   (util/raise
     (str "Cannot store a host function as :db/fn: a function is not an Eve value, "
       "so it cannot live in a DB. Store the fn as data instead: "
-      "(eve.db.ds.core/db-fn [db & args] ...) for a SCI fn, "
-      "(eve.db.ds.core/fn-ref 'my.ns/fn) for a resolved fn, or the explicit "
-      "stored map {:db.fn/kind :sci, :db.fn/params [...], :db.fn/code \"...\"}. "
+      "(eve.db.ds.core/db-fn [db & args] ...) for a host fn (the default — it "
+      "defines and registers the fn and stores its name), "
+      "(eve.db.ds.core/sci-fn [db & args] ...) or (eve.db.ds.core/function {...}) "
+      "for a SCI fn whose source travels with the DB, "
+      "(eve.db.ds.core/fn-ref 'my.ns/fn) for a resolved fn by name, or the explicit "
+      "stored maps {:db.fn/kind :resolve, :db.fn/sym my.ns/fn} / "
+      "{:db.fn/kind :sci, :db.fn/params [...], :db.fn/code \"...\"}. "
       "See GUIDE §5, \"Transaction functions\".")
     {:error :eve.db.ds/db-fn-host-fn}))
 

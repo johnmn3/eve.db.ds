@@ -730,26 +730,86 @@
 ; Transaction functions (stored :db/fn)
 
 #?(:clj
+   (defn- db-fn-var-name
+     "The generated var name for a db-fn form: content-addressed
+      from the caller's namespace and the printed fn form (SHA-1,
+      first 12 hex chars, db-fn- prefixed). Deterministic: the
+      same form in the same namespace always derives the same
+      name, so re-evaluating a form re-interns and re-registers
+      the same var; distinct forms derive distinct names. Two
+      textually identical forms intentionally share one var —
+      they are the same fn."
+     [ns-sym params body]
+     (let [input  (str ns-sym " " (pr-str (list* 'fn params body)))
+           digest (.digest (java.security.MessageDigest/getInstance "SHA-1")
+                      (.getBytes input "UTF-8"))
+           hex    (format "%040x" (java.math.BigInteger. 1 digest))]
+       (symbol (str "db-fn-" (subs hex 0 12))))))
+
+#?(:clj
    (defmacro db-fn
-     "Builds a stored transaction function as DATA: the fn body is
-      sourcified at macro time into a SCI stored db fn
-      ({:db.fn/kind :sci, :db.fn/params params, :db.fn/code \"<body>\"}),
-      safe to transact as a :db/fn value — it lives in the DB as
-      data and is evaluated by SCI, sandboxed, at transact time.
+     "Builds a stored transaction function from a plain fn form —
+      the DEFAULT kind (John's ruling, 2026-11-20: \"Let's default
+      to host fns and let you opt into sci fns\"). The body stays
+      a host fn: the expansion defines it as a var in YOUR
+      namespace, registers it for :resolve lookup, and evaluates
+      to the stored map {:db.fn/kind :resolve, :db.fn/sym
+      <your-ns>/db-fn-<hash>} — pure data, safe to transact as a
+      :db/fn value.
+
+      The generated var name is content-addressed (see
+      db-fn-var-name): db-fn-<hash>, derived from your namespace
+      and the form itself, so re-evaluating the same form
+      re-registers the same name, and the var is a real var in
+      your namespace that you can inspect and call. The body is
+      ordinary code in your namespace — the full host API at host
+      speed, no sandbox. The DB stores only the name, so a process
+      that reads the DB must evaluate the defining form (the
+      registration runs then; on ClojureScript this is the only
+      path) or register the same symbol itself; on the JVM,
+      requiring-resolve is the fallback.
 
       Usage:
 
           (transact! conn [{:db/ident :inc-age
                             :db/fn    (db-fn [db name]
-                                        (if-some [ent (entity db [:name name])]
+                                        (if-some [ent (d/entity db [:name name])]
                                           [{:db/id (:db/id ent)
                                             :age   (inc (:age ent))}]
                                           (throw (ex-info \"No entity\" {}))))}])
           (transact! conn [[:inc-age \"Petr\"]])
 
-      Inside the body, the DB read API ([[entity]], [[entid]], [[q]],
-      [[datoms]], [[seek-datoms]], [[pull]], [[pull-many]]) is
-      available unqualified, as d/<name>, or fully qualified. See
+      For a fn whose source travels with the DB instead, see
+      [[sci-fn]] (the SCI opt-in) and [[function]]. See GUIDE §5
+      for the two stored-fn kinds and their trade-offs."
+     {:arglists '([params & body])}
+     [params & body]
+     (let [ns-sym (or (get-in &env [:ns :name]) (ns-name *ns*))
+           vname  (db-fn-var-name ns-sym params body)
+           fq-sym (symbol (str ns-sym) (str vname))]
+       (list 'do
+         (list 'def vname (list* 'fn params body))
+         (list 'eve.db.ds.db-fn/register-fn! (list 'quote fq-sym) vname)
+         (list 'eve.db.ds.db-fn/resolve-fn (list 'quote fq-sym))))))
+
+#?(:clj
+   (defmacro sci-fn
+     "Builds a stored transaction function as DATA, the SCI kind —
+      the explicit opt-in (the default is a host fn; see
+      [[db-fn]]). The fn body is sourcified at macro time into a
+      SCI stored db fn ({:db.fn/kind :sci, :db.fn/params params,
+      :db.fn/code \"<body>\"}), safe to transact as a :db/fn
+      value — it lives in the DB as data and is evaluated by SCI,
+      sandboxed, at transact time, so the fn travels with the DB:
+      any process that can read the DB can run it, with no code
+      of its own registered or resolvable.
+
+      Usage is identical in shape to [[db-fn]]: (sci-fn [db name]
+      body...). Inside the body, the DB read API ([[entity]],
+      [[entid]], [[q]], [[datoms]], [[seek-datoms]], [[pull]],
+      [[pull-many]]) is available unqualified, as d/<name>, or
+      fully qualified — and nothing beyond that surface and
+      clojure.core: the body cannot reach host internals. See
       GUIDE §5 for the two stored-fn kinds and their trade-offs."
      {:arglists '([params & body])}
      [params & body]
@@ -770,15 +830,19 @@
 
                  (register-fn! 'my.app/inc-age inc-age)
                  (transact! conn [{:db/ident :inc-age
-                                   :db/fn    (fn-ref 'my.app/inc-age)}])"}
+                                   :db/fn    (fn-ref 'my.app/inc-age)}])
+
+             Or see [[db-fn]], which defines the fn as a var and
+             registers it for you."}
   fn-ref dbfn/resolve-fn)
 
 (def ^{:arglists '([m])
        :doc "The explicit stored-fn map form (Datomic's function
              shape): (function {:lang :clojure, :params [db & args],
-             :code \"<body>\"}) normalizes to a SCI stored db fn.
-             :code may be a string or a single form, which is
-             sourcified. See [[db-fn]] for the macro form."}
+             :code \"<body>\"}) normalizes to a SCI stored db fn —
+             the SCI opt-in in map form. :code may be a string or
+             a single form, which is sourcified. See [[sci-fn]] for
+             the macro form."}
   function dbfn/function)
 
 (def ^{:arglists '([sym f])} register-fn!
