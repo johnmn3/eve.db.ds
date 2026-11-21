@@ -1,5 +1,6 @@
 (ns ^:no-doc eve.db.ds.parser
   (:refer-clojure :exclude [distinct?])
+  #?(:cljs (:require-macros [eve.db.ds.util :as util]))
   #?(:cljs (:require-macros [eve.db.ds.parser :refer [deftrecord]]))
   (:require
     [clojure.set :as set]

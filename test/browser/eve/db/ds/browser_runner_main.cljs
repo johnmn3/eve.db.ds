@@ -5,7 +5,9 @@
    by the fat-kernel route — and the page polls for its summary and POSTs it to /result.
 
    The suite is chosen by window.DS_SUITE, set by the driver's generated index.html: \"laws\" (the
-   deftype/atom laws probe, test/eve) or \"bset\" (U1's sorted-set suite, test/eve/db/ds). The test
+   deftype/atom laws probe, test/eve), \"bset\" (U1's sorted-set suite, test/eve/db/ds) or \"u3\"
+   (the U3 slices — conn/listen/upsert/transact whole, plus the stored-:db/fn feature slice; the
+   GAP-U3-1 parks are a JVM-runner notion, the browser runs the namespaces as they stand). The test
    namespaces themselves touch Eve through eve.alpha only; eve.thread-host here is the harness's own
    plumbing, exactly as in Eve's runner."
   (:require [cljs.test :as t]
@@ -31,7 +33,8 @@
             [eve.db.ds.query-or-test]
             [eve.db.ds.query-pull-test]
             [eve.db.ds.query-return-map-test]
-            [eve.db.ds.test.serialize]))
+            [eve.db.ds.test.serialize]
+            [eve.db.ds.test.db-fn]))
 
 (def ^:private report-to (atom nil))
 (def ^:private failures (atom []))
@@ -63,14 +66,13 @@
   (case (:suite boot)
     "laws" (t/run-tests 'eve.deftype-atom-laws-test)
     "bset" (t/run-tests 'eve.db.ds.bset-test)
-    ;; U6 arms. "u3" includes test.transact whole: its GAP-U3-5 park
-    ;; (test-db-ident-fn, stored :db/fn) is a JVM runner park; in the
-    ;; browser it surfaces as that one named error — parity is read
-    ;; against the JVM table with the park named. "u4" excludes
-    ;; query-rules-test: its rule-performance deftest builds 50,000
-    ;; datoms (a venue leg on both hosts, U6 item 4).
+    ;; U6 arms. "u3" includes test.transact whole (the GAP-U3-5 park
+    ;; is resolved: the stored :db/fn implementation unparked and
+    ;; reshaped test-db-ident-fn) plus the db-fn feature slice.
+    ;; "u4" excludes query-rules-test: its rule-performance deftest
+    ;; builds 50,000 datoms (a venue leg on both hosts, U6 item 4).
     "u2" (t/run-tests 'eve.db.ds.db-test 'eve.db.ds.index-test 'eve.db.ds.components-test)
-    "u3" (t/run-tests 'eve.db.ds.test.conn 'eve.db.ds.test.listen 'eve.db.ds.test.upsert 'eve.db.ds.test.transact)
+    "u3" (t/run-tests 'eve.db.ds.test.conn 'eve.db.ds.test.listen 'eve.db.ds.test.upsert 'eve.db.ds.test.transact 'eve.db.ds.test.db-fn)
     "u4" (t/run-tests 'eve.db.ds.entity-test 'eve.db.ds.datafy-test 'eve.db.ds.pull-api-test
                       'eve.db.ds.query-test 'eve.db.ds.query-aggregates-test 'eve.db.ds.query-find-specs-test
                       'eve.db.ds.query-fns-test 'eve.db.ds.query-not-test 'eve.db.ds.query-or-test

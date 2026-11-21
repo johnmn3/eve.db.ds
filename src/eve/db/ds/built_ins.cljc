@@ -1,4 +1,5 @@
 (ns eve.db.ds.built-ins
+  #?(:cljs (:require-macros [eve.db.ds.util :as util]))
   (:require
     [clojure.string :as str]
     [eve.db.ds.db :as db]

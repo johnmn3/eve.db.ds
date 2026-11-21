@@ -29,6 +29,10 @@
 ;; :local/root deps inside this repository.
 {:paths ["src"]
  :deps {org.clojure/clojure {:mvn/version "1.12.0"}
+        ;; SCI: the interpreter for stored :db/fn values of the :sci
+        ;; kind (eve.db.ds.db-fn). A stored db fn is data (source as a
+        ;; string); SCI evaluates it at transact time in a sandbox.
+        org.babashka/sci {:mvn/version "0.15.59"}
         eve/eve {:git/url "https://github.com/SeniorCareMarket/eve"
                  :git/sha "abba331f78dfe08ff84e692edc4442c962120ef4"}
         me.tonsky/persistent-sorted-set {:local/root "lib"}

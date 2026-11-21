@@ -1,4 +1,5 @@
 (ns ^:no-doc eve.db.ds.pull-parser
+  #?(:cljs (:require-macros [eve.db.ds.util :as util]))
   (:require
     [eve.db.ds.built-ins :as built-ins]
     [eve.db.ds.db :as db]
