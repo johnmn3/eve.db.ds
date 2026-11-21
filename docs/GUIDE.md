@@ -7,9 +7,11 @@ the rules where they apply, function by function. Call shapes are
 upstream's; where a call shape or a return value differs from upstream,
 the difference is stated, not implied.
 
-**Status: rewrite in progress.** Sections whose implementing unit has
-not landed yet are marked *(in progress)* and describe the plan's
-contract (DS-IN-EVE-PLAN v2 §4), not a measured behavior.
+**Status: landed; acceptance-measured at U6 (2026-11-20).** What
+follows is the plan's contract (DS-IN-EVE-PLAN v2 §4) as measured on
+the JVM and in a browser at the pinned Eve. The only *(in progress)*
+markers left are the genuinely open items: the §8 release-policy
+ruling (§4) and `filter` (GAP-6, §4).
 
 ## 1. The model
 
@@ -36,7 +38,7 @@ contract (DS-IN-EVE-PLAN v2 §4), not a measured behavior.
   returns ordinary host values. Datoms come out as host Datoms
   (upstream's `Datom` type). No Eve type ever appears in a result.
 
-## 2. Connections *(in progress — U3)*
+## 2. Connections
 
 ```clojure
 (d/create-conn)                    ;; empty DB, no schema
@@ -67,7 +69,7 @@ domain). After `close-conn!`, reads through the conn's handles are not
 guaranteed to resolve. `close-conn!` is not an upstream var; it exists
 because an Eve atom is a resource in a way a host atom is not.
 
-## 3. Keeping old DB values *(in progress — U3)*
+## 3. Keeping old DB values
 
 An Eve atom holds its current value; yesterday's value is gone unless
 something in the atom still refers to it. That rule is the whole
@@ -97,7 +99,7 @@ retention story of this library:
   there. An atom can do the job of a host garbage collector exactly
   when the things that refer to a value live in the atom alongside it.
 
-## 4. DB values and conn-less values *(in progress — U2, U3)*
+## 4. DB values and conn-less values
 
 ```clojure
 (d/db conn)        ;; handle to the conn's current DB; @conn is the same
@@ -137,9 +139,12 @@ mechanism above is settled, the release policy is *(in progress —
 awaiting the §8 ruling)*. Do not design around either answer yet.
 
 `filter` returns a filtered view as a handle, with upstream semantics;
-`is-filtered` tests for one.
+`is-filtered` tests for one. *(Open at the pinned Eve — GAP-6:
+FilteredDB's `^:host` pred field reads null on every construction
+path, so `filter` currently throws a named error instead of building
+a filtered DB. Eve seat.)*
 
-## 5. Transacting *(in progress — U3)*
+## 5. Transacting
 
 ```clojure
 (d/transact! conn tx-data)         ;; => tx-report (host data)
@@ -170,7 +175,7 @@ Listeners fire after the transaction commits. `reset-conn!` and
 `reset-schema!` replace state inside the atom; handles to the replaced
 DB resolve only if they were kept (§3).
 
-## 6. Querying *(in progress — U2, U4)*
+## 6. Querying
 
 All of these take a **DB handle**, never a conn:
 
@@ -194,7 +199,7 @@ values; datom sequences contain host Datoms. The indexes themselves are
 Eve sorted sets (`eve.db.ds.bset`, landed — U1) living inside the atom;
 you never see them, you see what comes out of the reads above.
 
-## 7. Entities and pull *(in progress — U4)*
+## 7. Entities and pull
 
 ```clojure
 (d/entity db eid)                  ;; => entity (host data on access)
@@ -209,7 +214,7 @@ it or pulling from it resolves the handle at that moment, under the
 same kept/current rules as any other read (§3). `pull` and `pull-many`
 return plain host data, upstream-shaped.
 
-## 8. Serialization and persistence *(in progress — U5)*
+## 8. Serialization and persistence
 
 ```clojure
 (d/serializable db)                ;; => host value capturing the DB
@@ -231,8 +236,15 @@ The conn's Eve atom is backed by that directory; transactions are
 durable as the atom's are, and reopening the same directory with a new
 `create-conn` reads the same database back. The old port's `storage`
 namespace is **deleted** — there is no storage object to create, pass
-around or close. Round-trip and close/reopen equivalence are acceptance
-items of U5/U6 and are *(in progress)* until they are measured green.
+around or close. Round-trip and close/reopen equivalence were
+measured green at U5/U6: serialization round-trips are content-equal
+across EDN, transit (all encodings) and JSON routes; reopen-by-adopt
+and cross-process persistence round-trips are digest-identical in
+both directions, and an in-memory conn persists nothing. One caveat
+(GAP-U5-1, Eve seat): `close-conn!` on a `:persistent` conn throws
+inside Eve's close path at the pinned Eve — the data is not
+corrupted; process exit and adopt-reopen are the measured working
+closes.
 
 ## 9. Datoms and miscellany
 
