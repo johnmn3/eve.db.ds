@@ -39,6 +39,7 @@
    a source max-eid above every live datom eid (fully retracted
    entities) is not preserved — the transaction that would install
    it does not exist in the public API."
+  #?(:cljs (:require-macros [eve.db.ds.util :as util]))
   (:require
     [clojure.edn :as edn]
     [clojure.string :as str]

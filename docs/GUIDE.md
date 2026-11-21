@@ -201,7 +201,9 @@ below.) There are two kinds, chosen per fn:
 
 `d/db-fn` is a macro: it sourcifies the body at compile time into the
 stored map `{:db.fn/kind :sci, :db.fn/params [db name], :db.fn/code
-"<body>"}`. At transact time the body is evaluated with
+"<body>"}`. (ClojureScript consumers: also require the macro —
+`(:require-macros [eve.db.ds.core :as d])` in the ns form; this
+build does not infer .cljc macros across namespaces.) At transact time the body is evaluated with
 [SCI](https://github.com/babashka/sci) in a sandbox: clojure.core's
 safe surface, plus the DB read API — `entity`, `entid`, `q`, `datoms`,
 `seek-datoms`, `pull`, `pull-many` — callable unqualified, as
@@ -233,7 +235,7 @@ The fn runs at host speed with the full host API.
 | Body can use | The sandboxed read API above + clojure.core's safe surface | Anything the host fn can do |
 | Sandbox | Yes — a stored fn cannot reach host internals | No — it *is* host code; only install fns you trust |
 | Invoke cost | One compile per distinct fn (~10–15 ms, cell-class), then interpreted: a tight arithmetic body measured ≈2–3× the host cost; through `transact!` the difference is under the transaction machinery's noise | Host speed, no compile |
-| Browser | Works (SCI is a .cljc library) | Works via the registry (no `requiring-resolve` in ClojureScript) |
+| Browser | Works (SCI is a .cljc library; the browser u3 suite runs both kinds — tally in DB-FN-STATUS.md) | Works via the registry (no `requiring-resolve` in ClojureScript) |
 
 **Provisional default: the SCI kind** — it is what the `d/db-fn`
 macro builds, and it is the only kind that needs no out-of-band

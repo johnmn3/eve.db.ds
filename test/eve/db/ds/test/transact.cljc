@@ -28,7 +28,12 @@
     [clojure.test :as t :refer [is are deftest testing]]
     [eve.db.ds.core :as d]
     [eve.db.ds.db :as db]
-    [eve.db.ds.u3-support :as tdc]))
+    [eve.db.ds.u3-support :as tdc])
+  ;; d/db-fn is a macro defined in eve.db.ds.core (.cljc); this
+  ;; build does not infer .cljc macros across namespaces, so cljs
+  ;; consumers require it explicitly — the same shape as
+  ;; eve.db.ds.db's self :require-macros (db.cljc line 12).
+  #?(:cljs (:require-macros [eve.db.ds.core :as d])))
 
 (deftest test-with
   (let [db  (-> (d/empty-db {:aka {:db/cardinality :db.cardinality/many}})

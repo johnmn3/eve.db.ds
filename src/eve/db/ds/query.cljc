@@ -1,4 +1,5 @@
 (ns ^:no-doc eve.db.ds.query
+  #?(:cljs (:require-macros [eve.db.ds.util :as util]))
   (:require
     [#?(:cljs cljs.reader :clj clojure.edn) :as edn]
     [clojure.set :as set]

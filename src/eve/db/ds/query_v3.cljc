@@ -1,4 +1,5 @@
 (ns ^:no-doc eve.db.ds.query-v3
+  #?(:cljs (:require-macros [eve.db.ds.util :as util]))
   (:require
     [clojure.set :as set]
     [eve.db.ds.built-ins :as built-ins]

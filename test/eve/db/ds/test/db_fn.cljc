@@ -11,7 +11,13 @@
   (:require
     [clojure.test :as t :refer [is deftest testing]]
     [eve.db.ds.core :as d]
-    [eve.db.ds.db-fn :as dbfn]))
+    [eve.db.ds.db-fn :as dbfn]
+    #?(:cljs [cljs.reader :as reader]))
+  ;; d/db-fn is a macro (see the note in eve.db.ds.test.transact).
+  #?(:cljs (:require-macros [eve.db.ds.core :as d])))
+
+(defn- edn-read [s]
+  #?(:clj (read-string s) :cljs (reader/read-string s)))
 
 ;; ---------------------------------------------------------------------------
 ;; The canonical invariant: a db fn that aborts unless an email is
@@ -88,7 +94,7 @@
           stored))
     (is (dbfn/stored-fn? stored))
     ;; pure data: an EDN round-trip is identity
-    (is (= stored (read-string (pr-str stored))))
+    (is (= stored (edn-read (pr-str stored))))
     ;; and it is what actually sits in the DB as the datom value
     (let [conn (d/create-conn)]
       (d/transact! conn [{:db/ident :plus-one :db/fn stored}])

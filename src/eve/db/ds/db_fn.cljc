@@ -50,6 +50,7 @@
    registry (register-fn! — the portable path, both hosts), then,
    on the JVM only, by requiring-resolve. An unresolvable symbol
    throws :eve.db.ds/db-fn-unresolved at transact time."
+  #?(:cljs (:require-macros [eve.db.ds.util :as util]))
   (:require
     [eve.db.ds.util :as util]
     [sci.core :as sci]))

@@ -9,7 +9,8 @@
     [eve.db.ds.db-fn :as db-fn]
     [eve.db.ds.bset :as set])
   #?(:clj (:import clojure.lang.IFn$OOL))
-  #?(:cljs (:require-macros [eve.db.ds.db :refer [case-tree combine-cmp defn+ defcomp defrecord-updatable int-compare validate-attr validate-val]]))
+  #?(:cljs (:require-macros [eve.db.ds.db :refer [case-tree combine-cmp defn+ defcomp defrecord-updatable int-compare validate-attr validate-val]]
+                             [eve.db.ds.util :as util]))
   (:refer-clojure :exclude [seqable? #?(:clj update)]))
 
 #?(:clj (set! *warn-on-reflection* true))
