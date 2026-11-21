@@ -1,26 +1,22 @@
 # eve.db.ds
 
-DataScript 1.8.1 (Nikita Prokopov), rebuilt so the database lives in a
-real Eve atom.
+DataScript 1.8.1 (Nikita Prokopov), rebuilt so the database lives in an
+Eve atom.
 
 ## Status
 
 Alpha. The rewrite is landed and acceptance-measured.
 
-An earlier published port of this library claimed the database lived in
-an Eve atom. It did not: the connection wrapped a host atom, and the
-database never left the host heap. That claim was false. This rewrite is
-the correction, and it is verified the way claims here are verified: the
-acceptance battery ran the full suite on the JVM and in a real browser
-at the pinned Eve, green except the rows named under Known limitations,
-each of which traces to a filed defect with an owner.
+The acceptance battery ran the full suite on the JVM and in a real
+browser at the pinned Eve, green except the rows named under Known
+limitations, each of which traces to a filed defect with an owner.
 
 Eve is a dependency, not a vendored copy. `deps.edn` pins
 `SeniorCareMarket/eve` main at `abba331`.
 
 ## The model
 
-- **The connection holds a real Eve atom, and the DB lives inside it.**
+- **The connection holds an Eve atom, and the DB lives inside it.**
   A conn is a host object holding an Eve atom and the listener registry.
   The atom's value is a plain map, `{:db DB :kept {tx DB}}`. There is no
   host atom standing in for the database, and no second copy of the DB
@@ -137,12 +133,10 @@ to one datom written and read back — ran over the harness's 10,000 ms
 cap on a calm box and is recorded as **10s+**. The harness caps the
 measurement, so no raw median exists.
 
-Scale holds where the old port failed. A Logseq-shaped build of 500
-pages, about 95,700 datoms, completes; the previous published port ran
-out of memory around page 390 of a build of the same shape. The marginal
-cost of the database in Eve's slab is flat: about 133 bytes per datom at
-250 pages and at 500 pages. The database grows linearly, at a constant
-rate, with no cliff.
+Scale: a Logseq-shaped build of 500 pages, about 95,700 datoms,
+completes. The marginal cost of the database in Eve's slab is flat:
+about 133 bytes per datom at 250 pages and at 500 pages. The database
+grows linearly, at a constant rate, with no cliff.
 
 ## Retention
 
