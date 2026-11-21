@@ -96,7 +96,7 @@
              - Comparing entities just compares their ids. Be careful when comparing entities taken from different dbs or from different versions of the same db.
              - Accessed entity attributes are cached on entity itself (except backward references).
              - When printing, only cached attributes (the ones you have accessed before) are printed. See [[touch]]."}
-  entity (fn [db eid] (de/entity (resolve-db-arg db) eid)))
+  entity (fn [db eid] (de/entity (resolve-db-arg db) eid (when (conn/handle? db) db))))
 
 (def ^{:arglists '([db eid])
        :doc "Given lookup ref `[unique-attr value]`, returns numberic entity id.
@@ -455,7 +455,9 @@
        ; find all entities with age in a specific range (inclusive)
        (->> (index-range db :age 18 60) (map :e))"
   [db attr start end]
-  {:pre [(db/db? db)]}
+  {:pre [(some? db)]} ;; U6: was (db/db? db) on the raw arg — the only
+  ;; precondition in core that rejected a §4 handle its own body
+  ;; resolves (every sibling: some? + resolve-db-arg in the body).
   (deliver-datoms (db/-index-range (resolve-db-arg db) attr start end)))
 
 ;; Conn
@@ -624,22 +626,6 @@
 
 #?(:cljs
    (doseq [[tag cb] data-readers] (edn/register-tag-parser! tag cb)))
-
-;; STOPGAP (U3, for the coordinator/db.cljc): db.cljc registers
-;; print-method for the slab Datom class only. A delivered Datom is
-;; the flat sister class (Datom__Flat), which misses that dispatch,
-;; falls to Object/toString, whose body is (pr-str d) — infinite
-;; recursion, StackOverflowError on any print of a delivered Datom
-;; (measured, u3-logs/smoke1.log). Until db.cljc registers the
-;; sister classes next to its own defmethods (the same gap exists
-;; for DB at db.cljc's print-method DB), register the sister here.
-#?(:clj
-   (defmethod print-method (Class/forName "eve.db.ds.db.Datom__Flat")
-     [d, ^java.io.Writer w]
-     (.write w (str "#eve.db.ds/Datom "))
-     (binding [*out* w]
-       (pr [(:e d) (:a d) (:v d) (db/datom-tx d) (db/datom-added d)]))))
-
 
 ;; Datomic compatibility layer
 

@@ -18,7 +18,8 @@
                         ; trap-row replacement calls eve.alpha/same?
                         ; fully qualified (db.cljc's own require of
                         ; eve.alpha guarantees this order in the lib)
-    [eve.db.ds.db :as db]))
+    [eve.db.ds.db :as db])
+  #?(:cljs (:require-macros [eve.db.ds.test-macros])))
 
 ;; ---------------------------------------------------------------------
 ;; pure value fns — lawful inside swap! (the construction context)

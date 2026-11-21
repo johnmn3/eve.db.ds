@@ -234,10 +234,10 @@
                     [(- (now) start) result]))
         a       (sup/new-conn)
         db      (sup/built-db a nil
-                  [(for [x (range 1 50000)]
-                     {:db/id       (- x)
-                      :item/id     x
-                      :item/status (rand-nth ["started" "pending" "stopped"])})])
+                  (for [x (range 1 50000)]
+                    {:db/id       (- x)
+                     :item/id     x
+                     :item/status (rand-nth ["started" "pending" "stopped"])}))
         [inline-time inline-result] (measure inline db)
         [rule-time rule-result] (measure rule db)]
     ; (println "inline-time" inline-time "ms, rule-time" rule-time "ms")

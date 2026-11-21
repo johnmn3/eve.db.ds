@@ -70,7 +70,12 @@
       #?(:clj  (and (instance? Double v) (Double/isNaN ^double v))
          :cljs (js/isNaN v)) [marker-nan]
       :else v)
-    :else [marker-other (freeze-fn v)]))
+    ;; freeze-fn's contract is plain host data on every host: a
+    ;; delivered flat collection is converted first (transit-cljs's
+    ;; writer is protocol-strict and refuses flat sisters with
+    ;; "Cannot write" where transit-clj's generic Map writer does
+    ;; not — U6 browser finding, 2026-11-20).
+    :else [marker-other (freeze-fn (eve/eve->clj v))]))
 
 (defn- thaw-kw [s]
   (if (and (string? s) (str/starts-with? s ":"))
@@ -123,7 +128,7 @@
    (let [dbv     (conn/resolve-db db-handle)
          max-eid ($ (:max-eid dbv))
          max-tx  ($ (:max-tx dbv))]
-     {:schema  (freeze-fn (conn/schema-of db-handle))
+     {:schema  (freeze-fn (eve/eve->clj (conn/schema-of db-handle)))
       :max-eid max-eid
       :max-tx  max-tx
       :datoms  (mapv (fn [d]

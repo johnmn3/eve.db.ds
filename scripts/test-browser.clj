@@ -19,8 +19,8 @@
 
 (def root (str (fs/absolutize ".")))
 (def suite (or (first *command-line-args*) "laws"))
-(when-not (#{"laws" "bset"} suite)
-  (println "test-browser: unknown suite" (pr-str suite) "— expected laws or bset")
+(when-not (#{"laws" "bset" "u2" "u3" "u4" "u5"} suite)
+  (println "test-browser: unknown suite" (pr-str suite) "— expected laws, bset, u2, u3, u4 or u5")
   (System/exit 2))
 
 (def out (str root "/target/ds-browser"))

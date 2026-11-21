@@ -344,6 +344,15 @@
      (binding [*out* w]
        (pr [(:e d) (:a d) (:v d) (datom-tx d) (datom-added d)]))))
 
+;; GAP-U3-3 (U6): the delivered sister prints through the same body —
+;; without a method for Datom__Flat, pr-str fell back to the deftype's
+;; toString, which itself calls pr-str (infinite recursion).
+#?(:clj
+   (defmethod print-method (Class/forName "eve.db.ds.db.Datom__Flat") [d, ^java.io.Writer w]
+     (.write w (str "#eve.db.ds/Datom "))
+     (binding [*out* w]
+       (pr [(.-e d) (.-a d) (.-v d) (datom-tx d) (datom-added d)]))))
+
 ;; ----------------------------------------------------------------------------
 ;; datom cmp macros/funcs
 ;;
@@ -880,8 +889,8 @@
 
        IEmptyableCollection (-empty [_]         (throw (js/Error. "-empty is not supported on FilteredDB")))
 
-       ILookup              (-lookup ([_ _]     (throw (js/Error. "-lookup is not supported on FilteredDB")))
-                              ([_ _ _]   (throw (js/Error. "-lookup is not supported on FilteredDB"))))
+       ILookup              (-lookup [_ _]     (throw (js/Error. "-lookup is not supported on FilteredDB")))
+                            (-lookup [_ _ _]   (throw (js/Error. "-lookup is not supported on FilteredDB")))
 
        IAssociative         (-contains-key? [_ _] (throw (js/Error. "-contains-key? is not supported on FilteredDB")))
        (-assoc [_ _ _]       (throw (js/Error. "-assoc is not supported on FilteredDB")))]
@@ -1161,6 +1170,17 @@
   (combine-hashes (hash (:schema db))
     (hash (vec (-datoms db :eavt nil nil nil nil)))))
 
+(defn entity-db-hash
+  "Entity's no-handle hash fallback (U6, GAP-2): the DB version's
+   content hash combined with its max-tx, so two versions holding
+   identical datoms still hash differently. On a delivered (sister)
+   DB the content hash cannot be computed outside a region; fall
+   back to the value's identity hash."
+  [db]
+  (try (combine-hashes (hash-db db) (hash (:max-tx db)))
+       (catch #?(:clj Throwable :cljs :default) _
+         (#?(:clj System/identityHashCode :cljs goog/getUid) db))))
+
 (defn+ ^:private ^number hash-fdb [^FilteredDB db]
   (combine-hashes (hash (-schema db))
     (hash (vec (-datoms db :eavt nil nil nil nil)))))
@@ -1194,7 +1214,16 @@
        (.write w "]}"))
 
      (defmethod print-method DB [db w] (pr-db db w))
-     (defmethod print-method FilteredDB [db w] (pr-db db w))))
+     (defmethod print-method FilteredDB [db w] (pr-db db w))
+
+     ;; GAP-U3-3 (U6): a delivered DB cannot enumerate its datoms
+     ;; outside a region (pr-db's -datoms throws on delivered roots),
+     ;; so the sister prints its readable fields instead of recursing
+     ;; through toString → pr-str.
+     (defmethod print-method (Class/forName "eve.db.ds.db.DB__Flat") [db w]
+       (.write w (str "#eve.db.ds/DB "))
+       (binding [*out* w]
+         (pr {:schema (.-schema db) :max-eid (.-max-eid db) :max-tx (.-max-tx db)})))))
 
 (defn db-from-reader [{:keys [schema datoms]}]
   (init-db (map (fn [[e a v tx]] (datom e a v tx)) datoms) schema {}))
@@ -1476,7 +1505,7 @@
       :else
       entity)))
 
-(defn validate-datom [db ^Datom datom]
+(defn validate-datom [db datom]
   (when (and (datom-added datom)
           (is-attr? db (:a datom) :db/unique))
     (when-some [found (not-empty (-datoms db :avet (:a datom) (:v datom) nil nil))]
@@ -1591,7 +1620,7 @@
 ;; In context of `with-datom` we can use faster comparators which
 ;; do not check for nil (~10-15% performance gain in `transact`)
 
-(defn with-datom [db ^Datom datom]
+(defn with-datom [db datom]
   (validate-datom db datom)
   (let [indexing? (indexing? db (:a datom))]
     (if (datom-added datom)
@@ -1785,7 +1814,12 @@
 (defn- transact-add [report [_ e a v tx :as ent]]
   (validate-attr a ent)
   (validate-val  v ent)
-  (let [tx        (or tx (current-tx report))
+  ;; GAP-U5-2 (U6): a v already flat in a FOREIGN domain (a delivered
+  ;; datom's collection v, a read-back value) must be copied in by
+  ;; value: eve->clj materializes it as host data and the construction
+  ;; below re-flattens it in this domain. Host data passes through.
+  (let [v         (eve/eve->clj v)
+        tx        (or tx (current-tx report))
         db        (:db-after report)
         _         (validate-tuple db a v ent)
         e         (entid-strict db e)

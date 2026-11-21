@@ -1,7 +1,7 @@
 (ns eve.db.ds.bset-slice-smoke
   "Runs test-slice with its iteration count bound from upstream's 5
    to 2. Exists because at the pinned Eve's measured per-write cost
-   (reflective dispatch in eve.deftype.array/write-slot!) a full
+   (reflective dispatch in Eve's deftype-array write-slot!) a full
    5-iteration run takes over an hour on a shared cell; a bound run
    is reported as exactly that, never as the full test.
      clojure -Sdeps '{:paths [\"src\" \"test\"]}' -M -m eve.db.ds.bset-slice-smoke"

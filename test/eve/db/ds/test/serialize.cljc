@@ -64,6 +64,28 @@
    :url     {}   ;; just a component prop
    :attach  {}}) ;; should skip index
 
+#?(:cljs
+   (defn- js-form->clj
+     "JSON.parse output -> plain cljs data, for the JSON legs below.
+      Two Eve-browser-runtime interop facts shape these legs (U6
+      probes, 2026-11-20; evidence in U6-STATUS.md):
+      - js/JSON.stringify on cljs data serializes the collection
+        object's internal fields (meta/cnt/arr), not the data — the
+        form goes through clj->js first.
+      - cljs.core/js->clj cannot be used on the parse output:
+        js->clj checks (coll? x) before (array? x), Eve's coll
+        layer makes (coll? js-array) true, and the branch calls
+        (empty x) — JS arrays have no IEmptyableCollection there.
+      This converter walks arrays/objects directly."
+     [x]
+     (cond
+       (array? x) (mapv js-form->clj x)
+       (identical? (type x) js/Object)
+       (into {}
+         (map (fn [k] [(keyword k) (js-form->clj (aget x k))]))
+         (js/Object.keys x))
+       :else x)))
+
 (defn- roundtrips-to?
   "True if restored (a handle) has the same content as source
    (a handle), each read through a different path."
@@ -89,7 +111,7 @@
     #?(:clj
        (is (roundtrips-to? db (-> db d/serializable cheshire/generate-string cheshire/parse-string d/from-serializable))))
     #?(:cljs
-       (is (roundtrips-to? db (-> db d/serializable js/JSON.stringify js/JSON.parse d/from-serializable))))))
+       (is (roundtrips-to? db (-> db d/serializable clj->js js/JSON.stringify js/JSON.parse (js-form->clj) d/from-serializable))))))
 
 (deftest test-nan
   (let [db (d/db-with
@@ -110,7 +132,7 @@
     #?(:clj
        (is (valid? (-> db d/serializable cheshire/generate-string cheshire/parse-string d/from-serializable))))
     #?(:cljs
-       (is (valid? (-> db d/serializable js/JSON.stringify js/JSON.parse d/from-serializable))))))
+       (is (valid? (-> db d/serializable clj->js js/JSON.stringify js/JSON.parse (js-form->clj) d/from-serializable))))))
 
 (deftest test-synthetic-digest-roundtrip
   (let [conn (d/create-conn u5s/gen-schema)]
