@@ -60,11 +60,25 @@
    the printed form) and registers it, so the registration runs
    wherever the defining form is evaluated — on ClojureScript,
    where there is no requiring-resolve, that registration is the
-   path."
+   path.
+
+   SCI loading: SCI is an opt-in dependency — only the :sci kind
+   needs it — so on the :clj family sci.core is NOT a load-time
+   require of this namespace. It is resolved lazily, on first use
+   of the :sci kind, via requiring-resolve (see load-sci!). Hosts
+   that cannot load sci.core at all (jank: sci.core's ns form
+   pulls clojure.tools.reader.reader-types, a .clj-only module)
+   still load the whole library and use every other feature;
+   invoking the :sci kind there throws
+   :eve.db.ds/db-fn-sci-unavailable, naming the dependency.
+   (On jank the lazy resolve is not attempted: a failed module
+   load there is uncatchable, so load-sci! raises directly.)
+   ClojureScript has no runtime module loading, so there
+   sci.core remains a compile-time require of this namespace."
   #?(:cljs (:require-macros [eve.db.ds.util :as util]))
   (:require
     [eve.db.ds.util :as util]
-    [sci.core :as sci]))
+    #?(:cljs [sci.core :as sci])))
 
 ;; ---------------------------------------------------------------------------
 ;; Stored shapes
@@ -246,18 +260,90 @@
 (defn- resolve-stored [stored]
   (let [sym (:db.fn/sym stored)]
     (or (get @fn-registry sym)
-      #?(:clj (try (requiring-resolve sym)
-                   (catch #?(:clj Throwable :cljs :default) _ nil)))
+      ;; No requiring-resolve fallback on jank: a failed module
+      ;; load there is uncatchable (see load-sci!), so resolving
+      ;; an absent module would kill the process instead of
+      ;; reaching the db-fn-unresolved error below. On jank the
+      ;; registry is the path, exactly as on cljs.
+      #?(:jank nil
+         :clj  (try (requiring-resolve sym)
+                    (catch Throwable _ nil)))
       (util/raise
         (str "Cannot resolve db fn " sym
           ": it is not in the eve.db.ds registry and "
-          #?(:clj "cannot be requiring-resolve'd"
+          #?(:jank "jank resolves :resolve fns through the registry only"
+             :clj  "cannot be requiring-resolve'd"
              :cljs "ClojureScript has no requiring-resolve")
           ". Register it with (eve.db.ds.core/register-fn! '" sym " f).")
         {:error :eve.db.ds/db-fn-unresolved :sym sym}))))
 
 ;; ---------------------------------------------------------------------------
 ;; SCI: surface, context, compiled-fn cache
+
+;; SCI loading on the :clj family is lazy (see the ns docstring):
+;; sci.core's init/eval-string* are resolved via requiring-resolve
+;; on first use of the :sci kind and cached here. On cljs the ns
+;; form's compile-time require provides them directly.
+#?(:clj
+   (defonce ^:private sci-fns (atom nil)))
+
+#?(:clj
+   (defn- sci-unavailable!
+     "Raise the ds error for exercising the :sci kind on a host
+      where sci.core cannot load. detail names the host's reason."
+     [detail cause-msg]
+     (util/raise
+       (str "The :sci kind of stored :db/fn is opt-in and needs the SCI "
+         "interpreter (org.babashka/sci, namespace sci.core), which cannot "
+         "load on this host: " detail
+         ". Everything else in eve.db.ds — including the default host-fn "
+         "kind (eve.db.ds.core/db-fn) and :resolve fns — works without it.")
+       {:error :eve.db.ds/db-fn-sci-unavailable
+        :cause cause-msg})))
+
+#?(:clj
+   (defn- load-sci!
+     "Resolve sci.core's init and eval-string* (:clj family),
+      caching them on success. When this host cannot load
+      sci.core, throw :eve.db.ds/db-fn-sci-unavailable — the
+      failure surfaces where the :sci kind is exercised, never
+      at library load.
+
+      On jank the resolve is not even attempted: sci.core's ns
+      form requires clojure.tools.reader.reader-types, a
+      .clj-only module jank's loader cannot load (measured
+      against sci 0.15.59), and a failed module load on jank is
+      UNcatchable — catch Throwable and catch Object both miss
+      it (measured 2026-11-21) — so an attempt would kill the
+      process with a raw loader error instead of raising this
+      one. If a future sci ships a jank-loadable ns form, this
+      arm is the place to revisit."
+     []
+     (or @sci-fns
+       #?(:jank
+          (sci-unavailable!
+            (str "sci.core's ns form requires clojure.tools.reader.reader-types, "
+              "a .clj-only module jank's loader cannot load (sci 0.15.59)")
+            "The module clojure.tools.reader.reader-types could not be found")
+          :clj
+          (let [attempt (try {:init         (requiring-resolve 'sci.core/init)
+                              :eval-string* (requiring-resolve 'sci.core/eval-string*)}
+                             (catch Throwable e {:load-error e}))]
+            (if (and (:init attempt) (:eval-string* attempt))
+              (reset! sci-fns attempt)
+              (sci-unavailable!
+                (str "sci.core could not be loaded"
+                  (when-let [e (:load-error attempt)]
+                    (str ": " (ex-message e))))
+                (some-> (:load-error attempt) ex-message))))))))
+
+(defn- sci-init [opts]
+  #?(:cljs (sci/init opts)
+     :clj  ((:init (load-sci!)) opts)))
+
+(defn- sci-eval-string* [ctx form]
+  #?(:cljs (sci/eval-string* ctx form)
+     :clj  ((:eval-string* (load-sci!)) ctx form)))
 
 ;; Symbol -> host fn: the DB read API a SCI db fn may call.
 ;; eve.db.ds.core registers its public read fns here when it
@@ -280,7 +366,7 @@
 
 (defn- build-sci-ctx []
   (let [surface @sci-surface]
-    (sci/init
+    (sci-init
       {:namespaces {'user           surface
                     'eve.db.ds.core surface
                     'd              surface}})))
@@ -305,7 +391,7 @@
   (or (get @sci-compiled stored)
     (let [form (str "(fn " (pr-str (:db.fn/params stored)) " "
                  (:db.fn/code stored) ")")
-          f    (try (sci/eval-string* (sci-ctx) form)
+          f    (try (sci-eval-string* (sci-ctx) form)
                     (catch #?(:clj Throwable :cljs :default) e
                       (throw (unwrap-sci-error e))))]
       (swap! sci-compiled assoc stored f)
