@@ -467,8 +467,14 @@
     (cond
       (= x y) 0
       (and (sequential? x) (sequential? y)) (seq-compare x y)
-      #?@(:clj  [(instance? Number x)       (clojure.lang.Numbers/compare x y)])
-      #?@(:clj  [(instance? Comparable x)   (.compareTo ^Comparable x y)]
+      ;; PORTING-DS D4 hunk (F-JOLT-CMP): core compare, not host method
+      ;; calls — jolt's clojure.lang has no Numbers/compare and its
+      ;; Keyword carries no compareTo method, while clojure.core/compare
+      ;; is the same operation on the JVM (Numbers.compare /
+      ;; Util.compare -> .compareTo) and routes through the comparator
+      ;; machinery every host serves.
+      #?@(:clj  [(instance? Number x)       (compare x y)])
+      #?@(:clj  [(instance? Comparable x)   (compare x y)]
           :cljs [(satisfies? IComparable x) (-compare x y)])
       (not (class-identical? x y)) (class-compare x y)
       #?@(:cljs [(or (number? x) (string? x) (array? x) (true? x) (false? x)) (garray/defaultCompare x y)])
@@ -544,10 +550,16 @@
 ;; fast versions without nil checks
 
 (defn- cmp-attr-quick
+  ;; PORTING-DS D4 hunk (F-JOLT-CMP): (long (compare a1 a2)), not
+  ;; (.compareTo ...) — jolt's clojure.lang.Keyword names Comparable
+  ;; among its supers and (compare :a :b) answers, but the class
+  ;; carries no compareTo method for interop to dispatch to; on the
+  ;; JVM core compare on a Comparable IS .compareTo (Util/compare),
+  ;; so keyword/string ordering is unchanged.
   #?(:clj
      {:inline
       (fn [a1 a2]
-        `(long (.compareTo ~(with-meta a1 {:tag "Comparable"}) ~a2)))})
+        `(long (compare ~a1 ~a2)))})
   ^long [a1 a2]
   ;; either both are keywords or both are strings
   #?(:cljs
@@ -555,7 +567,7 @@
        (-compare a1 a2)
        (garray/defaultCompare a1 a2))
      :clj
-     (.compareTo ^Comparable a1 a2)))
+     (long (compare a1 a2))))
 
 (defcomp cmp-datoms-eav-quick ^long [d1, d2]
   (combine-cmp
