@@ -42,8 +42,14 @@
 ;; same arithmetic).
 
 (def ^:private factors
-  ;; 32^0 .. 32^12 — enough for 2^60 keys
-  (vec (take 13 (iterate #(* 32 %) 1))))
+  ;; 32^0 .. 32^12 — enough for 2^60 keys. Spelled *' (promoting):
+  ;; realizing the vec evaluates the iterate fn one element past
+  ;; the take (a discarded 32^13), and plain * is the CHECKED form
+  ;; on Eve hosts — it throws on overflow instead of promoting
+  ;; (measured under jank + Eve's completion, 2026-11-21: the
+  ;; checked * turned that discarded product into a load failure
+  ;; for this namespace). The taken values are identical either way.
+  (vec (take 13 (iterate #(*' 32 %) 1))))
 
 (def ^:const empty-path 0)
 
