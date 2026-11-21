@@ -12,9 +12,10 @@
    runs on this repo's vendored PSS port (lib/) — the jar both
    shadows the port on a shared classpath and is the only source of
    those classes, so no single classpath serves both arms.
-   - THIS namespace is the Eve arm: this repo's eve.db.ds, the
-     flagship shape — swap! on a journaled persistent Eve atom
-     domain (the release default). Prints {:arm :eve ...} EDN rows.
+   - THIS namespace is the Eve arm: this repo's eve.db.ds, driven
+     through the public conn API — create-conn on a persistent
+     domain + transact! (the rewrite's flagship shape, DS-IN-EVE-
+     PLAN v2 section 4). Prints {:arm :eve ...} EDN rows.
    - contract.ds-bench-stock is the stock arm: upstream DataScript
      1.8.1 (Maven dep, isolated in test/bench-stock/deps.edn) with
      the DB in a clojure.core/atom — stock has no persistent domain,
@@ -23,6 +24,16 @@
      (medians across reps) and prints the doc's markdown tables.
    The stock bb column prints GAPPED: stock on bb needs bb v1.13.226
    rebuilt natively with datascript 1.8.1 (PLAN gap 2).
+
+   WHY THE CONN API: the pre-rewrite arm stored (ed/empty-db schema)
+   as an mmap atom's root and swap!'d it with ed/db-with. In the
+   landed rewrite, empty-db/db-with return HANDLES —
+   {:atom <eve atom> :tx n} — and a handle embeds a host Eve atom,
+   so packing it into a shared (persistent) domain throws
+   eve.deftype-proto.serialize/refuse-reference! (proven at ds
+   b1c739c / Eve abba331: Eve arm produced zero rows at any size).
+   The conn API is the public shape that owns persistence now:
+   each shape below runs against its own fresh persistent conn.
 
    Person generator: the repo's deterministic one (ds-harness.perf,
    generalized from people-1k to size n): person i in 1..n is
@@ -44,12 +55,9 @@
       entities of a pre-built db (the build itself is not timed).
 
    Usage (via harness/run-jvm.sh): contract.ds-bench <domain-dir> [size...]
-   The domain dir must be FRESH (the Eve arm's atoms persist in it).
-   Default sizes: 500 1000."
-  (:refer-clojure :exclude [swap!])
-  (:require [eve.host :refer [swap!]]
-            [eve.atom :as atom]
-            [eve.db.ds.core :as ed]))
+   The dir is a scratch root and must be FRESH (each shape gets a
+   fresh persistent conn under it). Default sizes: 500 1000."
+  (:require [eve.db.ds.core :as ed]))
 
 (def schema
   {:name {:db/index true}
@@ -80,49 +88,48 @@
 (def shapes [:batched-build :bulk-load :one-person-per-swap
              :one-datom-per-swap :retract-per-swap])
 
-(defn- eve-atom [domain name]
-  (let [a (atom/lookup-or-create-mmap-atom! domain name nil)]
-    (when (nil? @a) (swap! a (fn [_] (ed/empty-db schema))))
-    a))
-
-(defn eve-shapes [domain n]
+(defn eve-shapes [root n]
   (let [ps (people n)
         tuples (datom-tuples n)
-        k (min 500 n)]
+        k (min 500 n)
+        conn (fn [tag]
+               (let [d (str root "/eve-" tag "-" n)]
+                 (.mkdirs (java.io.File. d))
+                 (ed/create-conn schema {:persistent d})))]
     {:batched-build
-     (let [a (eve-atom domain (str "ds-bench/eve-batched-" n))
+     (let [c (conn "batched")
            [ms _] (timed-ms (doseq [batch (partition-all 100 ps)]
-                              (swap! a (fn [db] (ed/db-with db batch)))))]
+                              (ed/transact! c batch)))]
        ms)
      :bulk-load
-     (let [a (eve-atom domain (str "ds-bench/eve-bulk-" n))
+     (let [c (conn "bulk")
            [ms _] (timed-ms (doseq [chunk (partition-all 2000 tuples)]
-                              (swap! a (fn [db] (ed/db-with db chunk)))))]
+                              (ed/transact! c chunk)))]
        ms)
      :one-person-per-swap
-     (let [a (eve-atom domain (str "ds-bench/eve-one-person-" n))
+     (let [c (conn "one-person")
            [ms _] (timed-ms (doseq [p (take k ps)]
-                              (swap! a (fn [db] (ed/db-with db [p])))))]
+                              (ed/transact! c [p])))]
        (/ ms k))
      :one-datom-per-swap
-     (let [a (eve-atom domain (str "ds-bench/eve-one-datom-" n))
+     (let [c (conn "one-datom")
            [ms _] (timed-ms (doseq [i (range 1 101)]
-                              (swap! a (fn [db] (ed/db-with db [[:db/add i :name (str "person-" i)]])))))]
+                              (ed/transact! c [[:db/add i :name (str "person-" i)]])))]
        (/ ms 100))
      :retract-per-swap
-     (let [a (eve-atom domain (str "ds-bench/eve-retract-" n))]
+     (let [c (conn "retract")]
        (doseq [batch (partition-all 100 ps)]
-         (swap! a (fn [db] (ed/db-with db batch))))
+         (ed/transact! c batch))
        (let [[ms _] (timed-ms (doseq [e (range 1 (inc k))]
-                                (swap! a (fn [db] (ed/db-with db [[:db.fn/retractEntity e]])))))]
+                                (ed/transact! c [[:db.fn/retractEntity e]])))]
          (/ ms k)))}))
 
 (defn -main [& [dir & sizes]]
   (let [dir (or dir (str (System/getProperty "java.io.tmpdir") "/ds-bench"))
-        sizes (if (seq sizes) (mapv #(Long/parseLong %) sizes) [500 1000])
-        domain (atom/persistent-atom-domain dir)]
+        sizes (if (seq sizes) (mapv #(Long/parseLong %) sizes) [500 1000])]
+    (.mkdirs (java.io.File. dir))
     (doseq [n sizes]
-      (let [rows (eve-shapes domain n)]
+      (let [rows (eve-shapes dir n)]
         (doseq [shape shapes]
           (println (pr-str {:arm :eve :size n :shape shape :ms (get rows shape)})))))
     (flush)))
