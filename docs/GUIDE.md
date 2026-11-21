@@ -186,9 +186,11 @@ the whole transaction aborts and nothing commits.
 A stored fn is **data** — it lives in the DB as a datom value, and a
 DB is Eve-resident, so the stored value must be a legal Eve value: a
 plain map. (A host fn is not an Eve value; see the rejection note
-below.) There are two kinds, chosen per fn:
+below.) There are two kinds, chosen per fn. The default is the host
+kind; SCI is the opt-in.
 
-**The SCI kind** — the fn's source travels with the DB:
+**The host kind (the default)** — the DB names a host fn, and
+`d/db-fn` builds one from a plain fn form:
 
 ```clojure
 (d/transact! conn [{:db/ident :inc-age
@@ -199,20 +201,23 @@ below.) There are two kinds, chosen per fn:
                                   (throw (ex-info "No entity" {}))))}])
 ```
 
-`d/db-fn` is a macro: it sourcifies the body at compile time into the
-stored map `{:db.fn/kind :sci, :db.fn/params [db name], :db.fn/code
-"<body>"}`. (ClojureScript consumers: also require the macro —
-`(:require-macros [eve.db.ds.core :as d])` in the ns form; this
-build does not infer .cljc macros across namespaces.) At transact time the body is evaluated with
-[SCI](https://github.com/babashka/sci) in a sandbox: clojure.core's
-safe surface, plus the DB read API — `entity`, `entid`, `q`, `datoms`,
-`seek-datoms`, `pull`, `pull-many` — callable unqualified, as
-`d/<name>`, or as `eve.db.ds.core/<name>`. The evaluated fn is cached
-host-side per stored map; the stored map itself stays pure data. The
-explicit map form is `d/function` (Datomic's function shape):
-`(d/function {:lang :clojure, :params [db name], :code "<body>"})`.
+`d/db-fn` is a macro. Its expansion *defines the body as a var in
+your namespace*, registers it, and evaluates to the stored map
+`{:db.fn/kind :resolve, :db.fn/sym <your-ns>/db-fn-<hash>}`. The
+generated name is content-addressed — derived from your namespace
+and a hash of the form — so re-evaluating the same form (a reload,
+a REPL re-eval) re-interns and re-registers the same name; the var
+is a real var in your namespace that you can inspect and call. The
+body is ordinary code in your namespace: the full host API, at host
+speed, no sandbox. (ClojureScript consumers: also require the
+macro — `(:require-macros [eve.db.ds.core :as d])` in the ns form;
+this build does not infer .cljc macros across namespaces. The
+expansion's def and registration run when the defining form is
+evaluated — at load, for a top-level form — and on ClojureScript
+that registration is the lookup path, since there is no
+`requiring-resolve`.)
 
-**The resolve kind** — the DB names a host fn:
+To name a fn yourself instead, register it and store a reference:
 
 ```clojure
 (defn inc-age [db name] …)               ; an ordinary host fn
@@ -221,40 +226,67 @@ explicit map form is `d/function` (Datomic's function shape):
                     :db/fn    (d/fn-ref 'my.app/inc-age)}])
 ```
 
-The stored map is `{:db.fn/kind :resolve, :db.fn/sym my.app/inc-age}`.
-At transact time the symbol is looked up in the registry
-(`d/register-fn!` / `d/unregister-fn!` — the portable path, both
-hosts) or, on the JVM only, by `requiring-resolve`. An unresolvable
-symbol aborts the transaction with `:eve.db.ds/db-fn-unresolved`.
-The fn runs at host speed with the full host API.
+Either way the stored map is `{:db.fn/kind :resolve, :db.fn/sym
+my.app/inc-age}`. At transact time the symbol is looked up in the
+registry (`d/register-fn!` / `d/unregister-fn!` — the portable path,
+both hosts) or, on the JVM only, by `requiring-resolve`. An
+unresolvable symbol aborts the transaction with
+`:eve.db.ds/db-fn-unresolved`. Because the DB stores only the name,
+a process that reads the DB must have the fn registered — for a
+`d/db-fn` fn, by loading the namespace that defines it — or be able
+to resolve it.
 
-| | SCI kind | resolve kind |
+**The SCI kind (opt-in)** — the fn's source travels with the DB:
+
+```clojure
+(d/transact! conn [{:db/ident :inc-age
+                    :db/fn    (d/sci-fn [db name]
+                                (if-some [ent (d/entity db [:name name])]
+                                  [{:db/id (:db/id ent)
+                                    :age   (inc (:age ent))}]
+                                  (throw (ex-info "No entity" {}))))}])
+```
+
+`d/sci-fn` is a macro with the same shape as `d/db-fn`, but it
+sourcifies the body at compile time into the stored map
+`{:db.fn/kind :sci, :db.fn/params [db name], :db.fn/code "<body>"}`.
+At transact time the body is evaluated with
+[SCI](https://github.com/babashka/sci) in a sandbox: clojure.core's
+safe surface, plus the DB read API — `entity`, `entid`, `q`, `datoms`,
+`seek-datoms`, `pull`, `pull-many` — callable unqualified, as
+`d/<name>`, or as `eve.db.ds.core/<name>`. The evaluated fn is cached
+host-side per stored map; the stored map itself stays pure data. The
+explicit map form is `d/function` (Datomic's function shape):
+`(d/function {:lang :clojure, :params [db name], :code "<body>"})`.
+
+| | host kind (default) | SCI kind (opt-in) |
 |---|---|---|
-| Travels with the DB | **Yes** — the source is in the DB; any process that can read the DB can run the fn | No — the DB names a symbol; the receiving process must register (or be able to resolve) the same fn |
-| Setup | None | `register-fn!` per fn (or a resolvable var, JVM) |
-| Body can use | The sandboxed read API above + clojure.core's safe surface | Anything the host fn can do |
-| Sandbox | Yes — a stored fn cannot reach host internals | No — it *is* host code; only install fns you trust |
-| Invoke cost | One compile per distinct fn (~10–15 ms, cell-class), then interpreted: a tight arithmetic body measured ≈2–3× the host cost; through `transact!` the difference is under the transaction machinery's noise | Host speed, no compile |
-| Browser | Works (SCI is a .cljc library; the browser u3 suite runs both kinds — tally in DB-FN-STATUS.md) | Works via the registry (no `requiring-resolve` in ClojureScript) |
+| Travels with the DB | No — the DB names a symbol; the receiving process must register (or be able to resolve) the same fn | **Yes** — the source is in the DB; any process that can read the DB can run the fn |
+| Setup | None for `d/db-fn` (it defines and registers its var); `register-fn!` per fn for `fn-ref` (or a resolvable var, JVM) | None |
+| Body can use | Anything the host fn can do | The sandboxed read API above + clojure.core's safe surface |
+| Sandbox | No — it *is* host code; only install fns you trust | Yes — a stored fn cannot reach host internals |
+| Invoke cost | Host speed, no compile | One compile per distinct fn (~10–15 ms, cell-class), then interpreted: a tight arithmetic body measured ≈2–3× the host cost; through `transact!` the difference is under the transaction machinery's noise |
+| Browser | Works via the registry (no `requiring-resolve` in ClojureScript); a `d/db-fn` fn registers when its defining form loads | Works (SCI is a .cljc library; the browser u3 suite runs both kinds — tally in DB-FN-STATUS.md) |
 
-**Provisional default: the SCI kind** — it is what the `d/db-fn`
-macro builds, and it is the only kind that needs no out-of-band
-setup: a DB carrying SCI fns is self-contained on both hosts. Pick
-the resolve kind per fn when the body needs the full host API, when
-the fn is on a hot path with a compute-heavy body, or when the code
-must not live in the DB. The default is one line — the constructor
-the `db-fn` macro expands to (`eve.db.ds.db-fn/sci-fn` in
-`eve.db.ds.core`) — and stays provisional until it is picked for
-good from measurements on a real venue; the numbers above are
+**Default: host fns** (John's ruling, 2026-11-20: "Let's default
+to host fns and let you opt into sci fns"). `d/db-fn` — the form a
+user reaches for — builds the host kind. Opt into SCI per fn when
+the DB must be self-contained (the fn travels with the data, e.g.
+a DB handed to another process), when the fn must be sandboxed, or
+when the receiving process cannot be expected to have the code.
+Stay with host fns for hot paths, compute-heavy bodies, and bodies
+that need the full host API. The numbers in the table are
 cell-class (shared, throttled box) and labeled as such in
 DB-FN-STATUS.md.
 
 **Host fns are rejected, before commit.** Transacting a raw host fn
-as a `:db/fn` value — or as any stored value — throws
+*object* as a `:db/fn` value — or as any stored value — throws
 `:eve.db.ds/db-fn-host-fn` (resp. `:eve.db.ds/fn-not-storable`)
 *before* anything commits: the conn's DB is unchanged and the error
-message names the supported forms. The same check runs on tx-data a
-db fn returns. A host fn may still be passed at the call site,
+message names the supported forms. (To store a host fn, transact
+what `d/db-fn` or `d/fn-ref` returns — the name, as data — never
+the fn object itself.) The same check runs on tx-data a db fn
+returns. A host fn may still be passed at the call site,
 `[:db.fn/call (fn [db] …) …]`, where nothing is stored.
 
 ## 6. Querying *(in progress — U2, U4)*
