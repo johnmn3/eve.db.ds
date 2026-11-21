@@ -21,9 +21,11 @@
    — a fn is not an Eve value and an Eve-resident DB cannot hold
    one. A stored :db/fn is data now ({:db.fn/kind :sci|:resolve,
    ...}); the deftest below is RESHAPED to run upstream's scenario
-   in both stored modes with upstream's assertions intact, plus
-   the original host-fn form asserting the named pre-commit
-   rejection (:eve.db.ds/db-fn-host-fn) and an unchanged DB."
+   in the default mode (d/db-fn — a host fn, stored as :resolve),
+   the SCI opt-in mode (d/sci-fn) and the explicit resolve mode
+   (d/fn-ref), with upstream's assertions intact, plus the
+   original host-fn form asserting the named pre-commit rejection
+   (:eve.db.ds/db-fn-host-fn) and an unchanged DB."
   (:require
     [clojure.test :as t :refer [is are deftest testing]]
     [eve.db.ds.core :as d]
@@ -288,14 +290,23 @@
     (is (:had-birthday e))))
 
 (deftest test-db-ident-fn
-  ;; Reshaped per John's ruling (2026-11-20): the feature stays,
-  ;; as stored DATA, in both invocation kinds. Upstream's host-fn
-  ;; install form is the third section: it must now fail BEFORE
+  ;; Reshaped per John's rulings (2026-11-20): the feature stays,
+  ;; as stored DATA, in every invocation kind. Upstream's host-fn
+  ;; install form is the last section: it must now fail BEFORE
   ;; commit with the named error, leaving the DB unchanged.
-  (testing "SCI kind (d/db-fn macro)"
+  (testing "default kind (d/db-fn macro — host fn, stored as :resolve)"
     (db-ident-fn-scenario
       (d/create-conn {:name {:db/unique :db.unique/identity}})
       (d/db-fn [db name]
+        (if-some [ent (d/entity db [:name name])]
+          [{:db/id (:db/id ent)
+            :age   (inc (:age ent))}
+           [:db/add (:db/id ent) :had-birthday true]]
+          (throw (ex-info (str "No entity with name: " name) {}))))))
+  (testing "SCI kind (d/sci-fn macro — the opt-in)"
+    (db-ident-fn-scenario
+      (d/create-conn {:name {:db/unique :db.unique/identity}})
+      (d/sci-fn [db name]
         (if-some [ent (d/entity db [:name name])]
           [{:db/id (:db/id ent)
             :age   (inc (:age ent))}

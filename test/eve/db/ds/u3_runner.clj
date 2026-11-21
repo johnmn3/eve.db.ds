@@ -7,10 +7,11 @@
    - GAP-U3-1 (query.cljc's tuple shape — U4's file): the
      q-dependent deftests throw ClassCastException at this pin.
 
-   GAP-U3-5 (stored :db/fn) is RESOLVED (John's ruling,
+   GAP-U3-5 (stored :db/fn) is RESOLVED (John's rulings,
    2026-11-20; DB-FN-STATUS.md): test-db-ident-fn is unparked,
-   reshaped to run in both stored modes, and eve.db.ds.test.db-fn
-   carries the feature proofs.
+   reshaped to run in the default (host), SCI opt-in and resolve
+   stored modes, and eve.db.ds.test.db-fn carries the feature
+   proofs.
 
    Run: clojure -Sdeps '{:paths [\"src\" \"test\"]}' -M -m eve.db.ds.u3-runner
    Exit code is 0 only when every run test passes."

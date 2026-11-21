@@ -32,7 +32,7 @@
 
 (defn -main [& _]
   (let [host-fn (fn [db n] [[:db/add 1 :n n]])
-        sci-stored (d/db-fn [db n] [[:db/add 1 :n n]])
+        sci-stored (d/sci-fn [db n] [[:db/add 1 :n n]])
         ;; cold: first-ever SCI invoke (context init + compile)
         cold-conn (d/create-conn)
         _ (d/transact! cold-conn [{:db/id 1} {:db/ident :b :db/fn sci-stored}])
@@ -59,7 +59,7 @@
         compute-host (fn [db n]
                        (loop [i 1 acc 0]
                          (if (> i 1000) [[:db/add 1 :n acc]] (recur (inc i) (+ acc i)))))
-        compute-sci (d/db-fn [db n]
+        compute-sci (d/sci-fn [db n]
                       (loop [i 1 acc 0]
                         (if (> i 1000) [[:db/add 1 :n acc]] (recur (inc i) (+ acc i)))))
         csci-conn (d/create-conn)
@@ -85,7 +85,7 @@
     (let [db      (d/empty-db)
           host    (fn [db n] (loop [i 1 acc 0]
                                (if (> i 1000) [[:db/add 1 :n acc]] (recur (inc i) (+ acc i)))))
-          sci-st  (d/db-fn [db n] (loop [i 1 acc 0]
+          sci-st  (d/sci-fn [db n] (loop [i 1 acc 0]
                                     (if (> i 1000) [[:db/add 1 :n acc]] (recur (inc i) (+ acc i)))))]
       (d/register-fn! 'dbfn-bench/micro host)
       (let [res-st (d/fn-ref 'dbfn-bench/micro)
