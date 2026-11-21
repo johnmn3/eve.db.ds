@@ -53,8 +53,9 @@ $DS_DIR/shadow-cljs.edn
 $DS_DIR/deps.edn
 $DS_DIR/harness/run-cljs.sh"
 
-read -r STAMP ARTIFACT < <(COHOST_DIR="$COHOST_DIR" "$BB" harness/aot-stamp.bb \
+mapfile -t _SA < <(COHOST_DIR="$COHOST_DIR" "$BB" harness/aot-stamp.bb \
   cljs "$(node --version)" "shadow-cljs $SHADOW_VERSION cp:$RESOLVED_CP" $FILES)
+STAMP="${_SA[0]}"; ARTIFACT="${_SA[1]}"
 
 ADDON="$EVE_ROOT/build/Release/mmap_cas.node"
 
@@ -71,8 +72,8 @@ ensure() {
   local tmp="$ARTIFACT.tmp.$$"
   mkdir -p "$tmp" "$(dirname "$ARTIFACT")"
   clojure -Sdeps "{:paths $PATHS_EDN :deps {thheller/shadow-cljs {:mvn/version \"$SHADOW_VERSION\"}}}" \
-    -M -m shadow.cljs.devtools.cli release one-node \
-    --config-merge "{:builds {:one-node {:output-to \"$tmp/main.js\"}}}"
+    -M -m shadow.cljs.devtools.cli release one-node
+  cp "$DS_DIR/target/one-node/main.js" "$tmp/main.js"
   mv "$tmp" "$ARTIFACT"
   echo "AOT-BUILD cljs $((SECONDS-t0))s stamp=$STAMP" >&2
 }

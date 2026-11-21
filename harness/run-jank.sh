@@ -50,8 +50,9 @@ $DS_DIR/deps.edn
 $DS_DIR/harness/run-jank.sh"
 
 JANK_VERSION="$(jank print-binary-version 2>/dev/null | head -1)"
-read -r STAMP ARTIFACT < <(COHOST_DIR="$COHOST_DIR" "$BB" harness/aot-stamp.bb \
+mapfile -t _SA < <(COHOST_DIR="$COHOST_DIR" "$BB" harness/aot-stamp.bb \
   jank "$JANK_VERSION" "cp:$RESOLVED_CP" $FILES)
+STAMP="${_SA[0]}"; ARTIFACT="${_SA[1]}"
 
 ensure() {
   if [ -f "$ARTIFACT/one" ]; then

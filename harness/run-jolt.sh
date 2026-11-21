@@ -47,8 +47,9 @@ $DS_DIR/deps.edn
 $DS_DIR/harness/run-jolt.sh"
 
 JOLT_VERSION="$(jolt --version 2>/dev/null | head -1)"
-read -r STAMP ARTIFACT < <(COHOST_DIR="$COHOST_DIR" "$BB" harness/aot-stamp.bb \
+mapfile -t _SA < <(COHOST_DIR="$COHOST_DIR" "$BB" harness/aot-stamp.bb \
   jolt "$JOLT_VERSION" "cp:$RESOLVED_CP" $FILES)
+STAMP="${_SA[0]}"; ARTIFACT="${_SA[1]}"
 
 ensure() {
   if [ -f "$ARTIFACT/one-jolt" ]; then
@@ -57,7 +58,20 @@ ensure() {
   local t0=$SECONDS
   local tmp="$ARTIFACT.tmp.$$"
   mkdir -p "$tmp" "$(dirname "$ARTIFACT")"
-  jolt -Scp "$RESOLVED_CP" build -m contract.one -o "$tmp/one-jolt"
+  # The compiled-jolt lane's recipe: jolt build runs from a project
+  # root whose deps.edn declares the paths (a -Scp override leaves
+  # jolt.host/build-binary unbound), with the --dev codegen path —
+  # the recorded fast configuration.
+  local stage="$tmp/stage"
+  mkdir -p "$stage"
+  python3 - "$stage/deps.edn" <<PY
+import sys
+paths = '''$CP'''.split(':')
+edn = '{:paths [' + ' '.join('"%s"' % p for p in paths) + ']'
+edn += ' :deps {org.babashka/sci {:mvn/version "0.15.59"}}}\n'
+open(sys.argv[1], 'w').write(edn)
+PY
+  (cd "$stage" && jolt build -m contract.one -o "$tmp/one-jolt" --dev)
   mv "$tmp" "$ARTIFACT"
   echo "AOT-BUILD jolt $((SECONDS-t0))s stamp=$STAMP" >&2
 }
