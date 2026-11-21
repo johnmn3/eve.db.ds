@@ -133,10 +133,16 @@ keeps resolving:
     (d/db-with [{:db/id 2 :name "Petr"}]))   ;; both steps stay readable
 ```
 
-Whether conn-less values are released explicitly by the caller or
-reclaimed by the host is an **open item in the plan (§8)** — the
-mechanism above is settled, the release policy is *(in progress —
-awaiting the §8 ruling)*. Do not design around either answer yet.
+The release policy is settled (plan §8, ruled 2026-11-20): explicit
+release is the rule, and chains auto-close their superseded
+intermediates — the `with-open` strategy. Once a chain has advanced
+two steps past a chain DB, that DB is released automatically, unless
+it was pinned with `keep!` or it has more than one chain successor
+(a fork is never auto-released). Pin any intermediate you still
+need — from its handle alone, `(d/keep! db)` — and `release!`
+removes one immediately. Reading a released handle throws
+`:eve.db.ds/db-not-kept`. Explicit conns are unchanged: their DBs
+stay kept until `release!`.
 
 `filter` returns a filtered view as a handle, with upstream semantics;
 `is-filtered` tests for one. *(Open at the pinned Eve — GAP-6:
@@ -274,6 +280,8 @@ boundary, in both directions.
    Datoms.
 5. Conn-less values (`empty-db`, `init-db`, `db-with`, `with`,
    `filter`) ride on a private in-memory conn whose kept set holds the
-   chain; their release policy is an open plan item (§8).
+   chain. Release is explicit (`keep!` / `release!`), and a chain
+   auto-closes a DB once it has advanced two steps past it — unless
+   the DB was `keep!`'d or has more than one chain successor.
 6. Persistence is `create-conn` with `:persistent dir`. There is no
    storage namespace.

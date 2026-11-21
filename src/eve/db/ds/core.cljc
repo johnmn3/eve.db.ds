@@ -486,18 +486,22 @@
    If you specify `:storage` option, conn will be stored automatically after each transaction"
   conn/create-conn)
 
-(def ^{:arglists '([conn db])} keep!
+(def ^{:arglists '([conn db] [db])} keep!
   "Pin the DB the handle names in its conn's atom, so reads through
    the handle keep resolving after the conn moves on (plan v2 §4).
    The DB must still be reachable — current, or already kept.
+   The one-argument form pins in the handle's own atom — for
+   conn-less values, whose holder has a handle but no conn; a
+   keep!'d chain DB is never auto-released as the chain advances.
    Additive in this rewrite; upstream has no equivalent."
   conn/keep!)
 
-(def ^{:arglists '([conn db])} release!
+(def ^{:arglists '([conn db] [db])} release!
   "Remove the DB the handle names from its conn's atom :kept map.
    Afterwards, reads through the handle throw :eve.db.ds/db-not-kept
-   unless the DB is the conn's current one again. Additive in this
-   rewrite; upstream has no equivalent."
+   unless the DB is the conn's current one again. The one-argument
+   form removes from the handle's own atom — for conn-less values.
+   Additive in this rewrite; upstream has no equivalent."
   conn/release!)
 
 (def ^{:arglists '([conn])} close-conn!
