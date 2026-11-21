@@ -11,4 +11,13 @@
    :output-dir "target/ds-browser/public/js"
    :asset-path "/js"
    :modules {:main {:init-fn eve.db.ds.browser-runner-main/init}}
-   :compiler-options {:optimizations :simple :output-wrapper false :load-tests true}}}}
+   :compiler-options {:optimizations :simple :output-wrapper false :load-tests true}}
+  ;; The shootout's cljs leg (harness/run-cljs.sh): the one-datum
+  ;; contract driver as a node script, Closure :advanced — the
+  ;; recorded fast configuration of the restored setup. The harness
+  ;; overrides :output-to into the cohost AOT artifact dir.
+  :one-node
+  {:target :node-script
+   :main contract.one-cljs/main
+   :output-to "target/one-node/main.js"
+   :compiler-options {:optimizations :advanced}}}}
