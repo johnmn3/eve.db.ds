@@ -38,6 +38,12 @@
               (d/db-with [[:db/add 1 :aka  "Devil"]])
               (d/db-with [[:db/add 1 :aka  "Tupen"]]))]
 
+    ;; eve.db.ds trap (retention ruling, 2026-11-20): this base is
+    ;; forked from again after a sibling db-with chain advances past
+    ;; it, so it is kept explicitly — un-kept chain intermediates
+    ;; auto-close once the chain moves two steps past them.
+    (d/keep! db)
+
     (is (= (d/q '[:find ?v
                   :where [1 :name ?v]] db)
           #{["Petr"]}))
