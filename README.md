@@ -128,10 +128,11 @@ shapes, a durable Eve database is 14 to 32 times slower than an
 in-memory database that pays nothing for durability. That is the honest
 picture at this pin.
 
-Cold start is a known cost. The JVM one-datum cold total — process start
-to one datom written and read back — ran over the harness's 10,000 ms
-cap on a calm box and is recorded as **10s+**. The harness caps the
-measurement, so no raw median exists.
+Cold start is a known cost. The JVM one-datum cold total — process
+start through one datum committed to a disk-backed database — is
+**2,578 ms**, the median of 5 fresh-process runs on J. The steady runs
+sit in a 2.2 to 2.9 s band; the first run paid a one-time compile
+(10,988 ms) that the median excludes by construction.
 
 Scale: a Logseq-shaped build of 500 pages, about 95,700 datoms,
 completes. The marginal cost of the database in Eve's slab is flat:
@@ -293,7 +294,17 @@ footnote of the docs.
   pinned Eve:** Eve's ClojureScript delivery cannot materialize Datom
   values out of a read region. The JVM serialize suite is green. (Eve
   seat.)
-- **JVM cold start is over 10,000 ms** (see Performance).
+- **JVM cold start is about 2.6 s** (see Performance).
+- **The library does not load on Babashka.** Loading the DB namespace
+  dies in the sorted-set code with an SCI error, `Protocol not found:
+  clojure.lang.IChunk` — the bset references a JVM host interface that
+  bb's SCI cannot resolve. Measured: every shootout run fails at load.
+- **Eve does not load on nbb at the pinned Eve.** Eve's own
+  `type_readers` namespace fails (`reader/register-tag-parser!`
+  unresolvable) before any library code loads. (Eve seat.)
+- **The library does not load on Basilisp.** Importing
+  `eve.db.ds.core` fails after a long load, about 95 s per attempt.
+  The cause is not yet isolated.
 
 ## API
 
