@@ -32,6 +32,10 @@
         ;; SCI: the interpreter for stored :db/fn values of the :sci
         ;; kind (eve.db.ds.db-fn). A stored db fn is data (source as a
         ;; string); SCI evaluates it at transact time in a sandbox.
+        ;; eve.db.ds.db-fn loads sci.core LAZILY (requiring-resolve on
+        ;; first use of the :sci kind; a compile-time require only on
+        ;; cljs): the :sci kind is opt-in, so hosts that cannot load
+        ;; sci.core (jank) still load the whole library.
         org.babashka/sci {:mvn/version "0.15.59"}
         eve/eve {:git/url "https://github.com/SeniorCareMarket/eve"
                  :git/sha "abba331f78dfe08ff84e692edc4442c962120ef4"}

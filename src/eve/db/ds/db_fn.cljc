@@ -60,11 +60,23 @@
    the printed form) and registers it, so the registration runs
    wherever the defining form is evaluated — on ClojureScript,
    where there is no requiring-resolve, that registration is the
-   path."
+   path.
+
+   SCI loading: SCI is an opt-in dependency — only the :sci kind
+   needs it — so on the :clj family sci.core is NOT a load-time
+   require of this namespace. It is resolved lazily, on first use
+   of the :sci kind, via requiring-resolve (see load-sci!). Hosts
+   that cannot load sci.core at all (jank: sci.core's ns form
+   pulls clojure.tools.reader.reader-types, a .clj-only module)
+   still load the whole library and use every other feature;
+   invoking the :sci kind there throws
+   :eve.db.ds/db-fn-sci-unavailable, naming the dependency.
+   ClojureScript has no runtime module loading, so there
+   sci.core remains a compile-time require of this namespace."
   #?(:cljs (:require-macros [eve.db.ds.util :as util]))
   (:require
     [eve.db.ds.util :as util]
-    [sci.core :as sci]))
+    #?(:cljs [sci.core :as sci])))
 
 ;; ---------------------------------------------------------------------------
 ;; Stored shapes
@@ -259,6 +271,46 @@
 ;; ---------------------------------------------------------------------------
 ;; SCI: surface, context, compiled-fn cache
 
+;; SCI loading on the :clj family is lazy (see the ns docstring):
+;; sci.core's init/eval-string* are resolved via requiring-resolve
+;; on first use of the :sci kind and cached here. On cljs the ns
+;; form's compile-time require provides them directly.
+#?(:clj
+   (defonce ^:private sci-fns (atom nil)))
+
+#?(:clj
+   (defn- load-sci!
+     "Resolve sci.core's init and eval-string* (:clj family),
+      caching them on success. When this host cannot load
+      sci.core, throw a ds error naming the opt-in dependency —
+      the failure surfaces where the :sci kind is exercised,
+      never at library load."
+     []
+     (or @sci-fns
+       (let [attempt (try {:init         (requiring-resolve 'sci.core/init)
+                           :eval-string* (requiring-resolve 'sci.core/eval-string*)}
+                          (catch Throwable e {:load-error e}))]
+         (if (and (:init attempt) (:eval-string* attempt))
+           (reset! sci-fns attempt)
+           (util/raise
+             (str "The :sci kind of stored :db/fn is opt-in and needs the SCI "
+               "interpreter (org.babashka/sci, namespace sci.core), which this "
+               "host could not load"
+               (when-let [e (:load-error attempt)]
+                 (str ": " (ex-message e)))
+               ". Everything else in eve.db.ds — including the default host-fn "
+               "kind (eve.db.ds.core/db-fn) and :resolve fns — works without it.")
+             {:error :eve.db.ds/db-fn-sci-unavailable
+              :cause (some-> (:load-error attempt) ex-message)}))))))
+
+(defn- sci-init [opts]
+  #?(:cljs (sci/init opts)
+     :clj  ((:init (load-sci!)) opts)))
+
+(defn- sci-eval-string* [ctx form]
+  #?(:cljs (sci/eval-string* ctx form)
+     :clj  ((:eval-string* (load-sci!)) ctx form)))
+
 ;; Symbol -> host fn: the DB read API a SCI db fn may call.
 ;; eve.db.ds.core registers its public read fns here when it
 ;; loads (register-sci-surface!); until then the surface is
@@ -280,7 +332,7 @@
 
 (defn- build-sci-ctx []
   (let [surface @sci-surface]
-    (sci/init
+    (sci-init
       {:namespaces {'user           surface
                     'eve.db.ds.core surface
                     'd              surface}})))
@@ -305,7 +357,7 @@
   (or (get @sci-compiled stored)
     (let [form (str "(fn " (pr-str (:db.fn/params stored)) " "
                  (:db.fn/code stored) ")")
-          f    (try (sci/eval-string* (sci-ctx) form)
+          f    (try (sci-eval-string* (sci-ctx) form)
                     (catch #?(:clj Throwable :cljs :default) e
                       (throw (unwrap-sci-error e))))]
       (swap! sci-compiled assoc stored f)
