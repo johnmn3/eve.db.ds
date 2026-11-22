@@ -705,7 +705,12 @@
          IDerefWithTimeout
          (-deref-with-timeout [_ _ timeout-val] (if @realized @res timeout-val))
          IPending
-         (-realized? [_] @realized)))))
+         (-realized? [_] @realized)))
+   ;; Threaded hosts take the clj body (basilisp's future is a real
+   ;; thread-pool future, like the JVM's).
+   :default
+   (defn- future-call [f]
+     (future (f))))
 
 (defn transact-async
   "In CLJ, calls [[transact!]] on a future thread pool, returning immediately.

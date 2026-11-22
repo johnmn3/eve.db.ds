@@ -1702,6 +1702,14 @@
      (or (= e :db/current-tx)
        (= e ":db/current-tx") ;; for eve.db.ds.js interop
        (= e "datomic.tx")
+       (= e "eve.db.ds.tx")))
+
+   :default
+   (defn- tx-id?
+     [e]
+     (or (= e :db/current-tx)
+       (= e ":db/current-tx") ;; for eve.db.ds.js interop
+       (= e "datomic.tx")
        (= e "eve.db.ds.tx"))))
 
 (defn- #?@(:clj    [^Boolean tempid?]
