@@ -687,7 +687,11 @@
           clojure.lang.IBlockingDeref
           (deref [_ _ _] res)
           clojure.lang.IPending
-          (isRealized [_] true))))))
+          (isRealized [_] true))
+        :lpy
+        (let [p (promise)]
+          (deliver p res)
+          p)))))
 
 
 ;; ersatz future without proper blocking

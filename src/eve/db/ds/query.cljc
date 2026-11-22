@@ -140,7 +140,7 @@
                     (fn [acc tuple-b]
                       (let [^objects tuple' (da/make-array tlen)]
                         (doseq [[idx-b idx-a] idxb->idxa]
-                          (aset tuple' idx-a (#?(:cljs da/aget :clj get) tuple-b idx-b)))
+                          (aset tuple' idx-a (#?(:cljs da/aget :clj get :default da/aget) tuple-b idx-b)))
                         (conj! acc tuple')))
                     (transient (vec tuples-a))
                     tuples-b))]
@@ -380,7 +380,7 @@
                         tuples2
                         (reduce (fn outer [acc tuple2]
                                   (let [key (key-fn2 tuple2)]
-                                    (if-some [tuples1 #?(:clj (hash key) :cljs (get hash key))]
+                                    (if-some [tuples1 #?(:clj (hash key) :cljs (get hash key) :default (get hash key))]
                                       (reduce (fn inner [acc tuple1]
                                                 (conj! acc (join-tuples tuple1 keep-idxs1 tuple2 keep-idxs2)))
                                         acc tuples1)
@@ -409,7 +409,7 @@
       (when-some [tuple (first (:tuples rel))]
         (when (nil? (fnext (:tuples rel)))
           (let [idx (get (:attrs rel) pattern-el)]
-            (#?(:cljs da/aget :clj get) tuple idx)))))))
+            (#?(:cljs da/aget :clj get :default da/aget) tuple idx)))))))
 
 (defn substitute-constants [context pattern]
   (mapv #(or (substitute-constant context %) %) pattern))
@@ -493,7 +493,7 @@
 (defn- context-resolve-val [context sym]
   (when-some [rel (rel-with-attr context sym)]
     (when-some [tuple (first (:tuples rel))]
-      (#?(:cljs da/aget :clj get) tuple ((:attrs rel) sym)))))
+      (#?(:cljs da/aget :clj get :default da/aget) tuple ((:attrs rel) sym)))))
 
 (defn- rel-contains-attrs? [rel attrs]
   (some #(contains? (:attrs rel) %) attrs))
@@ -519,26 +519,27 @@
     ;; CLJS `apply` + `vector` will hold onto mutable array of arguments directly
     ;; issue-262
     (if #?(:clj  false
-           :cljs (identical? f vector))
+           :cljs (identical? f vector)
+           :default false)
       (fn [tuple]
         ;; TODO raise if not all args are bound
         (let [args (da/aclone static-args)]
           (dotimes [i len]
             (when-some [tuple-idx (aget tuples-args i)]
-              (let [v (#?(:cljs da/aget :clj get) tuple tuple-idx)]
+              (let [v (#?(:cljs da/aget :clj get :default da/aget) tuple tuple-idx)]
                 (da/aset args i v))))
           (apply f args)))
       (fn [tuple]
         ;; TODO raise if not all args are bound
         (dotimes [i len]
           (when-some [tuple-idx (aget tuples-args i)]
-            (let [v (#?(:cljs da/aget :clj get) tuple tuple-idx)]
+            (let [v (#?(:cljs da/aget :clj get :default da/aget) tuple tuple-idx)]
               (da/aset static-args i v))))
         (apply f static-args)))))
 
 (defn- resolve-sym [sym]
   #?(:cljs nil
-     :clj (when (namespace sym)
+     :default (when (namespace sym)
             (when-some [v (resolve sym)] @v))))
 
 (defn filter-by-pred [context clause]
