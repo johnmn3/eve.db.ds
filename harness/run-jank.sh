@@ -32,6 +32,9 @@ COHOST_DIR="${COHOST_DIR:-}"
 # JANK_HOME_BIN (optional): a jank install to prefer over ~/.local/bin (a box with a stale shared jank).
 export PATH="${JANK_HOME_BIN:+$JANK_HOME_BIN:}$HOME/.local/bin:$PATH"
 export LC_ALL="${LC_ALL:-en_US.UTF-8}"
+# JANK_XDG_CACHE_HOME (optional): the cache root for that jank (its PCH/module cache), for a box
+# whose older jank shares the binary-version hash and would hand the new one an incompatible PCH.
+if [ -n "${JANK_XDG_CACHE_HOME:-}" ]; then export XDG_CACHE_HOME="$JANK_XDG_CACHE_HOME"; fi
 
 cd "$DS_DIR"
 ROOTS="$(EVE_ROOT="$EVE_ROOT" BB="$BB" bash harness/host-cp.sh jank)"
