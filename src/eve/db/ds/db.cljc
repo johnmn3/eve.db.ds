@@ -74,23 +74,27 @@
   [env]
   (boolean (:ns env)))
 
-#?(:clj
+#?(:cljs nil
+   :default
    (defmacro if-cljs
      "Return then if we are generating cljs code and else for Clojure code.
      https://groups.google.com/d/msg/clojurescript/iBY5HaQda4A/w1lAQi9_AwsJ"
      [then else]
      (if (cljs-env? &env) then else)))
 
-#?(:clj
+#?(:cljs nil
+   :default
    (defn patch-tag [meta cljs-env?]
      (if cljs-env?
        meta
-       (condp = (:tag meta)
-         'boolean (assoc meta :tag java.lang.Boolean)
-         'number  (assoc meta :tag clojure.core$long)
-         meta))))
+       #?(:clj  (condp = (:tag meta)
+                  'boolean (assoc meta :tag java.lang.Boolean)
+                  'number  (assoc meta :tag clojure.core$long)
+                  meta)
+          :default meta))))
 
-#?(:clj
+#?(:cljs nil
+   :default
    (defmacro defn+
      "CLJS really don’t like :declared metadata on vars (generates less
       efficient code), but it needs it to skip warnings. So we redefine
@@ -115,7 +119,11 @@
 
 (defn combine-hashes [x y]
   #?(:clj  (clojure.lang.Util/hashCombine x y)
-     :cljs (hash-combine x y)))
+     :cljs (hash-combine x y)
+     ;; Util/hashCombine's mix, spelled with core bit ops for hosts
+     ;; with neither a clojure.lang.Util nor a core hash-combine.
+     :default (bit-xor x (+ y 2654435769 (bit-shift-left x 6)
+                            (unsigned-bit-shift-right x 2)))))
 
 #?(:clj
    (defn- get-sig [method]
@@ -168,19 +176,24 @@
 ;; ----------------------------------------------------------------------------
 
 #?(:clj  (declare hash-datom)
-   :cljs (defn ^number hash-datom [d]))
+   :cljs (defn ^number hash-datom [d])
+   :default (declare hash-datom))
 
 #?(:clj  (declare equiv-datom)
-   :cljs (defn ^boolean equiv-datom [d o]))
+   :cljs (defn ^boolean equiv-datom [d o])
+   :default (declare equiv-datom))
 
 #?(:clj  (declare seq-datom)
-   :cljs (defn seq-datom [d]))
+   :cljs (defn seq-datom [d])
+   :default (declare seq-datom))
 
 #?(:clj  (declare nth-datom)
-   :cljs (defn nth-datom ([d i]) ([d i not-found])))
+   :cljs (defn nth-datom ([d i]) ([d i not-found]))
+   :default (declare nth-datom))
 
 #?(:clj  (declare assoc-datom)
-   :cljs (defn assoc-datom [d k v]))
+   :cljs (defn assoc-datom [d k v])
+   :default (declare assoc-datom))
 
 ;; A Datom's lookup, from its field values: called from inside the type's body, where e a v tx are direct
 ;; reads on either of its forms (the slab kind and its flat sister), so a lookup never reflects. The fields'
@@ -208,7 +221,8 @@
     :else
     not-found))
 #?(:clj  (declare datom?)
-   :cljs (defn datom? [x]))
+   :cljs (defn datom? [x])
+   :default (declare datom?))
 
 
 (defprotocol IDatom
@@ -265,6 +279,41 @@
        ;; count lives under clojure.lang.Counted above: one method
        ;; satisfies both interfaces (same signature); listing it under
        ;; both makes eve/deftype emit a duplicate method.
+       (cons [d [k v]] (assoc-datom d k v))
+
+       clojure.lang.Indexed
+       (nth [this i]           (nth-datom this i))
+       (nth [this i not-found] (nth-datom this i not-found))
+
+       clojure.lang.ILookup
+       (valAt [d k] (datom-lookup e a v tx k nil))
+       (valAt [d k nf] (datom-lookup e a v tx k nf))
+
+       clojure.lang.Associative
+       (entryAt [d k] (some->> (datom-lookup e a v tx k nil) (clojure.lang.MapEntry k)))
+       (containsKey [e k] (#{:e :a :v :tx :added} k))
+       (assoc [d k v] (assoc-datom d k v))]
+
+      ;; The :clj spelling is eve/deftype's canonical surface (Eve's
+      ;; own types write it unconditionally); every other host's
+      ;; deftype machinery translates it, as it does for Eve's types.
+      :default
+      [Object
+       (hashCode [d] (int (hash-datom d)))
+       (toString [d] (pr-str d))
+
+       clojure.lang.IHashEq
+       (hasheq [d] (int (hash-datom d)))
+
+       clojure.lang.Counted
+       (count [d] 5)
+
+       clojure.lang.Seqable
+       (seq [d] (seq-datom d))
+
+       clojure.lang.IPersistentCollection
+       (equiv [d o] (and (datom? o) (equiv-datom d o)))
+       (empty [d] (throw (UnsupportedOperationException. "empty is not supported on Datom")))
        (cons [d [k v]] (assoc-datom d k v))
 
        clojure.lang.Indexed
@@ -361,7 +410,8 @@
 ;; datom cmp macros/funcs
 ;;
 
-#?(:clj
+#?(:cljs nil
+   :default
    (defmacro combine-cmp [& comps]
      (loop [comps (reverse comps)
             res   (num 0)]
@@ -374,7 +424,8 @@
                 c#)))
          res))))
 
-#?(:clj
+#?(:cljs nil
+   :default
    (defn- -case-tree [queries variants]
      (if queries
        (let [v1 (take (/ (count variants) 2) variants)
@@ -384,7 +435,8 @@
            (-case-tree (next queries) v2)))
        (first variants))))
 
-#?(:clj
+#?(:cljs nil
+   :default
    (defmacro case-tree [qs vs]
      (-case-tree qs vs)))
 
@@ -401,7 +453,8 @@
   #?(:clj  {:inline (fn [x y] `(identical? (class ~x) (class ~y)))})
   [x y]
   #?(:clj  (identical? (class x) (class y))
-     :cljs (identical? (type x) (type y))))
+     :cljs (identical? (type x) (type y))
+     :default (identical? (type x) (type y))))
 
 #?(:clj
    (defn class-name
@@ -411,25 +464,39 @@
            (if (nil? x#) x# (.getName (. x# (getClass))))))}
      ^String [^Object x] (if (nil? x) x (.getName (. x (getClass))))))
 
+#?(:clj nil
+   :cljs nil
+   :default
+   (defn class-name [x] (if (nil? x) x (str (type x)))))
+
 (defn class-compare
   ^long [x y]
   #?(:clj  (long (compare (class-name x) (class-name y)))
-     :cljs (garray/defaultCompare (type->str (type x)) (type->str (type y)))))
+     :cljs (garray/defaultCompare (type->str (type x)) (type->str (type y)))
+     :default (long (compare (class-name x) (class-name y)))))
 
 #?(:clj
    (defmacro int-compare [x y]
      `(if-cljs
         (- ~x ~y)
-        (long (Integer/compare ~x ~y)))))
+        (long (Integer/compare ~x ~y))))
+   :cljs nil
+   ;; In-runtime hosts take the cljs expansion: a plain subtraction
+   ;; (the comparands are int32-range, so it cannot overflow).
+   :default
+   (defmacro int-compare [x y]
+     `(- ~x ~y)))
 
 (defn ihash
   {:inline (fn [x] `(. clojure.lang.Util (hasheq ~x)))}
   ^long [x]
   #?(:clj  (. clojure.lang.Util (hasheq x))
-     :cljs (hash x)))
+     :cljs (hash x)
+     :default (hash x)))
 
 #?(:clj  (declare value-compare)
-   :cljs (defn ^number value-compare [x y]))
+   :cljs (defn ^number value-compare [x y])
+   :default (declare value-compare))
 
 (defn- seq-compare [xs ys]
   (let [cx (count xs)
@@ -475,9 +542,11 @@
       ;; is the same operation on the JVM (Numbers.compare /
       ;; Util.compare -> .compareTo) and routes through the comparator
       ;; machinery every host serves.
-      #?@(:clj  [(instance? Number x)       (compare x y)])
+      #?@(:clj  [(instance? Number x)       (compare x y)]
+          :default [(number? x)             (compare x y)])
       #?@(:clj  [(instance? Comparable x)   (compare x y)]
-          :cljs [(satisfies? IComparable x) (-compare x y)])
+          :cljs [(satisfies? IComparable x) (-compare x y)]
+          :default [(or (string? x) (keyword? x)) (compare x y)])
       (not (class-identical? x y)) (class-compare x y)
       #?@(:cljs [(or (number? x) (string? x) (array? x) (true? x) (false? x)) (garray/defaultCompare x y)])
       :else (int-compare (ihash x) (ihash y)))
@@ -526,7 +595,14 @@
                 (.compare this# ~a1 ~a2))
               IFn$OOL
               (invokePrim [this# ~a1 ~a2]
-                (.compare this# ~a1 ~a2))))))))
+                (.compare this# ~a1 ~a2)))))))
+   :cljs nil
+   ;; In-runtime hosts take the cljs expansion: the comparator is a
+   ;; plain fn (the bset accepts a comparator fn on every host).
+   :default
+   (defmacro defcomp [sym [arg1 arg2] & body]
+     `(defn ~sym [~arg1 ~arg2]
+        ~@body)))
 
 (defcomp cmp-datoms-eavt ^long [d1, d2]
   (combine-cmp
@@ -569,6 +645,8 @@
        (-compare a1 a2)
        (garray/defaultCompare a1 a2))
      :clj
+     (long (compare a1 a2))
+     :default
      (long (compare a1 a2))))
 
 (defcomp cmp-datoms-eav-quick ^long [d1, d2]
@@ -648,22 +726,27 @@
     not-found))
 
 #?(:clj  (declare assoc-db)
-   :cljs (defn assoc-db [db k v]))
+   :cljs (defn assoc-db [db k v])
+   :default (declare assoc-db))
 
 #?(:clj  (declare indexing?)
-   :cljs (defn ^boolean indexing? [db attr]))
+   :cljs (defn ^boolean indexing? [db attr])
+   :default (declare indexing?))
 
 #?(:cljs (defn pr-db [db w opts]))
 
 #?(:clj  (declare resolve-datom)
-   :cljs (defn resolve-datom [db e a v t default-e default-tx]))
+   :cljs (defn resolve-datom [db e a v t default-e default-tx])
+   :default (declare resolve-datom))
 
 #?(:clj  (declare components->pattern)
-   :cljs (defn components->pattern [db index c0 c1 c2 c3 default-e default-tx]))
+   :cljs (defn components->pattern [db index c0 c1 c2 c3 default-e default-tx])
+   :default (declare components->pattern))
 
 ;;;;;;;;;; Fast validation
 
-#?(:clj
+#?(:cljs nil
+   :default
    (defmacro validate-attr [attr at]
      `(let [attr# ~attr]
         (when-not (or
@@ -673,7 +756,8 @@
             (util/raise "Bad entity attribute " attr# " at " at# ", expected keyword or string"
               {:error :transact/syntax, :attribute attr#, :context at#}))))))
 
-#?(:clj
+#?(:cljs nil
+   :default
    (defmacro validate-val [v at]
      `(when (nil? ~v)
         (let [at# ~at]
@@ -783,6 +867,36 @@
        (containsKey [db k] (contains? db-fields k))
        (entryAt [db k]     (when (contains? db-fields k)
                               (clojure.lang.MapEntry. k (db-lookup schema eavt aevt avet max-eid max-tx rschema k nil))))
+       (assoc [db k v]     (assoc-db db k v))]
+
+      :default
+      [Object               (hashCode [db]      (int (hash-db db)))
+       clojure.lang.IHashEq (hasheq [db]        (int (hash-db db)))
+       clojure.lang.Counted (count [db]         (set/count eavt))
+       clojure.lang.Seqable
+       (seq [db]           (seq {:schema  schema
+                                 :eavt    eavt
+                                 :aevt    aevt
+                                 :avet    avet
+                                 :max-eid max-eid
+                                 :max-tx  max-tx
+                                 :rschema rschema}))
+       clojure.lang.IPersistentCollection
+       (equiv [db other]   (equiv-db db other))
+       (empty [db]         (restore-db
+                             {:schema  (:schema db)
+                              :rschema (:rschema db)
+                              :eavt    (set/empty)
+                              :aevt    (set/empty)
+                              :avet    (set/empty)}))
+       (cons [db key]      (throw (ex-info "eve.db.ds.DB/cons is not supported" {})))
+       clojure.lang.ILookup
+       (valAt [db k]       (db-lookup schema eavt aevt avet max-eid max-tx rschema k nil))
+       (valAt [db k nf]    (db-lookup schema eavt aevt avet max-eid max-tx rschema k nf))
+       clojure.lang.Associative
+       (containsKey [db k] (contains? db-fields k))
+       (entryAt [db k]     (when (contains? db-fields k)
+                              (clojure.lang.MapEntry. k (db-lookup schema eavt aevt avet max-eid max-tx rschema k nil))))
        (assoc [db k v]     (assoc-db db k v))])
 
   IDB
@@ -796,7 +910,8 @@
           aevt       (:aevt db)
           avet       (:avet db)
           pred       #?(:clj  (vpred v)
-                        :cljs #(= v %))
+                        :cljs #(= v %)
+                        :default #(= v %))
           multival?  (contains? (-attrs-by db :db.cardinality/many) a)]
       (case-tree [e a (some? v) tx]
         [(set/slice eavt (datom e a v tx) (datom e a v tx) cmp-datoms-eavt)                   ;; e a v tx
@@ -893,6 +1008,10 @@
      :cljs
      (and (satisfies? ISearch x)
        (satisfies? IIndexAccess x)
+       (satisfies? IDB x))
+     :default
+     (and (satisfies? ISearch x)
+       (satisfies? IIndexAccess x)
        (satisfies? IDB x))))
 
 ;; ----------------------------------------------------------------------------
@@ -926,6 +1045,25 @@
        (valAt [db k nf]    (throw (UnsupportedOperationException. "valAt/3 is not supported on FilteredDB")))
        clojure.lang.IKeywordLookup (getLookupThunk [db k]
                                      (throw (UnsupportedOperationException. "getLookupThunk is not supported on FilteredDB")))
+
+       clojure.lang.Associative
+       (containsKey [e k]  (throw (UnsupportedOperationException. "containsKey is not supported on FilteredDB")))
+       (entryAt [db k]     (throw (UnsupportedOperationException. "entryAt is not supported on FilteredDB")))
+       (assoc [db k v]     (throw (UnsupportedOperationException. "assoc is not supported on FilteredDB")))]
+
+      :default
+      [Object               (hashCode [db]      (int (hash-fdb db)))
+
+       clojure.lang.IHashEq (hasheq [db]        (int (hash-fdb db)))
+
+       clojure.lang.IPersistentCollection
+       (count [db]         (count (-datoms db :eavt nil nil nil nil)))
+       (equiv [db o]       (equiv-db db o))
+       (cons [db [k v]]    (throw (UnsupportedOperationException. "cons is not supported on FilteredDB")))
+       (empty [db]         (throw (UnsupportedOperationException. "empty is not supported on FilteredDB")))
+
+       clojure.lang.ILookup (valAt [db k]       (throw (UnsupportedOperationException. "valAt/2 is not supported on FilteredDB")))
+       (valAt [db k nf]    (throw (UnsupportedOperationException. "valAt/3 is not supported on FilteredDB")))
 
        clojure.lang.Associative
        (containsKey [e k]  (throw (UnsupportedOperationException. "containsKey is not supported on FilteredDB")))
