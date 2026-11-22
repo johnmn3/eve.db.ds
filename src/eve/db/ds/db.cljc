@@ -488,7 +488,7 @@
      `(- ~x ~y)))
 
 (defn ihash
-  {:inline (fn [x] `(. clojure.lang.Util (hasheq ~x)))}
+  #?(:clj {:inline (fn [x] `(. clojure.lang.Util (hasheq ~x)))})
   ^long [x]
   #?(:clj  (. clojure.lang.Util (hasheq x))
      :cljs (hash x)
