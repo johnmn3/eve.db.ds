@@ -20,8 +20,19 @@
 #
 #   run-jvm-aot.sh ensure         build the artifact if this basis lacks
 #                                 it; prints the artifact dir on stdout,
-#                                 the build cost as AOT-BUILD on stderr
-#   run-jvm-aot.sh run <args...>  ensure, then run the driver
+#                                 the build cost as AOT-BUILD on stderr;
+#                                 records the artifact dir in the
+#                                 pointer file (below)
+#   run-jvm-aot.sh run <args...>  run the driver: with a pointer file
+#                                 present, this is exactly
+#                                 `java -jar <artifact>/one.jar <args...>`
+#                                 — no stamp, classpath or file-list
+#                                 computation on the timed path. Without
+#                                 one it falls back to ensure first. The
+#                                 shootout protocol always runs ensure
+#                                 (untimed) before the timed runs, so the
+#                                 pointer names the artifact ensure just
+#                                 validated for this basis.
 #
 # Env: EVE_ROOT (or EVE_LOCAL), COHOST_DIR, DS_DIR (default: repo root
 # of this script), BB (fleet bb), CLJ_CONFIG/JAVA_HOME for the
@@ -37,41 +48,48 @@ COHOST_DIR="${COHOST_DIR:-}"
 export PATH="$HOME/.local/bin:$PATH"
 
 cd "$DS_DIR"
-ROOTS="$(EVE_ROOT="$EVE_ROOT" BB="$BB" bash harness/host-cp.sh jvm)"
-DS_ROOTS="$DS_DIR/src:$DS_DIR/lib:$DS_DIR/lib-ds-deps:$DS_DIR/test/drivers"
-CP="$ROOTS:$DS_ROOTS"
+POINTER="${JVM_AOT_POINTER:-$DS_DIR/.jvm-aot-artifact}"
 
-PATHS_EDN="$(python3 -c "
+# The basis computation (host roots, tools.deps classpath resolution,
+# the stamp's file list) — ensure's work, and run's fallback only.
+compute_artifact() {
+  ROOTS="$(EVE_ROOT="$EVE_ROOT" BB="$BB" bash harness/host-cp.sh jvm)"
+  DS_ROOTS="$DS_DIR/src:$DS_DIR/lib:$DS_DIR/lib-ds-deps:$DS_DIR/test/drivers"
+  CP="$ROOTS:$DS_ROOTS"
+
+  PATHS_EDN="$(python3 -c "
 ps = '''$CP'''.split(':')
 print('[' + ' '.join('\"%s\"' % p for p in ps) + ']')")"
-RESOLVED_CP="$(clojure -Sdeps "{:paths $PATHS_EDN}" -Spath 2>/dev/null | tail -1)"
+  RESOLVED_CP="$(clojure -Sdeps "{:paths $PATHS_EDN}" -Spath 2>/dev/null | tail -1)"
 
-ROOTS_SP="${ROOTS//:/ }"
-FILES="$(find $ROOTS_SP $DS_DIR/src $DS_DIR/lib $DS_DIR/lib-ds-deps $DS_DIR/test/drivers \
-           -type f \( -name '*.clj' -o -name '*.cljc' -o -name '*.cljs' \) | sort)"
-FILES="$FILES
+  ROOTS_SP="${ROOTS//:/ }"
+  FILES="$(find $ROOTS_SP $DS_DIR/src $DS_DIR/lib $DS_DIR/lib-ds-deps $DS_DIR/test/drivers \
+             -type f \( -name '*.clj' -o -name '*.cljc' -o -name '*.cljs' \) | sort)"
+  FILES="$FILES
 $DS_DIR/deps.edn
 $DS_DIR/build.clj
 $DS_DIR/harness/run-jvm-aot.sh"
 
-JAVA_VERSION="$(java -version 2>&1 | head -1)"
-mapfile -t _SA < <(COHOST_DIR="$COHOST_DIR" "$BB" harness/aot-stamp.bb \
-  jvm "$JAVA_VERSION" "cp:$RESOLVED_CP" $FILES)
-STAMP="${_SA[0]}"; ARTIFACT="${_SA[1]}"
+  JAVA_VERSION="$(java -version 2>&1 | head -1)"
+  mapfile -t _SA < <(COHOST_DIR="$COHOST_DIR" "$BB" harness/aot-stamp.bb \
+    jvm "$JAVA_VERSION" "cp:$RESOLVED_CP" $FILES)
+  STAMP="${_SA[0]}"; ARTIFACT="${_SA[1]}"
+}
 
 ensure() {
-  if [ -f "$ARTIFACT/one.jar" ]; then
-    return 0
+  compute_artifact
+  if [ ! -f "$ARTIFACT/one.jar" ]; then
+    local t0=$SECONDS
+    local tmp="$ARTIFACT.tmp.$$"
+    mkdir -p "$tmp" "$(dirname "$ARTIFACT")"
+    clojure -Sdeps "{:deps {io.github.clojure/tools.build {:mvn/version \"0.10.5\"}}
+                     :paths [\"$DS_DIR\"]}" \
+      -M -e "(require 'build) (build/uber {:cp \"$RESOLVED_CP\" :class-dir \"$tmp/classes\" :out \"$tmp/one.jar\" :ds-src \"$DS_DIR/src\"})"
+    rm -rf "$tmp/classes"
+    mv "$tmp" "$ARTIFACT"
+    echo "AOT-BUILD jvm $((SECONDS-t0))s stamp=$STAMP" >&2
   fi
-  local t0=$SECONDS
-  local tmp="$ARTIFACT.tmp.$$"
-  mkdir -p "$tmp" "$(dirname "$ARTIFACT")"
-  clojure -Sdeps "{:deps {io.github.clojure/tools.build {:mvn/version \"0.10.5\"}}
-                   :paths [\"$DS_DIR\"]}" \
-    -M -e "(require 'build) (build/uber {:cp \"$RESOLVED_CP\" :class-dir \"$tmp/classes\" :out \"$tmp/one.jar\" :ds-src \"$DS_DIR/src\"})"
-  rm -rf "$tmp/classes"
-  mv "$tmp" "$ARTIFACT"
-  echo "AOT-BUILD jvm $((SECONDS-t0))s stamp=$STAMP" >&2
+  printf '%s' "$ARTIFACT" > "$POINTER"
 }
 
 case "${1:-}" in
@@ -81,6 +99,12 @@ case "${1:-}" in
     ;;
   run)
     shift
+    if [ -f "$POINTER" ]; then
+      CACHED="$(cat "$POINTER")"
+      if [ -f "$CACHED/one.jar" ]; then
+        exec java -jar "$CACHED/one.jar" "$@"
+      fi
+    fi
     ensure
     exec java -jar "$ARTIFACT/one.jar" "$@"
     ;;
