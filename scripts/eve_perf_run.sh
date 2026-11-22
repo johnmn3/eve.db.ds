@@ -40,6 +40,7 @@
 #   DS_RUNTIME  1 runs ds-harness.perf people-1k on the JVM (default 1)
 #   GLJ_EVE     a built glj-eve (default: run-glj.sh builds one)
 #   OUT_ROOT    default $DS_DIR/results
+#   EVE_SHA_LABEL  the Eve sha when EVE_DIR is a non-git snapshot
 set -u
 DS_DIR="${DS_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
 EVE_DIR="${EVE_DIR:?EVE_DIR must name the Eve checkout}"
@@ -53,7 +54,12 @@ DATE=$(date +%F)
 OUT="${OUT_ROOT:-$DS_DIR/results}/$DATE"
 mkdir -p "$OUT/logs"
 export SHOOTOUT_WORK="$OUT/shootout-runs"; mkdir -p "$SHOOTOUT_WORK"
+# EVE_SHA_LABEL names an Eve tree that is not a git checkout (a `git archive`
+# snapshot frozen at one sha, so a concurrent edit of the live checkout
+# cannot leak into a run).
+if [ -n "${EVE_SHA_LABEL:-}" ]; then EVE_SHA="$EVE_SHA_LABEL"; EVE_REF="snapshot"; else
 EVE_SHA=$(git -C "$EVE_DIR" rev-parse --short=10 HEAD)$(git -C "$EVE_DIR" diff --quiet HEAD -- . ':!doc/hosts/perf-results.edn' || echo "+dirty")
+EVE_REF=$(git -C "$EVE_DIR" rev-parse --abbrev-ref HEAD); fi
 DS_SHA=$(git -C "$DS_DIR" rev-parse --short=10 HEAD)$(git -C "$DS_DIR" diff --quiet HEAD || echo "+dirty")
 load1() { cut -d' ' -f1 /proc/loadavg; }
 over() { awk -v l="$(load1)" -v m="$LOAD_MAX" 'BEGIN{exit !(l>m)}'; }
@@ -62,7 +68,7 @@ T="$OUT/table.md"
 {
   echo "# eve perf run $DATE ($(date '+%H:%M %Z'))"
   echo
-  echo "- eve: \`$EVE_SHA\` ($EVE_DIR, $(git -C "$EVE_DIR" rev-parse --abbrev-ref HEAD))"
+  echo "- eve: \`$EVE_SHA\` ($EVE_DIR, $EVE_REF)"
   echo "- eve.db.ds: \`$DS_SHA\` ($DS_DIR, $(git -C "$DS_DIR" rev-parse --abbrev-ref HEAD))"
   echo "- box: $(nproc) cpu, $(free -g | awk '/Mem/{print $2}') GB RAM, $(uname -r)"
   echo
