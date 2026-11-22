@@ -76,8 +76,37 @@ $DS_DIR/harness/run-jvm-aot.sh"
   STAMP="${_SA[0]}"; ARTIFACT="${_SA[1]}"
 }
 
+# AppCDS (untimed, part of ensure): a dynamic class-data-sharing archive
+# of the classes one training run of the contract loads, written next to
+# the jar it was trained on (<artifact>/one.jsa) with the jar's sha256
+# beside it (one.jsa.jar-sha256). The artifact dir is keyed by the basis
+# stamp, and the archive is retrained whenever the recorded sha differs
+# from the jar's, so a changed jar never runs against a stale archive.
+# A verification launch with -Xshare:on (which fails instead of silently
+# falling back) proves the archive maps before any timed run uses it.
+ensure_cds() {
+  local jar="$ARTIFACT/one.jar" jsa="$ARTIFACT/one.jsa" sha t0 tr
+  sha="$(sha256sum "$jar" | cut -d' ' -f1)"
+  if [ -f "$jsa" ] && [ "$(cat "$jsa.jar-sha256" 2>/dev/null)" = "$sha" ]; then
+    return 0
+  fi
+  t0=$SECONDS
+  rm -f "$jsa" "$jsa.jar-sha256"
+  tr="$(mktemp -d)"
+  java -XX:ArchiveClassesAtExit="$jsa.tmp.$$" -jar "$jar" "$tr/train" > "$tr/train.out" 2>&1
+  grep -q ONE-DONE "$tr/train.out" || { echo "run-jvm-aot: AppCDS training run failed" >&2; cat "$tr/train.out" >&2; exit 3; }
+  java -Xshare:on -XX:SharedArchiveFile="$jsa.tmp.$$" -jar "$jar" "$tr/verify" > "$tr/verify.out" 2>&1
+  grep -q ONE-DONE "$tr/verify.out" || { echo "run-jvm-aot: AppCDS archive does not map" >&2; cat "$tr/verify.out" >&2; exit 3; }
+  mv "$jsa.tmp.$$" "$jsa"
+  printf '%s' "$sha" > "$jsa.jar-sha256"
+  rm -rf "$tr"
+  echo "AOT-BUILD jvm-appcds $((SECONDS-t0))s jar-sha256=$sha" >&2
+}
+
 ensure() {
   compute_artifact
+  # A failed ensure must not leave a pointer to another basis's artifact.
+  rm -f "$POINTER"
   if [ ! -f "$ARTIFACT/one.jar" ]; then
     local t0=$SECONDS
     local tmp="$ARTIFACT.tmp.$$"
@@ -89,6 +118,7 @@ ensure() {
     mv "$tmp" "$ARTIFACT"
     echo "AOT-BUILD jvm $((SECONDS-t0))s stamp=$STAMP" >&2
   fi
+  ensure_cds
   printf '%s' "$ARTIFACT" > "$POINTER"
 }
 
@@ -98,6 +128,21 @@ case "${1:-}" in
     echo "$ARTIFACT"
     ;;
   run)
+    # The timed path: exactly `java -XX:SharedArchiveFile=<artifact>/one.jsa
+    # -jar <artifact>/one.jar <args...>` from the pointer ensure wrote.
+    shift
+    if [ -f "$POINTER" ]; then
+      CACHED="$(cat "$POINTER")"
+      if [ -f "$CACHED/one.jar" ] && [ -f "$CACHED/one.jsa" ]; then
+        exec java -XX:SharedArchiveFile="$CACHED/one.jsa" -jar "$CACHED/one.jar" "$@"
+      fi
+    fi
+    ensure
+    exec java -XX:SharedArchiveFile="$ARTIFACT/one.jsa" -jar "$ARTIFACT/one.jar" "$@"
+    ;;
+  run-nocds)
+    # The pre-AppCDS timed path, kept for comparison cells:
+    # `java -jar <artifact>/one.jar <args...>` from the pointer.
     shift
     if [ -f "$POINTER" ]; then
       CACHED="$(cat "$POINTER")"
@@ -109,7 +154,7 @@ case "${1:-}" in
     exec java -jar "$ARTIFACT/one.jar" "$@"
     ;;
   *)
-    echo "usage: run-jvm-aot.sh ensure|run <args...>" >&2
+    echo "usage: run-jvm-aot.sh ensure|run|run-nocds <args...>" >&2
     exit 2
     ;;
 esac

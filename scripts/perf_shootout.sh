@@ -21,6 +21,9 @@
 # leg's cache build runs FIRST, untimed, as an `ensure` step whose
 # cost is echoed as AOT-BUILD into the host's log — the timed cells
 # are cache-warm by construction, which is the setup being restored.
+# (t98u: `run` on the cljs/jolt/jank legs now execs the artifact from the
+# pointer ensure writes, and the jvm leg runs with an AppCDS archive;
+# eve_perf_run.sh labels these cells and runs the pre-t98u twins.)
 #
 # Env (set at filing time):
 #   DS_DIR     eve.db.ds checkout at the merged tip   (REQUIRED)

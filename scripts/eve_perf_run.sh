@@ -13,6 +13,17 @@
 # saved and restored, so the Eve tree is left as found) and this repo's
 # ds-harness.perf (perf_runtime.sh's measurement).
 #
+# Cells changed by t98u (2026-11-22, the operator's approval of the two
+# harness changes): `jvm-aot` now runs with an AppCDS archive trained in
+# its untimed ensure (java -XX:SharedArchiveFile=one.jsa -jar one.jar),
+# and `cljs`, `jolt`, `jank` exec their artifact from the pointer file
+# their untimed ensure writes (no per-launch basis stamp). The contract,
+# the one-datum act and the median-of-5 protocol are unchanged. Those
+# rows are labelled in the table; with COMPARE=1 (default) each changed
+# cell is followed by its pre-t98u twin (run-nocds / run-stamped) on the
+# same artifact, so old and new sit side by side at the same load, and
+# doc/perf/shootout-history.md keeps the earlier runs' cells.
+#
 # Load discipline: before each leg, wait (up to LOAD_WAIT_S, default 600)
 # for load1 <= LOAD_MAX (default 5); a row whose end load1 > LOAD_MAX is
 # rerun once and both are recorded.
@@ -23,6 +34,7 @@
 #   COHOST_DIR  cohost.cljc checkout (cljs/jolt/jank/jvm AOT legs)
 #   BB          bb binary (default: bb on PATH)
 #   LEGS        startup legs (default: "jvm-aot jvm-src cljs jolt jank glj")
+#   COMPARE     1 adds the pre-t98u twin after each changed leg (default 1)
 #   PERF_HOSTS  Eve perf-all hosts (default: "jvm cljs jolt glj"; "" skips)
 #   JANK_PERF   1 runs jank's perf suite via run-main (default 1 if jank green)
 #   DS_RUNTIME  1 runs ds-harness.perf people-1k on the JVM (default 1)
@@ -35,6 +47,7 @@ export EVE_LOCAL="$EVE_DIR" EVE_ROOT="$EVE_DIR" COHOST_DIR="${COHOST_DIR:-}"
 export BB="${BB:-$(command -v bb)}"
 LEGS="${LEGS-jvm-aot jvm-src cljs jolt jank glj}"
 PERF_HOSTS="${PERF_HOSTS-jvm cljs jolt glj}"
+COMPARE="${COMPARE:-1}"
 LOAD_MAX="${LOAD_MAX:-5}"; LOAD_WAIT_S="${LOAD_WAIT_S:-600}"
 DATE=$(date +%F)
 OUT="${OUT_ROOT:-$DS_DIR/results}/$DATE"
@@ -55,14 +68,16 @@ T="$OUT/table.md"
   echo
   echo "## Startup (cold process -> one datum on a disk-backed DB; median of 5; cap 10,000 ms)"
   echo
-  echo "| leg | median ms | runs ms | load1 start/end | command |"
-  echo "|---|---|---|---|---|"
+  echo "| leg | cell | median ms | runs ms | load1 start/end | command |"
+  echo "|---|---|---|---|---|---|"
 } > "$T"
 
 startup_cmd() { # leg -> "ensure-cmd#timed-cmd"
   local H="$DS_DIR/harness"
   case "$1" in
     jvm-aot) echo "bash $H/run-jvm-aot.sh ensure#bash $H/run-jvm-aot.sh run" ;;
+    jvm-aot-old) echo "bash $H/run-jvm-aot.sh ensure#bash $H/run-jvm-aot.sh run-nocds" ;;
+    cljs-old|jolt-old|jank-old) echo "bash $H/run-${1%-old}.sh ensure#bash $H/run-${1%-old}.sh run-stamped" ;;
     jvm-src) echo "bash $H/run-jvm.sh contract.one $OUT/jvm-src-warm#bash $H/run-jvm.sh contract.one" ;;
     cljs)    echo "bash $H/run-cljs.sh ensure#bash $H/run-cljs.sh run" ;;
     jolt)    echo "bash $H/run-jolt.sh ensure#bash $H/run-jolt.sh run" ;;
@@ -75,6 +90,15 @@ startup_cmd() { # leg -> "ensure-cmd#timed-cmd"
   esac
 }
 
+cell_of() { # leg -> the cell's label in the table
+  case "$1" in
+    jvm-aot) echo "CHANGED t98u: AppCDS archive" ;;
+    cljs|jolt|jank) echo "CHANGED t98u: pointer file, no per-run stamp" ;;
+    jvm-aot-old) echo "pre-t98u (no AppCDS), same jar" ;;
+    *-old) echo "pre-t98u (stamp every run), same artifact" ;;
+    *) echo "unchanged" ;;
+  esac
+}
 run_leg() { # leg attempt
   local leg=$1 c ens cmd l0 l1 line med runs
   c=$(startup_cmd "$leg"); [ -z "$c" ] && { echo "| $leg | unknown leg | | | |" >> "$T"; return; }
@@ -87,11 +111,14 @@ run_leg() { # leg attempt
   med=$(echo "$line" | grep -o 'median-ms=[^ ]*' | cut -d= -f2)
   runs=$(echo "$line" | sed -n 's/.*runs=\[\([^]]*\)\].*/\1/p')
   [ -z "$med" ] && med=none
-  echo "| $leg${2:+ (rerun)} | $med | $runs | $l0 / $l1 | \`$cmd\` |" >> "$T"
+  echo "| $leg${2:+ (rerun)} | $(cell_of "$leg") | $med | $runs | $l0 / $l1 | \`$cmd\` |" >> "$T"
   echo "LEG-DONE $leg median=$med load=$l0/$l1"
   if [ -z "${2:-}" ] && over; then run_leg "$leg" rerun; fi
 }
-for leg in $LEGS; do run_leg "$leg"; done
+for leg in $LEGS; do
+  run_leg "$leg"
+  if [ "$COMPARE" = 1 ]; then case "$leg" in jvm-aot|cljs|jolt|jank) run_leg "$leg-old" ;; esac; fi
+done
 
 if [ -n "$PERF_HOSTS" ]; then
   {
