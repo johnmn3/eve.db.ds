@@ -3,27 +3,27 @@
   #?(:clj
      (:import
        [java.util UUID])))
-
 (def ^:dynamic *debug*
   false)
-
 #?(:clj
    (defmacro log [& body]
      (when (System/getProperty "eve.db.ds.debug")
        `(when *debug*
           (println ~@body)))))
-
-#?(:clj
-   (defmacro raise [& fragments]
+#?(:cljs
+   (defmacro log [& body]
+     `(when *debug*
+        (println ~@body))))
+;; (ungated: the macro belt is portable syntax machinery;
+;;  interpreted seats read no :clj arm, so the gate hid it from them)
+(defmacro raise [& fragments]
      (let [msgs (butlast fragments)
            data (last fragments)]
-       `(throw (ex-info (str ~@(map (fn [m#] (if (string? m#) m# (list 'pr-str m#))) msgs)) ~data)))))
-
-#?(:clj
-   (def ^:private ^:dynamic *if+-syms))
-  
-#?(:clj
-   (defn- if+-rewrite-cond-impl [cond]
+       `(throw (ex-info (str ~@(map (fn [m#] (if (string? m#) m# (list 'pr-str m#))) msgs)) ~data))))
+(def ^:private ^:dynamic *if+-syms)
+;; (ungated: the macro belt is portable syntax machinery;
+;;  interpreted seats read no :clj arm, so the gate hid it from them)
+(defn- if+-rewrite-cond-impl [cond]
      (clojure.core/cond
        (empty? cond)
        true
@@ -47,20 +47,20 @@
        :else
        (list 'and
          (first cond)
-         (if+-rewrite-cond-impl (next cond))))))
-
-#?(:clj
-   (defn- if+-rewrite-cond [cond]
+         (if+-rewrite-cond-impl (next cond)))))
+;; (ungated: the macro belt is portable syntax machinery;
+;;  interpreted seats read no :clj arm, so the gate hid it from them)
+(defn- if+-rewrite-cond [cond]
      (binding [*if+-syms (volatile! [])]
-       [(if+-rewrite-cond-impl cond) @*if+-syms])))
-
-#?(:clj
-   (defn- flatten-1 [xs]
+       [(if+-rewrite-cond-impl cond) @*if+-syms]))
+;; (ungated: the macro belt is portable syntax machinery;
+;;  interpreted seats read no :clj arm, so the gate hid it from them)
+(defn- flatten-1 [xs]
      (vec
-       (mapcat identity xs))))
-
-#?(:clj
-   (defmacro if+
+       (mapcat identity xs)))
+;; (ungated: the macro belt is portable syntax machinery;
+;;  interpreted seats read no :clj arm, so the gate hid it from them)
+(defmacro if+
      "Allows sharing local variables between condition and then clause.
       
       Use `:let [...]` form (not nested!) inside `and` condition and its bindings
@@ -95,27 +95,25 @@
                         [binding (list 'deref sym)]))
                 ~then)
               ~else)))
-       (list 'if cond then else))))
-
-#?(:clj
-   (defmacro cond+ [& clauses]
+       (list 'if cond then else)))
+;; (ungated: the macro belt is portable syntax machinery;
+;;  interpreted seats read no :clj arm, so the gate hid it from them)
+(defmacro cond+ [& clauses]
      (when-some [[test expr & rest] clauses]
        (case test
          :do   `(do ~expr (util/cond+ ~@rest))
          :let  `(let ~expr (util/cond+ ~@rest))
          :some `(or ~expr (util/cond+ ~@rest))
-         `(util/if+ ~test ~expr (util/cond+ ~@rest))))))
-
-#?(:clj
-   (defmacro some-of
+         `(util/if+ ~test ~expr (util/cond+ ~@rest)))))
+;; (ungated: the macro belt is portable syntax machinery;
+;;  interpreted seats read no :clj arm, so the gate hid it from them)
+(defmacro some-of
      ([] nil)
      ([x] x)
      ([x & more]
-      `(let [x# ~x] (if (nil? x#) (some-of ~@more) x#)))))
-
+      `(let [x# ~x] (if (nil? x#) (some-of ~@more) x#))))
 (defn- rand-bits [pow]
   (rand-int (bit-shift-left 1 pow)))
-
 #?(:cljs
    (defn- to-hex-string [n l]
      (let [s (.toString n 16)
@@ -124,7 +122,6 @@
          (> c l) (subs s 0 l)
          (< c l) (str (apply str (repeat (- l c) "0")) s)
          :else   s))))
-
 (defn squuid
   ([]
    (squuid #?(:clj  (System/currentTimeMillis)
@@ -149,7 +146,6 @@
           "-" (-> (rand-bits 16) (to-hex-string 4))
           (-> (rand-bits 16) (to-hex-string 4))
           (-> (rand-bits 16) (to-hex-string 4)))))))
-
 (defn squuid-time-millis
   "Returns time that was used in [[squuid]] call, in milliseconds, rounded to the closest second."
   [uuid]
@@ -159,7 +155,6 @@
      :cljs (-> (subs (str uuid) 0 8)
              (js/parseInt 16)
              (* 1000))))
-
 (defn distinct-by [f coll]
   (->>
     (reduce
@@ -172,27 +167,22 @@
       coll)
     second
     persistent!))
-
 (defn find [pred xs]
   (reduce
     (fn [_ x]
       (when (pred x)
         (reduced x)))
     nil xs))
-
 (defn single [coll]
   (assert (nil? (next coll)) "Expected single element")
   (first coll))
-
 (defn concatv [& xs]
   (into [] cat xs))
-
 (defn zip
   ([a b]
    (mapv vector a b))
   ([a b & rest]
    (apply mapv vector a b rest)))
-
 (defn removem [key-pred m]
   (persistent!
     (reduce-kv
@@ -201,13 +191,10 @@
           m
           (assoc! m k v)))
       (transient (empty m)) m)))
-
 (def conjv
   (fnil conj []))
-
 (def conjs
   (fnil conj #{}))
-
 (defn reduce-indexed
   "Same as reduce, but `f` takes [acc el idx]"
   [f init xs]

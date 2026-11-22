@@ -10,20 +10,15 @@
     [eve.db.ds.pull-api :as dp]
     [eve.db.ds.query :as dq]
     [eve.db.ds.serialize :as serialize]
-    [eve.db.ds.impl.entity :as de]
+    [eve.db.ds.impl.entity :as de #?@(:cljs [:refer [Entity]])]
     [eve.db.ds.util :as util])
   #?(:clj
      (:import
        [eve.db.ds.db Datom DB FilteredDB]
        [eve.db.ds.impl.entity Entity]
        [java.util UUID])))
-
 (def ^:const ^:no-doc tx0 
   db/tx0)
-
-
-; Entities
-
 (defn- resolve-db-arg
   "Public read fns take DB handles (plan v2 §4); resolve one to the
    DB value it names. Non-handle values (a raw DB value, U4-internal
@@ -32,7 +27,6 @@
   (if (conn/handle? db)
     (conn/resolve-db db)
     db))
-
 (defn- deliver-datoms
   "Realize an index iterator inside a read region so its Datoms
    arrive in their host delivery form (plan v2 §4). Returns a
@@ -40,13 +34,39 @@
    elements are Eve values until delivered."
   [iter]
   (eve/$ (mapv identity iter)))
-
 (defn- deliver-datom
   "Deliver a single Datom (or nil) in its host form."
   [d]
   (when (some? d)
     (eve/$ (identity d))))
+(defonce ^:private region-escapes
+  ;; {:db n :datom n :entity n}: DBs, datoms and entities that were
+  ;; returned from a read region (and so materialized out of it)
+  (atom {:db 0 :datom 0 :entity 0}))
 
+(defn region-escape-counts
+  "How many DBs, datoms and entities were returned from a read region
+   (and were materialized out at its exit) since the last reset."
+  []
+  @region-escapes)
+
+(defn reset-region-escape-counts! []
+  (reset! region-escapes {:db 0 :datom 0 :entity 0}))
+
+(defn read-in
+  "(f) inside an Eve read region (eve.alpha/$): every Eve atom deref'd
+   in it answers its stored value in place — slab-backed, pinned until
+   the region exits — so q, pull, entity, datoms and index seeks read
+   the stored DB directly. The region materializes f's result as
+   plain data before the holds are let go, so what f returns is safe
+   to hold after the region exits. A region inside another joins it.
+   A DB, datom or entity f returns is counted in region-escape-counts."
+  [f]
+  (let [r (eve/$ (f))]
+    (cond (db/db? r)     (swap! region-escapes update :db inc)
+          (db/datom? r)  (swap! region-escapes update :datom inc)
+          (de/entity? r) (swap! region-escapes update :entity inc))
+    r))
 (def ^{:tag Entity
        :arglists '([db eid])
        :doc "Retrieves an entity by its id from database. Entities are lazy map-like structures to navigate DataScript database content.
@@ -98,19 +118,16 @@
              - Accessed entity attributes are cached on entity itself (except backward references).
              - When printing, only cached attributes (the ones you have accessed before) are printed. See [[touch]]."}
   entity (fn [db eid] (de/entity (resolve-db-arg db) eid (when (conn/handle? db) db))))
-
 (def ^{:arglists '([db eid])
        :doc "Given lookup ref `[unique-attr value]`, returns numberic entity id.
 
              If entity does not exist, returns `nil`."}
   entid (fn [db eid] (db/entid (resolve-db-arg db) eid)))
-
 (defn ^DB entity-db
   "Returns a db that entity was created from."
   [^Entity entity]
   {:pre [(de/entity? entity)]}
   (.-db entity))
-
 (def ^{:tag Entity
        :arglists '([e])
        :doc "Forces all entity attributes to be eagerly fetched and cached. Only usable for debug output.
@@ -122,10 +139,6 @@
              (touch (entity db 1)) ; => {:db/id 1, :dislikes [:pie], :likes [:pizza]}
              ```"}
   touch de/touch)
-
-
-; Pull
-
 (def ^{:arglists '([db selector eid])
        :doc "Fetches data from database using recursive declarative description. See [docs.datomic.com/on-prem/pull.html](https://docs.datomic.com/on-prem/pull.html).
 
@@ -141,7 +154,6 @@
   pull (fn
          ([db selector eid] (dp/pull (resolve-db-arg db) selector eid))
          ([db selector eid opts] (dp/pull (resolve-db-arg db) selector eid opts))))
-
 (def ^{:arglists '([db selector eids])
        :doc "Same as [[pull]], but accepts sequence of ids and returns sequence of maps.
 
@@ -155,9 +167,6 @@
   pull-many (fn
               ([db selector eids] (dp/pull-many (resolve-db-arg db) selector eids))
               ([db selector eids opts] (dp/pull-many (resolve-db-arg db) selector eids opts))))
-
-; Query
-
 (def
   ^{:arglists '([query & inputs])
     :doc "Executes a datalog query. See [docs.datomic.com/on-prem/query.html](https://docs.datomic.com/on-prem/query.html).
@@ -172,10 +181,6 @@
           ```"}
   q (fn [query & inputs]
       (apply dq/q query (map resolve-db-arg inputs))))
-
-
-; Creating DB
-
 (defn empty-db
   "Creates an empty database with an optional schema. The value
    returned is a DB handle (plan v2 §4): underneath, a private
@@ -198,11 +203,9 @@
    (conn/empty-db schema {}))
   ([schema opts]
    (conn/empty-db schema opts)))
-
 (def ^{:arglists '([x])
        :doc "Returns `true` if the given value is an immutable database, `false` otherwise."}
   db? conn/handle?)
-
 (def ^{:tag Datom
        :arglists '([e a v] [e a v tx] [e a v tx added])
        :doc "Low-level fn to create raw datoms.
@@ -211,11 +214,9 @@
 
              See also [[init-db]]."}
   datom db/datom)
-
 (def ^{:arglists '([x])
        :doc "Returns `true` if the given value is a datom, `false` otherwise."}
   datom? db/datom?)
-
 (defn init-db
   "Low-level fn for creating database quickly from a trusted sequence of datoms.
    Does no validation on inputs, so `datoms` must be well-formed and match schema.
@@ -225,12 +226,6 @@
    (conn/init-db datoms nil))
   ([datoms schema]
    (conn/init-db datoms schema)))
-
-;; serializable / from-serializable (plan v2 §3: serialize is a new
-;; namespace, eve.db.ds.serialize — datoms out inside $, datoms in
-;; through a transact; the baseline defs pointed at a serialize that
-;; required the deleted storage namespace).
-
 (defn serializable
   "Captures the DB a handle names as plain host data: schema,
    max-eid, max-tx and the datoms as [e a v tx] vectors with values
@@ -240,7 +235,6 @@
    (serialize/serializable db))
   ([db opts]
    (serialize/serializable db opts)))
-
 (defn from-serializable
   "Rebuilds a DB from serializable's form and returns its handle:
    the datoms are transacted into a fresh private conn."
@@ -248,22 +242,13 @@
    (serialize/from-serializable form))
   ([form opts]
    (serialize/from-serializable form opts)))
-
-
-; Schema
-
 (def ^{:arglists '([db])
        :doc "Returns a schema of a database."}
   schema (fn [db] (if (conn/handle? db) (conn/schema-of db) (db/-schema db))))
-
-
-; Filtered db
-
 (defn is-filtered
   "Returns `true` if this database was filtered using [[filter]], `false` otherwise."
   [x]
   (conn/is-filtered x))
-
 (defn filter
   "Returns a view over database that has same interface but only includes datoms for which the `(pred db datom)` is true. Can be applied multiple times.
 
@@ -280,27 +265,18 @@
    until the Eve fix lands. See eve.db.ds.conn/filter."
   [db pred]
   (conn/filter db pred))
-
-
-; Changing DB
-
 (def ^{:arglists '([db tx-data] [db tx-data tx-meta])} with
   "Same as [[transact!]], but applies to an immutable database value. Returns transaction report (see [[transact!]])."
   conn/with)
-
 (def ^{:arglists '([db tx-data]) :tag DB} db-with
   "Applies transaction to an immutable db value, returning new immutable db value. Same as `(:db-after (with db tx-data))`."
   conn/db-with)
-
 (defn with-schema
   "Warning! No validation or conversion. Only change schema in a compatible way"
   [db schema]
   (if (conn/handle? db)
     (conn/with-schema db schema)
     (db/with-schema db schema)))
-
-; Index lookups
-
 (defn datoms
   "Index lookup. Returns a sequence of datoms (lazy iterator over actual DB index) which components (e, a, v) match passed arguments.
 
@@ -377,7 +353,6 @@
   ([db index c0 c1]       {:pre [(some? db)]} (deliver-datoms (db/-datoms (resolve-db-arg db) index c0  c1  nil nil)))
   ([db index c0 c1 c2]    {:pre [(some? db)]} (deliver-datoms (db/-datoms (resolve-db-arg db) index c0  c1  c2  nil)))
   ([db index c0 c1 c2 c3] {:pre [(some? db)]} (deliver-datoms (db/-datoms (resolve-db-arg db) index c0  c1  c2  c3))))
-
 (defn ^Datom find-datom
   "Same as [[datoms]], but only returns single datom. Faster than `(first (datoms ...))`"
   ([db index]             {:pre [(some? db)]} (deliver-datom (db/find-datom (resolve-db-arg db) index nil nil nil nil)))
@@ -385,7 +360,6 @@
   ([db index c0 c1]       {:pre [(some? db)]} (deliver-datom (db/find-datom (resolve-db-arg db) index c0  c1  nil nil)))
   ([db index c0 c1 c2]    {:pre [(some? db)]} (deliver-datom (db/find-datom (resolve-db-arg db) index c0  c1  c2  nil)))
   ([db index c0 c1 c2 c3] {:pre [(some? db)]} (deliver-datom (db/find-datom (resolve-db-arg db) index c0  c1  c2  c3))))
-
 (defn seek-datoms
   "Similar to [[datoms]], but will return datoms starting from specified components and including rest of the database until the end of the index.
 
@@ -422,7 +396,6 @@
   ([db index c0 c1]       {:pre [(some? db)]} (deliver-datoms (db/-seek-datoms (resolve-db-arg db) index c0  c1  nil nil)))
   ([db index c0 c1 c2]    {:pre [(some? db)]} (deliver-datoms (db/-seek-datoms (resolve-db-arg db) index c0  c1  c2  nil)))
   ([db index c0 c1 c2 c3] {:pre [(some? db)]} (deliver-datoms (db/-seek-datoms (resolve-db-arg db) index c0  c1  c2  c3))))
-
 (defn rseek-datoms
   "Same as [[seek-datoms]], but goes backwards until the beginning of the index."
   ([db index]             {:pre [(some? db)]} (deliver-datoms (db/-rseek-datoms (resolve-db-arg db) index nil nil nil nil)))
@@ -430,7 +403,6 @@
   ([db index c0 c1]       {:pre [(some? db)]} (deliver-datoms (db/-rseek-datoms (resolve-db-arg db) index c0  c1  nil nil)))
   ([db index c0 c1 c2]    {:pre [(some? db)]} (deliver-datoms (db/-rseek-datoms (resolve-db-arg db) index c0  c1  c2  nil)))
   ([db index c0 c1 c2 c3] {:pre [(some? db)]} (deliver-datoms (db/-rseek-datoms (resolve-db-arg db) index c0  c1  c2  c3))))
-
 (defn index-range
   "Returns part of `:avet` index between `[_ attr start]` and `[_ attr end]` in AVET sort order.
   
@@ -460,21 +432,15 @@
   ;; precondition in core that rejected a §4 handle its own body
   ;; resolves (every sibling: some? + resolve-db-arg in the body).
   (deliver-datoms (db/-index-range (resolve-db-arg db) attr start end)))
-
-;; Conn
-
 (def ^{:arglists '([conn])} conn?
   "Returns `true` if this is a connection to a DataScript db, `false` otherwise."
   conn/conn?)
-
 (def ^{:arglists '([db])} conn-from-db
   "Creates a mutable reference to a given immutable database. See [[create-conn]]."
   conn/conn-from-db)
-
 (def ^{:arglists '([datoms] [datoms schema] [datoms schema opts])} conn-from-datoms
   "Creates an empty DB and a mutable reference to it. See [[create-conn]]."
   conn/conn-from-datoms)
-
 (def ^{:arglists '([] [schema] [schema opts])} create-conn
   "Creates a mutable reference (a “connection”) to an empty immutable database.
 
@@ -486,7 +452,6 @@
    
    If you specify `:storage` option, conn will be stored automatically after each transaction"
   conn/create-conn)
-
 (def ^{:arglists '([conn db] [db])} keep!
   "Pin the DB the handle names in its conn's atom, so reads through
    the handle keep resolving after the conn moves on (plan v2 §4).
@@ -496,7 +461,6 @@
    keep!'d chain DB is never auto-released as the chain advances.
    Additive in this rewrite; upstream has no equivalent."
   conn/keep!)
-
 (def ^{:arglists '([conn db] [db])} release!
   "Remove the DB the handle names from its conn's atom :kept map.
    Afterwards, reads through the handle throw :eve.db.ds/db-not-kept
@@ -504,13 +468,11 @@
    form removes from the handle's own atom — for conn-less values.
    Additive in this rewrite; upstream has no equivalent."
   conn/release!)
-
 (def ^{:arglists '([conn])} close-conn!
   "Release the conn's Eve atom (and, for a :persistent conn, its
    backing domain). Additive in this rewrite; upstream has no
    equivalent."
   conn/close-conn!)
-
 (def ^{:arglists '([conn tx-data] [conn tx-data tx-meta])} transact!
   "Applies transaction the underlying database value and atomically updates connection reference to point to the result of that transaction, new db value.
   
@@ -597,14 +559,11 @@
       (transact! conn [[:db/add  -1 :name   \"Oleg\"]
                        [:db/add 296 :friend -1]])"
   conn/transact!)
-
 (def ^{:arglists '([conn db] [conn db tx-meta])} reset-conn!
   "Forces underlying `conn` value to become `db`. Will generate a tx-report that will remove everything from old value and insert everything from the new one."
   conn/reset-conn!)
-
 (def ^{:arglists '([conn schema])} reset-schema!
   conn/reset-schema!)
-
 (def ^{:arglists '([conn callback] [conn key callback])} listen!
   "Listen for changes on the given connection. Whenever a transaction is applied to the database via [[transact!]], the callback is called
    with the transaction report. `key` is any opaque unique value.
@@ -613,14 +572,9 @@
    
    Returns the key under which this listener is registered. See also [[unlisten!]]."
   conn/listen!)
-
 (def ^{:arglists '([conn key])} unlisten!
   "Removes registered listener from connection. See also [[listen!]]."
   conn/unlisten!)
-
-
-; Data Readers
-
 (def ^{:doc "Data readers for EDN readers. In CLJS they’re registered automatically. In CLJ, if `data_readers.clj` do not work, you can always do
 
              ```
@@ -628,14 +582,9 @@
              ```"}
   data-readers {'eve.db.ds/Datom db/datom-from-reader
                 'eve.db.ds/DB    db/db-from-reader})
-
 #?(:cljs
    (doseq [[tag cb] data-readers] (edn/register-tag-parser! tag cb)))
-
-;; Datomic compatibility layer
-
 (def ^:private last-tempid (atom -1000000))
-
 (defn tempid
   "Allocates and returns an unique temporary id (a negative integer). Ignores `part`. Returns `x` if it is specified.
   
@@ -648,14 +597,12 @@
    (if (= part :db.part/tx)
      :db/current-tx
      x)))
-
 (defn resolve-tempid
   "Does a lookup in tempids map, returning an entity id that tempid was resolved to.
    
    Exists for Datomic API compatibility. Prefer using map lookup directly if possible."
   [_db tempids tempid]
   (get tempids tempid))
-
 (defn ^DB db
   "Returns the underlying immutable database value from a connection.
    
@@ -663,7 +610,6 @@
   [conn]
   {:pre [(conn? conn)]}
   @conn)
-
 (defn transact
   "Same as [[transact!]], but returns an immediately realized future.
   
@@ -688,9 +634,6 @@
           (deref [_ _ _] res)
           clojure.lang.IPending
           (isRealized [_] true))))))
-
-
-;; ersatz future without proper blocking
 #?(:clj
    (defn- future-call [f]
      (future (f)))
@@ -706,7 +649,6 @@
          (-deref-with-timeout [_ _ timeout-val] (if @realized @res timeout-val))
          IPending
          (-realized? [_] @realized)))))
-
 (defn transact-async
   "In CLJ, calls [[transact!]] on a future thread pool, returning immediately.
   
@@ -715,10 +657,6 @@
   ([conn tx-data tx-meta]
    {:pre [(conn? conn)]}
    (future-call #(transact! conn tx-data tx-meta))))
-
-
-; Transaction functions (stored :db/fn)
-
 #?(:clj
    (defn- db-fn-var-name
      "The generated var name for a db-fn form: content-addressed
@@ -734,10 +672,20 @@
            digest (.digest (java.security.MessageDigest/getInstance "SHA-1")
                       (.getBytes input "UTF-8"))
            hex    (format "%040x" (java.math.BigInteger. 1 digest))]
-       (symbol (str "db-fn-" (subs hex 0 12))))))
-
-#?(:clj
-   (defmacro db-fn
+       (symbol (str "db-fn-" (subs hex 0 12)))))
+   :cljs
+   (defn- db-fn-var-name
+     "The generated var name for a db-fn form: content-addressed
+      from the caller's namespace and the printed fn form (SHA-1,
+      first 12 hex chars, db-fn- prefixed). Same derivation as the
+      :clj arm — node's crypto supplies the SHA-1 on this seat, so
+      a form derives the same name on every host."
+     [ns-sym params body]
+     (let [input (str ns-sym " " (pr-str (list* 'fn params body)))
+           h     (.createHash (js/require "crypto") "sha1")]
+       (.update h input "utf8")
+       (symbol (str "db-fn-" (subs (.digest h "hex") 0 12))))))
+(defmacro db-fn
      "Builds a stored transaction function from a plain fn form —
       the DEFAULT kind (John's ruling, 2026-11-20: \"Let's default
       to host fns and let you opt into sci fns\"). The body stays
@@ -780,10 +728,8 @@
        (list 'do
          (list 'def vname (list* 'fn params body))
          (list 'eve.db.ds.db-fn/register-fn! (list 'quote fq-sym) vname)
-         (list 'eve.db.ds.db-fn/resolve-fn (list 'quote fq-sym))))))
-
-#?(:clj
-   (defmacro sci-fn
+         (list 'eve.db.ds.db-fn/resolve-fn (list 'quote fq-sym)))))
+(defmacro sci-fn
      "Builds a stored transaction function as DATA, the SCI kind —
       the explicit opt-in (the default is a host fn; see
       [[db-fn]]). The fn body is sourcified at macro time into a
@@ -805,8 +751,7 @@
      [params & body]
      (list 'eve.db.ds.db-fn/sci-fn
        (list 'quote params)
-       (apply str (interpose "\n" (map pr-str body))))))
-
+       (apply str (interpose "\n" (map pr-str body)))))
 (def ^{:arglists '([sym])
        :doc "Builds a stored transaction function that resolves a
              host fn by name at transact time:
@@ -825,7 +770,6 @@
              Or see [[db-fn]], which defines the fn as a var and
              registers it for you."}
   fn-ref dbfn/resolve-fn)
-
 (def ^{:arglists '([m])
        :doc "The explicit stored-fn map form (Datomic's function
              shape): (function {:lang :clojure, :params [db & args],
@@ -834,48 +778,29 @@
              a single form, which is sourcified. See [[sci-fn]] for
              the macro form."}
   function dbfn/function)
-
 (def ^{:arglists '([sym f])} register-fn!
   "Registers host fn f under fully-qualified symbol sym for
    :resolve stored db fns (see [[fn-ref]]). The registry is the
    portable path: it works on both hosts, unlike JVM-only
    requiring-resolve. Returns sym."
   dbfn/register-fn!)
-
 (def ^{:arglists '([sym])} unregister-fn!
   "Removes sym from the :resolve db-fn registry. Returns sym."
   dbfn/unregister-fn!)
-
-
-;; squuid
-
 (def ^{:arglists '([] [msec])} squuid
   "Generates a UUID that grow with time. Such UUIDs will always go to the end  of the index and that will minimize insertions in the middle.
   
    Consist of 64 bits of current UNIX timestamp (in seconds) and 64 random bits (2^64 different unique values per second)."
   util/squuid)
-
 (def ^{:arglists '([uuid])} squuid-time-millis
   "Returns time that was used in [[squuid]] call, in milliseconds, rounded to the closest second."
   util/squuid-time-millis)
-
-
-;; Storage: the baseline storage namespace is deleted (plan v2 §3).
-;; Persistence is create-conn with :persistent (see GUIDE §8); there
-;; is no storage object, and no storage/store/restore/file-storage
-;; surface in this rewrite.
-
 (defn settings
   "The DB's settings map. The indexes are eve.db.ds.bset trees; the
    one setting that survives the port is the branching factor — a
    bset leaf holds up to 32 keys (plan v2 §5)."
   [db]
   {:branching-factor 32})
-
-;; The SCI stored-fn read surface: a SCI transaction function
-;; receives the in-transaction DB value (a raw DB, not a handle —
-;; resolve-db-arg passes it through) and calls these public read
-;; fns. Registered on load; see eve.db.ds.db-fn.
 (dbfn/register-sci-surface!
   {'entity     entity
    'entid      entid
