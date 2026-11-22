@@ -9,12 +9,16 @@
    Usage: bb -m ds-harness.bb-main <contract|perf|one> <args...>"
   (:require [eve.host-completion]
             [ds-harness.contract-check :as cc]
-            [ds-harness.perf :as perf]
             [contract.one :as one]))
 
 (defn -main [& [mode & args]]
   (case mode
     "contract" (apply cc/-main args)
-    "perf" (apply perf/-main args)
+    ;; perf is required in the branch, not the ns form: the perf
+    ;; namespace carries a dangling reference at this pin
+    ;; (d/read-in, defined nowhere), and an eager require made
+    ;; every mode pay for it at load.
+    "perf" (do (require 'ds-harness.perf)
+               (apply (ns-resolve 'ds-harness.perf '-main) args))
     "one" (apply one/-main args)
     (println (pr-str {:fatal (str "unknown mode " mode)}))))

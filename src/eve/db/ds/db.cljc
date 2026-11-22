@@ -8,7 +8,6 @@
     [eve.db.ds.util :as util]
     [eve.db.ds.db-fn :as db-fn]
     [eve.db.ds.bset :as set])
-  #?(:clj (:import clojure.lang.IFn$OOL))
   #?(:cljs (:require-macros [eve.db.ds.db :refer [case-tree combine-cmp defn+ defcomp defrecord-updatable int-compare validate-attr validate-val]]
                              [eve.db.ds.util :as util]))
   (:refer-clojure :exclude [seqable? #?(:clj update)]))
@@ -350,10 +349,15 @@
 ;; without a method for Datom__Flat, pr-str fell back to the deftype's
 ;; toString, which itself calls pr-str (infinite recursion).
 #?(:clj
-   (defmethod print-method (Class/forName "eve.db.ds.db.Datom__Flat") [d, ^java.io.Writer w]
-     (.write w (str "#eve.db.ds/Datom "))
-     (binding [*out* w]
-       (pr [(.-e d) (.-a d) (.-v d) (datom-tx d) (datom-added d)]))))
+   ;; the flat sister is a class on hosts that materialize one;
+   ;; where it is not, its printing is the host's own type
+   ;; presentation and there is no class to key a method on
+   (when-let [flat (try (Class/forName "eve.db.ds.db.Datom__Flat")
+                        (catch Throwable _ nil))]
+     (defmethod print-method flat [d, ^java.io.Writer w]
+       (.write w (str "#eve.db.ds/Datom "))
+       (binding [*out* w]
+         (pr [(.-e d) (.-a d) (.-v d) (datom-tx d) (datom-added d)])))))
 
 ;; ----------------------------------------------------------------------------
 ;; datom cmp macros/funcs
@@ -522,7 +526,11 @@
               clojure.lang.IFn
               (invoke [this# ~a1 ~a2]
                 (.compare this# ~a1 ~a2))
-              IFn$OOL
+              ;; fully qualified, not imported: the name is the
+              ;; macro's only use of the class, and an :import of a
+              ;; JVM primitive interface is a load-time demand a
+              ;; non-JVM :clj host cannot meet
+              clojure.lang.IFn$OOL
               (invokePrim [this# ~a1 ~a2]
                 (.compare this# ~a1 ~a2))))))))
 
@@ -1234,10 +1242,12 @@
      ;; outside a region (pr-db's -datoms throws on delivered roots),
      ;; so the sister prints its readable fields instead of recursing
      ;; through toString → pr-str.
-     (defmethod print-method (Class/forName "eve.db.ds.db.DB__Flat") [db w]
-       (.write w (str "#eve.db.ds/DB "))
-       (binding [*out* w]
-         (pr {:schema (.-schema db) :max-eid (.-max-eid db) :max-tx (.-max-tx db)})))))
+     (when-let [flat (try (Class/forName "eve.db.ds.db.DB__Flat")
+                          (catch Throwable _ nil))]
+       (defmethod print-method flat [db w]
+         (.write w (str "#eve.db.ds/DB "))
+         (binding [*out* w]
+           (pr {:schema (.-schema db) :max-eid (.-max-eid db) :max-tx (.-max-tx db)}))))))
 
 (defn db-from-reader [{:keys [schema datoms]}]
   (init-db (map (fn [[e a v tx]] (datom e a v tx)) datoms) schema {}))
