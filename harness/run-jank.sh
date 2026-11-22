@@ -29,7 +29,8 @@ EVE_ROOT="${EVE_ROOT:-${EVE_LOCAL:-}}"
 COHOST_DIR="${COHOST_DIR:-}"
 [ -n "$EVE_ROOT" ] || { echo "run-jank: EVE_ROOT (or EVE_LOCAL) not set" >&2; exit 2; }
 [ -n "$COHOST_DIR" ] || { echo "run-jank: COHOST_DIR not set" >&2; exit 2; }
-export PATH="$HOME/.local/bin:$PATH"
+# JANK_HOME_BIN (optional): a jank install to prefer over ~/.local/bin (a box with a stale shared jank).
+export PATH="${JANK_HOME_BIN:+$JANK_HOME_BIN:}$HOME/.local/bin:$PATH"
 export LC_ALL="${LC_ALL:-en_US.UTF-8}"
 
 cd "$DS_DIR"
