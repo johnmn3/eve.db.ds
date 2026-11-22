@@ -123,7 +123,7 @@ if [ "${JANK_PERF:-1}" = 1 ] && echo " $LEGS " | grep -q ' jank '; then
   JCP=$(bash "$DS_DIR/harness/host-cp.sh" jank):$EVE_DIR/test
   JB="${JANK_HOME_BIN:+$JANK_HOME_BIN/}jank"
   JCMD="$JB --module-path <jank-cp>:\$EVE_DIR/test run-main eve.runner.jank-main -- perf"
-  ( cd "$EVE_DIR" && timeout 3600 "$JB" --module-path "$JCP" run-main eve.runner.jank-main -- perf ) > "$OUT/logs/perf-jank.log" 2>&1
+  ( cd "$EVE_DIR" && if [ -n "${JANK_XDG_CACHE_HOME:-}" ]; then export XDG_CACHE_HOME="$JANK_XDG_CACHE_HOME"; fi; export LC_ALL="${LC_ALL:-en_US.UTF-8}"; timeout 3600 "$JB" --module-path "$JCP" run-main eve.runner.jank-main -- perf ) > "$OUT/logs/perf-jank.log" 2>&1
   {
     echo
     echo "### jank runtime (interpreted perf suite; ns/op)"
