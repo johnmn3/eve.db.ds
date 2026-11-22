@@ -1,4 +1,9 @@
-(ns ^:no-doc eve.db.ds.lru)
+(ns ^:no-doc eve.db.ds.lru
+  ;; eve.core is required for the :default deftype arm below: it
+  ;; spells its protocols ecore/… (the spelling Eve's own type
+  ;; sections use), and a qualified protocol name resolves on
+  ;; let-go only in a namespace that requires eve.core.
+  (:require [eve.core :as ecore]))
 
 (declare assoc-lru cleanup-lru)
 
@@ -21,7 +26,24 @@
      clojure.lang.Associative
      (containsKey [_ k] (.containsKey key-value k))
      (entryAt [_ k]     (.entryAt key-value k))
-     (assoc [this k v]  (assoc-lru this k v))))
+     (assoc [this k v]  (assoc-lru this k v)))
+   ;; A reader with neither :cljs nor :clj in its features (let-go:
+   ;; #{:lg} + :default) selected no arm at all before — the type and
+   ;; its ->LRU factory were never defined while the fns below
+   ;; reference them (Can't resolve ->LRU). The :default arm carries
+   ;; the portable spelling: the protocol names every Eve host's
+   ;; type language translates from, unhinted fields.
+   :default
+   (deftype LRU [key-value gen-key key-gen gen limit]
+     ecore/IAssociative
+     (-assoc [this k v] (assoc-lru this k v))
+     (-contains-key? [_ k] (ecore/-contains-key? key-value k))
+     ecore/ILookup
+     (-lookup [_ k]    (ecore/-lookup key-value k nil))
+     (-lookup [_ k nf] (ecore/-lookup key-value k nf))
+     ecore/IPrintWithWriter
+     (-pr-writer [_ writer opts]
+       (ecore/-pr-writer key-value writer opts))))
 
 (defn assoc-lru [^LRU lru k v]
   (let [key-value (.-key-value lru)

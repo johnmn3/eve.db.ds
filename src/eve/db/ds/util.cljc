@@ -7,22 +7,36 @@
 (def ^:dynamic *debug*
   false)
 
-#?(:clj
+;; The macro family below is spelled once, under :default: every
+;; reader that is not compiling the cljs runtime face selects it —
+;; :clj readers (JVM, jank, glojure, bb) by falling through to
+;; :default, and hosts whose feature set carries neither :clj nor
+;; :cljs (let-go: #{:lg} + :default) the same way. Under a bare
+;; #?(:clj ...) the macros never existed on let-go and every
+;; consumer failed at its first macro call (Can't resolve
+;; util/raise). cljs consumers pull the macros via :require-macros,
+;; whose macro-side load reads this file with :clj features and so
+;; selects :default as well; the cljs runtime face selects nil.
+#?(:cljs nil
+   :default
    (defmacro log [& body]
      (when (System/getProperty "eve.db.ds.debug")
        `(when *debug*
           (println ~@body)))))
 
-#?(:clj
+#?(:cljs nil
+   :default
    (defmacro raise [& fragments]
      (let [msgs (butlast fragments)
            data (last fragments)]
        `(throw (ex-info (str ~@(map (fn [m#] (if (string? m#) m# (list 'pr-str m#))) msgs)) ~data)))))
 
-#?(:clj
+#?(:cljs nil
+   :default
    (def ^:private ^:dynamic *if+-syms))
-  
-#?(:clj
+
+#?(:cljs nil
+   :default
    (defn- if+-rewrite-cond-impl [cond]
      (clojure.core/cond
        (empty? cond)
@@ -49,17 +63,20 @@
          (first cond)
          (if+-rewrite-cond-impl (next cond))))))
 
-#?(:clj
+#?(:cljs nil
+   :default
    (defn- if+-rewrite-cond [cond]
      (binding [*if+-syms (volatile! [])]
        [(if+-rewrite-cond-impl cond) @*if+-syms])))
 
-#?(:clj
+#?(:cljs nil
+   :default
    (defn- flatten-1 [xs]
      (vec
        (mapcat identity xs))))
 
-#?(:clj
+#?(:cljs nil
+   :default
    (defmacro if+
      "Allows sharing local variables between condition and then clause.
       
@@ -97,7 +114,8 @@
               ~else)))
        (list 'if cond then else))))
 
-#?(:clj
+#?(:cljs nil
+   :default
    (defmacro cond+ [& clauses]
      (when-some [[test expr & rest] clauses]
        (case test
@@ -106,7 +124,8 @@
          :some `(or ~expr (util/cond+ ~@rest))
          `(util/if+ ~test ~expr (util/cond+ ~@rest))))))
 
-#?(:clj
+#?(:cljs nil
+   :default
    (defmacro some-of
      ([] nil)
      ([x] x)
