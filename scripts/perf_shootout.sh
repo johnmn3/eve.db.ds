@@ -14,7 +14,9 @@
 # lane-m/ds-shootout-restore): cljs (run-cljs.sh — Closure :advanced
 # bundle under ~/.cache/cohost/aot/cljs/<stamp>), jolt (run-jolt.sh —
 # standalone binary under ~/.cache/cohost/aot/jolt/<stamp>), jank
-# (run-jank.sh — AOT binary under ~/.cache/cohost/aot/jank/<stamp>).
+# (run-jank.sh — AOT binary under ~/.cache/cohost/aot/jank/<stamp>),
+# jvm (run-jvm-aot.sh — one self-contained uberjar under
+# ~/.cache/cohost/aot/jvm/<stamp>/one.jar, timed as `java -jar`).
 # For these hosts the timed runs launch the precached artifact; each
 # leg's cache build runs FIRST, untimed, as an `ensure` step whose
 # cost is echoed as AOT-BUILD into the host's log — the timed cells
@@ -51,7 +53,7 @@ if [ -n "${DS_DIR:-}" ] && [ -n "${EVE_DIR:-}" ]; then
   echo "|---|---|" >> "$OUT/shootout-table.md"
   for h in ${HOSTS:-jvm bb nbb lpy}; do
     case "$h" in
-      jvm) bash "$DS_DIR/harness/shootout.sh" jvm bash "$DS_DIR/harness/run-jvm.sh" contract.one > "$OUT/shootout-jvm.txt" 2>&1 ;;
+      jvm) { bash "$DS_DIR/harness/run-jvm-aot.sh" ensure && bash "$DS_DIR/harness/shootout.sh" jvm bash "$DS_DIR/harness/run-jvm-aot.sh" run; } > "$OUT/shootout-jvm.txt" 2>&1 ;;
       bb)  bash "$DS_DIR/harness/shootout.sh" bb  bash "$DS_DIR/harness/run-bb.sh"  one          > "$OUT/shootout-bb.txt" 2>&1 ;;
       nbb) bash "$DS_DIR/harness/shootout.sh" nbb bash "$DS_DIR/harness/run-nbb.sh" one          > "$OUT/shootout-nbb.txt" 2>&1 ;;
       lpy) bash "$DS_DIR/harness/shootout.sh" lpy bash "$DS_DIR/harness/run-lpy.sh" one          > "$OUT/shootout-lpy.txt" 2>&1 ;;
