@@ -14,20 +14,25 @@
 
 (declare pull-impl attrs-frame ref-frame ->ReverseAttrsFrame)
 
+;; The seqs these helpers walk are the library's own (bset iters,
+;; pull frames): on a host where they are Eve seqs rather than
+;; clojure.lang.ISeq, a direct (.first xs) / (.next xs) / (.cons xs x)
+;; cannot dispatch at all, so the :clj arm goes through the core
+;; fns — the same methods, reached portably.
 (defn- first-seq [#?(:clj ^ISeq xs :cljs ^seq xs)]
   (if (nil? xs)
     nil
-    #?(:clj (.first xs) :cljs (-first xs))))
+    #?(:clj (first xs) :cljs (-first xs))))
 
 (defn- next-seq [#?(:clj ^ISeq xs :cljs ^seq xs)]
   (if (nil? xs)
     nil
-    #?(:clj (.next xs) :cljs (-next xs))))
+    #?(:clj (next xs) :cljs (-next xs))))
 
 (defn- conj-seq [#?(:clj ^ISeq xs :cljs ^seq xs) x]
   (if (nil? xs)
     (list x)
-    #?(:clj (.cons xs x) :cljs (-conj xs x))))
+    #?(:clj (cons x xs) :cljs (-conj xs x))))
 
 (defn- assoc-some! [m k v]
   (if (nil? v) m (assoc! m k v)))

@@ -471,6 +471,15 @@
     (cond
       (= x y) 0
       (and (sequential? x) (sequential? y)) (seq-compare x y)
+      ;; Maps and sets are one kind on every host, whatever class a
+      ;; host gives them: a value's class is not stable across the
+      ;; store/read boundary (a host map literal on one side, the
+      ;; stored Eve map on the other), and the class-name fallback
+      ;; below would order an insert by one rule and a seek by
+      ;; another, corrupting the index's order. Uncomparable values
+      ;; order by hash — the same rule the same-class fallback uses.
+      (and (map? x) (map? y)) (int-compare (ihash x) (ihash y))
+      (and (set? x) (set? y)) (int-compare (ihash x) (ihash y))
       ;; PORTING-DS D4 hunk (F-JOLT-CMP): core compare, not host method
       ;; calls — jolt's clojure.lang has no Numbers/compare and its
       ;; Keyword carries no compareTo method, while clojure.core/compare
@@ -2168,7 +2177,12 @@
             (util/raise "Unknown operation at " entity ", expected :db/add, :db/retract, :db.fn/call, :db.fn/retractAttribute, :db.fn/retractEntity or an ident corresponding to an installed transaction function (e.g. {:db/ident <keyword> :db/fn <Ifn>}, usage of :db/ident requires {:db/unique :db.unique/identity} in schema)" {:error :transact/syntax, :operation op, :tx-data entity})))
        
         (datom? entity)
-        (let [[e a v tx added] entity]
+        ;; destructured through seq, not positionally: the seq form
+        ;; is [e a v tx added] on every host, and tx is only used
+        ;; when added, where the signed and seq forms agree. A
+        ;; positional destructure nth's the Datom itself, which a
+        ;; host whose Datom is not Indexed cannot do.
+        (let [[e a v tx added] (seq entity)]
           (if added
             (recur (transact-add report [:db/add e a v tx]) entities)
             (recur report (cons [:db/retract e a v] entities))))
