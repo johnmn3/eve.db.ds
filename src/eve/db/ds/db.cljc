@@ -701,16 +701,20 @@
 ;; ----------------------------------------------------------------------------
 
 #?(:clj  (declare hash-db)
-   :cljs (defn ^number hash-db [db]))
+   :cljs (defn ^number hash-db [db])
+   :default (declare hash-db))
 
 #?(:clj  (declare hash-fdb)
-   :cljs (defn ^number hash-fdb [db]))
+   :cljs (defn ^number hash-fdb [db])
+   :default (declare hash-fdb))
 
 #?(:clj  (declare equiv-db)
-   :cljs (defn ^boolean equiv-db [db other]))
+   :cljs (defn ^boolean equiv-db [db other])
+   :default (declare equiv-db))
 
 #?(:clj  (declare restore-db)
-   :cljs (defn restore-db [keys]))
+   :cljs (defn restore-db [keys])
+   :default (declare restore-db))
 
 ;; A DB's lookup, from its field values: called from inside the type's body (direct field reads on either
 ;; form), as datom-lookup is for a Datom.
@@ -1385,16 +1389,20 @@
 ;; ----------------------------------------------------------------------------
 
 #?(:clj  (declare entid-strict)
-   :cljs (defn ^number entid-strict [db eid]))
+   :cljs (defn ^number entid-strict [db eid])
+   :default (declare entid-strict))
 
 #?(:clj  (declare ref?)
-   :cljs (defn ^boolean ref? [db attr]))
+   :cljs (defn ^boolean ref? [db attr])
+   :default (declare ref?))
 
 #?(:clj  (declare tuple?)
-   :cljs (defn ^boolean tuple? [db attr]))
+   :cljs (defn ^boolean tuple? [db attr])
+   :default (declare tuple?))
 
 #?(:clj  (declare resolve-tuple-refs)
-   :cljs (defn resolve-tuple-refs [db a vs context]))
+   :cljs (defn resolve-tuple-refs [db a vs context])
+   :default (declare resolve-tuple-refs))
 
 (defn+ resolve-datom [db e a v t default-e default-tx]
   (when (some? a)
@@ -2009,7 +2017,8 @@
               (map (fn [^Datom d] [:db.fn/retractEntity (:v d)]))) datoms))
 
 #?(:clj  (declare transact-tx-data-impl)
-   :cljs (defn transact-tx-data-impl [initial-report initial-es]))
+   :cljs (defn transact-tx-data-impl [initial-report initial-es])
+   :default (declare transact-tx-data-impl))
 
 (defn- retry-with-tempid [initial-report report es tempid upserted-eid]
   (if-some [eid (get (::upserted-tempids initial-report) tempid)]
