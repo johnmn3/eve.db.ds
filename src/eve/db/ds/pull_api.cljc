@@ -14,20 +14,20 @@
 
 (declare pull-impl attrs-frame ref-frame ->ReverseAttrsFrame)
 
-(defn- first-seq [#?(:clj ^ISeq xs :cljs ^seq xs)]
+(defn- first-seq [#?(:clj ^ISeq xs :cljs ^seq xs :default xs)]
   (if (nil? xs)
     nil
-    #?(:clj (.first xs) :cljs (-first xs))))
+    #?(:clj (.first xs) :cljs (-first xs) :default (first xs))))
 
-(defn- next-seq [#?(:clj ^ISeq xs :cljs ^seq xs)]
+(defn- next-seq [#?(:clj ^ISeq xs :cljs ^seq xs :default xs)]
   (if (nil? xs)
     nil
-    #?(:clj (.next xs) :cljs (-next xs))))
+    #?(:clj (.next xs) :cljs (-next xs) :default (next xs))))
 
-(defn- conj-seq [#?(:clj ^ISeq xs :cljs ^seq xs) x]
+(defn- conj-seq [#?(:clj ^ISeq xs :cljs ^seq xs :default xs) x]
   (if (nil? xs)
     (list x)
-    #?(:clj (.cons xs x) :cljs (-conj xs x))))
+    #?(:clj (.cons xs x) :cljs (-conj xs x) :default (cons x xs))))
 
 (defn- assoc-some! [m k v]
   (if (nil? v) m (assoc! m k v)))

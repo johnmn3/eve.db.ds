@@ -865,11 +865,12 @@
     (comp
       (map
         (fn [#?(:cljs t1
-                :clj ^{:tag "[[Ljava.lang.Object;"} t1)]
+                :clj ^{:tag "[[Ljava.lang.Object;"} t1
+                :default t1)]
           (->Eduction
             (map
               (fn [t2]
-                (let [res (aclone t1)]
+                (let [res (da/aclone t1)]
                   #?(:clj
                      (if (.isArray (.getClass ^Object t2))
                        (dotimes [i len]
@@ -881,7 +882,13 @@
                      :cljs
                      (dotimes [i len]
                        (when-some [idx (aget ^objects copy-map i)]
-                         (aset res i (da/aget ^objects t2 idx)))))
+                         (aset res i (da/aget ^objects t2 idx))))
+                     :default
+                     (dotimes [i len]
+                       (when-some [idx (da/aget copy-map i)]
+                         (da/aset res i (if (da/array? t2)
+                                          (da/aget t2 idx)
+                                          (get t2 idx))))))
                   res)))
             (:tuples rel))))
       cat)

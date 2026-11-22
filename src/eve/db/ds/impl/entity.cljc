@@ -1,6 +1,6 @@
 (ns ^:no-doc eve.db.ds.impl.entity
   (:refer-clojure :exclude [keys get])
-  (:require [#?(:cljs cljs.core :clj clojure.core) :as c]
+  (:require [#?(:cljs cljs.core :default clojure.core) :as c]
     [eve.db.ds.db :as db]))
 
 (declare entity ->Entity equiv-entity lookup-entity touch hash-entity)
