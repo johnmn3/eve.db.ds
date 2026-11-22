@@ -117,7 +117,11 @@
    :cljs
    (deftype Conn [eve-atom listeners closed persistent]
      IDeref
-     (-deref [this] (db this))))
+     (-deref [this] (db this)))
+   :lpy
+   (deftype Conn [eve-atom listeners closed persistent]
+     basilisp.lang.interfaces/IDeref
+     (deref [this] (db this))))
 
 (defn conn? [x]
   (instance? Conn x))
