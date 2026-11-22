@@ -22,7 +22,8 @@
 (defn- next-seq [#?(:clj ^ISeq xs :cljs ^seq xs)]
   (if (nil? xs)
     nil
-    #?(:clj (.next xs) :cljs (-next xs))))
+    ;; jolt's ArraySeq has no .next field: the core fn there
+    #?(:jolt (next xs) :clj (.next xs) :cljs (-next xs))))
 
 (defn- conj-seq [#?(:clj ^ISeq xs :cljs ^seq xs) x]
   (if (nil? xs)

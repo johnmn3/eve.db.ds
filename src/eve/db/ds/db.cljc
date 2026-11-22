@@ -349,7 +349,15 @@
 ;; GAP-U3-3 (U6): the delivered sister prints through the same body —
 ;; without a method for Datom__Flat, pr-str fell back to the deftype's
 ;; toString, which itself calls pr-str (infinite recursion).
-#?(:clj
+;; glojure reads :clj but has no Class/forName: the sister type is named
+;; through the namespace's own mapping (nothing when the host realized none).
+#?(:glj
+   (when-let [flat-t (ns-resolve 'eve.db.ds.db 'Datom__Flat)]
+     (defmethod print-method flat-t [d w]
+       (.write w (str "#eve.db.ds/Datom "))
+       (binding [*out* w]
+         (pr [(.-e d) (.-a d) (.-v d) (datom-tx d) (datom-added d)]))))
+   :clj
    (defmethod print-method (Class/forName "eve.db.ds.db.Datom__Flat") [d, ^java.io.Writer w]
      (.write w (str "#eve.db.ds/Datom "))
      (binding [*out* w]
