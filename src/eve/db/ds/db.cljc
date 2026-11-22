@@ -1242,10 +1242,18 @@
      ;; outside a region (pr-db's -datoms throws on delivered roots),
      ;; so the sister prints its readable fields instead of recursing
      ;; through toString → pr-str.
-     (defmethod print-method (Class/forName "eve.db.ds.db.DB__Flat") [db w]
-       (.write w (str "#eve.db.ds/DB "))
-       (binding [*out* w]
-         (pr {:schema (.-schema db) :max-eid (.-max-eid db) :max-tx (.-max-tx db)})))))
+     ;; (glojure has no Class/forName: the namespace mapping names it)
+     #?(:glj
+        (when-let [flat-t (ns-resolve 'eve.db.ds.db 'DB__Flat)]
+          (defmethod print-method flat-t [db w]
+            (.write w (str "#eve.db.ds/DB "))
+            (binding [*out* w]
+              (pr {:schema (.-schema db) :max-eid (.-max-eid db) :max-tx (.-max-tx db)}))))
+        :clj
+        (defmethod print-method (Class/forName "eve.db.ds.db.DB__Flat") [db w]
+          (.write w (str "#eve.db.ds/DB "))
+          (binding [*out* w]
+            (pr {:schema (.-schema db) :max-eid (.-max-eid db) :max-tx (.-max-tx db)}))))))
 
 (defn db-from-reader [{:keys [schema datoms]}]
   (init-db (map (fn [[e a v tx]] (datom e a v tx)) datoms) schema {}))
