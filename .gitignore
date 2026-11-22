@@ -8,3 +8,4 @@ perf-results/
 .cljs-build/
 target/
 .shadow-cljs/
+/.glj-cp/
