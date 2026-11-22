@@ -27,4 +27,9 @@ if [ ! -s "$CPFILE" ]; then
 fi
 export GLJ_CLASSPATH="$(cat "$CPFILE")"
 ARGS=""; for a in "$@"; do ARGS="$ARGS \"$a\""; done
+# glojure reads ./deps.edn from the cwd and adds its deps to the classpath
+# (this repo's deps.edn pins a released Eve, whose JVM eve.encoding then
+# shadows the Go one: "unable to resolve java.util.concurrent.ConcurrentHashMap"
+# in eve/codec.cljc). Run from a deps.edn-free dir; every root is absolute.
+cd "$(dirname "$CPFILE")"
 exec "$GLJ_EVE" -e "(require '$NS) ($NS/-main$ARGS)"
