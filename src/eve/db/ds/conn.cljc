@@ -33,6 +33,11 @@
   #?(:cljs (:require-macros [eve.db.ds.util :as util]))
   (:require
     [eve.alpha :as eve :refer [$]]
+    ;; eve.core is required for the :default Conn arm below: it
+    ;; spells its protocol ecore/IDeref, and a qualified protocol
+    ;; name resolves on let-go only in a namespace that requires
+    ;; eve.core.
+    [eve.core :as ecore]
     [eve.db.ds.db :as db]
     [eve.db.ds.db-fn :as db-fn]
     [eve.db.ds.util :as util]))
@@ -117,6 +122,13 @@
    :cljs
    (deftype Conn [eve-atom listeners closed persistent]
      IDeref
+     (-deref [this] (db this)))
+   ;; A reader with neither :clj nor :cljs (let-go) selected no arm
+   ;; before — Conn and ->Conn were never defined. The :default arm
+   ;; carries the portable spelling, as in eve.db.ds.lru.
+   :default
+   (deftype Conn [eve-atom listeners closed persistent]
+     ecore/IDeref
      (-deref [this] (db this))))
 
 (defn conn? [x]

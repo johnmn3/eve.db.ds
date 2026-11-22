@@ -694,6 +694,9 @@
 #?(:clj
    (defn- future-call [f]
      (future (f)))
+   :default
+   (defn- future-call [f]
+     (future (f)))
    :cljs
    (defn- future-call [f]
      (let [res      (atom nil)
@@ -782,7 +785,8 @@
          (list 'eve.db.ds.db-fn/register-fn! (list 'quote fq-sym) vname)
          (list 'eve.db.ds.db-fn/resolve-fn (list 'quote fq-sym))))))
 
-#?(:clj
+#?(:cljs nil
+   :default
    (defmacro sci-fn
      "Builds a stored transaction function as DATA, the SCI kind —
       the explicit opt-in (the default is a host fn; see
