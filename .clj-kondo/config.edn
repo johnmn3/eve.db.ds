@@ -1,0 +1,20 @@
+; Fleet clj-kondo config — copied byte-identical to
+; .clj-kondo/config.edn in each adopted repo (see cljfmt.edn header
+; for the sync law). v1 pins the tool floor and otherwise runs the
+; clj-kondo DEFAULT linter levels: the Phase 1 census measures the
+; default gate. Linter levels are never demoted to make a repo pass;
+; off-by-default idiom linters are enabled in deliberate fleet-wide
+; batches, recorded here.
+{:min-clj-kondo-version "2026.10.26"
+ ;; ── eve.db.ds repo exception (sync-law named exception, see STATUS) ──
+ ;; Eve ships no clj-kondo exports, so kondo cannot see that
+ ;; eve.alpha/deftype (used as `eve/deftype`) and eve.deftype/deftype
+ ;; are structurally clojure.core/deftype: a name, a field vector,
+ ;; then protocol specs whose bodies close over the fields. Without
+ ;; this mapping every field reference reads as an unresolved symbol
+ ;; and every protocol method as an invalid arity. Same exception as
+ ;; narcis (Phase 1 RETRO item 1); proposed upstream homes: Eve ships
+ ;; clj-kondo exports for its macros, or the fleet template gains
+ ;; this mapping for Eve-consuming repos.
+ :lint-as {eve.alpha/deftype clojure.core/deftype
+           eve.deftype/deftype clojure.core/deftype}}

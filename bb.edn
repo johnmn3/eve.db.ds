@@ -1,0 +1,41 @@
+;; Task runner for eve.db.ds — the fleet syntax-formalization tasks
+;; (syntax/formalization-1). Identical task names in every adopted
+;; repo; the fleet templates in
+;; ~/workspace/syntax-formalization/templates/ are the source of
+;; truth for the config files these tasks read (.cljfmt.edn,
+;; .clj-kondo/config.edn, .splint.edn are byte-identical copies,
+;; except the named Eve :lint-as exception in .clj-kondo/config.edn).
+;; Splint needs babashka >= 1.12.205 on PATH (fleet pin 1.25.0).
+{:tasks
+ {splint
+  {:doc "Run the Splint linter (fleet pin 1.25.0): bb splint [paths]"
+   :extra-deps {io.github.noahtheduke/splint {:mvn/version "1.25.0"}}
+   :task noahtheduke.splint/-main}
+
+  lint-kondo
+  {:doc "clj-kondo at the default fail level — warnings fail"
+   :task (shell "clj-kondo --lint src test")}
+
+  lint-splint
+  {:doc "Splint shape/smell rules"
+   :task (shell "bb splint")}
+
+  carve-report
+  {:doc "fail if any unused var is reported"
+   :task (shell "carve --opts '{:paths [\"src\" \"test\"] :report {:format :text}}'")}
+
+  fmt-check
+  {:doc "cljfmt check — the fleet .cljfmt.edn is the rules"
+   :task (shell "cljfmt check src test")}
+
+  fmt
+  {:doc "apply the fleet formatting"
+   :task (shell "cljfmt fix src test")}
+
+  lint-docs
+  {:doc "dprint check over docs/config (config: dprint.json)"
+   :task (shell "dprint check")}
+
+  lint
+  {:doc "the whole gate"
+   :depends [lint-kondo lint-splint carve-report fmt-check lint-docs]}}}

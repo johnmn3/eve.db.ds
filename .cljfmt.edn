@@ -1,0 +1,17 @@
+; Fleet formatting rules — THE source of truth for every adopted repo.
+; Sync law: this file is copied byte-identical to .cljfmt.edn in each
+; repo. The CI gate (cljfmt check), the editor (Calva / clojure-lsp),
+; and the agent write-hook (clojure-mcp-light) all read the repo copy,
+; so system-wide rules and edit-local rules are the same file by
+; construction. Changes happen HERE, by a fleet-level commit, and are
+; then propagated to the repos — a repo-local edit to .cljfmt.edn is
+; drift and fails the fleet config-diff check.
+; v1 is deliberately the cljfmt defaults plus ns sorting: the Phase 1
+; retro earns every non-default entry, recorded here with its reason.
+{:remove-surrounding-whitespace? true
+ :remove-trailing-whitespace? true
+ :remove-consecutive-blank-lines? true
+ :insert-missing-whitespace? true
+ :sort-ns-references? true
+ :align-associative? false
+ :indents {}}
