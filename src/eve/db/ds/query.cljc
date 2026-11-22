@@ -284,7 +284,8 @@
             (let [eid #?(:cljs (da/aget tuple idx)
                          :clj (if (.isArray (.getClass ^Object tuple))
                                 (aget ^objects tuple idx)
-                                (nth tuple idx)))]
+                                (nth tuple idx))
+                         :default (da/aget tuple idx))]
               (cond
                 (number? eid)     eid ;; quick path to avoid fn call
                 (sequential? eid) (resolve-fn eid)
@@ -293,7 +294,8 @@
         ;; If the index is not an int?, the target can never be an array
         (fn contained-getter-fn [tuple]
           (let [eid #?(:cljs (da/aget tuple idx)
-                       :clj (.valAt ^ILookup tuple idx))]
+                       :clj (.valAt ^ILookup tuple idx)
+                       :default (da/aget tuple idx))]
             (cond
               (number? eid)     eid ;; quick path to avoid fn call
               (sequential? eid) (resolve-fn eid)
@@ -305,11 +307,13 @@
             #?(:cljs (da/aget tuple idx)
                :clj (if (.isArray (.getClass ^Object tuple))
                       (aget ^objects tuple idx)
-                      (nth tuple idx)))))
+                      (nth tuple idx))
+               :default (da/aget tuple idx))))
         ;; If the index is not an int?, the target can never be an array
         (fn getter [tuple]
           #?(:cljs (da/aget tuple idx)
-             :clj (.valAt ^ILookup tuple idx)))))))
+             :clj (.valAt ^ILookup tuple idx)
+             :default (da/aget tuple idx)))))))
 
 (defn tuple-key-fn
   [attrs common-attrs]
@@ -317,11 +321,14 @@
     (if (== n 1)
       (getter-fn attrs (first common-attrs))
       (let [^objects getters-arr #?(:clj (into-array Object common-attrs)
-                                    :cljs (into-array common-attrs))]
+                                    :cljs (into-array common-attrs)
+                                    :default (let [a (da/make-array n)]
+                                               (dotimes [j n] (da/aset a j (nth common-attrs j)))
+                                               a))]
         (loop [i 0]
           (if (< i n)
             (do
-              (aset getters-arr i (getter-fn attrs (aget getters-arr i)))
+              (da/aset getters-arr i (getter-fn attrs (da/aget getters-arr i)))
               (recur (unchecked-inc i)))
             #?(:clj
                (fn [tuple]
@@ -333,7 +340,10 @@
                          (recur (unchecked-inc i)))
                        (LazilyPersistentVector/createOwning arr)))))
                :cljs (fn [tuple]
-                       (list* (.map getters-arr #(% tuple)))))))))))
+                       (list* (.map getters-arr #(% tuple))))
+               :default (fn [tuple]
+                          (mapv (fn [g] (g tuple))
+                                (mapv (fn [j] (da/aget getters-arr j)) (range n)))))))))))
 
 (defn -group-by
   [f init coll]
