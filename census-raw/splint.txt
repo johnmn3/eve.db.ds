@@ -1,0 +1,2050 @@
+WARNING: Proxy info is of authenticated type - discarding the user/pw as we do not support it!
+WARNING: Proxy info is of authenticated type - discarding the user/pw as we do not support it!
+src/eve/db/ds/bset.cljc:157:16 [style/eq-zero] - Use `zero?` instead of recreating it.
+(== 0 (cmp (eve/aget a1 (+ i a1-from)) (eve/aget a2 (+ i a2-from))))
+Consider using:
+(zero? (cmp (eve/aget a1 (+ i a1-from)) (eve/aget a2 (+ i a2-from))))
+
+src/eve/db/ds/bset.cljc:233:14 [style/eq-zero] - Use `zero?` instead of recreating it.
+(== 0 (cmp (eve/aget a idx) key))
+Consider using:
+(zero? (cmp (eve/aget a idx) key))
+
+src/eve/db/ds/bset.cljc:387:12 [style/eq-zero] - Use `zero?` instead of recreating it.
+(== 0 (cmp key (eve/aget slots idx)))
+Consider using:
+(zero? (cmp key (eve/aget slots idx)))
+
+src/eve/db/ds/bset.cljc:450:56 [style/plus-one] - Use `inc` instead of recreating it.
+(+ 1 idx)
+Consider using:
+(inc idx)
+
+src/eve/db/ds/bset.cljc:488:11 [lint/if-else-nil] - Use `when` which doesn't require specifying the else branch.
+(if (< (inc idx) (node-children-count node)) (path-set empty-path level (inc idx)) nil)
+Consider using:
+(when (< (inc idx) (node-children-count node)) (path-set empty-path level (inc idx)))
+
+src/eve/db/ds/bset.cljc:496:7 [lint/if-else-nil] - Use `when` which doesn't require specifying the else branch.
+(if (< (inc idx) (eve/alength (:slots node))) (path-set empty-path 0 (inc idx)) nil)
+Consider using:
+(when (< (inc idx) (eve/alength (:slots node))) (path-set empty-path 0 (inc idx)))
+
+src/eve/db/ds/bset.cljc:529:12 [style/eq-zero] - Use `zero?` instead of recreating it.
+(== 0 level)
+Consider using:
+(zero? level)
+
+src/eve/db/ds/bset.cljc:529:25 [style/eq-zero] - Use `zero?` instead of recreating it.
+(== 0 idx)
+Consider using:
+(zero? idx)
+
+src/eve/db/ds/bset.cljc:533:7 [style/eq-zero] - Use `zero?` instead of recreating it.
+(== 0 level)
+Consider using:
+(zero? level)
+
+src/eve/db/ds/bset.cljc:548:11 [style/eq-zero] - Use `zero?` instead of recreating it.
+(== 0 idx)
+Consider using:
+(zero? idx)
+
+src/eve/db/ds/bset.cljc:560:7 [style/pos-checks] - Use `pos?` instead of recreating it.
+(> (path-get path (inc shift)) 0)
+Consider using:
+(pos? (path-get path (inc shift)))
+
+src/eve/db/ds/bset.cljc:577:15 [style/eq-zero] - Use `zero?` instead of recreating it.
+(== 0 level)
+Consider using:
+(zero? level)
+
+src/eve/db/ds/bset.cljc:583:3 [style/prefer-condp] - Prefer condp when predicate and arguments are the same
+(cond
+  (path-eq path-l path-r) 0
+  (path-eq (path-inc path-l) path-r) 1
+  (path-eq (next-path root shift path-l) path-r) 1
+  :else (-distance root path-l path-r shift))
+Consider using:
+(condp path-eq path-r
+  path-l 0
+  (path-inc path-l) 1
+  (next-path root shift path-l) 1
+  (-distance root path-l path-r shift))
+
+src/eve/db/ds/bset.cljc:587:5 [lint/identical-branches] - Two adjacent branches are identical
+((path-eq (path-inc path-l) path-r) 1 (path-eq (next-path root shift path-l) path-r) 1)
+Consider using:
+((or (path-eq (path-inc path-l) path-r) (path-eq (next-path root shift path-l) path-r))
+ 1)
+
+src/eve/db/ds/bset.cljc:608:13 [style/eq-zero] - Use `zero?` instead of recreating it.
+(== 0 level)
+Consider using:
+(zero? level)
+
+src/eve/db/ds/bset.cljc:611:13 [lint/if-nil-else] - Use `when-not` instead of recreating it.
+(if (== keys-l idx) nil (path-set path 0 idx))
+Consider using:
+(when-not (== keys-l idx) (path-set path 0 idx))
+
+src/eve/db/ds/bset.cljc:631:13 [style/eq-zero] - Use `zero?` instead of recreating it.
+(== 0 level)
+Consider using:
+(zero? level)
+
+src/eve/db/ds/bset.cljc:974:9 [style/pos-checks] - Use `pos?` instead of recreating it.
+(> (.-idx it) 0)
+Consider using:
+(pos? (.-idx it))
+
+src/eve/db/ds/bset.cljc:1044:12 [style/pos-checks] - Use `pos?` instead of recreating it.
+(> idx 0)
+Consider using:
+(pos? idx)
+
+src/eve/db/ds/bset.cljc:1136:5 [lint/if-nil-else] - Use `when-not` instead of recreating it.
+(if (nil? new-roots)
+  nil
+  (let [new-root (eve/aget new-roots 0)]
+    (if (and (node? new-root) (== 1 (node-children-count new-root)))
+      (node-child new-root 0)
+      new-root)))
+Consider using:
+(when-not (nil? new-roots)
+  (let [new-root (eve/aget new-roots 0)]
+    (if (and (node? new-root) (== 1 (node-children-count new-root)))
+      (node-child new-root 0)
+      new-root)))
+
+src/eve/db/ds/built_ins.cljc:36:13 [lint/if-same-truthy] - Use `or` instead of recreating it.
+(if b b (reduced b))
+Consider using:
+(or b (reduced b))
+
+src/eve/db/ds/built_ins.cljc:128:4 [style/prefer-clj-math] - Use the `clojure.math` function instead of interop.
+Math/sqrt
+Consider using:
+clojure.math/sqrt
+
+src/eve/db/ds/conn.cljc:461:28 [lint/into-literal] - Use `vec` instead of recreating it.
+(into
+ []
+ (concat
+  (map
+   (fn [d] (db/datom (:e d) (:a d) (:v d) (db/datom-tx d) false))
+   (db/-datoms db-before :eavt nil nil nil nil))
+  (db/-datoms db-after :eavt nil nil nil nil)))
+Consider using:
+(vec
+ (concat
+  (map
+   (fn [d] (db/datom (:e d) (:a d) (:v d) (db/datom-tx d) false))
+   (db/-datoms db-before :eavt nil nil nil nil))
+  (db/-datoms db-after :eavt nil nil nil nil)))
+
+src/eve/db/ds/conn.cljc:492:9 [lint/assoc-fn] - Use `update` instead of recreating it.
+(assoc m :db (db/with-schema (:db m) schema))
+Consider using:
+(update m :db db/with-schema schema)
+
+src/eve/db/ds/conn.cljc:502:13 [lint/assoc-fn] - Use `update` instead of recreating it.
+(assoc m :db (db/with-schema (:db m) schema))
+Consider using:
+(update m :db db/with-schema schema)
+
+src/eve/db/ds/conn.cljc:563:1 [naming/predicate] - Use a question mark instead of other language idioms.
+(defn is-filtered
+  "Returns true if this database was filtered using filter."
+  [x]
+  (boolean (and (some? x) (db/FilteredDB? x))))
+Consider using:
+(defn filtered?
+  "Returns true if this database was filtered using filter."
+  [x]
+  (boolean (and (some? x) (db/FilteredDB? x))))
+
+src/eve/db/ds/core.cljc:50:1 [style/def-fn] - Prefer `defn` instead of `def` wrapping `fn`.
+(def entity
+  (fn [db eid] (de/entity (resolve-db-arg db) eid (when (conn/handle? db) db))))
+Consider using:
+(defn entity [db eid] (de/entity (resolve-db-arg db) eid (when (conn/handle? db) db)))
+
+src/eve/db/ds/core.cljc:102:1 [style/def-fn] - Prefer `defn` instead of `def` wrapping `fn`.
+(def entid (fn [db eid] (db/entid (resolve-db-arg db) eid)))
+Consider using:
+(defn entid [db eid] (db/entid (resolve-db-arg db) eid))
+
+src/eve/db/ds/core.cljc:129:1 [style/def-fn] - Prefer `defn` instead of `def` wrapping `fn`.
+(def pull
+  (fn
+   ([db selector eid] (dp/pull (resolve-db-arg db) selector eid))
+   ([db selector eid opts] (dp/pull (resolve-db-arg db) selector eid opts))))
+Consider using:
+(defn pull
+  ([db selector eid] (dp/pull (resolve-db-arg db) selector eid))
+  ([db selector eid opts] (dp/pull (resolve-db-arg db) selector eid opts)))
+
+src/eve/db/ds/core.cljc:145:1 [style/def-fn] - Prefer `defn` instead of `def` wrapping `fn`.
+(def pull-many
+  (fn
+   ([db selector eids] (dp/pull-many (resolve-db-arg db) selector eids))
+   ([db selector eids opts] (dp/pull-many (resolve-db-arg db) selector eids opts))))
+Consider using:
+(defn pull-many
+  ([db selector eids] (dp/pull-many (resolve-db-arg db) selector eids))
+  ([db selector eids opts] (dp/pull-many (resolve-db-arg db) selector eids opts)))
+
+src/eve/db/ds/core.cljc:161:1 [style/def-fn] - Prefer `defn` instead of `def` wrapping `fn`.
+(def q (fn [query & inputs] (apply dq/q query (map resolve-db-arg inputs))))
+Consider using:
+(defn q [query & inputs] (apply dq/q query (map resolve-db-arg inputs)))
+
+src/eve/db/ds/core.cljc:255:1 [style/def-fn] - Prefer `defn` instead of `def` wrapping `fn`.
+(def schema (fn [db] (if (conn/handle? db) (conn/schema-of db) (db/-schema db))))
+Consider using:
+(defn schema [db] (if (conn/handle? db) (conn/schema-of db) (db/-schema db)))
+
+src/eve/db/ds/core.cljc:262:1 [naming/predicate] - Use a question mark instead of other language idioms.
+(defn is-filtered
+  "Returns `true` if this database was filtered using [[filter]], `false` otherwise."
+  [x]
+  (conn/is-filtered x))
+Consider using:
+(defn filtered?
+  "Returns `true` if this database was filtered using [[filter]], `false` otherwise."
+  [x]
+  (conn/is-filtered x))
+
+src/eve/db/ds/core.cljc:808:8 [style/apply-str-interpose] - Use `clojure.string/join` instead of recreating it.
+(apply str (interpose "\n" (map pr-str body)))
+Consider using:
+(clojure.string/join "\n" (map pr-str body))
+
+src/eve/db/ds/datafy.cljc:2:3 [naming/conventional-aliases] - Prefer community standard aliases.
+(:require
+ [clojure.core.protocols :as cp]
+ [eve.db.ds.pull-api :as dp]
+ [eve.db.ds.db :as db]
+ [eve.db.ds.impl.entity :as e])
+Consider using:
+(:require
+ [clojure.core.protocols :as p]
+ [eve.db.ds.pull-api :as dp]
+ [eve.db.ds.db :as db]
+ [eve.db.ds.impl.entity :as e])
+
+src/eve/db/ds/db.cljc:345:16 [lint/redundant-str-call] - Use the literal directly.
+(str "#eve.db.ds/Datom ")
+Consider using:
+"#eve.db.ds/Datom "
+
+src/eve/db/ds/db.cljc:354:16 [lint/redundant-str-call] - Use the literal directly.
+(str "#eve.db.ds/Datom ")
+Consider using:
+"#eve.db.ds/Datom "
+
+src/eve/db/ds/db.cljc:370:19 [style/eq-zero] - Use `zero?` instead of recreating it.
+(== 0 c#)
+Consider using:
+(zero? c#)
+
+src/eve/db/ds/db.cljc:461:21 [style/eq-zero] - Use `zero?` instead of recreating it.
+(= v 0)
+Consider using:
+(zero? v)
+
+src/eve/db/ds/db.cljc:476:18 [lint/identical-branches] - Two adjacent branches are identical
+((instance? Number x) (compare x y) (instance? Comparable x) (compare x y))
+Consider using:
+((or (instance? Number x) (instance? Comparable x)) (compare x y))
+
+src/eve/db/ds/db.cljc:483:7 [lint/if-not-both] - Use `if-not` instead of recreating it.
+(if (not (class-identical? x y)) (class-compare x y) (throw e))
+Consider using:
+(if-not (class-identical? x y) (class-compare x y) (throw e))
+
+src/eve/db/ds/db.cljc:617:11 [style/eq-zero] - Use `zero?` instead of recreating it.
+(== diff 0)
+Consider using:
+(zero? diff)
+
+src/eve/db/ds/db.cljc:618:11 [style/neg-checks] - Use `neg?` instead of recreating it.
+(< diff 0)
+Consider using:
+(neg? diff)
+
+src/eve/db/ds/db.cljc:619:11 [style/pos-checks] - Use `pos?` instead of recreating it.
+(> diff 0)
+Consider using:
+(pos? diff)
+
+src/eve/db/ds/db.cljc:714:21 [lint/fn-wrapper] - No need to wrap function. Clojure supports first-class functions.
+(fn [x] (nil? x))
+Consider using:
+nil?
+
+src/eve/db/ds/db.cljc:1153:37 [lint/fn-wrapper] - No need to wrap function. Clojure supports first-class functions.
+(fn [d] (datom-tx d))
+Consider using:
+datom-tx
+
+src/eve/db/ds/db.cljc:1222:18 [lint/redundant-str-call] - Use the literal directly.
+(str "#eve.db.ds/DB {")
+Consider using:
+"#eve.db.ds/DB {"
+
+src/eve/db/ds/db.cljc:1238:18 [lint/redundant-str-call] - Use the literal directly.
+(str "#eve.db.ds/DB ")
+Consider using:
+"#eve.db.ds/DB "
+
+src/eve/db/ds/db.cljc:1471:16 [lint/redundant-str-call] - Use the literal directly.
+(str "#eve.db.ds/AutoTempid ")
+Consider using:
+"#eve.db.ds/AutoTempid "
+
+src/eve/db/ds/db.cljc:1675:20 [lint/if-else-nil] - Use `when` which doesn't require specifying the else branch.
+(if (datom-added datom) (:v datom) nil)
+Consider using:
+(when (datom-added datom) (:v datom))
+
+src/eve/db/ds/db.cljc:1742:18 [lint/not-empty?] - `seq` is idiomatic, gotta learn to love it.
+(not (empty? insert))
+Consider using:
+(seq insert)
+
+src/eve/db/ds/db.cljc:1744:18 [lint/not-empty?] - `seq` is idiomatic, gotta learn to love it.
+(not (empty? upsert))
+Consider using:
+(seq upsert)
+
+src/eve/db/ds/db.cljc:1789:5 [lint/identical-branches] - Two adjacent branches are identical
+((not (or (reverse-ref? a) (multival? db a)))
+ [vs]
+ (not (or (array? vs) (and (coll? vs) (not (map? vs)))))
+ [vs])
+Consider using:
+((or (not (or (reverse-ref? a) (multival? db a)))
+     (not (or (array? vs) (and (coll? vs) (not (map? vs))))))
+ [vs])
+
+src/eve/db/ds/db.cljc:1794:5 [lint/identical-branches] - Two adjacent branches are identical
+((not (or (array? vs) (and (coll? vs) (not (map? vs)))))
+ [vs]
+ (and (= (count vs) 2) (is-attr? db (first vs) :db.unique/identity))
+ [vs])
+Consider using:
+((or (not (or (array? vs) (and (coll? vs) (not (map? vs)))))
+     (and (= (count vs) 2) (is-attr? db (first vs) :db.unique/identity)))
+ [vs])
+
+src/eve/db/ds/db.cljc:1901:27 [lint/if-nil-else] - Use `when-not` instead of recreating it.
+(if (every? nil? value) nil value)
+Consider using:
+(when-not (every? nil? value) value)
+
+src/eve/db/ds/db.cljc:1929:25 [lint/not-empty?] - `seq` is idiomatic, gotta learn to love it.
+(not (empty? (-attrs-by (:db-after initial-report) :db/attrTuples)))
+Consider using:
+(seq (-attrs-by (:db-after initial-report) :db/attrTuples))
+
+src/eve/db/ds/impl/entity.cljc:74:10 [style/not-nil?] - Use `some?` instead of recreating it.
+(not (nil? (.get this attr)))
+Consider using:
+(some? (.get this attr))
+
+src/eve/db/ds/inline.clj:27:10 [lint/assoc-fn] - Use `update` instead of recreating it.
+(assoc m# k# (~f (get m# k#) ~@more))
+Consider using:
+(update m# k# ~f ~@more)
+
+src/eve/db/ds/inline.clj:29:4 [lint/assoc-fn] - Use `update` instead of recreating it.
+(assoc m k (f (get m k)))
+Consider using:
+(update m k f)
+
+src/eve/db/ds/inline.clj:31:4 [lint/assoc-fn] - Use `update` instead of recreating it.
+(assoc m k (f (get m k) x))
+Consider using:
+(update m k f x)
+
+src/eve/db/ds/inline.clj:33:4 [lint/assoc-fn] - Use `update` instead of recreating it.
+(assoc m k (f (get m k) x y))
+Consider using:
+(update m k f x y)
+
+src/eve/db/ds/inline.clj:35:4 [lint/assoc-fn] - Use `update` instead of recreating it.
+(assoc m k (f (get m k) x y z))
+Consider using:
+(update m k f x y z)
+
+src/eve/db/ds/js.cljs:78:1 [naming/lisp-case] - Prefer kebab-case over other cases for top-level definitions.
+(defn empty_db [& [schema]] (d/empty-db (schema->clj schema)))
+Consider using:
+(defn empty-db [& [schema]] (d/empty-db (schema->clj schema)))
+
+src/eve/db/ds/js.cljs:81:1 [naming/lisp-case] - Prefer kebab-case over other cases for top-level definitions.
+(defn init_db [datoms & [schema]]
+  (d/init-db (map js->Datom datoms) (schema->clj schema)))
+Consider using:
+(defn init-db [datoms & [schema]]
+  (d/init-db (map js->Datom datoms) (schema->clj schema)))
+
+src/eve/db/ds/js.cljs:84:1 [style/def-fn] - Prefer `defn` instead of `def` wrapping `fn`.
+(def serializable #(serialize/serializable % {:freeze-kw identity}))
+Consider using:
+(defn serializable [%1#] (serialize/serializable %1# {:freeze-kw identity}))
+
+src/eve/db/ds/js.cljs:85:1 [naming/lisp-case] - Prefer kebab-case over other cases for top-level definitions.
+(def from_serializable #(serialize/from-serializable % {:thaw-kw identity}))
+Consider using:
+(def from-serializable #(serialize/from-serializable % {:thaw-kw identity}))
+
+src/eve/db/ds/js.cljs:85:1 [style/def-fn] - Prefer `defn` instead of `def` wrapping `fn`.
+(def from_serializable #(serialize/from-serializable % {:thaw-kw identity}))
+Consider using:
+(defn from_serializable [%1#] (serialize/from-serializable %1# {:thaw-kw identity}))
+
+src/eve/db/ds/js.cljs:98:1 [naming/lisp-case] - Prefer kebab-case over other cases for top-level definitions.
+(defn pull_many [db pattern eids]
+  (let [pattern (cljs.reader/read-string pattern)
+        eids (js->clj eids)
+        results (d/pull-many db pattern eids)]
+    (pull-result->js results)))
+Consider using:
+(defn pull-many [db pattern eids]
+  (let [pattern (cljs.reader/read-string pattern)
+        eids (js->clj eids)
+        results (d/pull-many db pattern eids)]
+    (pull-result->js results)))
+
+src/eve/db/ds/js.cljs:104:1 [naming/lisp-case] - Prefer kebab-case over other cases for top-level definitions.
+(defn db_with [db entities] (d/db-with db (entities->clj entities)))
+Consider using:
+(defn db-with [db entities] (d/db-with db (entities->clj entities)))
+
+src/eve/db/ds/js.cljs:111:1 [naming/lisp-case] - Prefer kebab-case over other cases for top-level definitions.
+(def entity_db d/entity-db)
+Consider using:
+(def entity-db d/entity-db)
+
+src/eve/db/ds/js.cljs:113:1 [naming/lisp-case] - Prefer kebab-case over other cases for top-level definitions.
+(def is_filtered d/is-filtered)
+Consider using:
+(def is-filtered d/is-filtered)
+
+src/eve/db/ds/js.cljs:115:1 [naming/lisp-case] - Prefer kebab-case over other cases for top-level definitions.
+(defn create_conn [& [schema]] (d/create-conn (schema->clj schema)))
+Consider using:
+(defn create-conn [& [schema]] (d/create-conn (schema->clj schema)))
+
+src/eve/db/ds/js.cljs:118:1 [naming/lisp-case] - Prefer kebab-case over other cases for top-level definitions.
+(def conn_from_db d/conn-from-db)
+Consider using:
+(def conn-from-db d/conn-from-db)
+
+src/eve/db/ds/js.cljs:120:1 [naming/lisp-case] - Prefer kebab-case over other cases for top-level definitions.
+(defn conn_from_datoms
+  ([datoms] (conn_from_db (init_db datoms)))
+  ([datoms schema] (conn_from_db (init_db datoms schema))))
+Consider using:
+(defn conn-from-datoms
+  ([datoms] (conn_from_db (init_db datoms)))
+  ([datoms schema] (conn_from_db (init_db datoms schema))))
+
+src/eve/db/ds/js.cljs:134:1 [naming/lisp-case] - Prefer kebab-case over other cases for top-level definitions.
+(defn reset_conn [conn db & [tx-meta]]
+  (let [report {splint/tagged-literal (js
+                                       {:db_before @conn,
+                                        :db_after db,
+                                        :tx_data (into-array
+                                                  (concat
+                                                   (map
+                                                    #(assoc % :added false)
+                                                    (d/datoms @conn :eavt))
+                                                   (d/datoms db :eavt))),
+                                        :tx_meta tx-meta})}]
+    (reset! conn db)
+    (doseq [[_ callback] (:listeners @(:atom conn))] (callback report))
+    db))
+Consider using:
+(defn reset-conn [conn db & [tx-meta]]
+  (let [report {splint/tagged-literal (js
+                                       {:db_before @conn,
+                                        :db_after db,
+                                        :tx_data (into-array
+                                                  (concat
+                                                   (map
+                                                    #(assoc % :added false)
+                                                    (d/datoms @conn :eavt))
+                                                   (d/datoms db :eavt))),
+                                        :tx_meta tx-meta})}]
+    (reset! conn db)
+    (doseq [[_ callback] (:listeners @(:atom conn))] (callback report))
+    db))
+
+src/eve/db/ds/js.cljs:150:1 [naming/lisp-case] - Prefer kebab-case over other cases for top-level definitions.
+(defn resolve_tempid [tempids tempid] (go/get tempids (str tempid)))
+Consider using:
+(defn resolve-tempid [tempids tempid] (go/get tempids (str tempid)))
+
+src/eve/db/ds/js.cljs:157:1 [naming/lisp-case] - Prefer kebab-case over other cases for top-level definitions.
+(defn seek_datoms [db index & components]
+  (->> (apply d/seek-datoms db (keywordize index) (map js->clj components)) into-array))
+Consider using:
+(defn seek-datoms [db index & components]
+  (->> (apply d/seek-datoms db (keywordize index) (map js->clj components)) into-array))
+
+src/eve/db/ds/js.cljs:161:1 [naming/lisp-case] - Prefer kebab-case over other cases for top-level definitions.
+(defn index_range [db attr start end]
+  (into-array (d/index-range db attr (js->clj start) (js->clj end))))
+Consider using:
+(defn index-range [db attr start end]
+  (into-array (d/index-range db attr (js->clj start) (js->clj end))))
+
+src/eve/db/ds/js.cljs:167:1 [naming/lisp-case] - Prefer kebab-case over other cases for top-level definitions.
+(defn squuid_time_millis [uuid] (d/squuid-time-millis (cljs.core/uuid uuid)))
+Consider using:
+(defn squuid-time-millis [uuid] (d/squuid-time-millis (cljs.core/uuid uuid)))
+
+src/eve/db/ds/parser.cljc:29:24 [style/new-object] - Foo. is preferred.
+(new ~tagname ~@(map #(list 'eve.db.ds.parser/postwalk % f) fields))
+Consider using:
+((splint/unquote tagname). ~@(map #(list 'eve.db.ds.parser/postwalk % f) fields))
+
+src/eve/db/ds/parser.cljc:159:17 [lint/redundant-call] - Single-arg `distinct?` always returns the arg.
+(distinct? (concat required* free*))
+Consider using:
+(concat required* free*)
+
+src/eve/db/ds/parser.cljc:374:14 [lint/not-empty?] - `seq` is idiomatic, gotta learn to love it.
+(not (empty? form))
+Consider using:
+(seq form)
+
+src/eve/db/ds/parser.cljc:686:16 [style/single-key-in] - Use `update` instead of recreating it.
+(update-in parsed [key] (fnil conj []) q)
+Consider using:
+(update parsed key (fnil conj []) q)
+
+src/eve/db/ds/parser.cljc:694:9 [style/when-not-call] - Use `when-not` instead of recreating it.
+(when (not (instance? DefaultSrc source)) source)
+Consider using:
+(when-not (instance? DefaultSrc source) source)
+
+src/eve/db/ds/parser.cljc:698:3 [lint/if-not-both] - Use `if-not` instead of recreating it.
+(if (not (empty? (collect explicit-input qwhere))) '[$] [])
+Consider using:
+(if-not (empty? (collect explicit-input qwhere)) '[$] [])
+
+src/eve/db/ds/parser.cljc:698:7 [lint/not-empty?] - `seq` is idiomatic, gotta learn to love it.
+(not (empty? (collect explicit-input qwhere)))
+Consider using:
+(seq (collect explicit-input qwhere))
+
+src/eve/db/ds/parser.cljc:710:5 [style/when-not-empty?] - `seq` is idiomatic, gotta learn to love it.
+(when-not (empty? unknown)
+  (util/raise
+   "Query for unknown vars: "
+   (mapv :symbol unknown)
+   {:error :parser/query, :vars unknown, :form form}))
+Consider using:
+(when (seq unknown)
+  (util/raise
+   "Query for unknown vars: "
+   (mapv :symbol unknown)
+   {:error :parser/query, :vars unknown, :form form}))
+
+src/eve/db/ds/parser.cljc:713:5 [style/when-not-empty?] - `seq` is idiomatic, gotta learn to love it.
+(when-not (empty? shared)
+  (util/raise
+   ":find and :with should not use same variables: "
+   (mapv :symbol shared)
+   {:error :parser/query, :vars shared, :form form}))
+Consider using:
+(when (seq shared)
+  (util/raise
+   ":find and :with should not use same variables: "
+   (mapv :symbol shared)
+   {:error :parser/query, :vars shared, :form form}))
+
+src/eve/db/ds/parser.cljc:743:20 [lint/redundant-call] - Single-arg `distinct?` always returns the arg.
+(distinct? in-vars)
+Consider using:
+in-vars
+
+src/eve/db/ds/parser.cljc:744:17 [lint/redundant-call] - Single-arg `distinct?` always returns the arg.
+(distinct? in-sources)
+Consider using:
+in-sources
+
+src/eve/db/ds/parser.cljc:745:17 [lint/redundant-call] - Single-arg `distinct?` always returns the arg.
+(distinct? in-rules)
+Consider using:
+in-rules
+
+src/eve/db/ds/parser.cljc:750:15 [lint/redundant-call] - Single-arg `distinct?` always returns the arg.
+(distinct? with-vars)
+Consider using:
+with-vars
+
+src/eve/db/ds/parser.cljc:757:5 [style/when-not-empty?] - `seq` is idiomatic, gotta learn to love it.
+(when-not (empty? unknown)
+  (util/raise
+   "Where uses unknown source vars: "
+   (mapv :symbol unknown)
+   {:error :parser/query, :vars unknown, :form form}))
+Consider using:
+(when (seq unknown)
+  (util/raise
+   "Where uses unknown source vars: "
+   (mapv :symbol unknown)
+   {:error :parser/query, :vars unknown, :form form}))
+
+src/eve/db/ds/parser.cljc:763:16 [lint/not-empty?] - `seq` is idiomatic, gotta learn to love it.
+(not (empty? rule-exprs))
+Consider using:
+(seq rule-exprs)
+
+src/eve/db/ds/pprint.clj:10:19 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.-e d)
+Consider using:
+(CLASS/.-e d)
+
+src/eve/db/ds/pprint.clj:11:5 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.write *out* " ")
+Consider using:
+(CLASS/.write *out* " ")
+
+src/eve/db/ds/pprint.clj:13:19 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.-a d)
+Consider using:
+(CLASS/.-a d)
+
+src/eve/db/ds/pprint.clj:14:5 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.write *out* " ")
+Consider using:
+(CLASS/.write *out* " ")
+
+src/eve/db/ds/pprint.clj:16:19 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.-v d)
+Consider using:
+(CLASS/.-v d)
+
+src/eve/db/ds/pprint.clj:17:5 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.write *out* " ")
+Consider using:
+(CLASS/.write *out* " ")
+
+src/eve/db/ds/pprint.clj:20:5 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.write *out* " ")
+Consider using:
+(CLASS/.write *out* " ")
+
+src/eve/db/ds/pprint.clj:28:7 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.write w " ")
+Consider using:
+(CLASS/.write w " ")
+
+src/eve/db/ds/pprint.clj:31:5 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.write w ", ")
+Consider using:
+(CLASS/.write w ", ")
+
+src/eve/db/ds/pprint.clj:36:7 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.write w " ")
+Consider using:
+(CLASS/.write w " ")
+
+src/eve/db/ds/pprint.clj:42:30 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.-e d)
+Consider using:
+(CLASS/.-e d)
+
+src/eve/db/ds/pprint.clj:42:38 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.-a d)
+Consider using:
+(CLASS/.-a d)
+
+src/eve/db/ds/pprint.clj:42:46 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.-v d)
+Consider using:
+(CLASS/.-v d)
+
+src/eve/db/ds/pprint.clj:44:17 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.write w " ")
+Consider using:
+(CLASS/.write w " ")
+
+src/eve/db/ds/pull_api.cljc:18:3 [lint/if-nil-else] - Use `when-not` instead of recreating it.
+(if (nil? xs) nil (-first xs))
+Consider using:
+(when-not (nil? xs) (-first xs))
+
+src/eve/db/ds/pull_api.cljc:23:3 [lint/if-nil-else] - Use `when-not` instead of recreating it.
+(if (nil? xs) nil (.next xs))
+Consider using:
+(when-not (nil? xs) (.next xs))
+
+src/eve/db/ds/pull_api.cljc:289:18 [lint/redundant-call] - Single-arg `->>` always returns the arg.
+(->> (db/-seek-datoms db :eavt id nil nil nil))
+Consider using:
+(db/-seek-datoms db :eavt id nil nil nil)
+
+src/eve/db/ds/pull_parser.cljc:50:20 [lint/if-else-nil] - Use `when` which doesn't require specifying the else branch.
+(if multival? 1000 nil)
+Consider using:
+(when multival? 1000)
+
+src/eve/db/ds/pull_parser.cljc:160:29 [style/cond-else] - Use `:else` as the catch-all branch.
+(cond
+  (keyword? name) name
+  (= ":" (subs name 0 1)) (keyword (subs name 1))
+  :eles (keyword name))
+Consider using:
+(cond
+  (keyword? name) name
+  (= ":" (subs name 0 1)) (keyword (subs name 1))
+  :else (keyword name))
+
+src/eve/db/ds/pull_parser.cljc:166:31 [style/not-some-pred] - Use `not-any?` instead of recreating it.
+(not (some db-id? (.-attrs result)))
+Consider using:
+(not-any? db-id? (.-attrs result))
+
+src/eve/db/ds/query.cljc:115:8 [lint/identical-branches] - Both branches are identical
+(if (.isArray (.getClass t2))
+  (dotimes [i l2] (aset res (+ l1 i) (get t2 (aget idxs2 i))))
+  (dotimes [i l2] (aset res (+ l1 i) (get t2 (aget idxs2 i)))))
+
+src/eve/db/ds/query.cljc:287:17 [lint/identical-branches] - Two adjacent branches are identical
+((sequential? eid) (resolve-fn eid) (da/array? eid) (resolve-fn eid))
+Consider using:
+((or (sequential? eid) (da/array? eid)) (resolve-fn eid))
+
+src/eve/db/ds/query.cljc:296:15 [lint/identical-branches] - Two adjacent branches are identical
+((sequential? eid) (resolve-fn eid) (da/array? eid) (resolve-fn eid))
+Consider using:
+((or (sequential? eid) (da/array? eid)) (resolve-fn eid))
+
+src/eve/db/ds/query.cljc:435:33 [lint/if-nil-else] - Use `when-not` instead of recreating it.
+(if (or (= %1# '_) (free-var? %1#)) nil %1#)
+Consider using:
+(when-not (or (= %1# '_) (free-var? %1#)) %1#)
+
+src/eve/db/ds/query.cljc:560:47 [style/not-nil?] - Use `some?` instead of recreating it.
+(not (nil? val))
+Consider using:
+(some? val)
+
+src/eve/db/ds/query.cljc:720:3 [lint/assoc-fn] - Use `update` instead of recreating it.
+(assoc context :rels (->> (:rels context) (keep #(limit-rel % vars))))
+Consider using:
+(update context :rels ->> (keep #(limit-rel % vars)))
+
+src/eve/db/ds/query.cljc:725:3 [lint/into-literal] - Use `set` instead of recreating it.
+(into #{} (mapcat #(keys (:attrs %)) (:rels context)))
+Consider using:
+(set (mapcat #(keys (:attrs %)) (:rels context)))
+
+src/eve/db/ds/query_v3.cljc:145:26 [style/prefer-clj-string] - Use the `clojure.string` function instead of interop.
+(.contains set k)
+Consider using:
+(clojure.string/includes? set k)
+
+src/eve/db/ds/query_v3.cljc:476:5 [lint/if-not-both] - Use `if-not` instead of recreating it.
+(if (not (db/seqable? source))
+  (util/raise
+   "Cannot bind value "
+   source
+   " to collection "
+   (dp/source binding)
+   {:error :query/binding, :value source, :binding (dp/source binding)})
+  (let [inner-binding (:binding binding)]
+    (case (count source)
+      0 []
+      1 (bind! tuples inner-binding (first source) indexes)
+      (into
+       []
+       (comp (map #(bind! tuples inner-binding % indexes)) cat (map da/aclone))
+       source))))
+Consider using:
+(if-not (db/seqable? source)
+  (util/raise
+   "Cannot bind value "
+   source
+   " to collection "
+   (dp/source binding)
+   {:error :query/binding, :value source, :binding (dp/source binding)})
+  (let [inner-binding (:binding binding)]
+    (case (count source)
+      0 []
+      1 (bind! tuples inner-binding (first source) indexes)
+      (into
+       []
+       (comp (map #(bind! tuples inner-binding % indexes)) cat (map da/aclone))
+       source))))
+
+src/eve/db/ds/query_v3.cljc:516:7 [style/prefer-for-with-literals] - Prefer `for` when creating a seq of data literals.
+(map #(vector % ((-getter rel %) tuple)) (-symbols rel))
+Consider using:
+(for [item (-symbols rel)] [item ((-getter rel item) tuple)])
+
+src/eve/db/ds/query_v3.cljc:522:5 [style/single-key-in] - Use `update` instead of recreating it.
+(update-in context [:sources] assoc (get-in binding [:variable :symbol]) value)
+Consider using:
+(update context :sources assoc (get-in binding [:variable :symbol]) value)
+
+src/eve/db/ds/query_v3.cljc:529:9 [style/single-key-in] - Use `update` instead of recreating it.
+(update-in context [:consts] merge (rel->consts rel))
+Consider using:
+(update context :consts merge (rel->consts rel))
+
+src/eve/db/ds/query_v3.cljc:530:9 [style/single-key-in] - Use `update` instead of recreating it.
+(update-in context [:rels] conj rel)
+Consider using:
+(update context :rels conj rel)
+
+src/eve/db/ds/query_v3.cljc:630:7 [style/eq-zero] - Use `zero?` instead of recreating it.
+(== 0 (-size rel))
+Consider using:
+(zero? (-size rel))
+
+src/eve/db/ds/query_v3.cljc:855:17 [style/useless-do] - Unnecessary `do`.
+(do context*)
+Consider using:
+context*
+
+src/eve/db/ds/serialize.cljc:59:5 [lint/identical-branches] - Two adjacent branches are identical
+((string? v) v (boolean? v) v)
+Consider using:
+((or (string? v) (boolean? v)) v)
+
+src/eve/db/ds/serialize.cljc:88:5 [lint/identical-branches] - Two adjacent branches are identical
+((string? v) v (boolean? v) v)
+Consider using:
+((or (string? v) (boolean? v)) v)
+
+src/eve/db/ds/serialize.cljc:89:5 [lint/identical-branches] - Two adjacent branches are identical
+((boolean? v) v (number? v) v)
+Consider using:
+((or (boolean? v) (number? v)) v)
+
+src/eve/db/ds/util.cljc:125:23 [style/apply-str] - Use `clojure.string/join` instead of recreating it.
+(apply str (repeat (- l c) "0"))
+Consider using:
+(clojure.string/join (repeat (- l c) "0"))
+
+test/drivers/cliff/build_probe.clj:32:12 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.-regions (slab/domain-ctx (alloc/domain-root (ea/atom-sio (.-eve-atom conn)))))
+Consider using:
+(CLASS/.-regions (slab/domain-ctx (alloc/domain-root (ea/atom-sio (.-eve-atom conn)))))
+
+test/drivers/cliff/build_probe.clj:32:72 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.-eve-atom conn)
+Consider using:
+(CLASS/.-eve-atom conn)
+
+test/drivers/cliff/build_probe.clj:41:40 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.totalMemory rt)
+Consider using:
+(CLASS/.totalMemory rt)
+
+test/drivers/cliff/build_probe.clj:41:58 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.freeMemory rt)
+Consider using:
+(CLASS/.freeMemory rt)
+
+test/drivers/cliff/build_probe.clj:53:14 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.-eve-atom conn)
+Consider using:
+(CLASS/.-eve-atom conn)
+
+test/drivers/cliff/build_probe.clj:54:14 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.-domain-state a)
+Consider using:
+(CLASS/.-domain-state a)
+
+test/drivers/cliff/build_probe.clj:56:62 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.-atom-slot-idx a)
+Consider using:
+(CLASS/.-atom-slot-idx a)
+
+test/drivers/cliff/build_probe.clj:78:43 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.nextDouble rng)
+Consider using:
+(CLASS/.nextDouble rng)
+
+test/drivers/cliff/build_probe.clj:80:53 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.nextInt rng (min 5 (inc p)))
+Consider using:
+(CLASS/.nextInt rng (min 5 (inc p)))
+
+test/drivers/cliff/build_probe.clj:81:43 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.nextInt rng (inc p))
+Consider using:
+(CLASS/.nextInt rng (inc p))
+
+test/drivers/cliff/build_probe.clj:86:46 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.nextInt rng 3)
+Consider using:
+(CLASS/.nextInt rng 3)
+
+test/drivers/cliff/build_probe.clj:90:54 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.nextInt rng 3)
+Consider using:
+(CLASS/.nextInt rng 3)
+
+test/drivers/cliff/probe0_eve.clj:19:20 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.-regions c)
+Consider using:
+(CLASS/.-regions c)
+
+test/drivers/contract/behave.cljc:19:4 [lint/body-unquote-splicing] - Wrap ~@/unquote-splicing in `(let [res# (do ...)] res#)` to avoid unhygenic macro expansion.
+(try ~@body (catch Exception t# (str :throws " " t#)))
+Consider using:
+(try (let [res# (do ~@body)] res#) (catch Exception t# (str :throws " " t#)))
+
+test/drivers/contract/behave.cljc:58:34 [lint/into-literal] - Use `set` instead of recreating it.
+(into #{} (range 200))
+Consider using:
+(set (range 200))
+
+test/drivers/contract/behave.cljc:59:35 [lint/into-literal] - Use `set` instead of recreating it.
+(into #{} (range 200))
+Consider using:
+(set (range 200))
+
+test/drivers/contract/contend.cljc:30:4 [lint/body-unquote-splicing] - Wrap ~@/unquote-splicing in `(let [res# (do ...)] res#)` to avoid unhygenic macro expansion.
+(try ~@body (catch Exception t# (str :throws " " t#)))
+Consider using:
+(try (let [res# (do ~@body)] res#) (catch Exception t# (str :throws " " t#)))
+
+test/drivers/contract/ds_bench_table.cljc:53:34 [style/prefer-clj-math] - Use the `clojure.math` function instead of interop.
+Math/round
+Consider using:
+clojure.math/round
+
+test/drivers/contract/ds_bisect.cljc:25:39 [lint/into-literal] - Use `vec` instead of recreating it.
+(into [] sl)
+Consider using:
+(vec sl)
+
+test/drivers/contract/ds_contend.cljc:31:4 [lint/body-unquote-splicing] - Wrap ~@/unquote-splicing in `(let [res# (do ...)] res#)` to avoid unhygenic macro expansion.
+(try ~@body (catch :default t# (str :throws " " t#)))
+Consider using:
+(try (let [res# (do ~@body)] res#) (catch :default t# (str :throws " " t#)))
+
+test/drivers/contract/ds_flagship.cljc:39:4 [lint/body-unquote-splicing] - Wrap ~@/unquote-splicing in `(let [res# (do ...)] res#)` to avoid unhygenic macro expansion.
+(try ~@body (catch Exception t# (str :throws " " t#)))
+Consider using:
+(try (let [res# (do ~@body)] res#) (catch Exception t# (str :throws " " t#)))
+
+test/drivers/contract/ds_window.cljc:44:4 [lint/body-unquote-splicing] - Wrap ~@/unquote-splicing in `(let [res# (do ...)] res#)` to avoid unhygenic macro expansion.
+(try ~@body (catch Exception t# (str :throws " " t#)))
+Consider using:
+(try (let [res# (do ~@body)] res#) (catch Exception t# (str :throws " " t#)))
+
+test/drivers/contract/flagship_main.cljc:18:3 [style/let-do] - Unnecessary `do` in `let` body.
+(let [run (fn
+           []
+           (if (#{"seed" "go" "window" "counters"} (first args))
+             (apply window/-main args)
+             (apply flagship/-main args)))]
+  (do (run) nil))
+Consider using:
+(let [run (fn
+           []
+           (if (#{"seed" "go" "window" "counters"} (first args))
+             (apply window/-main args)
+             (apply flagship/-main args)))]
+  (run)
+  nil)
+
+test/drivers/contract/native_sqrt.cljc:19:44 [style/prefer-clj-math] - Use the `clojure.math` function instead of interop.
+Math/sqrt
+Consider using:
+clojure.math/sqrt
+
+test/drivers/contract/native_sqrt.cljc:20:49 [style/prefer-clj-math] - Use the `clojure.math` function instead of interop.
+Math/sqrt
+Consider using:
+clojure.math/sqrt
+
+test/drivers/contract/nbb_probe.cljc:1:1 [naming/single-segment-namespace] - nbb-probe is a single segment. Consider adding an additional segment.
+(ns nbb-probe
+  (:require [eve.process-slab :as ps]
+            [eve.core :as e]
+            [me.tonsky.persistent-sorted-set :as pss]))
+
+test/drivers/contract/one_aot.cljc:23:21 [style/prefer-condp] - Prefer condp when predicate and arguments are the same
+(cond
+  (= "--mat" flag) (contract.one-mat/-main dir)
+  (= "--open-only" flag) (contract.one-mat/open-only dir)
+  (= "--readback" flag) (contract.one-mat/readback dir)
+  (= "--desc16k" flag) (contract.one-mat/one-16k dir)
+  :else (apply contract.one/-main args))
+Consider using:
+(condp = flag
+  "--mat" (contract.one-mat/-main dir)
+  "--open-only" (contract.one-mat/open-only dir)
+  "--readback" (contract.one-mat/readback dir)
+  "--desc16k" (contract.one-mat/one-16k dir)
+  (apply contract.one/-main args))
+
+test/drivers/contract/one_cljs.cljs:44:20 [style/prefer-condp] - Prefer condp when predicate and arguments are the same
+(cond
+  (= "--open-only" flag) (open-only dir)
+  (= "--readback" flag) (readback dir)
+  :else (apply contract.one/-main args))
+Consider using:
+(condp = flag
+  "--open-only" (open-only dir)
+  "--readback" (readback dir)
+  (apply contract.one/-main args))
+
+test/drivers/contract/one_uberjar.clj:19:19 [lint/catch-throwable] - Throwable is too broad to safely catch.
+(catch
+ Throwable
+ e
+ (println (pr-str {:mark :ONE-UBERJAR-ERROR, :error (ex-message e), :data (ex-data e)}))
+ 1)
+
+test/drivers/dbfn_bench.clj:1:1 [naming/single-segment-namespace] - dbfn-bench is a single segment. Consider adding an additional segment.
+(ns dbfn-bench
+  "Comparison measurement for the two stored :db/fn kinds\n   (DB-FN-STATUS.md): N ident-invocations through transact! on a\n   small conn, per kind, plus the non-storable host-fn call-site\n   path as the speed ceiling. The fn body is minimal\n   ([db n] -> [[:db/add 1 :n n]]) so the numbers isolate invocation\n   cost; every mode pays the same transact!/swap!/report cost.\n\n   CELL-CLASS numbers: measured on the shared hatch cell (1.5\n   shared vCPUs, throttled) — ratios are the signal, absolutes\n   are smoke-class, not venue measurements.\n\n   Run: clojure -Sdeps '{:paths [\"src\" \"test\"]}' -M -m dbfn-bench"
+  (:require [eve.db.ds.core :as d] [eve.db.ds.db-fn :as dbfn]))
+
+test/drivers/dbfn_bench.clj:30:38 [style/prefer-clj-math] - Use the `clojure.math` function instead of interop.
+Math/round
+Consider using:
+clojure.math/round
+
+test/drivers/dbfn_bench.clj:31:18 [style/prefer-clj-math] - Use the `clojure.math` function instead of interop.
+Math/round
+Consider using:
+clojure.math/round
+
+test/drivers/dbfn_bench.clj:31:50 [style/prefer-clj-math] - Use the `clojure.math` function instead of interop.
+Math/round
+Consider using:
+clojure.math/round
+
+test/drivers/dbfn_bench.clj:77:73 [style/prefer-clj-math] - Use the `clojure.math` function instead of interop.
+Math/round
+Consider using:
+clojure.math/round
+
+test/drivers/dbfn_bench.clj:78:74 [style/prefer-clj-math] - Use the `clojure.math` function instead of interop.
+Math/round
+Consider using:
+clojure.math/round
+
+test/drivers/dbfn_bench.clj:79:31 [style/prefer-clj-math] - Use the `clojure.math` function instead of interop.
+Math/round
+Consider using:
+clojure.math/round
+
+test/drivers/dbfn_bench.clj:97:41 [style/prefer-clj-math] - Use the `clojure.math` function instead of interop.
+Math/round
+Consider using:
+clojure.math/round
+
+test/eve/db/ds/api_surface_test.cljc:59:20 [lint/identical-branches] - Two adjacent branches are identical
+((fn? v) nil (and (map? v) (= #{:atom :tx} (set (keys v)))) nil)
+Consider using:
+((or (fn? v) (and (map? v) (= #{:atom :tx} (set (keys v))))) nil)
+
+test/eve/db/ds/bset_stress_smoke.clj:29:11 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.flush *out*)
+Consider using:
+(CLASS/.flush *out*)
+
+test/eve/db/ds/bset_stress_smoke.clj:31:7 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.flush *out*)
+Consider using:
+(CLASS/.flush *out*)
+
+test/eve/db/ds/bset_stress_test.cljc:60:38 [style/plus-one] - Use `inc` instead of recreating it.
+(+ 1 (rand-int size))
+Consider using:
+(inc (rand-int size))
+
+test/eve/db/ds/bset_stress_test.cljc:69:9 [style/redundant-nested-call] - Redundant nested call: `str`.
+(str
+ "Iter:"
+ (inc i)
+ "/"
+ *iters*
+ " adds:"
+ (str (count xs) " (" (count xs-sorted) " distinct),")
+ " removals:"
+ (str (count rm) " (down to " (count xs-rm) ")"))
+Consider using:
+(str
+ "Iter:"
+ (inc i)
+ "/"
+ *iters*
+ " adds:"
+ (str (count xs) " (" (count xs-sorted) " distinct),")
+ " removals:"
+ (count rm)
+ " (down to "
+ (count xs-rm)
+ ")")
+
+test/eve/db/ds/bset_stress_test.cljc:90:33 [style/plus-one] - Use `inc` instead of recreating it.
+(+ 1 (rand-int 20000))
+Consider using:
+(inc (rand-int 20000))
+
+test/eve/db/ds/bset_test.cljc:110:7 [style/eq-zero] - Use `zero?` instead of recreating it.
+(= c0 0)
+Consider using:
+(zero? c0)
+
+test/eve/db/ds/bset_test.cljc:111:7 [style/neg-checks] - Use `neg?` instead of recreating it.
+(< c0 0)
+Consider using:
+(neg? c0)
+
+test/eve/db/ds/bset_test.cljc:112:7 [style/pos-checks] - Use `pos?` instead of recreating it.
+(> c0 0)
+Consider using:
+(pos? c0)
+
+test/eve/db/ds/bset_test.cljc:355:13 [style/eq-zero] - Use `zero?` instead of recreating it.
+(= 0 ($ (reduce + (bset/slice @a nil nil compare))))
+Consider using:
+(zero? ($ (reduce + (bset/slice @a nil nil compare))))
+
+test/eve/db/ds/bset_test.cljc:356:13 [style/eq-zero] - Use `zero?` instead of recreating it.
+(= 0 ($ (reduce + 0 (bset/slice @a nil nil compare))))
+Consider using:
+(zero? ($ (reduce + 0 (bset/slice @a nil nil compare))))
+
+test/eve/db/ds/datafy_test.cljc:7:3 [naming/conventional-aliases] - Prefer community standard aliases.
+(:require
+ [clojure.test :as t :refer [is are deftest testing]]
+ [eve.alpha :as eve :refer [$]]
+ [eve.db.ds.datafy :as datafy]
+ [eve.db.ds.u4-support :as sup]
+ [clojure.core.protocols :as cp]
+ [eve.db.ds.impl.entity :as e])
+Consider using:
+(:require
+ [clojure.test :as t :refer [is are deftest testing]]
+ [eve.alpha :as eve :refer [$]]
+ [eve.db.ds.datafy :as datafy]
+ [eve.db.ds.u4-support :as sup]
+ [clojure.core.protocols :as p]
+ [eve.db.ds.impl.entity :as e])
+
+test/eve/db/ds/entity_test.cljc:29:10 [style/is-eq-order] - Expected value should go first
+(is (= (:db/id e) 1))
+Consider using:
+(is (= 1 (:db/id e)))
+
+test/eve/db/ds/entity_test.cljc:31:10 [style/is-eq-order] - Expected value should go first
+(is (= (:name e) "Ivan"))
+Consider using:
+(is (= "Ivan" (:name e)))
+
+test/eve/db/ds/entity_test.cljc:32:10 [style/is-eq-order] - Expected value should go first
+(is (= (e :name) "Ivan"))
+Consider using:
+(is (= "Ivan" (e :name)))
+
+test/eve/db/ds/entity_test.cljc:33:10 [style/is-eq-order] - Expected value should go first
+(is (= (:age e) 19))
+Consider using:
+(is (= 19 (:age e)))
+
+test/eve/db/ds/entity_test.cljc:35:14 [style/eq-true] - Use `true?` instead of recreating it.
+(= true (contains? e :age))
+Consider using:
+(true? (contains? e :age))
+
+test/eve/db/ds/entity_test.cljc:36:14 [style/eq-false] - Use `false?` instead of recreating it.
+(= false (contains? e :not-found))
+Consider using:
+(false? (contains? e :not-found))
+
+test/eve/db/ds/entity_test.cljc:47:10 [style/is-eq-order] - Expected value should go first
+(is (= (pr-str (de/entity db 1)) "{:db/id 1}"))
+Consider using:
+(is (= "{:db/id 1}" (pr-str (de/entity db 1))))
+
+test/eve/db/ds/entity_test.cljc:48:10 [style/is-eq-order] - Expected value should go first
+(is (= (pr-str (let [e (de/entity db 1)] (:unknown e) e)) "{:db/id 1}"))
+Consider using:
+(is (= "{:db/id 1}" (pr-str (let [e (de/entity db 1)] (:unknown e) e))))
+
+test/eve/db/ds/entity_test.cljc:69:12 [style/is-eq-order] - Expected value should go first
+(is (= (:children (e 100)) nil))
+Consider using:
+(is (= nil (:children (e 100))))
+
+test/eve/db/ds/entity_test.cljc:69:16 [style/eq-nil] - Use `nil?` instead of recreating it.
+(= (:children (e 100)) nil)
+Consider using:
+(nil? (:children (e 100)))
+
+test/eve/db/ds/entity_test.cljc:86:12 [style/is-eq-order] - Expected value should go first
+(is (= (:_children (e 1)) nil))
+Consider using:
+(is (= nil (:_children (e 1))))
+
+test/eve/db/ds/entity_test.cljc:86:16 [style/eq-nil] - Use `nil?` instead of recreating it.
+(= (:_children (e 1)) nil)
+Consider using:
+(nil? (:_children (e 1)))
+
+test/eve/db/ds/entity_test.cljc:112:16 [style/eq-nil] - Use `nil?` instead of recreating it.
+(= nil (:ref (de/entity db 1)))
+Consider using:
+(nil? (:ref (de/entity db 1)))
+
+test/eve/db/ds/entity_test.cljc:113:16 [style/eq-nil] - Use `nil?` instead of recreating it.
+(= nil (:comp (de/entity db 1)))
+Consider using:
+(nil? (:comp (de/entity db 1)))
+
+test/eve/db/ds/entity_test.cljc:114:16 [style/eq-nil] - Use `nil?` instead of recreating it.
+(= nil (:multiref (de/entity db 1)))
+Consider using:
+(nil? (:multiref (de/entity db 1)))
+
+test/eve/db/ds/entity_test.cljc:115:16 [style/eq-nil] - Use `nil?` instead of recreating it.
+(= nil (:multicomp (de/entity db 1)))
+Consider using:
+(nil? (:multicomp (de/entity db 1)))
+
+test/eve/db/ds/index_test.cljc:117:9 [style/eq-nil] - Use `nil?` instead of recreating it.
+(= nil ($ (dvec-or-nil (db/find-datom (:db @a) :eavt 1 :name "Ivan" nil))))
+Consider using:
+(nil? ($ (dvec-or-nil (db/find-datom (:db @a) :eavt 1 :name "Ivan" nil))))
+
+test/eve/db/ds/index_test.cljc:118:9 [style/eq-nil] - Use `nil?` instead of recreating it.
+(= nil ($ (dvec-or-nil (db/find-datom (:db @a) :eavt 4 nil nil nil))))
+Consider using:
+(nil? ($ (dvec-or-nil (db/find-datom (:db @a) :eavt 4 nil nil nil))))
+
+test/eve/db/ds/index_test.cljc:126:11 [style/eq-nil] - Use `nil?` instead of recreating it.
+(= nil ($ (db/find-datom (:db @e1) :eavt nil nil nil nil)))
+Consider using:
+(nil? ($ (db/find-datom (:db @e1) :eavt nil nil nil nil)))
+
+test/eve/db/ds/index_test.cljc:127:11 [style/eq-nil] - Use `nil?` instead of recreating it.
+(= nil ($ (db/find-datom (:db @e2) :eavt nil nil nil nil)))
+Consider using:
+(nil? ($ (db/find-datom (:db @e2) :eavt nil nil nil nil)))
+
+test/eve/db/ds/pull_api_test.cljc:497:12 [style/eq-nil] - Use `nil?` instead of recreating it.
+(= nil (dp/pull db '[:name :aka] [:name "NotInDatabase"]))
+Consider using:
+(nil? (dp/pull db '[:name :aka] [:name "NotInDatabase"]))
+
+test/eve/db/ds/pull_api_test.cljc:525:52 [lint/fn-wrapper] - No need to wrap function. Clojure supports first-class functions.
+#(:name %)
+Consider using:
+:name
+
+test/eve/db/ds/pull_api_test.cljc:533:51 [lint/fn-wrapper] - No need to wrap function. Clojure supports first-class functions.
+#(:name %)
+Consider using:
+:name
+
+test/eve/db/ds/query_aggregates_test.cljc:72:7 [style/is-eq-order] - Expected value should go first
+(is (= (ffirst (dq/q '[:find (avg ?x) :in [?x ...]] [10 15 20 35 75])) 31))
+Consider using:
+(is (= 31 (ffirst (dq/q '[:find (avg ?x) :in [?x ...]] [10 15 20 35 75]))))
+
+test/eve/db/ds/query_aggregates_test.cljc:78:7 [style/is-eq-order] - Expected value should go first
+(is (= (ffirst (dq/q '[:find (median ?x) :in [?x ...]] [10 15 20 35 75])) 20))
+Consider using:
+(is (= 20 (ffirst (dq/q '[:find (median ?x) :in [?x ...]] [10 15 20 35 75]))))
+
+test/eve/db/ds/query_aggregates_test.cljc:84:7 [style/is-eq-order] - Expected value should go first
+(is (= (ffirst (dq/q '[:find (variance ?x) :in [?x ...]] [10 15 20 35 75])) 554))
+Consider using:
+(is (= 554 (ffirst (dq/q '[:find (variance ?x) :in [?x ...]] [10 15 20 35 75]))))
+
+test/eve/db/ds/query_aggregates_test.cljc:90:7 [style/is-eq-order] - Expected value should go first
+(is
+ (=
+  (ffirst (dq/q '[:find (stddev ?x) :in [?x ...]] [10 15 20 35 75]))
+  23.53720459187964))
+Consider using:
+(is
+ (=
+  23.53720459187964
+  (ffirst (dq/q '[:find (stddev ?x) :in [?x ...]] [10 15 20 35 75]))))
+
+test/eve/db/ds/query_find_specs_test.cljc:37:8 [style/is-eq-order] - Expected value should go first
+(is (= (dq/q '[:find ?name . :where [1 :name ?name]] db) "Petr"))
+Consider using:
+(is (= "Petr" (dq/q '[:find ?name . :where [1 :name ?name]] db)))
+
+test/eve/db/ds/query_find_specs_test.cljc:59:10 [style/is-eq-order] - Expected value should go first
+(is (= (dq/q '[:find (count ?name) . :where [_ :name ?name]] db) 3))
+Consider using:
+(is (= 3 (dq/q '[:find (count ?name) . :where [_ :name ?name]] db)))
+
+test/eve/db/ds/test/conn.cljc:26:9 [style/eq-nil] - Use `nil?` instead of recreating it.
+(= nil (d/schema @conn))
+Consider using:
+(nil? (d/schema @conn))
+
+test/eve/db/ds/test/conn.cljc:34:9 [style/eq-nil] - Use `nil?` instead of recreating it.
+(= nil (d/schema @conn))
+Consider using:
+(nil? (d/schema @conn))
+
+test/eve/db/ds/test/conn.cljc:42:9 [style/eq-nil] - Use `nil?` instead of recreating it.
+(= nil (d/schema @conn))
+Consider using:
+(nil? (d/schema @conn))
+
+test/eve/db/ds/test/db_fn.cljc:118:32 [style/plus-one] - Use `inc` instead of recreating it.
+(+ x 1)
+Consider using:
+(inc x)
+
+test/eve/db/ds/test/db_fn.cljc:128:35 [style/plus-one] - Use `inc` instead of recreating it.
+(+ x 1)
+Consider using:
+(inc x)
+
+test/eve/db/ds/test/db_fn.cljc:152:33 [style/plus-one] - Use `inc` instead of recreating it.
+(+ x 1)
+Consider using:
+(inc x)
+
+test/eve/db/ds/test/listen.cljc:39:5 [style/is-eq-order] - Expected value should go first
+(is (= (:tx-meta (second @reports)) nil))
+Consider using:
+(is (= nil (:tx-meta (second @reports))))
+
+test/eve/db/ds/test/listen.cljc:39:9 [style/eq-nil] - Use `nil?` instead of recreating it.
+(= (:tx-meta (second @reports)) nil)
+Consider using:
+(nil? (:tx-meta (second @reports)))
+
+test/eve/db/ds/test/persistence.cljc:112:11 [style/eq-zero] - Use `zero?` instead of recreating it.
+(= 0 (count (d/datoms (d/db conn2) :eavt)))
+Consider using:
+(zero? (count (d/datoms (d/db conn2) :eavt)))
+
+test/eve/db/ds/test/transact.cljc:93:48 [style/plus-one] - Use `inc` instead of recreating it.
+(+ 1 d/tx0)
+Consider using:
+(inc d/tx0)
+
+test/eve/db/ds/test/transact.cljc:95:31 [style/plus-one] - Use `inc` instead of recreating it.
+(+ 1 d/tx0)
+Consider using:
+(inc d/tx0)
+
+test/eve/db/ds/test/transact.cljc:208:5 [style/is-eq-order] - Expected value should go first
+(is (= (:weight (d/entity @conn 1)) 300))
+Consider using:
+(is (= 300 (:weight (d/entity @conn 1))))
+
+test/eve/db/ds/test/transact.cljc:210:5 [style/is-eq-order] - Expected value should go first
+(is (= (:weight (d/entity @conn 1)) 400))
+Consider using:
+(is (= 400 (:weight (d/entity @conn 1))))
+
+test/eve/db/ds/test/transact.cljc:225:5 [style/is-eq-order] - Expected value should go first
+(is (= (:age (d/entity @conn 1)) 42))
+Consider using:
+(is (= 42 (:age (d/entity @conn 1))))
+
+test/eve/db/ds/test/transact.cljc:259:7 [style/is-eq-order] - Expected value should go first
+(is (= (:age e) 32))
+Consider using:
+(is (= 32 (:age e)))
+
+test/eve/db/ds/test/transact.cljc:295:5 [style/is-eq-order] - Expected value should go first
+(is (= (:age e) 32))
+Consider using:
+(is (= 32 (:age e)))
+
+test/eve/db/ds/test/transact.cljc:363:29 [style/plus-one] - Use `inc` instead of recreating it.
+(+ d/tx0 1)
+Consider using:
+(inc d/tx0)
+
+test/eve/db/ds/test/transact.cljc:420:28 [style/plus-one] - Use `inc` instead of recreating it.
+(+ d/tx0 1)
+Consider using:
+(inc d/tx0)
+
+test/eve/db/ds/test/transact.cljc:456:32 [style/plus-one] - Use `inc` instead of recreating it.
+(+ d/tx0 1)
+Consider using:
+(inc d/tx0)
+
+test/eve/db/ds/test/transact.cljc:457:18 [style/plus-one] - Use `inc` instead of recreating it.
+(+ d/tx0 1)
+Consider using:
+(inc d/tx0)
+
+test/eve/db/ds/test/transact.cljc:458:18 [style/plus-one] - Use `inc` instead of recreating it.
+(+ d/tx0 1)
+Consider using:
+(inc d/tx0)
+
+test/eve/db/ds/test/transact.cljc:460:32 [style/plus-one] - Use `inc` instead of recreating it.
+(+ d/tx0 1)
+Consider using:
+(inc d/tx0)
+
+test/eve/db/ds/test/transact.cljc:462:39 [style/plus-one] - Use `inc` instead of recreating it.
+(+ d/tx0 1)
+Consider using:
+(inc d/tx0)
+
+test/eve/db/ds/test/transact.cljc:463:28 [style/plus-one] - Use `inc` instead of recreating it.
+(+ d/tx0 1)
+Consider using:
+(inc d/tx0)
+
+test/eve/db/ds/test/upsert.cljc:29:60 [lint/fn-wrapper] - No need to wrap function. Clojure supports first-class functions.
+#(:db/id %)
+Consider using:
+:db/id
+
+test/eve/db/ds/test/upsert.cljc:202:3 [style/redundant-let] - Redundant let expressions can be merged.
+(let [db (-> (d/empty-db {:name {:db/unique :db.unique/identity}})
+             (d/db-with [{:db/id -1, :name "Ivan"}]))]
+  (let [tx (d/with db [{:db/id -1, :age 35} {:db/id -1, :name "Ivan", :age 36}])]
+    (is (= #{[1 :age 36] [1 :name "Ivan"]} (tdc/all-datoms (:db-after tx))))
+    (is (= {-1 1, :db/current-tx (+ d/tx0 2)} (:tempids tx)))))
+Consider using:
+(let [db (-> (d/empty-db {:name {:db/unique :db.unique/identity}})
+             (d/db-with [{:db/id -1, :name "Ivan"}]))
+      tx (d/with db [{:db/id -1, :age 35} {:db/id -1, :name "Ivan", :age 36}])]
+  (is (= #{[1 :age 36] [1 :name "Ivan"]} (tdc/all-datoms (:db-after tx))))
+  (is (= {-1 1, :db/current-tx (+ d/tx0 2)} (:tempids tx))))
+
+test/eve/db/ds/test_macros.clj:24:6 [lint/body-unquote-splicing] - Wrap ~@/unquote-splicing in `(let [res# (do ...)] res#)` to avoid unhygenic macro expansion.
+(try
+ ~@body
+ (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual nil})
+ (catch
+  :default
+  e#
+  (let [m# (.-message e#)]
+    (if (= ~match m#)
+      (t/do-report {:type :pass, :message ~msg, :expected '~form, :actual e#})
+      (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual e#})))
+  e#))
+Consider using:
+(try
+ (let [res# (do ~@body)] res#)
+ (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual nil})
+ (catch
+  :default
+  e#
+  (let [m# (.-message e#)]
+    (if (= ~match m#)
+      (t/do-report {:type :pass, :message ~msg, :expected '~form, :actual e#})
+      (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual e#})))
+  e#))
+
+test/eve/db/ds/test_macros.clj:27:22 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.-message e#)
+Consider using:
+(CLASS/.-message e#)
+
+test/eve/db/ds/u2_support.cljc:18:9 [lint/body-unquote-splicing] - Wrap ~@/unquote-splicing in `(let [res# (do ...)] res#)` to avoid unhygenic macro expansion.
+(try
+ ~@body
+ (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual nil})
+ (catch
+  Throwable
+  e#
+  (let [m# (.getMessage e#)]
+    (if (= ~match m#)
+      (t/do-report {:type :pass, :message ~msg, :expected '~form, :actual e#})
+      (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual e#})))
+  e#))
+Consider using:
+(try
+ (let [res# (do ~@body)] res#)
+ (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual nil})
+ (catch
+  Throwable
+  e#
+  (let [m# (.getMessage e#)]
+    (if (= ~match m#)
+      (t/do-report {:type :pass, :message ~msg, :expected '~form, :actual e#})
+      (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual e#})))
+  e#))
+
+test/eve/db/ds/u3_support.cljc:36:9 [lint/body-unquote-splicing] - Wrap ~@/unquote-splicing in `(let [res# (do ...)] res#)` to avoid unhygenic macro expansion.
+(try
+ ~@body
+ (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual nil})
+ (catch
+  Throwable
+  e#
+  (let [m# (.getMessage e#)]
+    (if (= ~match m#)
+      (t/do-report {:type :pass, :message ~msg, :expected '~form, :actual e#})
+      (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual e#})))
+  e#))
+Consider using:
+(try
+ (let [res# (do ~@body)] res#)
+ (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual nil})
+ (catch
+  Throwable
+  e#
+  (let [m# (.getMessage e#)]
+    (if (= ~match m#)
+      (t/do-report {:type :pass, :message ~msg, :expected '~form, :actual e#})
+      (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual e#})))
+  e#))
+
+test/eve/db/ds/u4_support.cljc:56:1 [style/multiple-arity-order] - defn arities should be sorted fewest to most arguments.
+(defn build!
+  "Replace the atom's DB with an empty DB over schema, transacted\n   with each of txs in order — all inside swap!."
+  ([a schema txs]
+   (swap! a (fn [_] {:db (reduce db-with (db/empty-db schema {}) txs)}))
+   a)
+  ([a txs] (build! a nil txs)))
+Consider using:
+(defn build!
+  ([a txs] (build! a nil txs))
+  ([a schema txs]
+   (swap! a (fn [_] {:db (reduce db-with (db/empty-db schema {}) txs)}))
+   a))
+
+test/eve/db/ds/u4_support.cljc:105:20 [lint/assoc-fn] - Use `update` instead of recreating it.
+(assoc m :db (db-with (:db m) tx))
+Consider using:
+(update m :db db-with tx)
+
+test/eve/db/ds/u4_support.cljc:115:9 [lint/body-unquote-splicing] - Wrap ~@/unquote-splicing in `(let [res# (do ...)] res#)` to avoid unhygenic macro expansion.
+(try
+ ~@body
+ (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual nil})
+ (catch
+  Throwable
+  e#
+  (let [m# (.getMessage e#)]
+    (if (= ~match m#)
+      (t/do-report {:type :pass, :message ~msg, :expected '~form, :actual e#})
+      (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual e#})))
+  e#))
+Consider using:
+(try
+ (let [res# (do ~@body)] res#)
+ (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual nil})
+ (catch
+  Throwable
+  e#
+  (let [m# (.getMessage e#)]
+    (if (= ~match m#)
+      (t/do-report {:type :pass, :message ~msg, :expected '~form, :actual e#})
+      (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual e#})))
+  e#))
+
+test/eve_db_ds_query_v3_test.cljc:1:1 [naming/single-segment-namespace] - eve-db-ds-query-v3-test is a single segment. Consider adding an additional segment.
+(ns eve-db-ds-query-v3-test
+  (:require [clojure.test :refer [deftest is testing]]
+            [eve.core :as e]
+            [eve.map :as em]
+            [eve.vec :as ev]
+            [eve.set :as es]
+            [eve.db.ds.core :as d]
+            [eve.db.ds.query-v3 :as q]))
+
+test/upstream-ds/test/eve/db/ds/test/cljs.cljc:21:9 [lint/body-unquote-splicing] - Wrap ~@/unquote-splicing in `(let [res# (do ...)] res#)` to avoid unhygenic macro expansion.
+(try
+ ~@body
+ (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual nil})
+ (catch
+  :default
+  e#
+  (let [m# (.-message e#)]
+    (if (= ~match m#)
+      (t/do-report {:type :pass, :message ~msg, :expected '~form, :actual e#})
+      (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual e#}))
+    e#)))
+Consider using:
+(try
+ (let [res# (do ~@body)] res#)
+ (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual nil})
+ (catch
+  :default
+  e#
+  (let [m# (.-message e#)]
+    (if (= ~match m#)
+      (t/do-report {:type :pass, :message ~msg, :expected '~form, :actual e#})
+      (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual e#}))
+    e#)))
+
+test/upstream-ds/test/eve/db/ds/test/conn.cljc:18:9 [style/eq-nil] - Use `nil?` instead of recreating it.
+(= nil (:schema @conn))
+Consider using:
+(nil? (:schema @conn))
+
+test/upstream-ds/test/eve/db/ds/test/conn.cljc:26:9 [style/eq-nil] - Use `nil?` instead of recreating it.
+(= nil (:schema @conn))
+Consider using:
+(nil? (:schema @conn))
+
+test/upstream-ds/test/eve/db/ds/test/conn.cljc:34:9 [style/eq-nil] - Use `nil?` instead of recreating it.
+(= nil (:schema @conn))
+Consider using:
+(nil? (:schema @conn))
+
+test/upstream-ds/test/eve/db/ds/test/core.cljc:49:9 [lint/body-unquote-splicing] - Wrap ~@/unquote-splicing in `(let [res# (do ...)] res#)` to avoid unhygenic macro expansion.
+(try
+ ~@body
+ (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual nil})
+ (catch
+  Throwable
+  e#
+  (let [m# (.getMessage e#)]
+    (if (= ~match m#)
+      (t/do-report {:type :pass, :message ~msg, :expected '~form, :actual e#})
+      (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual e#})))
+  e#))
+Consider using:
+(try
+ (let [res# (do ~@body)] res#)
+ (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual nil})
+ (catch
+  Throwable
+  e#
+  (let [m# (.getMessage e#)]
+    (if (= ~match m#)
+      (t/do-report {:type :pass, :message ~msg, :expected '~form, :actual e#})
+      (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual e#})))
+  e#))
+
+test/upstream-ds/test/eve/db/ds/test/datafy.cljc:2:3 [naming/conventional-aliases] - Prefer community standard aliases.
+(:require
+ [clojure.test :as t :refer [is are deftest testing]]
+ [eve.db.ds.datafy :as datafy]
+ [eve.db.ds.core :as d]
+ [clojure.core.protocols :as cp]
+ [eve.db.ds.impl.entity :as e])
+Consider using:
+(:require
+ [clojure.test :as t :refer [is are deftest testing]]
+ [eve.db.ds.datafy :as datafy]
+ [eve.db.ds.core :as d]
+ [clojure.core.protocols :as p]
+ [eve.db.ds.impl.entity :as e])
+
+test/upstream-ds/test/eve/db/ds/test/db.cljc:24:9 [style/eq-zero] - Use `zero?` instead of recreating it.
+(= 0 @(.-hash db))
+Consider using:
+(zero? @(.-hash db))
+
+test/upstream-ds/test/eve/db/ds/test/entity.cljc:20:5 [style/is-eq-order] - Expected value should go first
+(is (= (:db/id e) 1))
+Consider using:
+(is (= 1 (:db/id e)))
+
+test/upstream-ds/test/eve/db/ds/test/entity.cljc:22:5 [style/is-eq-order] - Expected value should go first
+(is (= (:name e) "Ivan"))
+Consider using:
+(is (= "Ivan" (:name e)))
+
+test/upstream-ds/test/eve/db/ds/test/entity.cljc:23:5 [style/is-eq-order] - Expected value should go first
+(is (= (e :name) "Ivan"))
+Consider using:
+(is (= "Ivan" (e :name)))
+
+test/upstream-ds/test/eve/db/ds/test/entity.cljc:24:5 [style/is-eq-order] - Expected value should go first
+(is (= (:age e) 19))
+Consider using:
+(is (= 19 (:age e)))
+
+test/upstream-ds/test/eve/db/ds/test/entity.cljc:26:9 [style/eq-true] - Use `true?` instead of recreating it.
+(= true (contains? e :age))
+Consider using:
+(true? (contains? e :age))
+
+test/upstream-ds/test/eve/db/ds/test/entity.cljc:27:9 [style/eq-false] - Use `false?` instead of recreating it.
+(= false (contains? e :not-found))
+Consider using:
+(false? (contains? e :not-found))
+
+test/upstream-ds/test/eve/db/ds/test/entity.cljc:38:5 [style/is-eq-order] - Expected value should go first
+(is (= (pr-str (d/entity db 1)) "{:db/id 1}"))
+Consider using:
+(is (= "{:db/id 1}" (pr-str (d/entity db 1))))
+
+test/upstream-ds/test/eve/db/ds/test/entity.cljc:39:5 [style/is-eq-order] - Expected value should go first
+(is (= (pr-str (let [e (d/entity db 1)] (:unknown e) e)) "{:db/id 1}"))
+Consider using:
+(is (= "{:db/id 1}" (pr-str (let [e (d/entity db 1)] (:unknown e) e))))
+
+test/upstream-ds/test/eve/db/ds/test/entity.cljc:59:7 [style/is-eq-order] - Expected value should go first
+(is (= (:children (e 100)) nil))
+Consider using:
+(is (= nil (:children (e 100))))
+
+test/upstream-ds/test/eve/db/ds/test/entity.cljc:59:11 [style/eq-nil] - Use `nil?` instead of recreating it.
+(= (:children (e 100)) nil)
+Consider using:
+(nil? (:children (e 100)))
+
+test/upstream-ds/test/eve/db/ds/test/entity.cljc:76:7 [style/is-eq-order] - Expected value should go first
+(is (= (:_children (e 1)) nil))
+Consider using:
+(is (= nil (:_children (e 1))))
+
+test/upstream-ds/test/eve/db/ds/test/entity.cljc:76:11 [style/eq-nil] - Use `nil?` instead of recreating it.
+(= (:_children (e 1)) nil)
+Consider using:
+(nil? (:_children (e 1)))
+
+test/upstream-ds/test/eve/db/ds/test/entity.cljc:100:9 [style/eq-nil] - Use `nil?` instead of recreating it.
+(= nil (:ref (d/entity db 1)))
+Consider using:
+(nil? (:ref (d/entity db 1)))
+
+test/upstream-ds/test/eve/db/ds/test/entity.cljc:101:9 [style/eq-nil] - Use `nil?` instead of recreating it.
+(= nil (:comp (d/entity db 1)))
+Consider using:
+(nil? (:comp (d/entity db 1)))
+
+test/upstream-ds/test/eve/db/ds/test/entity.cljc:102:9 [style/eq-nil] - Use `nil?` instead of recreating it.
+(= nil (:multiref (d/entity db 1)))
+Consider using:
+(nil? (:multiref (d/entity db 1)))
+
+test/upstream-ds/test/eve/db/ds/test/entity.cljc:103:9 [style/eq-nil] - Use `nil?` instead of recreating it.
+(= nil (:multicomp (d/entity db 1)))
+Consider using:
+(nil? (:multicomp (d/entity db 1)))
+
+test/upstream-ds/test/eve/db/ds/test/filter.cljc:47:7 [style/is-eq-order] - Expected value should go first
+(is (= (:password (d/entity db 1)) "<SECRET>"))
+Consider using:
+(is (= "<SECRET>" (:password (d/entity db 1))))
+
+test/upstream-ds/test/eve/db/ds/test/filter.cljc:48:7 [style/is-eq-order] - Expected value should go first
+(is
+ (=
+  (:password (d/entity (d/filter db remove-pass) 1) :eve.db.ds.test.filter/not-found)
+  :eve.db.ds.test.filter/not-found))
+Consider using:
+(is
+ (=
+  :eve.db.ds.test.filter/not-found
+  (:password (d/entity (d/filter db remove-pass) 1) :eve.db.ds.test.filter/not-found)))
+
+test/upstream-ds/test/eve/db/ds/test/index.cljc:104:9 [style/eq-nil] - Use `nil?` instead of recreating it.
+(= nil (dvec (d/find-datom db :eavt 1 :name "Ivan")))
+Consider using:
+(nil? (dvec (d/find-datom db :eavt 1 :name "Ivan")))
+
+test/upstream-ds/test/eve/db/ds/test/index.cljc:105:9 [style/eq-nil] - Use `nil?` instead of recreating it.
+(= nil (dvec (d/find-datom db :eavt 4)))
+Consider using:
+(nil? (dvec (d/find-datom db :eavt 4)))
+
+test/upstream-ds/test/eve/db/ds/test/index.cljc:108:9 [style/eq-nil] - Use `nil?` instead of recreating it.
+(= nil (d/find-datom (d/empty-db) :eavt))
+Consider using:
+(nil? (d/find-datom (d/empty-db) :eavt))
+
+test/upstream-ds/test/eve/db/ds/test/index.cljc:109:9 [style/eq-nil] - Use `nil?` instead of recreating it.
+(= nil (d/find-datom (d/empty-db {:age {:db/index true}}) :eavt))
+Consider using:
+(nil? (d/find-datom (d/empty-db {:age {:db/index true}}) :eavt))
+
+test/upstream-ds/test/eve/db/ds/test/listen.cljc:35:5 [style/is-eq-order] - Expected value should go first
+(is (= (:tx-meta (second @reports)) nil))
+Consider using:
+(is (= nil (:tx-meta (second @reports))))
+
+test/upstream-ds/test/eve/db/ds/test/listen.cljc:35:9 [style/eq-nil] - Use `nil?` instead of recreating it.
+(= (:tx-meta (second @reports)) nil)
+Consider using:
+(nil? (:tx-meta (second @reports)))
+
+test/upstream-ds/test/eve/db/ds/test/pull_api.cljc:394:3 [style/redundant-let] - Redundant let expressions can be merged.
+(let [empty (d/empty-db
+             {:part {:db/valueType :db.type/ref}, :spec {:db/valueType :db.type/ref}})]
+  (let [db (d/db-with
+            empty
+            [[:db/add 1 :part 2]
+             [:db/add 2 :part 3]
+             [:db/add 3 :part 1]
+             [:db/add 1 :spec 2]
+             [:db/add 2 :spec 1]])]
+    (is
+     (=
+      (d/pull db '[:db/id {:part ...} {:spec ...}] 1)
+      {:db/id 1,
+       :spec {:db/id 2,
+              :spec {:db/id 1, :spec {:db/id 2}, :part {:db/id 2}},
+              :part {:db/id 3, :part {:db/id 1, :spec {:db/id 2}, :part {:db/id 2}}}},
+       :part {:db/id 2,
+              :spec {:db/id 1, :spec {:db/id 2}, :part {:db/id 2}},
+              :part {:db/id 3, :part {:db/id 1, :spec {:db/id 2}, :part {:db/id 2}}}}}))))
+Consider using:
+(let [empty (d/empty-db
+             {:part {:db/valueType :db.type/ref}, :spec {:db/valueType :db.type/ref}})
+      db (d/db-with
+          empty
+          [[:db/add 1 :part 2]
+           [:db/add 2 :part 3]
+           [:db/add 3 :part 1]
+           [:db/add 1 :spec 2]
+           [:db/add 2 :spec 1]])]
+  (is
+   (=
+    (d/pull db '[:db/id {:part ...} {:spec ...}] 1)
+    {:db/id 1,
+     :spec {:db/id 2,
+            :spec {:db/id 1, :spec {:db/id 2}, :part {:db/id 2}},
+            :part {:db/id 3, :part {:db/id 1, :spec {:db/id 2}, :part {:db/id 2}}}},
+     :part {:db/id 2,
+            :spec {:db/id 1, :spec {:db/id 2}, :part {:db/id 2}},
+            :part {:db/id 3, :part {:db/id 1, :spec {:db/id 2}, :part {:db/id 2}}}}})))
+
+test/upstream-ds/test/eve/db/ds/test/pull_api.cljc:453:7 [style/eq-nil] - Use `nil?` instead of recreating it.
+(= nil (d/pull @*test-db '[:name :aka] [:name "NotInDatabase"]))
+Consider using:
+(nil? (d/pull @*test-db '[:name :aka] [:name "NotInDatabase"]))
+
+test/upstream-ds/test/eve/db/ds/test/pull_api.cljc:480:53 [lint/fn-wrapper] - No need to wrap function. Clojure supports first-class functions.
+#(:name %)
+Consider using:
+:name
+
+test/upstream-ds/test/eve/db/ds/test/pull_api.cljc:488:52 [lint/fn-wrapper] - No need to wrap function. Clojure supports first-class functions.
+#(:name %)
+Consider using:
+:name
+
+test/upstream-ds/test/eve/db/ds/test/query_aggregates.cljc:64:7 [style/is-eq-order] - Expected value should go first
+(is (= (ffirst (d/q '[:find (avg ?x) :in [?x ...]] [10 15 20 35 75])) 31))
+Consider using:
+(is (= 31 (ffirst (d/q '[:find (avg ?x) :in [?x ...]] [10 15 20 35 75]))))
+
+test/upstream-ds/test/eve/db/ds/test/query_aggregates.cljc:70:7 [style/is-eq-order] - Expected value should go first
+(is (= (ffirst (d/q '[:find (median ?x) :in [?x ...]] [10 15 20 35 75])) 20))
+Consider using:
+(is (= 20 (ffirst (d/q '[:find (median ?x) :in [?x ...]] [10 15 20 35 75]))))
+
+test/upstream-ds/test/eve/db/ds/test/query_aggregates.cljc:76:7 [style/is-eq-order] - Expected value should go first
+(is (= (ffirst (d/q '[:find (variance ?x) :in [?x ...]] [10 15 20 35 75])) 554))
+Consider using:
+(is (= 554 (ffirst (d/q '[:find (variance ?x) :in [?x ...]] [10 15 20 35 75]))))
+
+test/upstream-ds/test/eve/db/ds/test/query_aggregates.cljc:82:7 [style/is-eq-order] - Expected value should go first
+(is
+ (= (ffirst (d/q '[:find (stddev ?x) :in [?x ...]] [10 15 20 35 75])) 23.53720459187964))
+Consider using:
+(is
+ (= 23.53720459187964 (ffirst (d/q '[:find (stddev ?x) :in [?x ...]] [10 15 20 35 75]))))
+
+test/upstream-ds/test/eve/db/ds/test/query_find_specs.cljc:27:3 [style/is-eq-order] - Expected value should go first
+(is (= (d/q '[:find ?name . :where [1 :name ?name]] @*test-db) "Petr"))
+Consider using:
+(is (= "Petr" (d/q '[:find ?name . :where [1 :name ?name]] @*test-db)))
+
+test/upstream-ds/test/eve/db/ds/test/query_find_specs.cljc:49:5 [style/is-eq-order] - Expected value should go first
+(is (= (d/q '[:find (count ?name) . :where [_ :name ?name]] @*test-db) 3))
+Consider using:
+(is (= 3 (d/q '[:find (count ?name) . :where [_ :name ?name]] @*test-db)))
+
+test/upstream-ds/test/eve/db/ds/test/serialize.cljc:26:9 [style/is-eq-order] - Expected value should go first
+(is (= (pr-str d) "#eve.db.ds/Datom [1 :name \"Oleg\" 17 true]"))
+Consider using:
+(is (= "#eve.db.ds/Datom [1 :name \"Oleg\" 17 true]" (pr-str d)))
+
+test/upstream-ds/test/eve/db/ds/test/serialize.cljc:30:9 [style/is-eq-order] - Expected value should go first
+(is (= (pr-str d) "#eve.db.ds/Datom [1 :name 3 536870912 true]"))
+Consider using:
+(is (= "#eve.db.ds/Datom [1 :name 3 536870912 true]" (pr-str d)))
+
+test/upstream-ds/test/eve/db/ds/test/storage.clj:59:5 [style/prefer-for-with-literals] - Prefer `for` when creating a seq of data literals.
+(map #(vector :db/add % :str (str %)) (range 1 1001))
+Consider using:
+(for [item (range 1 1001)] [:db/add item :str (str item)])
+
+test/upstream-ds/test/eve/db/ds/test/storage.clj:77:13 [style/eq-zero] - Use `zero?` instead of recreating it.
+(= 0 (count @(:*reads storage)))
+Consider using:
+(zero? (count @(:*reads storage)))
+
+test/upstream-ds/test/eve/db/ds/test/storage.clj:147:8 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.mkdirs dir#)
+Consider using:
+(CLASS/.mkdirs dir#)
+
+test/upstream-ds/test/eve/db/ds/test/storage.clj:151:12 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.delete file#)
+Consider using:
+(CLASS/.delete file#)
+
+test/upstream-ds/test/eve/db/ds/test/storage.clj:225:13 [style/eq-zero] - Use `zero?` instead of recreating it.
+(= 0 (count @(:*deletes storage)))
+Consider using:
+(zero? (count @(:*deletes storage)))
+
+test/upstream-ds/test/eve/db/ds/test/storage.clj:351:20 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.availableProcessors (Runtime/getRuntime))
+Consider using:
+(CLASS/.availableProcessors (Runtime/getRuntime))
+
+test/upstream-ds/test/eve/db/ds/test/storage.clj:360:7 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.submit
+ exec
+ (fn
+  []
+  (try
+   (let [i (+ 2 (rand-int 100000))]
+     (d/transact! conn [[:db.fn/call bump] {:db/id i, :idx i, :name (str i)}]))
+   (catch Exception e (vreset! *exception e) (.printStackTrace e)))
+  (when @*running? (recur))))
+Consider using:
+(CLASS/.submit
+ exec
+ (fn
+  []
+  (try
+   (let [i (+ 2 (rand-int 100000))]
+     (d/transact! conn [[:db.fn/call bump] {:db/id i, :idx i, :name (str i)}]))
+   (catch Exception e (vreset! *exception e) (.printStackTrace e)))
+  (when @*running? (recur))))
+
+test/upstream-ds/test/eve/db/ds/test/storage.clj:371:15 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.printStackTrace e)
+Consider using:
+(CLASS/.printStackTrace e)
+
+test/upstream-ds/test/eve/db/ds/test/storage.clj:375:5 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.submit
+ exec
+ (fn [] (Thread/sleep (long (rand-int 100))) (System/gc) (when @*running? (recur))))
+Consider using:
+(CLASS/.submit
+ exec
+ (fn [] (Thread/sleep (long (rand-int 100))) (System/gc) (when @*running? (recur))))
+
+test/upstream-ds/test/eve/db/ds/test/storage.clj:382:5 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.submit
+ exec
+ (fn [] (Thread/sleep 1000) (d/collect-garbage storage) (when @*running? (recur))))
+Consider using:
+(CLASS/.submit
+ exec
+ (fn [] (Thread/sleep 1000) (d/collect-garbage storage) (when @*running? (recur))))
+
+test/upstream-ds/test/eve/db/ds/test/storage.clj:390:5 [lint/prefer-method-values] - Prefer uniform Class/member syntax instead of traditional interop.
+(.shutdown exec)
+Consider using:
+(CLASS/.shutdown exec)
+
+test/upstream-ds/test/eve/db/ds/test/transact.cljc:55:48 [style/plus-one] - Use `inc` instead of recreating it.
+(+ 1 d/tx0)
+Consider using:
+(inc d/tx0)
+
+test/upstream-ds/test/eve/db/ds/test/transact.cljc:57:31 [style/plus-one] - Use `inc` instead of recreating it.
+(+ 1 d/tx0)
+Consider using:
+(inc d/tx0)
+
+test/upstream-ds/test/eve/db/ds/test/transact.cljc:170:5 [style/is-eq-order] - Expected value should go first
+(is (= (:weight (d/entity @conn 1)) 300))
+Consider using:
+(is (= 300 (:weight (d/entity @conn 1))))
+
+test/upstream-ds/test/eve/db/ds/test/transact.cljc:172:5 [style/is-eq-order] - Expected value should go first
+(is (= (:weight (d/entity @conn 1)) 400))
+Consider using:
+(is (= 400 (:weight (d/entity @conn 1))))
+
+test/upstream-ds/test/eve/db/ds/test/transact.cljc:187:5 [style/is-eq-order] - Expected value should go first
+(is (= (:age (d/entity @conn 1)) 42))
+Consider using:
+(is (= 42 (:age (d/entity @conn 1))))
+
+test/upstream-ds/test/eve/db/ds/test/transact.cljc:221:7 [style/is-eq-order] - Expected value should go first
+(is (= (:age e) 32))
+Consider using:
+(is (= 32 (:age e)))
+
+test/upstream-ds/test/eve/db/ds/test/transact.cljc:260:7 [style/is-eq-order] - Expected value should go first
+(is (= (:age e) 32))
+Consider using:
+(is (= 32 (:age e)))
+
+test/upstream-ds/test/eve/db/ds/test/transact.cljc:278:29 [style/plus-one] - Use `inc` instead of recreating it.
+(+ d/tx0 1)
+Consider using:
+(inc d/tx0)
+
+test/upstream-ds/test/eve/db/ds/test/transact.cljc:335:28 [style/plus-one] - Use `inc` instead of recreating it.
+(+ d/tx0 1)
+Consider using:
+(inc d/tx0)
+
+test/upstream-ds/test/eve/db/ds/test/transact.cljc:371:32 [style/plus-one] - Use `inc` instead of recreating it.
+(+ d/tx0 1)
+Consider using:
+(inc d/tx0)
+
+test/upstream-ds/test/eve/db/ds/test/transact.cljc:372:18 [style/plus-one] - Use `inc` instead of recreating it.
+(+ d/tx0 1)
+Consider using:
+(inc d/tx0)
+
+test/upstream-ds/test/eve/db/ds/test/transact.cljc:373:18 [style/plus-one] - Use `inc` instead of recreating it.
+(+ d/tx0 1)
+Consider using:
+(inc d/tx0)
+
+test/upstream-ds/test/eve/db/ds/test/transact.cljc:375:32 [style/plus-one] - Use `inc` instead of recreating it.
+(+ d/tx0 1)
+Consider using:
+(inc d/tx0)
+
+test/upstream-ds/test/eve/db/ds/test/transact.cljc:377:39 [style/plus-one] - Use `inc` instead of recreating it.
+(+ d/tx0 1)
+Consider using:
+(inc d/tx0)
+
+test/upstream-ds/test/eve/db/ds/test/transact.cljc:378:28 [style/plus-one] - Use `inc` instead of recreating it.
+(+ d/tx0 1)
+Consider using:
+(inc d/tx0)
+
+test/upstream-ds/test/eve/db/ds/test/upsert.cljc:25:60 [lint/fn-wrapper] - No need to wrap function. Clojure supports first-class functions.
+#(:db/id %)
+Consider using:
+:db/id
+
+test/upstream-ds/test/eve/db/ds/test/upsert.cljc:198:3 [style/redundant-let] - Redundant let expressions can be merged.
+(let [db (-> (d/empty-db {:name {:db/unique :db.unique/identity}})
+             (d/db-with [{:db/id -1, :name "Ivan"}]))]
+  (let [tx (d/with db [{:db/id -1, :age 35} {:db/id -1, :name "Ivan", :age 36}])]
+    (is (= #{[1 :age 36] [1 :name "Ivan"]} (tdc/all-datoms (:db-after tx))))
+    (is (= {-1 1, :db/current-tx (+ d/tx0 2)} (:tempids tx)))))
+Consider using:
+(let [db (-> (d/empty-db {:name {:db/unique :db.unique/identity}})
+             (d/db-with [{:db/id -1, :name "Ivan"}]))
+      tx (d/with db [{:db/id -1, :age 35} {:db/id -1, :name "Ivan", :age 36}])]
+  (is (= #{[1 :age 36] [1 :name "Ivan"]} (tdc/all-datoms (:db-after tx))))
+  (is (= {-1 1, :db/current-tx (+ d/tx0 2)} (:tempids tx))))
+
+Linting took 18687ms, checked 157 files, 316 style warnings

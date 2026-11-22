@@ -6,12 +6,17 @@
 ; construction. Changes happen HERE, by a fleet-level commit, and are
 ; then propagated to the repos — a repo-local edit to .cljfmt.edn is
 ; drift and fails the fleet config-diff check.
-; v1 is deliberately the cljfmt defaults plus ns sorting: the Phase 1
-; retro earns every non-default entry, recorded here with its reason.
+; v1 was the cljfmt defaults plus ns sorting; v2 (Phase 1 retro,
+; cohost-media-example): :sort-ns-references? is FALSE — sorting
+; :require lists reorders namespace load order, which is semantics,
+; not formatting; the media demo broke on it (proven by a
+; reader-normalized form-tree diff: require order was the only
+; difference). Every non-default entry below is earned by a retro
+; and recorded here with its reason.
 {:remove-surrounding-whitespace? true
  :remove-trailing-whitespace? true
  :remove-consecutive-blank-lines? true
  :insert-missing-whitespace? true
- :sort-ns-references? true
+ :sort-ns-references? false
  :align-associative? false
  :indents {}}

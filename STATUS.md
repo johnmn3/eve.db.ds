@@ -8,8 +8,8 @@ to eve.db.ds, eve, cohost, valuescript).
 
 ## Steps
 
-- [ ] 1. Fleet templates installed (byte-identical) + kondo cache
-- [ ] 2. Census banked in CENSUS.md (before any fixing)
+- [x] 1. Fleet templates installed (byte-identical) + kondo cache
+- [x] 2. Census banked in CENSUS.md (before any fixing)
 - [ ] 3. Baseline test run banked (before formatting)
 - [ ] 4. Format pass (own commit) + gate re-run
 - [ ] 5. Fix campaign, rule-class by rule-class, gate after every batch
@@ -32,3 +32,18 @@ Reason written in the config file's header.
   this repo's real paths (src, test) + the pinned splint task;
   kondo cache generation launched over the real classpath
   (`clojure -Spath`, Eve git pin from deps.edn).
+- Nov 22 ~6:33 PM ET: FLEET TEMPLATE CORRECTION applied —
+  .cljfmt.edn re-copied from the corrected template
+  (:sort-ns-references? false; sorting :require lists reorders
+  namespace load order — semantics, proven break in the media
+  lane). Re-copy diff-verified byte-identical. The census numbers
+  stand (the flag affects the format pass, not the check counts).
+- Nov 22 ~6:35 PM ET: census complete — kondo 918 (248E/640W/30I),
+  Splint 316 (gate task adapted to name paths: no-arg splint
+  checked only 73/157 files here), Carve 154, cljfmt 154/157 files
+  unformatted. Banked in CENSUS.md + census-raw/.
+  Media RETRO items 3–5 read before kondo-config work: deftask
+  :lint-as pattern, defcfn hook pattern (not used here — no FFI),
+  and the two .cljc false-positive classes (unused-* miscounting
+  #? references; dual-pass phantom unresolved symbols) that this
+  portable codebase will meet at scale.
