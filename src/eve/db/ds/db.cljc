@@ -1,6 +1,5 @@
 (ns ^:no-doc eve.db.ds.db
   (:require
-    #?(:cljs [goog.array :as garray])
     [clojure.walk]
     [clojure.data]
     [eve.alpha :as eve]
@@ -476,7 +475,7 @@
 (defn class-compare
   ^long [x y]
   #?(:clj  (long (compare (class-name x) (class-name y)))
-     :cljs (garray/defaultCompare (type->str (type x)) (type->str (type y)))
+     :cljs (compare (type->str (type x)) (type->str (type y)))
      :default (long (compare (class-name x) (class-name y)))))
 
 #?(:cljs nil
@@ -550,7 +549,11 @@
           :cljs [(satisfies? IComparable x) (-compare x y)]
           :default [(or (keyword? x) (string? x) (symbol? x)) (compare x y)])
       (not (class-identical? x y)) (class-compare x y)
-      #?@(:cljs [(or (number? x) (string? x) (array? x) (true? x) (false? x)) (garray/defaultCompare x y)])
+      ;; goog.array/defaultCompare spelled out: it IS the JS
+      ;; relational comparison (a > b ? 1 : a < b ? -1 : 0), and
+      ;; goog.array is a cljs-only lib other readers do not carry
+      ;; (squint's SCI holds no goog.array). Same values, no lib.
+      #?@(:cljs [(or (number? x) (string? x) (array? x) (true? x) (false? x)) (cond (> x y) 1 (< x y) -1 :else 0)])
       :else (int-compare (ihash x) (ihash y)))
     (catch #?(:clj ClassCastException :cljs js/Error :default Throwable) e
       (if (not (class-identical? x y))
@@ -630,7 +633,7 @@
   #?(:cljs
      (if (keyword? a1)
        (-compare a1 a2)
-       (garray/defaultCompare a1 a2))
+       (compare a1 a2))
      :clj
      (long (compare a1 a2))))
 
