@@ -119,14 +119,14 @@
          (dotimes [i l2] (aset res (+ l1 i) (get ^objects t2 (aget idxs2 i))))
          (dotimes [i l2] (aset res (+ l1 i) (get t2 (aget idxs2 i)))))
        res))
-   :cljs
+   :default
    (defn join-tuples [t1 idxs1
                       t2 idxs2]
      (let [l1  (alength idxs1)
            l2  (alength idxs2)
            res (da/make-array (+ l1 l2))]
-       (dotimes [i l1] (aset res i (da/aget t1 (aget idxs1 i))))
-       (dotimes [i l2] (aset res (+ l1 i) (da/aget t2 (aget idxs2 i))))
+       (dotimes [i l1] (da/aset res i (da/aget t1 (aget idxs1 i))))
+       (dotimes [i l2] (da/aset res (+ l1 i) (da/aget t2 (aget idxs2 i))))
        res)))
 
 #?(:clj (set! *unchecked-math* false))
