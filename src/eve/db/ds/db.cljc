@@ -276,7 +276,20 @@
        clojure.lang.Associative
        (entryAt [d k] (some->> (datom-lookup e a v tx k nil) (clojure.lang.MapEntry k)))
        (containsKey [e k] (#{:e :a :v :tx :added} k))
-       (assoc [d k v] (assoc-datom d k v))]))
+       (assoc [d k v] (assoc-datom d k v))
+
+       ;; the type's print, in Eve's portable spelling: an
+       ;; IPrintWithWriter section in the body, realized as the
+       ;; type's print registration by each host's types adapter
+       ;; (the :cljs arm above carries the same section in cljs
+       ;; spelling). A hand-written (defmethod print-method Datom)
+       ;; here cannot serve every host: defmethod itself is not
+       ;; portable (jank's native analysis refuses its expansion),
+       ;; and the section is the form Eve's own types print through.
+       IPrintWithWriter
+       (-pr-writer [d w _opts]
+         (eve.core/-write w (str "#eve.db.ds/Datom "
+                                 (pr-str [(:e d) (:a d) (:v d) (datom-tx d) (datom-added d)]))))]))
 
 #?(:cljs (goog/exportSymbol "eve.db.ds.db.Datom" Datom))
 
@@ -340,17 +353,20 @@
 (defn ^Datom datom-from-reader [vec]
   (apply datom vec))
 
-#?(:clj
-   (defmethod print-method Datom [^Datom d, ^java.io.Writer w]
-     (.write w (str "#eve.db.ds/Datom "))
-     (binding [*out* w]
-       (pr [(:e d) (:a d) (:v d) (datom-tx d) (datom-added d)]))))
+;; Datom's own print-method is registered from the IPrintWithWriter
+;; section of its eve/deftype body above (Eve's portable print
+;; spelling, realized per host by the types adapters).
 
 ;; GAP-U3-3 (U6): the delivered sister prints through the same body —
 ;; without a method for Datom__Flat, pr-str fell back to the deftype's
-;; toString, which itself calls pr-str (infinite recursion).
+;; toString, which itself calls pr-str (infinite recursion). The
+;; sister is named by its bare type symbol — the spelling Eve's own
+;; flat types use (eve.flat.chunk's FlatVec and kin) — never by
+;; (Class/forName "eve.db.ds.db.Datom__Flat"): a reflective JVM class
+;; lookup is a host form no other :clj-reading host can evaluate
+;; (glojure's load died on it, HOST-MATRIX-STATUS §4).
 #?(:clj
-   (defmethod print-method (Class/forName "eve.db.ds.db.Datom__Flat") [d, ^java.io.Writer w]
+   (defmethod print-method Datom__Flat [d, ^java.io.Writer w]
      (.write w (str "#eve.db.ds/Datom "))
      (binding [*out* w]
        (pr [(.-e d) (.-a d) (.-v d) (datom-tx d) (datom-added d)]))))
@@ -626,6 +642,7 @@
 #?(:clj  (declare hash-fdb)
    :cljs (defn ^number hash-fdb [db]))
 
+#?(:clj  (declare pr-db))
 #?(:clj  (declare equiv-db)
    :cljs (defn ^boolean equiv-db [db other]))
 
@@ -781,7 +798,11 @@
        (containsKey [db k] (contains? db-fields k))
        (entryAt [db k]     (when (contains? db-fields k)
                               (clojure.lang.MapEntry. k (db-lookup schema eavt aevt avet max-eid max-tx rschema k nil))))
-       (assoc [db k v]     (assoc-db db k v))])
+       (assoc [db k v]     (assoc-db db k v))
+       ;; the type's print, in Eve's portable spelling (see Datom):
+       ;; the :cljs arm carries the same section in cljs spelling
+       IPrintWithWriter
+       (-pr-writer [db w _opts] (pr-db db w))])
 
   IDB
   (-schema [db] (:schema db))
@@ -928,7 +949,11 @@
        clojure.lang.Associative
        (containsKey [e k]  (throw (UnsupportedOperationException. "containsKey is not supported on FilteredDB")))
        (entryAt [db k]     (throw (UnsupportedOperationException. "entryAt is not supported on FilteredDB")))
-       (assoc [db k v]     (throw (UnsupportedOperationException. "assoc is not supported on FilteredDB")))])
+       (assoc [db k v]     (throw (UnsupportedOperationException. "assoc is not supported on FilteredDB")))
+       ;; the type's print, in Eve's portable spelling (see Datom):
+       ;; the :cljs arm carries the same section in cljs spelling
+       IPrintWithWriter
+       (-pr-writer [db w _opts] (pr-db db w))])
 
   IDB
   (-schema [db]
@@ -1227,14 +1252,16 @@
          (apply pr (map (fn [^Datom d] [(:e d) (:a d) (:v d) (datom-tx d)]) (-datoms db :eavt nil nil nil nil))))
        (.write w "]}"))
 
-     (defmethod print-method DB [db w] (pr-db db w))
-     (defmethod print-method FilteredDB [db w] (pr-db db w))
+     ;; DB's and FilteredDB's own print-methods are registered from
+     ;; the IPrintWithWriter sections of their eve/deftype bodies
+     ;; (Eve's portable print spelling, realized per host).
 
      ;; GAP-U3-3 (U6): a delivered DB cannot enumerate its datoms
      ;; outside a region (pr-db's -datoms throws on delivered roots),
      ;; so the sister prints its readable fields instead of recursing
-     ;; through toString → pr-str.
-     (defmethod print-method (Class/forName "eve.db.ds.db.DB__Flat") [db w]
+     ;; through toString → pr-str. The sister is named by its bare
+     ;; type symbol, as for Datom__Flat above — never Class/forName.
+     (defmethod print-method DB__Flat [db w]
        (.write w (str "#eve.db.ds/DB "))
        (binding [*out* w]
          (pr {:schema (.-schema db) :max-eid (.-max-eid db) :max-tx (.-max-tx db)})))))
