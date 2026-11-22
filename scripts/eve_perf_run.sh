@@ -33,7 +33,7 @@ DS_DIR="${DS_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
 EVE_DIR="${EVE_DIR:?EVE_DIR must name the Eve checkout}"
 export EVE_LOCAL="$EVE_DIR" EVE_ROOT="$EVE_DIR" COHOST_DIR="${COHOST_DIR:-}"
 export BB="${BB:-$(command -v bb)}"
-LEGS="${LEGS:-jvm-aot jvm-src cljs jolt jank glj}"
+LEGS="${LEGS-jvm-aot jvm-src cljs jolt jank glj}"
 PERF_HOSTS="${PERF_HOSTS-jvm cljs jolt glj}"
 LOAD_MAX="${LOAD_MAX:-5}"; LOAD_WAIT_S="${LOAD_WAIT_S:-600}"
 DATE=$(date +%F)
@@ -63,7 +63,7 @@ startup_cmd() { # leg -> "ensure-cmd#timed-cmd"
   local H="$DS_DIR/harness"
   case "$1" in
     jvm-aot) echo "bash $H/run-jvm-aot.sh ensure#bash $H/run-jvm-aot.sh run" ;;
-    jvm-src) echo "true#bash $H/run-jvm.sh contract.one" ;;
+    jvm-src) echo "bash $H/run-jvm.sh contract.one $OUT/jvm-src-warm#bash $H/run-jvm.sh contract.one" ;;
     cljs)    echo "bash $H/run-cljs.sh ensure#bash $H/run-cljs.sh run" ;;
     jolt)    echo "bash $H/run-jolt.sh ensure#bash $H/run-jolt.sh run" ;;
     jank)    echo "bash $H/run-jank.sh ensure#bash $H/run-jank.sh run" ;;
@@ -129,23 +129,33 @@ if [ "${JANK_PERF:-1}" = 1 ] && echo " $LEGS " | grep -q ' jank '; then
     echo "### jank runtime (interpreted perf suite; ns/op)"
     echo
     echo "| workload | ns/op |"; echo "|---|---|"
-    grep -o '{:perf [^}]*}' "$OUT/logs/perf-jank.log" | sed -E 's/.*:perf :([^ ]+).*:ns-per-op ([0-9]+).*/| \1 | \2 |/'
+    grep -o '{:perf [^}]*}' "$OUT/logs/perf-jank.log" | sed -E 's/.*:perf :([^ ,]+).*:ns-per-op ([0-9]+).*/| \1 | \2 |/'
     echo; echo "load1 $l0 / $(load1); command: \`$JCMD\`"
   } >> "$T"
 fi
 
 if [ "${DS_RUNTIME:-1}" = 1 ]; then
+  # contract.ds-runtime: people-1k on the rewrite API (ds-harness.perf no longer runs at
+  # this ds sha — see the driver's docstring). JVM, x5 fresh processes after one warm-up.
   wait_load; l0=$(load1)
-  rm -rf "$OUT/ds-perf-jvm"*
-  timeout 3600 bash "$DS_DIR/harness/run-jvm.sh" ds-harness.perf "$OUT/ds-perf-jvm" jvm > "$OUT/logs/ds-perf-jvm.log" 2>&1
+  for i in 0 1 2 3 4 5; do
+    rm -rf "$OUT/ds-runtime-jvm"
+    timeout 1200 bash "$DS_DIR/harness/run-jvm.sh" contract.ds-runtime "$OUT/ds-runtime-jvm" jvm 2>/dev/null | grep ds-runtime
+  done > "$OUT/logs/ds-runtime-jvm.edn"
   {
     echo
-    echo "## eve.db.ds runtime (ds-harness.perf people-1k, JVM)"
+    echo "## eve.db.ds runtime (contract.ds-runtime people-1k, JVM; median of 5 after a warm-up; ms)"
     echo
-    echo '```'
-    grep -E '^\{' "$OUT/logs/ds-perf-jvm.log" | tail -5
-    echo '```'
-    echo "load1 $l0 / $(load1); command: \`bash \$DS_DIR/harness/run-jvm.sh ds-harness.perf <dir> jvm\` (perf_runtime.sh's jvm row)"
+    "$BB" -e "
+(require '[clojure.edn :as edn] '[clojure.string :as str])
+(let [rows (rest (map edn/read-string (str/split-lines (slurp \"$OUT/logs/ds-runtime-jvm.edn\"))))
+      ks [:create-ms :build-ms :find-1000-ms :pull-1000-ms :query-7-ms :seq-ms :tx-single-100-ms]
+      med (fn [k] (let [v (sort (map k rows))] (nth v (quot (count v) 2))))]
+  (println (str \"| \" (str/join \" | \" (map name ks)) \" | keys-exact |\"))
+  (println (str \"|\" (str/join (repeat (inc (count ks)) \"---|\"))))
+  (println (str \"| \" (str/join \" | \" (map med ks)) \" | \" (every? :keys-exact rows) \" |\")))"
+    echo
+    echo "load1 $l0 / $(load1); command: \`bash \$DS_DIR/harness/run-jvm.sh contract.ds-runtime <dir> jvm\`"
   } >> "$T"
 fi
 echo "RUN-DONE table=$T"
