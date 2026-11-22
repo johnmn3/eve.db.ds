@@ -1,7 +1,7 @@
 (ns eve.db.ds.core
   (:refer-clojure :exclude [filter])
   (:require
-    [#?(:cljs cljs.reader :clj clojure.edn) :as edn]
+    [#?(:cljs cljs.reader :default clojure.edn) :as edn]
     [eve.alpha :as eve]
     [eve.db.ds.conn :as conn]
     [eve.db.ds.db :as db #?@(:cljs [:refer [Datom DB FilteredDB]])]
