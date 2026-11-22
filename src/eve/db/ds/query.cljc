@@ -12,6 +12,9 @@
     [eve.db.ds.impl.entity :as de]
     [eve.db.ds.parser :as dp #?@(:cljs [:refer [BindColl BindIgnore BindScalar BindTuple Constant
                                                  FindColl FindRel FindScalar FindTuple PlainSymbol
+                                                 RulesVar SrcVar Variable]]
+                                  :lpy  [:refer [BindColl BindIgnore BindScalar BindTuple Constant
+                                                 FindColl FindRel FindScalar FindTuple PlainSymbol
                                                  RulesVar SrcVar Variable]])]
     [eve.db.ds.pull-api :as dpa]
     [eve.db.ds.util :as util])

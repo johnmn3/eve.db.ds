@@ -4,13 +4,13 @@
     [#?(:cljs cljs.reader :default clojure.edn) :as edn]
     [eve.alpha :as eve]
     [eve.db.ds.conn :as conn]
-    [eve.db.ds.db :as db #?@(:cljs [:refer [Datom DB FilteredDB]])]
+    [eve.db.ds.db :as db #?@(:cljs [:refer [Datom DB FilteredDB]] :lpy [:refer [Datom DB FilteredDB]])]
     [eve.db.ds.db-fn :as dbfn]
     #?(:clj [eve.db.ds.pprint])
     [eve.db.ds.pull-api :as dp]
     [eve.db.ds.query :as dq]
     [eve.db.ds.serialize :as serialize]
-    [eve.db.ds.impl.entity :as de]
+    [eve.db.ds.impl.entity :as de #?@(:lpy [:refer [Entity]])]
     [eve.db.ds.util :as util])
   #?(:clj
      (:import

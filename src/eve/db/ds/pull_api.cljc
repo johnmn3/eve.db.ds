@@ -1,8 +1,8 @@
 (ns ^:no-doc eve.db.ds.pull-api
   (:require
     [clojure.string :as str]
-    [eve.db.ds.pull-parser :as dpp]
-    [eve.db.ds.db :as db #?@(:cljs [:refer [DB]])]
+    [eve.db.ds.pull-parser :as dpp #?@(:lpy [:refer [PullAttr PullPattern]])]
+    [eve.db.ds.db :as db #?@(:cljs [:refer [DB]] :lpy [:refer [Datom DB]])]
     [eve.db.ds.lru :as lru]
     [eve.db.ds.util :as util]
     [eve.db.ds.bset :as set])
