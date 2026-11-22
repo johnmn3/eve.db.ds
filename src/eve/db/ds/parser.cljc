@@ -16,7 +16,8 @@
   (-collect-vars [_ acc])
   (-postwalk     [_ f]))
 
-#?(:clj
+#?(:cljs nil
+   :default
    (defmacro deftrecord
      "Augment all eve.db.ds.parser/ records with default implementation of ITraversable"
      [tagname fields & rest]
