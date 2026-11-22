@@ -95,11 +95,18 @@
    (defn- get-sig [method]
      ;; expects something like '(method-symbol [arg arg arg] ...)
      ;; if the thing matches, returns [fully-qualified-symbol arity], otherwise nil
+     ;; The home-ns lookup resolves the symbol: a runtime fn on the
+     ;; JVM and in SCI, but cljs.core/resolve is a macro that asserts
+     ;; a quoted argument when cljs compiles this helper as runtime
+     ;; code (it never runs there — it serves the macro pass, whose
+     ;; cljs branch computes the sig only for the discarded form).
      (and (sequential? method)
        (symbol? (first method))
        (vector? (second method))
        (let [sym (first method)
-             ns  (or (some->> sym resolve meta :ns str) "clojure.core")]
+             ns  (or #?(:clj (some->> sym resolve meta :ns str)
+                        :cljs (namespace sym))
+                     "clojure.core")]
          [(symbol ns (name sym)) (-> method second count)])))
    (defn- dedupe-interfaces [deftype-form]
      ;; get the interfaces list, remove any duplicates, similar to remove-nil-implements in potemkin
@@ -110,18 +117,25 @@
          (throw #?(:cljs (js/Error. "deftype-form mismatch") :default (IllegalArgumentException. "deftype-form mismatch"))))
        (list* deftype* tagname classname fields implements (vec (distinct interfaces)) rest)))
    (defn- make-record-updatable-clj [name fields & impls]
+     ;; Macro-pass only (the JVM's, or SCI's own expansion of
+     ;; defrecord-updatable — both branches are computed there).
+     ;; macroexpand-1 and walk/postwalk are reached through resolve:
+     ;; in cljs-compiled runtime code macroexpand-1 is a macro that
+     ;; asserts a quoted argument, and this helper is never called
+     ;; there; the indirection keeps the reference analyzer-legal on
+     ;; every pass while the macro passes get the real fns.
      (let [impl-map (->> impls (map (juxt get-sig identity)) (filter first) (into {}))
-           body     (macroexpand-1 (list* 'defrecord name fields impls))]
-       (clojure.walk/postwalk
-         (fn [form]
-           (if (and (sequential? form) (= 'deftype* (first form)))
-             (->> form
-               dedupe-interfaces
-               (remove (fn [method]
-                         (when-some [impl (-> method get-sig impl-map)]
-                           (not= method impl)))))
-             form))
-         body)))
+           body     ((resolve 'clojure.core/macroexpand-1) (list* 'defrecord name fields impls))]
+       ((resolve 'clojure.walk/postwalk)
+        (fn [form]
+          (if (and (sequential? form) (= 'deftype* (first form)))
+            (->> form
+              dedupe-interfaces
+              (remove (fn [method]
+                        (when-some [impl (-> method get-sig impl-map)]
+                          (not= method impl)))))
+            form))
+        body)))
    (defn- make-record-updatable-cljs [name fields & impls]
      ;; the trailing def captures the record type object into a var
      ;; of the same name for interpreted cljs seats (SCI/nbb), whose
