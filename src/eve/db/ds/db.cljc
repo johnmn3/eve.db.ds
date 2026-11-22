@@ -47,8 +47,9 @@
   #?(:clj  (and (some? x) (.isArray (class x)))
      :cljs (js/Array.isArray x)))
 
-(defn #?@(:clj  [^Boolean seqable?]  
-          :cljs [^boolean seqable?])
+(defn #?@(:clj    [^Boolean seqable?]
+          :cljs   [^boolean seqable?]
+          :default [seqable?])
   [x]
   (and (not (string? x))
     #?(:cljs (or (cljs.core/seqable? x)
@@ -58,7 +59,8 @@
                (nil? x)
                (instance? Iterable x)
                (array? x)
-               (instance? java.util.Map x)))))
+               (instance? java.util.Map x))
+       :default (clojure.core/seqable? x))))
 
 ;; ----------------------------------------------------------------------------
 ;; macros and funcs to support writing defrecords and updating
@@ -1366,16 +1368,18 @@
          (util/raise "Attribute " a " expected a vector, got: " v " in " context
            {:error :transact/syntax, :attribute a, :value v, :context context}))))))
 
-(defn- #?@(:clj  [^Boolean tuple-ref-slot?]
-           :cljs [^boolean tuple-ref-slot?])
+(defn- #?@(:clj    [^Boolean tuple-ref-slot?]
+           :cljs   [^boolean tuple-ref-slot?]
+           :default [tuple-ref-slot?])
   [db schema-a idx]
   (cond
     (:db/tupleAttrs schema-a) (ref? db (nth (:db/tupleAttrs schema-a) idx nil))
     (:db/tupleTypes schema-a) (= :db.type/ref (nth (:db/tupleTypes schema-a) idx nil))
     :else                     (= :db.type/ref (:db/tupleType schema-a))))
 
-(defn- #?@(:clj  [^Boolean resolved-eid?]
-           :cljs [^boolean resolved-eid?])
+(defn- #?@(:clj    [^Boolean resolved-eid?]
+           :cljs   [^boolean resolved-eid?]
+           :default [resolved-eid?])
   [x]
   (or
     (nil? x)
@@ -1554,8 +1558,9 @@
        (= e "datomic.tx")
        (= e "eve.db.ds.tx"))))
 
-(defn- #?@(:clj  [^Boolean tempid?]
-           :cljs [^boolean tempid?])
+(defn- #?@(:clj    [^Boolean tempid?]
+           :cljs   [^boolean tempid?]
+           :default [tempid?])
   [x]
   (or
     (and (number? x) (neg? x))
@@ -1679,8 +1684,9 @@
         (update report' ::queued-tuples assoc e queue'))
       report')))
 
-(defn- #?@(:clj  [^Boolean tuple-has-tempids?]
-           :cljs [^boolean tuple-has-tempids?])
+(defn- #?@(:clj    [^Boolean tuple-has-tempids?]
+           :cljs   [^boolean tuple-has-tempids?]
+           :default [tuple-has-tempids?])
   [db a vs]
   (and
     (sequential? vs)
