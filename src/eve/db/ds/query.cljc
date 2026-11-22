@@ -359,7 +359,7 @@
                           (transient []))
                         persistent!) ; keys in attrs2-attrs1
         keep-idxs1    (to-array (vals attrs1))
-        keep-idxs2    (to-array (->Eduction (map attrs2) keep-attrs2)) ; vals in attrs2-attrs1 by keys
+        keep-idxs2    (to-array (eduction (map attrs2) keep-attrs2)) ; vals in attrs2-attrs1 by keys
         key-fn1       (tuple-key-fn attrs1 common-attrs)
         key-fn2       (tuple-key-fn attrs2 common-attrs)
         hash          (hash-attrs key-fn1 tuples1)
@@ -861,12 +861,12 @@
 
 (defn -collect-tuples
   [acc rel ^long len copy-map]
-  (->Eduction
+  (eduction
     (comp
       (map
         (fn [#?(:cljs t1
                 :clj ^{:tag "[[Ljava.lang.Object;"} t1)]
-          (->Eduction
+          (eduction
             (map
               (fn [t2]
                 (let [res (aclone t1)]
