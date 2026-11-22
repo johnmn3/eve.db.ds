@@ -42,8 +42,19 @@
 ;; same arithmetic).
 
 (def ^:private factors
-  ;; 32^0 .. 32^12 — enough for 2^60 keys
-  (vec (take 13 (iterate #(* 32 %) 1))))
+  ;; 32^0 .. 32^12 — enough for 2^60 keys. The multiply is the
+  ;; PROMOTING form on the :clj family (*'): realizing the vec
+  ;; evaluates the iterate fn one element past the take (a
+  ;; discarded 32^13), and plain * there is the CHECKED form on
+  ;; Eve hosts — it throws on overflow instead of promoting
+  ;; (measured under jank + Eve's completion, 2026-11-21: the
+  ;; checked * turned that discarded product into a load failure
+  ;; for this namespace). On cljs the numbers are doubles — no
+  ;; overflow to promote from, plain * — and this build's
+  ;; cljs.core has no *' var: an unqualified *' compiled to a
+  ;; bset-local var and killed the browser bundle at load
+  ;; (measured 2026-11-21). The taken values are identical.
+  (vec (take 13 (iterate (fn [x] #?(:cljs (* 32 x) :clj (*' 32 x))) 1))))
 
 (def ^:const empty-path 0)
 

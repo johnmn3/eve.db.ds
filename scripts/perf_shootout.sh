@@ -10,9 +10,20 @@
 # nbb (run-nbb.sh), basilisp (run-lpy.sh) — every host's `one` entry
 # dispatches to the same contract.one.
 #
+# The restored precompiled legs (the cohost AOT setup,
+# lane-m/ds-shootout-restore): cljs (run-cljs.sh — Closure :advanced
+# bundle under ~/.cache/cohost/aot/cljs/<stamp>), jolt (run-jolt.sh —
+# standalone binary under ~/.cache/cohost/aot/jolt/<stamp>), jank
+# (run-jank.sh — AOT binary under ~/.cache/cohost/aot/jank/<stamp>).
+# For these hosts the timed runs launch the precached artifact; each
+# leg's cache build runs FIRST, untimed, as an `ensure` step whose
+# cost is echoed as AOT-BUILD into the host's log — the timed cells
+# are cache-warm by construction, which is the setup being restored.
+#
 # Env (set at filing time):
 #   DS_DIR     eve.db.ds checkout at the merged tip   (REQUIRED)
 #   EVE_DIR    Eve checkout at the merged release tip (REQUIRED)
+#   COHOST_DIR cohost.cljc checkout (the AOT contract) (restored legs)
 #   OUT        results dir (default: $DS_DIR/perf-results)
 #   HOSTS      default "jvm bb nbb lpy"
 #   BB         fleet bb 1.13.226 binary
@@ -31,6 +42,7 @@ verdict () { # median-ms-or-empty -> prints ms or 10s+
 
 if [ -n "${DS_DIR:-}" ] && [ -n "${EVE_DIR:-}" ]; then
   export EVE_LOCAL="$EVE_DIR" EVE_ROOT="$EVE_DIR"
+  export COHOST_DIR="${COHOST_DIR:-}"
   export BB="${BB:-$HOME/workspace/tools/bin/bb}"
   export SHOOTOUT_WORK="$OUT/shootout-runs"
   mkdir -p "$SHOOTOUT_WORK"
@@ -43,6 +55,9 @@ if [ -n "${DS_DIR:-}" ] && [ -n "${EVE_DIR:-}" ]; then
       bb)  bash "$DS_DIR/harness/shootout.sh" bb  bash "$DS_DIR/harness/run-bb.sh"  one          > "$OUT/shootout-bb.txt" 2>&1 ;;
       nbb) bash "$DS_DIR/harness/shootout.sh" nbb bash "$DS_DIR/harness/run-nbb.sh" one          > "$OUT/shootout-nbb.txt" 2>&1 ;;
       lpy) bash "$DS_DIR/harness/shootout.sh" lpy bash "$DS_DIR/harness/run-lpy.sh" one          > "$OUT/shootout-lpy.txt" 2>&1 ;;
+      cljs) { bash "$DS_DIR/harness/run-cljs.sh" ensure && bash "$DS_DIR/harness/shootout.sh" cljs bash "$DS_DIR/harness/run-cljs.sh" run; } > "$OUT/shootout-cljs.txt" 2>&1 ;;
+      jolt) { bash "$DS_DIR/harness/run-jolt.sh" ensure && bash "$DS_DIR/harness/shootout.sh" jolt bash "$DS_DIR/harness/run-jolt.sh" run; } > "$OUT/shootout-jolt.txt" 2>&1 ;;
+      jank) { bash "$DS_DIR/harness/run-jank.sh" ensure && bash "$DS_DIR/harness/shootout.sh" jank bash "$DS_DIR/harness/run-jank.sh" run; } > "$OUT/shootout-jank.txt" 2>&1 ;;
       *)   echo "UNKNOWN-HOST $h" > "$OUT/shootout-$h.txt" ;;
     esac
     med=$(grep -o 'median-ms=[0-9]*' "$OUT/shootout-$h.txt" 2>/dev/null | tail -1 | cut -d= -f2)
