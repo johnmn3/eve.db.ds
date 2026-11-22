@@ -9,12 +9,16 @@
    Usage: bb -m ds-harness.bb-main <contract|perf|one> <args...>"
   (:require [eve.host-completion]
             [ds-harness.contract-check :as cc]
-            [ds-harness.perf :as perf]
             [contract.one :as one]))
 
 (defn -main [& [mode & args]]
   (case mode
     "contract" (apply cc/-main args)
-    "perf" (apply perf/-main args)
+    ;; ds-harness.perf is required lazily: it is a pre-rewrite driver
+    ;; that references eve.db.ds.core/read-in, deleted by the rewrite
+    ;; (it fails to load on the JVM too — "No such var: d/read-in"),
+    ;; and must not block the modes that do not use it.
+    "perf" (do (require 'ds-harness.perf)
+               (apply (resolve 'ds-harness.perf/-main) args))
     "one" (apply one/-main args)
     (println (pr-str {:fatal (str "unknown mode " mode)}))))
