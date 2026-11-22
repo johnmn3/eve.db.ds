@@ -520,9 +520,12 @@
         (long (compare ~x ~y)))))
 
 (defn ihash
-  #?(:clj {:inline (fn [x] `(. clojure.lang.Util (hasheq ~x)))})
+  ;; glojure has no clojure.lang.Util (unable to resolve, measured
+  ;; 2026-11-22 under contract.ds-runtime): its hash is clojure.core/hash
+  #?(:clj {:inline (fn [x] #?(:glj `(hash ~x) :default `(. clojure.lang.Util (hasheq ~x))))})
   ^long [x]
-  #?(:clj  (. clojure.lang.Util (hasheq x))
+  #?(:glj  (hash x)
+     :clj  (. clojure.lang.Util (hasheq x))
      :cljs (hash x)
      :default (hash x)))
 
