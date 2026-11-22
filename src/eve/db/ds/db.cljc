@@ -479,7 +479,7 @@
       (not (class-identical? x y)) (class-compare x y)
       #?@(:cljs [(or (number? x) (string? x) (array? x) (true? x) (false? x)) (garray/defaultCompare x y)])
       :else (int-compare (ihash x) (ihash y)))
-    (catch #?(:clj ClassCastException :cljs js/Error) e
+    (catch #?(:clj ClassCastException :cljs js/Error :lpy python/TypeError :default ClassCastException) e
       (if (not (class-identical? x y))
         (class-compare x y)
         (throw e)))))
@@ -610,7 +610,7 @@
             first-b (first b)
             diff (try
                    (cmp first-a first-b)
-                   (catch #?(:clj ClassCastException :cljs js/Error) _
+                   (catch #?(:clj ClassCastException :cljs js/Error :lpy python/TypeError :default ClassCastException) _
                      :incomparable))]
         (cond
           (= diff :incomparable) (recur (conj only-a first-a) (conj only-b first-b) both                (next a) (next b))
@@ -1192,7 +1192,7 @@
    back to the value's identity hash."
   [db]
   (try (combine-hashes (hash-db db) (hash (:max-tx db)))
-       (catch #?(:clj Throwable :cljs :default) _
+       (catch #?(:clj Throwable :cljs :default :lpy python/BaseException :default Throwable) _
          (#?(:clj System/identityHashCode :cljs goog/getUid) db))))
 
 (defn+ ^:private ^number hash-fdb [^FilteredDB db]
