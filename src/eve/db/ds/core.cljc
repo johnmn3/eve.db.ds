@@ -714,7 +714,7 @@
    ;; thread-pool future, like the JVM's).
    :default
    (defn- future-call [f]
-     (future (f))))
+     (future (f)))))
 
 (defn transact-async
   "In CLJ, calls [[transact!]] on a future thread pool, returning immediately.
