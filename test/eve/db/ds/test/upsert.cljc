@@ -11,7 +11,10 @@
 
 #?(:cljs
    (def Throwable
-     js/Error))
+     js/Error)
+   :lpy
+   (def Throwable
+     python/BaseException))
 
 (deftest test-upsert
   (let [ivan    {:db/id 1 :name "Ivan" :email "@1"}
