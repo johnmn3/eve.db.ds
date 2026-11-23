@@ -857,7 +857,7 @@
        (empty [_] ())
        basilisp.lang.interfaces/IReduce
        (reduce [_ & args]
-         (if (== 1 (count args))
+         (if (== 1 (clojure.core/count args))
            (iter-reduce _ (first args))
            (iter-reduce _ (first args) (second args))))
        basilisp.lang.interfaces/IWithMeta
@@ -975,7 +975,7 @@
        (empty [_] ())
        basilisp.lang.interfaces/IReduce
        (reduce [_ & args]
-         (if (== 1 (count args))
+         (if (== 1 (clojure.core/count args))
            (riter-reduce _ (first args))
            (riter-reduce _ (first args) (second args))))
        basilisp.lang.interfaces/IWithMeta
