@@ -11,41 +11,28 @@
   #?(:cljs (:require-macros [eve.db.ds.db :refer [case-tree combine-cmp defn+ defcomp defrecord-updatable int-compare validate-attr validate-val]]
                              [eve.db.ds.util :as util]))
   (:refer-clojure :exclude [seqable? #?(:clj update)]))
-
 #?(:clj (set! *warn-on-reflection* true))
-
-;; ----------------------------------------------------------------------------
-
 #?(:cljs
    (do
      (def Exception js/Error)
      (def IllegalArgumentException js/Error)
      (def UnsupportedOperationException js/Error)))
-
 (def ^:const e0
   0)
-
 (def ^:const tx0
   0x20000000)
-
 (def ^:const emax
   0x7FFFFFFF)
-
 (def ^:const txmax
   0x7FFFFFFF)
-
 (def ^:const implicit-schema
   {:db/ident {:db/unique :db.unique/identity}})
-
-;; ----------------------------------------------------------------------------
-
 (defn- array?
   "Host array test (the baseline took this from the sorted-set lib's
    arrays ns; the bset has no arrays ns, so it lives here)."
   [x]
   #?(:clj  (and (some? x) (.isArray (class x)))
      :cljs (js/Array.isArray x)))
-
 (defn #?@(:clj  [^Boolean seqable?]  
           :cljs [^boolean seqable?])
   [x]
@@ -58,37 +45,29 @@
                (instance? Iterable x)
                (array? x)
                (instance? java.util.Map x)))))
-
-;; ----------------------------------------------------------------------------
-;; macros and funcs to support writing defrecords and updating
-;; (replacing) builtins, i.e., Object/hashCode, IHashEq hasheq, etc.
-;; code taken from prismatic:
-;;  https://github.com/Prismatic/schema/commit/e31c419c56555c83ef9ee834801e13ef3c112597
-;;
-
 (defn- cljs-env?
   "Take the &env from a macro, and tell whether we are expanding into cljs."
   [env]
-  (boolean (:ns env)))
-
-#?(:clj
-   (defmacro if-cljs
+  (boolean (or (:ns env)
+               ;; interpreted cljs seats (nbb): SCI's &env carries no
+               ;; :ns (measured), so the compiler test misses them;
+               ;; nbb.core exists only in that runtime (bb's SCI,
+               ;; a clj target, has no nbb.core and stays false).
+               (resolve 'nbb.core/load-string))))
+(defmacro if-cljs
      "Return then if we are generating cljs code and else for Clojure code.
      https://groups.google.com/d/msg/clojurescript/iBY5HaQda4A/w1lAQi9_AwsJ"
      [then else]
-     (if (cljs-env? &env) then else)))
-
-#?(:clj
-   (defn patch-tag [meta cljs-env?]
+     (if (cljs-env? &env) then else))
+(defn patch-tag [meta cljs-env?]
      (if cljs-env?
        meta
-       (condp = (:tag meta)
-         'boolean (assoc meta :tag java.lang.Boolean)
-         'number  (assoc meta :tag clojure.core$long)
-         meta))))
-
-#?(:clj
-   (defmacro defn+
+       #?(:clj  (condp = (:tag meta)
+                  'boolean (assoc meta :tag java.lang.Boolean)
+                  'number  (assoc meta :tag clojure.core$long)
+                  meta)
+          :cljs meta)))
+(defmacro defn+
      "CLJS really don’t like :declared metadata on vars (generates less
       efficient code), but it needs it to skip warnings. So we redefine
       first with ^:declared and empty implementation, and then immediately
@@ -108,80 +87,79 @@
          `(do
             (defn ~(vary-meta name' assoc :declared true) ~@arglists)
             (defn ~name' ~@rest))
-         `(defn ~name' ~@rest)))))
-
+         `(defn ~name' ~@rest))))
 (defn combine-hashes [x y]
   #?(:clj  (clojure.lang.Util/hashCombine x y)
      :cljs (hash-combine x y)))
-
-#?(:clj
    (defn- get-sig [method]
      ;; expects something like '(method-symbol [arg arg arg] ...)
      ;; if the thing matches, returns [fully-qualified-symbol arity], otherwise nil
+     ;; The home-ns lookup resolves the symbol: a runtime fn on the
+     ;; JVM and in SCI, but cljs.core/resolve is a macro that asserts
+     ;; a quoted argument when cljs compiles this helper as runtime
+     ;; code (it never runs there — it serves the macro pass, whose
+     ;; cljs branch computes the sig only for the discarded form).
      (and (sequential? method)
        (symbol? (first method))
        (vector? (second method))
        (let [sym (first method)
-             ns  (or (some->> sym resolve meta :ns str) "clojure.core")]
-         [(symbol ns (name sym)) (-> method second count)]))))
-
-#?(:clj
+             ns  (or #?(:clj (some->> sym resolve meta :ns str)
+                        :cljs (namespace sym))
+                     "clojure.core")]
+         [(symbol ns (name sym)) (-> method second count)])))
    (defn- dedupe-interfaces [deftype-form]
      ;; get the interfaces list, remove any duplicates, similar to remove-nil-implements in potemkin
      ;; verified w/ deftype impl in compiler:
      ;; (deftype* tagname classname [fields] :implements [interfaces] :tag tagname methods*)
      (let [[deftype* tagname classname fields implements interfaces & rest] deftype-form]
        (when (or (not= deftype* 'deftype*) (not= implements :implements))
-         (throw (IllegalArgumentException. "deftype-form mismatch")))
-       (list* deftype* tagname classname fields implements (vec (distinct interfaces)) rest))))
-
-#?(:clj
+         (throw #?(:cljs (js/Error. "deftype-form mismatch") :default (IllegalArgumentException. "deftype-form mismatch"))))
+       (list* deftype* tagname classname fields implements (vec (distinct interfaces)) rest)))
    (defn- make-record-updatable-clj [name fields & impls]
+     ;; Macro-pass only (the JVM's, or SCI's own expansion of
+     ;; defrecord-updatable — both branches are computed there).
+     ;; macroexpand-1 and walk/postwalk are reached through resolve:
+     ;; in cljs-compiled runtime code macroexpand-1 is a macro that
+     ;; asserts a quoted argument, and this helper is never called
+     ;; there; the indirection keeps the reference analyzer-legal on
+     ;; every pass while the macro passes get the real fns.
      (let [impl-map (->> impls (map (juxt get-sig identity)) (filter first) (into {}))
-           body     (macroexpand-1 (list* 'defrecord name fields impls))]
-       (clojure.walk/postwalk
-         (fn [form]
-           (if (and (sequential? form) (= 'deftype* (first form)))
-             (->> form
-               dedupe-interfaces
-               (remove (fn [method]
-                         (when-some [impl (-> method get-sig impl-map)]
-                           (not= method impl)))))
-             form))
-         body))))
-
-#?(:clj
+           body     ((resolve 'clojure.core/macroexpand-1) (list* 'defrecord name fields impls))]
+       ((resolve 'clojure.walk/postwalk)
+        (fn [form]
+          (if (and (sequential? form) (= 'deftype* (first form)))
+            (->> form
+              dedupe-interfaces
+              (remove (fn [method]
+                        (when-some [impl (-> method get-sig impl-map)]
+                          (not= method impl)))))
+            form))
+        body)))
    (defn- make-record-updatable-cljs [name fields & impls]
+     ;; the trailing def captures the record type object into a var
+     ;; of the same name for interpreted cljs seats (SCI/nbb), whose
+     ;; defrecord interns no type var for consumers to :refer; SCI's
+     ;; instance? discriminates on the type object, as on compiled
+     ;; seats.
      `(do
         (defrecord ~name ~fields)
-        (extend-type ~name ~@impls))))
-
-#?(:clj
-   (defmacro defrecord-updatable [name fields & impls]
+        (extend-type ~name ~@impls)
+        (def ~name
+          (type (~(symbol (str "->" (clojure.core/name name))) ~@(map (constantly nil) fields))))))
+(defmacro defrecord-updatable [name fields & impls]
      `(if-cljs
         ~(apply make-record-updatable-cljs name fields impls)
-        ~(apply make-record-updatable-clj  name fields impls))))
-
-;; ----------------------------------------------------------------------------
-
+        ~(apply make-record-updatable-clj  name fields impls)))
 #?(:clj  (declare hash-datom)
    :cljs (defn ^number hash-datom [d]))
-
 #?(:clj  (declare equiv-datom)
    :cljs (defn ^boolean equiv-datom [d o]))
-
 #?(:clj  (declare seq-datom)
    :cljs (defn seq-datom [d]))
-
 #?(:clj  (declare nth-datom)
    :cljs (defn nth-datom ([d i]) ([d i not-found])))
-
 #?(:clj  (declare assoc-datom)
    :cljs (defn assoc-datom [d k v]))
-
-;; A Datom's lookup, from its field values: called from inside the type's body, where e a v tx are direct
-;; reads on either of its forms (the slab kind and its flat sister), so a lookup never reflects. The fields'
-;; readers outside the body ask the Datom by keyword -- (:e d) -- and land here.
 (defn datom-lookup [e a v tx k not-found]
   (cond
     (keyword? k)
@@ -206,12 +184,9 @@
     not-found))
 #?(:clj  (declare datom?)
    :cljs (defn datom? [x]))
-
-
 (defprotocol IDatom
   (datom-tx [this])
   (datom-added [this]))
-
 (eve/deftype Datom [^:int32 e a v ^:int32 tx]
   IDatom
   (datom-tx [d] (if (pos? tx) tx (- tx)))
@@ -276,35 +251,22 @@
        (entryAt [d k] (some->> (datom-lookup e a v tx k nil) (clojure.lang.MapEntry k)))
        (containsKey [e k] (#{:e :a :v :tx :added} k))
        (assoc [d k v] (assoc-datom d k v))]))
-
 #?(:cljs (goog/exportSymbol "eve.db.ds.db.Datom" Datom))
-
 (defn ^Datom datom
   ([e a v] (->Datom e a v tx0))
   ([e a v tx] (->Datom e a v tx))
   ([e a v tx added] (->Datom e a v (if added tx (- tx)))))
-
 (defn datom? [x] (Datom? x))
-
-;; The Datom helpers below are deliberately UNHINTED (the baseline
-;; hinted ^Datom): the flat sister type (Datom__Flat) dispatches its
-;; =/hash/seq/lookup methods to these same fns, so the receiver and
-;; the comparand can both be sister values, and a ^Datom hint makes
-;; the field reads cast them to the slab class and throw
-;; ClassCastException. Field reads work on both forms.
 (defn+ ^:private hash-datom [d]
   (-> (hash (:e d))
     (combine-hashes (hash (:a d)))
     (combine-hashes (hash (:v d)))))
-
 (defn+ ^:private equiv-datom [d o]
   (and (== (:e d) (:e o))
     (= (:a d) (:a o))
     (= (:v d) (:v o))))
-
 (defn+ ^:private seq-datom [d]
   (list (:e d) (:a d) (:v d) (datom-tx d) (datom-added d)))
-
 (defn+ ^:private nth-datom
   ([d ^long i]
    (case i
@@ -323,7 +285,6 @@
      3 (datom-tx d)
      4 (datom-added d)
      not-found)))
-
 (defn+ ^:private ^Datom assoc-datom [d k v]
   (case k
     :e     (datom v       (:a d) (:v d) (datom-tx d) (datom-added d))
@@ -332,22 +293,13 @@
     :tx    (datom (:e d) (:a d) (:v d) v            (datom-added d))
     :added (datom (:e d) (:a d) (:v d) (datom-tx d) v)
     (throw (IllegalArgumentException. (str "invalid key for #eve.db.ds/Datom: " k)))))
-
-;; printing and reading
-;; #datomic/DB {:schema <map>, :datoms <vector of [e a v tx]>}
-
 (defn ^Datom datom-from-reader [vec]
   (apply datom vec))
-
 #?(:clj
    (defmethod print-method Datom [^Datom d, ^java.io.Writer w]
      (.write w (str "#eve.db.ds/Datom "))
      (binding [*out* w]
        (pr [(:e d) (:a d) (:v d) (datom-tx d) (datom-added d)]))))
-
-;; GAP-U3-3 (U6): the delivered sister prints through the same body —
-;; without a method for Datom__Flat, pr-str fell back to the deftype's
-;; toString, which itself calls pr-str (infinite recursion).
 #?(:clj
    ;; the flat sister is a class on hosts that materialize one;
    ;; where it is not, its printing is the host's own type
@@ -366,7 +318,7 @@
 #?(:clj
    (defmacro combine-cmp [& comps]
      (loop [comps (reverse comps)
-            res   (num 0)]
+            res   0]
        (if (not-empty comps)
          (recur
            (next comps)
@@ -375,21 +327,16 @@
                 ~res
                 c#)))
          res))))
-
-#?(:clj
-   (defn- -case-tree [queries variants]
+(defn- -case-tree [queries variants]
      (if queries
        (let [v1 (take (/ (count variants) 2) variants)
              v2 (drop (/ (count variants) 2) variants)]
          (list 'if (first queries)
            (-case-tree (next queries) v1)
            (-case-tree (next queries) v2)))
-       (first variants))))
-
-#?(:clj
-   (defmacro case-tree [qs vs]
-     (-case-tree qs vs)))
-
+       (first variants)))
+(defmacro case-tree [qs vs]
+     (-case-tree qs vs))
 (defn cmp
   #?(:clj
      {:inline
@@ -398,41 +345,32 @@
            (if (nil? x#) 0 (if (nil? y#) 0 (long (compare x# y#))))))})
   ^long [x y]
   (if (nil? x) 0 (if (nil? y) 0 (long (compare x y)))))
-
 (defn class-identical?
   #?(:clj  {:inline (fn [x y] `(identical? (class ~x) (class ~y)))})
   [x y]
   #?(:clj  (identical? (class x) (class y))
      :cljs (identical? (type x) (type y))))
-
-#?(:clj
-   (defn class-name
+(defn class-name
      {:inline
       (fn [x]
         `(let [^Object x# ~x]
            (if (nil? x#) x# (.getName (. x# (getClass))))))}
-     ^String [^Object x] (if (nil? x) x (.getName (. x (getClass))))))
-
+     ^String [^Object x] (if (nil? x) x (.getName (. x (getClass)))))
 (defn class-compare
   ^long [x y]
   #?(:clj  (long (compare (class-name x) (class-name y)))
      :cljs (garray/defaultCompare (type->str (type x)) (type->str (type y)))))
-
-#?(:clj
-   (defmacro int-compare [x y]
+(defmacro int-compare [x y]
      `(if-cljs
         (- ~x ~y)
-        (long (Integer/compare ~x ~y)))))
-
+        (long (Integer/compare ~x ~y))))
 (defn ihash
   {:inline (fn [x] `(. clojure.lang.Util (hasheq ~x)))}
   ^long [x]
   #?(:clj  (. clojure.lang.Util (hasheq x))
      :cljs (hash x)))
-
 #?(:clj  (declare value-compare)
    :cljs (defn ^number value-compare [x y]))
-
 (defn- seq-compare [xs ys]
   (let [cx (count xs)
         cy (count ys)]
@@ -465,6 +403,46 @@
                 (if (= v 0)
                   (recur (next xs) (next ys))
                   v)))))))))
+(defn- map-compare [x y]
+  ;; Entrywise total order for maps: by count, then by key (in
+  ;; value-compare order), then by the value under each key. A map
+  ;; value in a datom does not keep one representation across hosts
+  ;; or across an atom round-trip (plain here, an Eve flat sister
+  ;; there), and the hash fallthrough in value-compare orders each
+  ;; representation differently — an index built under one order is
+  ;; then mis-seeked under the other. Entrywise comparison is
+  ;; representation-independent: a flat map seqs and looks up like
+  ;; the plain map it equals.
+  (let [cx (count x)
+        cy (count y)]
+    (cond
+      (< cx cy) -1
+      (> cx cy) 1
+      :else
+      (loop [ksx (sort (fn [a b] (value-compare a b)) (keys x))
+             ksy (sort (fn [a b] (value-compare a b)) (keys y))]
+        (if (empty? ksx)
+          0
+          (let [kx (first ksx)
+                ky (first ksy)
+                kc (value-compare kx ky)]
+            (if (not= 0 kc)
+              kc
+              (let [vc (value-compare (get x kx) (get y ky))]
+                (if (= 0 vc)
+                  (recur (next ksx) (next ksy))
+                  vc)))))))))
+
+(defn- set-compare [x y]
+  ;; Sets order by count, then by their elements in value-compare
+  ;; order — representation-independent, as map-compare.
+  (let [cx (count x)
+        cy (count y)]
+    (cond
+      (< cx cy) -1
+      (> cx cy) 1
+      :else (seq-compare (sort (fn [a b] (value-compare a b)) (seq x))
+                         (sort (fn [a b] (value-compare a b)) (seq y))))))
 
 (defn+ ^number value-compare [x y]
   (try
@@ -476,10 +454,13 @@
       ;; store/read boundary (a host map literal on one side, the
       ;; stored Eve map on the other), and the class-name fallback
       ;; below would order an insert by one rule and a seek by
-      ;; another, corrupting the index's order. Uncomparable values
-      ;; order by hash — the same rule the same-class fallback uses.
-      (and (map? x) (map? y)) (int-compare (ihash x) (ihash y))
-      (and (set? x) (set? y)) (int-compare (ihash x) (ihash y))
+      ;; another, corrupting the index's order. They compare
+      ;; entrywise (map-compare / set-compare above): a total order
+      ;; over the entries alone, the same on both sides of the
+      ;; boundary — where a hash order is not, a map's hash being
+      ;; representation-dependent on some hosts.
+      (and (map? x) (map? y)) (map-compare x y)
+      (and (set? x) (set? y)) (set-compare x y)
       ;; PORTING-DS D4 hunk (F-JOLT-CMP): core compare, not host method
       ;; calls — jolt's clojure.lang has no Numbers/compare and its
       ;; Keyword carries no compareTo method, while clojure.core/compare
@@ -496,7 +477,6 @@
       (if (not (class-identical? x y))
         (class-compare x y)
         (throw e)))))
-
 (defn value-cmp
   #?(:clj
      {:inline
@@ -509,18 +489,7 @@
     (if (nil? y)
       0
       (value-compare x y))))
-
-;; Slower cmp-* fns allows for datom fields to be nil.
-;; Such datoms come from slice method where they are used as boundary markers.
-;;
-;; The comparator args are deliberately UNHINTED (the baseline hinted
-;; ^Datom): boundary datoms built inside a $ region are the flat sister
-;; type (Datom__Flat), and a ^Datom hint makes compare cast them to the
-;; slab class and throw ClassCastException. Field reads work on both
-;; forms; the hint does not survive the type swap.
-
-#?(:clj
-   (defmacro defcomp [sym [arg1 arg2] & body]
+(defmacro defcomp [sym [arg1 arg2] & body]
      (let [a1 (with-meta arg1 {})
            a2 (with-meta arg2 {})]
        `(if-cljs
@@ -541,31 +510,25 @@
               ;; non-JVM :clj host cannot meet
               clojure.lang.IFn$OOL
               (invokePrim [this# ~a1 ~a2]
-                (.compare this# ~a1 ~a2))))))))
-
+                (.compare this# ~a1 ~a2)))))))
 (defcomp cmp-datoms-eavt ^long [d1, d2]
   (combine-cmp
     (int-compare (:e d1) (:e d2))
     (cmp (:a d1) (:a d2))
     (value-cmp (:v d1) (:v d2))
     (int-compare (datom-tx d1) (datom-tx d2))))
-
 (defcomp cmp-datoms-aevt ^long [d1, d2]
   (combine-cmp
     (cmp (:a d1) (:a d2))
     (int-compare (:e d1) (:e d2))
     (value-cmp (:v d1) (:v d2))
     (int-compare (datom-tx d1) (datom-tx d2))))
-
 (defcomp cmp-datoms-avet ^long [d1, d2]
   (combine-cmp
     (cmp (:a d1) (:a d2))
     (value-cmp (:v d1) (:v d2))
     (int-compare (:e d1) (:e d2))
     (int-compare (datom-tx d1) (datom-tx d2))))
-
-;; fast versions without nil checks
-
 (defn- cmp-attr-quick
   ;; PORTING-DS D4 hunk (F-JOLT-CMP): (long (compare a1 a2)), not
   ;; (.compareTo ...) — jolt's clojure.lang.Keyword names Comparable
@@ -585,34 +548,29 @@
        (garray/defaultCompare a1 a2))
      :clj
      (long (compare a1 a2))))
-
 (defcomp cmp-datoms-eav-quick ^long [d1, d2]
   (combine-cmp
     (int-compare (:e d1) (:e d2))
     (cmp-attr-quick (:a d1) (:a d2))
     (value-compare (:v d1) (:v d2))))
-
 (defcomp cmp-datoms-eavt-quick ^long [d1, d2]
   (combine-cmp
     (int-compare (:e d1) (:e d2))
     (cmp-attr-quick (:a d1) (:a d2))
     (value-compare (:v d1) (:v d2))
     (int-compare (datom-tx d1) (datom-tx d2))))
-
 (defcomp cmp-datoms-aevt-quick ^long [d1, d2]
   (combine-cmp
     (cmp-attr-quick (:a d1) (:a d2))
     (int-compare (:e d1) (:e d2))
     (value-compare (:v d1) (:v d2))
     (int-compare (datom-tx d1) (datom-tx d2))))
-
 (defcomp cmp-datoms-avet-quick ^long [d1, d2]
   (combine-cmp
     (cmp-attr-quick (:a d1) (:a d2))
     (value-compare (:v d1) (:v d2))
     (int-compare (:e d1) (:e d2))
     (int-compare (datom-tx d1) (datom-tx d2))))
-
 (defn- diff-sorted [a b cmp]
   (loop [only-a []
          only-b []
@@ -634,23 +592,14 @@
           (== diff 0)            (recur only-a                only-b                (conj both first-a) (next a) (next b))
           (< diff 0)             (recur (conj only-a first-a) only-b                both                (next a) b)
           (> diff 0)             (recur only-a                (conj only-b first-b) both                a        (next b)))))))
-
-;; ----------------------------------------------------------------------------
-
 #?(:clj  (declare hash-db)
    :cljs (defn ^number hash-db [db]))
-
 #?(:clj  (declare hash-fdb)
    :cljs (defn ^number hash-fdb [db]))
-
 #?(:clj  (declare equiv-db)
    :cljs (defn ^boolean equiv-db [db other]))
-
 #?(:clj  (declare restore-db)
    :cljs (defn restore-db [keys]))
-
-;; A DB's lookup, from its field values: called from inside the type's body (direct field reads on either
-;; form), as datom-lookup is for a Datom.
 (defn db-lookup [schema eavt aevt avet max-eid max-tx rschema k not-found]
   (case k
     :schema  schema
@@ -661,78 +610,54 @@
     :max-tx  max-tx
     :rschema rschema
     not-found))
-
 #?(:clj  (declare assoc-db)
    :cljs (defn assoc-db [db k v]))
-
 #?(:clj  (declare indexing?)
    :cljs (defn ^boolean indexing? [db attr]))
-
 #?(:cljs (defn pr-db [db w opts]))
-
 #?(:clj  (declare resolve-datom)
    :cljs (defn resolve-datom [db e a v t default-e default-tx]))
-
 #?(:clj  (declare components->pattern)
    :cljs (defn components->pattern [db index c0 c1 c2 c3 default-e default-tx]))
-
-;;;;;;;;;; Fast validation
-
-#?(:clj
-   (defmacro validate-attr [attr at]
+(defmacro validate-attr [attr at]
      `(let [attr# ~attr]
         (when-not (or
                     (keyword? attr#)
                     (string? attr#))
           (let [at# ~at]
             (util/raise "Bad entity attribute " attr# " at " at# ", expected keyword or string"
-              {:error :transact/syntax, :attribute attr#, :context at#}))))))
-
-#?(:clj
-   (defmacro validate-val [v at]
+              {:error :transact/syntax, :attribute attr#, :context at#})))))
+(defmacro validate-val [v at]
      `(when (nil? ~v)
         (let [at# ~at]
           (util/raise "Cannot store nil as a value at " at#
-            {:error :transact/syntax, :value nil, :context at#})))))
-
-;;;;;;;;;; Searching
-
+            {:error :transact/syntax, :value nil, :context at#}))))
 (defprotocol ISearch
   (-search [data pattern]))
-
 (defn- ^Datom fsearch [data pattern]
   (first (-search data pattern)))
-
 (defprotocol IIndexAccess
   (-datoms [db index c0 c1 c2 c3])
   (-seek-datoms [db index c0 c1 c2 c3])
   (-rseek-datoms [db index c0 c1 c2 c3])
   (-index-range [db attr start end]))
-
 (defn validate-indexed [db index c0 c1 c2 c3]
   (when (= index :avet)
     (when-some [attr c0]
       (when-not (indexing? db attr)
         (util/raise "Attribute " attr " should be marked as :db/index true"
           {:error :index-access :index :avet :components [c0 c1 c2 c3]})))))
-
 (defprotocol IDB
   (-schema [db])
   (-attrs-by [db property]))
-
-;; ----------------------------------------------------------------------------
-
-#?(:clj
-   (defn vpred [v]
+(defn vpred [v]
      (cond
        (string? v)  (fn [x] (if (string? x) (.equals ^String v x) false))
        (int? v)     (fn [x] (if (int? x) (= (long v) (long x)) false))
        (keyword? v) (fn [x] (.equals ^Object v x))
        (nil? v)     (fn [x] (nil? x))
-       :else        (fn [x] (= v x)))))
-
+       :else        (fn [x] (= v x))))
 (def ^:private db-fields #{:schema :eavt :aevt :avet :max-eid :max-tx :rschema})
-
 (defn- index-cmp
   "The comparator of an index keyword. The baseline's sorted set stored
    its comparator in the set; the bset takes it as an argument (§5)."
@@ -741,7 +666,6 @@
     :eavt cmp-datoms-eavt
     :aevt cmp-datoms-aevt
     :avet cmp-datoms-avet))
-
 (eve/deftype DB [schema eavt aevt avet ^:int32 max-eid ^:int32 max-tx rschema]
   #?@(:cljs
       [IHash                (-hash  [db]        (hash-db db))
@@ -883,7 +807,6 @@
   (diff-similar [a b]
     (diff-sorted (set/slice (:eavt a) nil nil cmp-datoms-eavt)
       (set/slice (:eavt b) nil nil cmp-datoms-eavt) cmp-datoms-eav-quick)))
-
 (defn+ ^:private assoc-db [db k v]
   (case k
     :schema  (->DB v (:eavt db) (:aevt db) (:avet db) (:max-eid db) (:max-tx db) (:rschema db))
@@ -894,7 +817,6 @@
     :max-tx  (->DB (:schema db) (:eavt db) (:aevt db) (:avet db) (:max-eid db) v (:rschema db))
     :rschema (->DB (:schema db) (:eavt db) (:aevt db) (:avet db) (:max-eid db) (:max-tx db) v)
     (throw (IllegalArgumentException. (str "No such field: " k " in eve.db.ds.db.DB")))))
-
 (defn db? [x]
   #?(:clj
      (or
@@ -909,8 +831,6 @@
      (and (satisfies? ISearch x)
        (satisfies? IIndexAccess x)
        (satisfies? IDB x))))
-
-;; ----------------------------------------------------------------------------
 (eve/deftype FilteredDB [unfiltered-db ^:host pred]
   #?@(:cljs
       [IHash                (-hash  [db]        (hash-fdb db))
@@ -970,14 +890,10 @@
 
   (-index-range [db attr start end]
     (filter pred (-index-range unfiltered-db attr start end))))
-
 (defn unfiltered-db ^DB [db]
   (if (FilteredDB? db)
     (:unfiltered-db db)
     db))
-
-;; ----------------------------------------------------------------------------
-
 (defn attr->properties [k v]
   (cond
     (= :db/tupleAttrs k)                  [:db.type/tuple :db/index :db/tupleAttrs]
@@ -990,7 +906,6 @@
     (and (= :db/isComponent k) (true? v)) [:db/isComponent]
     (and (= :db/index k) (true? v))       [:db/index]
     :else                                 []))
-
 (defn attr-tuples
   "e.g. :reg/semester => #{:reg/semester+course+student ...}"
   [schema rschema]
@@ -1003,7 +918,6 @@
         (-> schema (get tuple-attr) :db/tupleAttrs)))
     {}
     (:db/tupleAttrs rschema)))
-
 (defn- rschema
   ":db/unique           => #{attr ...}
    :db.unique/identity  => #{attr ...}
@@ -1029,7 +943,6 @@
                       rschema attr-schema))
                   {} schema)]
     (assoc rschema :db/attrTuples (attr-tuples schema rschema))))
-
 (defn- validate-schema-key [a k v expected]
   (when-not (or (nil? v)
               (contains? expected v))
@@ -1038,7 +951,6 @@
               :attribute a
               :key k
               :value v}))))
-
 (defn- validate-schema [schema]
   (doseq [[a kv] schema]
 
@@ -1113,7 +1025,6 @@
             {:error :schema/validation
              :attribute a
              :key :db/tupleType}))))))
-  
 (defn ^DB empty-db [schema opts]
   {:pre [(or (nil? schema) (map? schema))]}
   (validate-schema schema)
@@ -1124,7 +1035,6 @@
     e0
     tx0
     (rschema (merge implicit-schema schema))))
-
 (defn- init-max-eid [rschema eavt avet]
   (let [max     #(if (and %2 (> %2 %1)) %2 %1)
         max-eid (some->
@@ -1147,7 +1057,6 @@
                     (max res (max-ref attr)))
                   res refs)]
     res))
-
 (defn ^DB init-db [datoms schema opts]
   (when-some [not-datom (first (drop-while datom? datoms))]
     (util/raise "init-db expects list of Datoms, got " (type not-datom)
@@ -1169,7 +1078,6 @@
         max-eid     (init-max-eid rschema eavt avet)
         max-tx      (transduce (map (fn [^Datom d] (datom-tx d))) max tx0 (set/slice eavt nil nil cmp-datoms-eavt))]
     (->DB schema eavt aevt avet max-eid max-tx rschema)))
-
 (defn+ ^DB restore-db [{:keys [schema eavt aevt avet max-eid max-tx] :as keys}]
   (->DB schema
     eavt
@@ -1179,13 +1087,11 @@
     (or max-tx tx0)
     (or (:rschema keys)
       (rschema (merge implicit-schema schema)))))
-
 (defn with-schema [db schema]
   {:pre [(db? db) (or (nil? schema) (map? schema))]}
   (assoc db
     :schema        schema
     :rschema       (rschema (merge implicit-schema schema))))
-
 (defn- equiv-db-index [x y]
   (loop [xs (seq x)
          ys (seq y)]
@@ -1193,14 +1099,12 @@
       (nil? xs) (nil? ys)
       (= (first xs) (first ys)) (recur (next xs) (next ys))
       :else false)))
-
 (defn+ ^:private ^number hash-db [^DB db]
   ;; No cache: the baseline's mutable hash atom is gone with the type
   ;; swap (§3), so the hash is recomputed from the schema and the ordered
   ;; datom sequence — exactly the two things equiv-db compares.
   (combine-hashes (hash (:schema db))
     (hash (vec (-datoms db :eavt nil nil nil nil)))))
-
 (defn entity-db-hash
   "Entity's no-handle hash fallback (U6, GAP-2): the DB version's
    content hash combined with its max-tx, so two versions holding
@@ -1211,16 +1115,13 @@
   (try (combine-hashes (hash-db db) (hash (:max-tx db)))
        (catch #?(:clj Throwable :cljs :default) _
          (#?(:clj System/identityHashCode :cljs goog/getUid) db))))
-
 (defn+ ^:private ^number hash-fdb [^FilteredDB db]
   (combine-hashes (hash (-schema db))
     (hash (vec (-datoms db :eavt nil nil nil nil)))))
-
 (defn+ ^:private ^boolean equiv-db [db other]
   (and (or (DB? other) (FilteredDB? other))
     (= (-schema db) (-schema other))
     (equiv-db-index (-datoms db :eavt nil nil nil nil) (-datoms other :eavt nil nil nil nil))))
-
 #?(:cljs
    (defn+ pr-db [db w opts]
      (-write w "#eve.db.ds/DB {")
@@ -1232,7 +1133,6 @@
          (pr-sequential-writer w pr-writer "[" " " "]" opts [(:e d) (:a d) (:v d) (datom-tx d)]))
        "[" " " "]" opts (-datoms db :eavt nil nil nil nil))
      (-write w "}")))
-
 #?(:clj
    (do
      (defn pr-db [db, ^java.io.Writer w]
@@ -1260,21 +1160,14 @@
 
 (defn db-from-reader [{:keys [schema datoms]}]
   (init-db (map (fn [[e a v tx]] (datom e a v tx)) datoms) schema {}))
-
-;; ----------------------------------------------------------------------------
-
 #?(:clj  (declare entid-strict)
    :cljs (defn ^number entid-strict [db eid]))
-
 #?(:clj  (declare ref?)
    :cljs (defn ^boolean ref? [db attr]))
-
 #?(:clj  (declare tuple?)
    :cljs (defn ^boolean tuple? [db attr]))
-
 #?(:clj  (declare resolve-tuple-refs)
    :cljs (defn resolve-tuple-refs [db a vs context]))
-
 (defn+ resolve-datom [db e a v t default-e default-tx]
   (when (some? a)
     (validate-attr a (list 'resolve-datom 'db e a v t)))
@@ -1287,13 +1180,11 @@
       (tuple? db a) (resolve-tuple-refs db a v (list 'resolve-datom 'db e a v t))
       :else         v)
     (if (some? t) (entid-strict db t) default-tx)))
-
 (defn+ components->pattern [db index c0 c1 c2 c3 default-e default-tx]
   (case index
     :eavt (resolve-datom db c0 c1 c2 c3 default-e default-tx)
     :aevt (resolve-datom db c1 c0 c2 c3 default-e default-tx)
     :avet (resolve-datom db c2 c0 c1 c3 default-e default-tx)))
-
 (defn find-datom [db index c0 c1 c2 c3]
   (validate-indexed db index c0 c1 c2 c3)
   (let [root    (get db index)
@@ -1303,42 +1194,29 @@
         datom   (first (set/slice root from to cmp))]
     (when (and (some? datom) (<= 0 (cmp to datom)))
       datom)))
-
-;; ----------------------------------------------------------------------------
-
 (defrecord TxReport [db-before db-after tx-data tempids tx-meta])
-
 (defn+ ^boolean is-attr? [db attr property]
   (contains? (-attrs-by db property) attr))
-
 (defn+ ^boolean multival? [db attr]
   (is-attr? db attr :db.cardinality/many))
-
 (defn+ ^boolean multi-value? [db attr value]
   (and
     (is-attr? db attr :db.cardinality/many)
     (or
       (array? value)
       (and (coll? value) (not (map? value))))))
-
 (defn+ ^boolean ref? [db attr]
   (is-attr? db attr :db.type/ref))
-
 (defn+ ^boolean component? [db attr]
   (is-attr? db attr :db/isComponent))
-
 (defn+ ^boolean indexing? [db attr]
   (is-attr? db attr :db/index))
-
 (defn+ ^boolean tuple? [db attr]
   (is-attr? db attr :db.type/tuple))
-
 (defn+ ^boolean tuple-source? [db attr]
   (is-attr? db attr :db/attrTuples))
-
 (defn+ ^boolean composite-tuple? [db attr]
   (is-attr? db attr :db/tupleAttrs))
-
 (defn+ ^boolean reverse-ref? [attr]
   (cond
     (keyword? attr)
@@ -1350,7 +1228,6 @@
     :else
     (util/raise "Bad attribute type: " attr ", expected keyword or string"
       {:error :transact/syntax, :attribute attr})))
-
 (defn reverse-ref [attr]
   (cond
     (keyword? attr)
@@ -1367,7 +1244,6 @@
     :else
     (util/raise "Bad attribute type: " attr ", expected keyword or string"
       {:error :transact/syntax, :attribute attr})))
-
 (defn- validate-tuple
   "Validates that a heterogeneous/homogeneous tuple attr value is a vector
    of the declared arity. nils are checked separately in validate-val"
@@ -1384,7 +1260,6 @@
        (when-not (vector? v)
          (util/raise "Attribute " a " expected a vector, got: " v " in " context
            {:error :transact/syntax, :attribute a, :value v, :context context}))))))
-
 (defn- #?@(:clj  [^Boolean tuple-ref-slot?]
            :cljs [^boolean tuple-ref-slot?])
   [db schema-a idx]
@@ -1392,14 +1267,12 @@
     (:db/tupleAttrs schema-a) (ref? db (nth (:db/tupleAttrs schema-a) idx nil))
     (:db/tupleTypes schema-a) (= :db.type/ref (nth (:db/tupleTypes schema-a) idx nil))
     :else                     (= :db.type/ref (:db/tupleType schema-a))))
-
 (defn- #?@(:clj  [^Boolean resolved-eid?]
            :cljs [^boolean resolved-eid?])
   [x]
   (or
     (nil? x)
     (and (number? x) (not (neg? x)))))
-
 (defn+ resolve-tuple-refs
   "Resolves lookup refs and idents in ref slots of a tuple value.
    Read path: no tempids, unresolved refs raise"
@@ -1417,7 +1290,6 @@
               (entid-strict db v)
               v)))
         vs))))
-
 (defn+ ^number entid [db eid]
   {:pre [(db? db)]}
   (cond
@@ -1455,26 +1327,19 @@
     :else
     (util/raise "Expected number or lookup ref for entity id, got " eid
       {:error :entity-id/syntax, :entity-id eid})))
-
 (defn+ ^boolean numeric-eid-exists? [db eid]
   (= eid (-> (-seek-datoms db :eavt eid nil nil nil) first :e)))
-
 (defn+ ^number entid-strict [db eid]
   (or
     (entid db eid)
     (util/raise "Nothing found for entity id " eid
       {:error :entity-id/missing
        :entity-id eid})))
-
 (defn+ ^number entid-some [db eid]
   (when (some? eid)
     (entid-strict db eid)))
-
-;;;;;;;;;; Transacting
-
 (def *last-auto-tempid
   (atom 0))
-
 (deftype AutoTempid [id]
   #?@(:cljs
       [IPrintWithWriter
@@ -1484,19 +1349,15 @@
       [Object
        (toString [d]
          (str "#eve.db.ds/AutoTempid [" id "]"))]))
-
 #?(:clj
    (defmethod print-method AutoTempid [^AutoTempid id, ^java.io.Writer w]
      (.write w (str "#eve.db.ds/AutoTempid "))
      (binding [*out* w]
        (pr [(.-id id)]))))
-
 (defn auto-tempid []
   (AutoTempid. (swap! *last-auto-tempid inc)))
-
 (defn+ ^boolean auto-tempid? [x]
   (instance? AutoTempid x))
-
 (defn assoc-auto-tempids [db tx-data]
   (for [entity tx-data]
     (util/cond+
@@ -1537,7 +1398,6 @@
         
       :else
       entity)))
-
 (defn validate-datom [db datom]
   (when (and (datom-added datom)
           (is-attr? db (:a datom) :db/unique))
@@ -1546,17 +1406,14 @@
         {:error :transact/unique
          :attribute (:a datom)
          :datom datom}))))
-
 (defn- current-tx
   #?(:clj {:inline (fn [report] `(-> ~report :db-before :max-tx long inc))})
   ^long [report]
   (-> report :db-before :max-tx long inc))
-
 (defn- next-eid
   #?(:clj {:inline (fn [db] `(inc (long (:max-eid ~db))))})
   ^long [db]
   (inc (long (:max-eid db))))
-
 #?(:clj
    (defn- ^Boolean tx-id?
      [e]
@@ -1572,7 +1429,6 @@
        (= e ":db/current-tx") ;; for eve.db.ds.js interop
        (= e "datomic.tx")
        (= e "eve.db.ds.tx"))))
-
 (defn- #?@(:clj  [^Boolean tempid?]
            :cljs [^boolean tempid?])
   [x]
@@ -1580,17 +1436,14 @@
     (and (number? x) (neg? x))
     (string? x)
     (auto-tempid? x)))
-
 (defn- new-eid? [db eid]
   (and
     (> eid (:max-eid db))
     (< eid tx0))) ;; tx0 is max eid
-
 (defn- advance-max-eid [db eid]
   (cond-> db
     (new-eid? db eid)
     (assoc :max-eid eid)))
-
 (defn- allocate-eid
   ([report eid]
    (update report :db-after advance-max-eid eid))
@@ -1611,7 +1464,6 @@
 
      true
      (update :db-after advance-max-eid eid))))
-
 (defn- resolve-tuple-value
   "Resoleves refs, tempids and :db/current-tx in ref slots. Returns [report' vs']"
   [report a vs context]
@@ -1649,10 +1501,6 @@
 
                 (recur (inc idx) report'' (conj! vs' v')))
               (recur (inc idx) report' (conj! vs' v)))))))))
-
-;; In context of `with-datom` we can use faster comparators which
-;; do not check for nil (~10-15% performance gain in `transact`)
-
 (defn with-datom [db datom]
   (validate-datom db datom)
   (let [indexing? (indexing? db (:a datom))]
@@ -1668,21 +1516,18 @@
           true      (update :aevt (fn [s] (or (set/disj s removing cmp-datoms-aevt-quick) s)))
           indexing? (update :avet (fn [s] (or (set/disj s removing cmp-datoms-avet-quick) s))))
         db))))
-
 (defn- queue-tuple [queue tuple idx db e a v]
   (let [tuple-value  (or (get queue tuple)
                        (:v (first (-datoms db :eavt e tuple nil nil)))
                        (vec (repeat (-> db (-schema) (get tuple) :db/tupleAttrs count) nil)))
         tuple-value' (assoc tuple-value idx v)]
     (assoc queue tuple tuple-value')))
-
 (defn- queue-tuples [queue tuples db e a v]
   (reduce-kv
     (fn [queue tuple idx]
       (queue-tuple queue tuple idx db e a v))
     queue
     tuples))
-
 (defn- transact-report [report datom]
   (let [db      (:db-after report)
         a       (:a datom)
@@ -1697,7 +1542,6 @@
             queue' (queue-tuples queue tuples db e a v)]
         (update report' ::queued-tuples assoc e queue'))
       report')))
-
 (defn- #?@(:clj  [^Boolean tuple-has-tempids?]
            :cljs [^boolean tuple-has-tempids?])
   [db a vs]
@@ -1716,7 +1560,6 @@
 
           :else
           (recur (inc idx)))))))
-
 (defn- resolve-upserts
   "Returns [entity' upserts]. Upsert attributes that resolve to existing entities
    are removed from entity, rest are kept in entity for insertion. No validation is performed.
@@ -1769,7 +1612,6 @@
         [{} {}]
         entity))
     [entity nil]))
-
 (defn validate-upserts
   "Throws if not all upserts point to the same entity. 
    Returns single eid that all upserts point to, or null."
@@ -1800,8 +1642,6 @@
              :assertion [upsert-id a v]
              :conflict  {:db/id eid}}))
         upsert-id))))
-
-;; multivals/reverse can be specified as coll or as a single value, trying to guess
 (defn- maybe-wrap-multival [db a vs]
   (cond
     ;; not a multival context
@@ -1820,7 +1660,6 @@
     [vs]
     
     :else vs))
-
 (defn- explode [db entity]
   (let [eid  (:db/id entity)
         ;; sort tuple attrs after non-tuple
@@ -1843,7 +1682,6 @@
         (if reverse?
           [:db/add v   straight-a eid]
           [:db/add eid straight-a v])))))
-
 (defn- transact-add [report [_ e a v tx :as ent]]
   (validate-attr a ent)
   (validate-val  v ent)
@@ -1873,19 +1711,15 @@
       (-> report
         (transact-report (datom e a (:v old-datom) tx false))
         (transact-report new-datom)))))
-
 (defn- transact-retract-datom [report ^Datom d]
   (let [tx (current-tx report)]
     (transact-report report (datom (:e d) (:a d) (:v d) tx false))))
-
 (defn- retract-components [db datoms]
   (into #{} (comp
               (filter (fn [^Datom d] (component? db (:a d))))
               (map (fn [^Datom d] [:db.fn/retractEntity (:v d)]))) datoms))
-
 #?(:clj  (declare transact-tx-data-impl)
    :cljs (defn transact-tx-data-impl [initial-report initial-es]))
-
 (defn- retry-with-tempid [initial-report report es tempid upserted-eid]
   (if-some [eid (get (::upserted-tempids initial-report) tempid)]
     (util/raise "Conflicting upsert: " tempid " resolves"
@@ -1900,7 +1734,6 @@
                      (update ::upserted-tempids assoc tempid upserted-eid))]
       (util/log "retry" tempid "->" upserted-eid)
       (transact-tx-data-impl report' es))))
-
 (def builtin-fn?
   #{:db.fn/call
     :db.fn/cas
@@ -1910,7 +1743,6 @@
     :db.fn/retractAttribute
     :db.fn/retractEntity
     :db/retractEntity})
-
 (defn flush-tuples [report]
   (let [db (:db-after report)]
     (reduce-kv
@@ -1927,7 +1759,6 @@
           tuples+values))
       []
       (::queued-tuples report))))
-
 (defn check-value-tempids [report]
   (if-let [tempids (::value-tempids report)]
     (let [all-tempids (transient tempids)
@@ -1942,7 +1773,6 @@
         (util/raise "Tempids used only as value in transaction: " (sort (vals (persistent! unused)))
           {:error :transact/syntax, :tempids unused})))
     (dissoc report ::value-tempids ::tx-redundant)))
-
 (defn+ transact-tx-data-impl [initial-report initial-es]
   (let [initial-report' initial-report
         has-tuples?     (not (empty? (-attrs-by (:db-after initial-report) :db/attrTuples)))
@@ -2190,7 +2020,6 @@
         :else
         (util/raise "Bad entity type at " entity ", expected map or vector"
           {:error :transact/syntax, :tx-data entity})))))
-
 (defn transact-tx-data [report es]
   (when-not (or
               (nil? es)

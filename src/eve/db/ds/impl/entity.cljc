@@ -1,5 +1,5 @@
 (ns ^:no-doc eve.db.ds.impl.entity
-  (:refer-clojure :exclude [keys get])
+  (:refer-clojure :exclude [keys])
   (:require [#?(:cljs cljs.core :clj clojure.core) :as c]
     [eve.db.ds.db :as db]))
 
@@ -60,37 +60,6 @@
       [Object
        (toString [this]
          (pr-str* this))
-       (equiv [this other]
-         (equiv-entity this other))
-
-       ;; js/map interface
-       (keys [this]
-         (es6-iterator (c/keys this)))
-       (entries [this]
-         (es6-entries-iterator (js-seq this)))
-       (values [this]
-         (es6-iterator (map second (js-seq this))))
-       (has [this attr]
-         (not (nil? (.get this attr))))
-       (get [this attr]
-         (if (= attr ":db/id")
-           eid
-           (if (db/reverse-ref? attr)
-             (-> (-lookup-backwards db handle eid (db/reverse-ref attr) nil)
-               multival->js)
-             (cond-> (lookup-entity this attr)
-               (db/multival? db attr) multival->js))))
-       (forEach [this f]
-         (doseq [[a v] (js-seq this)]
-           (f v a this)))
-       (forEach [this f use-as-this]
-         (doseq [[a v] (js-seq this)]
-           (.call f use-as-this v a this)))
-
-       ;; js fallbacks
-       (key_set   [this] (to-array (c/keys this)))
-       (entry_set [this] (to-array (map to-array (js-seq this))))
-       (value_set [this] (to-array (map second (js-seq this))))
 
        IEquiv
        (-equiv [this o] (equiv-entity this o))
@@ -154,12 +123,65 @@
        (invoke [e k]      (lookup-entity e k))
        (invoke [e k not-found] (lookup-entity e k not-found))]))
 
+;; Interpreted cljs seats (SCI/nbb) register the deftype without
+;; interning a var for its name; eve.db.ds.core names Entity in type
+;; tags, which resolve through the var there. Capture the type
+;; object into a var (SCI's instance? discriminates on the type
+;; object, as on compiled seats).
+#?(:cljs (def Entity
+           (type (->Entity nil nil nil nil nil))))
+
+#?(:cljs
+   ;; The JS-Map interface Entity carries for JS consumers (keys /
+   ;; entries / values / has / get / forEach + the *_set fallbacks).
+   ;; It used to live in the deftype's Object spec; interpreted cljs
+   ;; seats (SCI) accept only a minimal Object spec, so the methods
+   ;; are installed on the prototype here instead — the same
+   ;; unchecked-set mechanism the ES6 iterator patches above use.
+   ;; Interpreted seats expose no .-prototype on the type value, so
+   ;; the guard skips installation there (Clojure consumers use the
+   ;; protocol surface, which the deftype itself carries).
+   (when (.-prototype Entity)
+     (let [proto (.-prototype Entity)]
+       (unchecked-set proto "keys"
+         (fn [] (this-as this (es6-iterator (c/keys this)))))
+       (unchecked-set proto "entries"
+         (fn [] (this-as this (es6-entries-iterator (js-seq this)))))
+       (unchecked-set proto "values"
+         (fn [] (this-as this (es6-iterator (map second (js-seq this))))))
+       (unchecked-set proto "has"
+         (fn [attr] (this-as this (not (nil? (.get this attr))))))
+       (unchecked-set proto "get"
+         (fn [attr]
+           (this-as this
+             (if (= attr ":db/id")
+               (.-eid this)
+               (if (db/reverse-ref? attr)
+                 (-> (-lookup-backwards (.-db this) (.-handle this) (.-eid this) (db/reverse-ref attr) nil)
+                   multival->js)
+                 (cond-> (lookup-entity this attr)
+                   (db/multival? (.-db this) attr) multival->js))))))
+       (unchecked-set proto "forEach"
+         (fn [f & [use-as-this]]
+           (this-as this
+             (doseq [[a v] (js-seq this)]
+               (if use-as-this
+                 (.call f use-as-this v a this)
+                 (f v a this))))))
+       (unchecked-set proto "key_set"
+         (fn [] (this-as this (to-array (c/keys this)))))
+       (unchecked-set proto "entry_set"
+         (fn [] (this-as this (to-array (map to-array (js-seq this))))))
+       (unchecked-set proto "value_set"
+         (fn [] (this-as this (to-array (map second (js-seq this)))))))))
+
 (defn entity? [x] (instance? Entity x))
 
 #?(:cljs
-  (unchecked-set (.-prototype Entity) cljs.core/ITER_SYMBOL
-     (fn []
-       (this-as this# (.entries this#)))))
+  (when (.-prototype Entity)
+    (unchecked-set (.-prototype Entity) cljs.core/ITER_SYMBOL
+       (fn []
+         (this-as this# (.entries this#))))))
 
 #?(:clj
    (defmethod print-method Entity [e, ^java.io.Writer w]
