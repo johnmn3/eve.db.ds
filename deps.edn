@@ -38,7 +38,7 @@
         ;; sci.core (jank) still load the whole library.
         org.babashka/sci {:mvn/version "0.15.59"}
         eve/eve {:git/url "https://github.com/SeniorCareMarket/eve"
-                 :git/sha "665bcf84cc72105f257a831e9366e8dc4eebc153"}
+                 :git/sha "4606596a9e642865cafbbb2a8fd27998e311de7a"}
         me.tonsky/persistent-sorted-set {:local/root "lib"}
         extend-clj/extend-clj {:local/root "lib-ds-deps"}}
  :aliases
