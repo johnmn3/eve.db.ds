@@ -10,6 +10,9 @@
     [me.tonsky.persistent-sorted-set.arrays :as da]
     [eve.db.ds.parser :as dp #?@(:cljs [:refer [BindColl BindIgnore BindScalar BindTuple
                                                  Constant DefaultSrc Pattern RulesVar SrcVar Variable
+                                                 Not Or And Predicate PlainSymbol]]
+                                  :lpy  [:refer [BindColl BindIgnore BindScalar BindTuple
+                                                 Constant DefaultSrc Pattern RulesVar SrcVar Variable
                                                  Not Or And Predicate PlainSymbol]])]
     [eve.db.ds.util :as util])
   #?(:clj

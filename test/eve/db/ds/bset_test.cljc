@@ -419,7 +419,7 @@
       (is (= (range 0 501) ($ (vec (-> (bset/rslice @a nil nil compare) (bset/seek 750 compare) (bset/seek 500 compare) rseq))))))
 
     (testing "nil behaviour"
-      (is (thrown-with-msg? ExceptionInfo #"seek can't be called with a nil key!"
+      (is (thrown-with-msg? #?(:clj ExceptionInfo :lpy basilisp.lang.exception/ExceptionInfo :default ExceptionInfo) #"seek can't be called with a nil key!"
             ($ (bset/seek (bset/slice @a nil nil compare) nil compare)))))
 
     (testing "slicing together with seek"

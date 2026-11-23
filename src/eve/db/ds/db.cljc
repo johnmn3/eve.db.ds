@@ -48,7 +48,8 @@
                (nil? x)
                (instance? Iterable x)
                (array? x)
-               (instance? java.util.Map x)))))
+               (instance? java.util.Map x))
+       :default (clojure.core/seqable? x))))
 (defn- cljs-env?
   "Take the &env from a macro, and tell whether we are expanding into cljs."
   [env]
@@ -117,6 +118,10 @@
 (defn combine-hashes [x y]
   #?(:clj  (clojure.lang.Util/hashCombine x y)
      :cljs (hash-combine x y)
+     ;; Util/hashCombine's mix, spelled with core bit ops for hosts
+     ;; with neither a clojure.lang.Util nor a core hash-combine.
+     :lpy (bit-xor x (+ y 2654435769 (bit-shift-left x 6)
+                            (unsigned-bit-shift-right x 2)))
      :default (hash-combine x y)))
 
 #?(:cljs nil
@@ -319,7 +324,42 @@
        IPrintWithWriter
        (-pr-writer [d w _opts]
          (eve.core/-write w (str "#eve.db.ds/Datom "
-                                 (pr-str [(:e d) (:a d) (:v d) (datom-tx d) (datom-added d)]))))]))
+                                 (pr-str [(:e d) (:a d) (:v d) (datom-tx d) (datom-added d)]))))]
+
+      ;; The :clj spelling is eve/deftype's canonical surface (Eve's
+      ;; own types write it unconditionally); every other host's
+      ;; deftype machinery translates it, as it does for Eve's types.
+      :default
+      [Object
+       (hashCode [d] (int (hash-datom d)))
+       (toString [d] (pr-str d))
+
+       clojure.lang.IHashEq
+       (hasheq [d] (int (hash-datom d)))
+
+       clojure.lang.Counted
+       (count [d] 5)
+
+       clojure.lang.Seqable
+       (seq [d] (seq-datom d))
+
+       clojure.lang.IPersistentCollection
+       (equiv [d o] (and (datom? o) (equiv-datom d o)))
+       (empty [d] (throw (UnsupportedOperationException. "empty is not supported on Datom")))
+       (cons [d [k v]] (assoc-datom d k v))
+
+       clojure.lang.Indexed
+       (nth [this i]           (nth-datom this i))
+       (nth [this i not-found] (nth-datom this i not-found))
+
+       clojure.lang.ILookup
+       (valAt [d k] (datom-lookup e a v tx k nil))
+       (valAt [d k nf] (datom-lookup e a v tx k nf))
+
+       clojure.lang.Associative
+       (entryAt [d k] (some->> (datom-lookup e a v tx k nil) (clojure.lang.MapEntry k)))
+       (containsKey [e k] (#{:e :a :v :tx :added} k))
+       (assoc [d k v] (assoc-datom d k v))]))
 
 #?(:cljs (goog/exportSymbol "eve.db.ds.db.Datom" Datom))
 (defn ^Datom datom
@@ -453,6 +493,11 @@
    (defn class-name
      ^String [x] (if (nil? x) x (str (type x)))))
 
+#?(:clj nil
+   :cljs nil
+   :default
+   (defn class-name [x] (if (nil? x) x (str (type x)))))
+
 (defn class-compare
   ^long [x y]
   #?(:clj  (long (compare (class-name x) (class-name y)))
@@ -460,6 +505,11 @@
      :default (long (compare (class-name x) (class-name y)))))
 
 #?(:cljs nil
+   ;; In-runtime hosts take the cljs expansion: a plain subtraction
+   ;; (the comparands are int32-range, so it cannot overflow).
+   :lpy
+   (defmacro int-compare [x y]
+     `(- ~x ~y))
    :default
    (defmacro int-compare [x y]
      `(if-cljs
@@ -470,7 +520,7 @@
         (long (compare ~x ~y)))))
 
 (defn ihash
-  {:inline (fn [x] `(. clojure.lang.Util (hasheq ~x)))}
+  #?(:clj {:inline (fn [x] `(. clojure.lang.Util (hasheq ~x)))})
   ^long [x]
   #?(:clj  (. clojure.lang.Util (hasheq x))
      :cljs (hash x)
@@ -588,7 +638,7 @@
       ;; (squint's SCI holds no goog.array). Same values, no lib.
       #?@(:cljs [(or (number? x) (string? x) (array? x) (true? x) (false? x)) (cond (> x y) 1 (< x y) -1 :else 0)])
       :else (int-compare (ihash x) (ihash y)))
-    (catch #?(:clj ClassCastException :cljs js/Error :default Throwable) e
+    (catch #?(:clj ClassCastException :cljs js/Error :lpy python/TypeError :default Throwable) e
       (if (not (class-identical? x y))
         (class-compare x y)
         (throw e)))))
@@ -678,6 +728,8 @@
        (-compare a1 a2)
        (compare a1 a2))
      :clj
+     (long (compare a1 a2))
+     :default
      (long (compare a1 a2))))
 (defcomp cmp-datoms-eav-quick ^long [d1, d2]
   (combine-cmp
@@ -716,7 +768,7 @@
             first-b (first b)
             diff (try
                    (cmp first-a first-b)
-                   (catch #?(:clj ClassCastException :cljs js/Error :default Throwable) _
+                   (catch #?(:clj ClassCastException :cljs js/Error :lpy python/TypeError :default Throwable) _
                      :incomparable))]
         (cond
           (= diff :incomparable) (recur (conj only-a first-a) (conj only-b first-b) both                (next a) (next b))
@@ -884,7 +936,37 @@
        ;; the type's print, in Eve's portable spelling (see Datom):
        ;; the :cljs arm carries the same section in cljs spelling
        IPrintWithWriter
-       (-pr-writer [db w _opts] (pr-db db w))])
+       (-pr-writer [db w _opts] (pr-db db w))]
+
+      :default
+      [Object               (hashCode [db]      (int (hash-db db)))
+       clojure.lang.IHashEq (hasheq [db]        (int (hash-db db)))
+       clojure.lang.Counted (count [db]         (set/count eavt))
+       clojure.lang.Seqable
+       (seq [db]           (seq {:schema  schema
+                                 :eavt    eavt
+                                 :aevt    aevt
+                                 :avet    avet
+                                 :max-eid max-eid
+                                 :max-tx  max-tx
+                                 :rschema rschema}))
+       clojure.lang.IPersistentCollection
+       (equiv [db other]   (equiv-db db other))
+       (empty [db]         (restore-db
+                             {:schema  (:schema db)
+                              :rschema (:rschema db)
+                              :eavt    (set/empty)
+                              :aevt    (set/empty)
+                              :avet    (set/empty)}))
+       (cons [db key]      (throw (ex-info "eve.db.ds.DB/cons is not supported" {})))
+       clojure.lang.ILookup
+       (valAt [db k]       (db-lookup schema eavt aevt avet max-eid max-tx rschema k nil))
+       (valAt [db k nf]    (db-lookup schema eavt aevt avet max-eid max-tx rschema k nf))
+       clojure.lang.Associative
+       (containsKey [db k] (contains? db-fields k))
+       (entryAt [db k]     (when (contains? db-fields k)
+                              (clojure.lang.MapEntry. k (db-lookup schema eavt aevt avet max-eid max-tx rschema k nil))))
+       (assoc [db k v]     (assoc-db db k v))])
 
   IDB
   (-schema [db] (:schema db))
@@ -993,6 +1075,10 @@
      :cljs
      (and (satisfies? ISearch x)
        (satisfies? IIndexAccess x)
+       (satisfies? IDB x))
+     :default
+     (and (satisfies? ISearch x)
+       (satisfies? IIndexAccess x)
        (satisfies? IDB x))))
 (eve/deftype FilteredDB [unfiltered-db ^:host pred]
   #?@(:cljs
@@ -1032,7 +1118,26 @@
        ;; the type's print, in Eve's portable spelling (see Datom):
        ;; the :cljs arm carries the same section in cljs spelling
        IPrintWithWriter
-       (-pr-writer [db w _opts] (pr-db db w))])
+       (-pr-writer [db w _opts] (pr-db db w))]
+
+      :default
+      [Object               (hashCode [db]      (int (hash-fdb db)))
+
+       clojure.lang.IHashEq (hasheq [db]        (int (hash-fdb db)))
+
+       clojure.lang.IPersistentCollection
+       (count [db]         (count (-datoms db :eavt nil nil nil nil)))
+       (equiv [db o]       (equiv-db db o))
+       (cons [db [k v]]    (throw (UnsupportedOperationException. "cons is not supported on FilteredDB")))
+       (empty [db]         (throw (UnsupportedOperationException. "empty is not supported on FilteredDB")))
+
+       clojure.lang.ILookup (valAt [db k]       (throw (UnsupportedOperationException. "valAt/2 is not supported on FilteredDB")))
+       (valAt [db k nf]    (throw (UnsupportedOperationException. "valAt/3 is not supported on FilteredDB")))
+
+       clojure.lang.Associative
+       (containsKey [e k]  (throw (UnsupportedOperationException. "containsKey is not supported on FilteredDB")))
+       (entryAt [db k]     (throw (UnsupportedOperationException. "entryAt is not supported on FilteredDB")))
+       (assoc [db k v]     (throw (UnsupportedOperationException. "assoc is not supported on FilteredDB")))])
 
   IDB
   (-schema [db]
@@ -1280,7 +1385,7 @@
    back to the value's identity hash."
   [db]
   (try (combine-hashes (hash-db db) (hash (:max-tx db)))
-       (catch #?(:clj Throwable :cljs :default) _
+       (catch #?(:clj Throwable :cljs :default :lpy python/BaseException :default Throwable) _
          (#?(:clj System/identityHashCode :cljs goog/getUid) db))))
 (defn+ ^:private ^number hash-fdb [^FilteredDB db]
   (combine-hashes (hash (-schema db))

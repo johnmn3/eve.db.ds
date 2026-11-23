@@ -1,24 +1,26 @@
 (ns eve.db.ds.core
   (:refer-clojure :exclude [filter])
   (:require
-    [#?(:cljs cljs.reader :clj clojure.edn) :as edn]
+    [#?(:cljs cljs.reader :default clojure.edn) :as edn]
     [eve.alpha :as eve]
     [eve.crypto :as crypto]
     [eve.net.bytes :as bytes]
     [eve.db.ds.conn :as conn]
-    [eve.db.ds.db :as db #?@(:cljs [:refer [Datom DB FilteredDB]])]
+    [eve.db.ds.db :as db #?@(:cljs [:refer [Datom DB FilteredDB]] :lpy [:refer [Datom DB FilteredDB]])]
     [eve.db.ds.db-fn :as dbfn]
     #?(:clj [eve.db.ds.pprint])
     [eve.db.ds.pull-api :as dp]
     [eve.db.ds.query :as dq]
     [eve.db.ds.serialize :as serialize]
-    [eve.db.ds.impl.entity :as de #?@(:cljs [:refer [Entity]])]
+    [eve.db.ds.impl.entity :as de #?@(:cljs [:refer [Entity]] :lpy [:refer [Entity]])]
     [eve.db.ds.util :as util])
   #?(:clj
      (:import
        [eve.db.ds.db Datom DB FilteredDB]
        [eve.db.ds.impl.entity Entity]
-       [java.util UUID])))
+       [java.util UUID])
+     :lpy
+     (:import hashlib)))
 (def ^:const ^:no-doc tx0 
   db/tx0)
 (defn- resolve-db-arg
@@ -635,7 +637,14 @@
           clojure.lang.IBlockingDeref
           (deref [_ _ _] res)
           clojure.lang.IPending
-          (isRealized [_] true))))))
+          (isRealized [_] true))
+        :lpy
+        (let [p (promise)]
+          (deliver p res)
+          p)))))
+
+
+;; ersatz future without proper blocking
 #?(:clj
    (defn- future-call [f]
      (future (f)))
@@ -683,7 +692,20 @@
            hex   (bytes/hex (crypto/sha256 (bytes/utf8 input)))]
        (symbol (str "db-fn-" (subs hex 0 12))))))
 
-#?(:clj
+#?(:lpy
+   (defn- db-fn-var-name
+     "The generated var name for a db-fn form: content-addressed
+      from the caller's namespace and the printed fn form (SHA-1,
+      first 12 hex chars, db-fn- prefixed) — the :clj arm's
+      contract, over Python's hashlib (the same SHA-1 of the same
+      UTF-8 bytes, so the derived names agree across hosts)."
+     [ns-sym params body]
+     (let [input (str ns-sym " " (pr-str (list* 'fn params body)))
+           hex   (.hexdigest (hashlib/sha1 (.encode input "utf-8")))]
+       (symbol (str "db-fn-" (subs hex 0 12))))))
+
+#?(:cljs nil
+   :default
    (defmacro db-fn
      "Builds a stored transaction function from a plain fn form —
       the DEFAULT kind (John's ruling, 2026-11-20: \"Let's default

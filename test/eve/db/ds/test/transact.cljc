@@ -339,7 +339,7 @@
           err     (try (d/transact! conn [{:db/ident :inc-age
                                            :db/fn    inc-age}])
                        nil
-                       (catch #?(:clj Throwable :cljs :default) e e))]
+                       (catch #?(:clj Throwable :cljs :default :lpy python/BaseException :default Throwable) e e))]
       (is (some? err))
       (is (= :eve.db.ds/db-fn-host-fn (:error (ex-data err))))
       (is (= (:tx before) (:tx @conn)))

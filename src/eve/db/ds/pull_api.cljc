@@ -1,8 +1,8 @@
 (ns ^:no-doc eve.db.ds.pull-api
   (:require
     [clojure.string :as str]
-    [eve.db.ds.pull-parser :as dpp]
-    [eve.db.ds.db :as db #?@(:cljs [:refer [DB]])]
+    [eve.db.ds.pull-parser :as dpp #?@(:lpy [:refer [PullAttr PullPattern]])]
+    [eve.db.ds.db :as db #?@(:cljs [:refer [DB]] :lpy [:refer [Datom DB]])]
     [eve.db.ds.lru :as lru]
     [eve.db.ds.util :as util]
     [eve.db.ds.bset :as set])
@@ -45,7 +45,14 @@
 (defrecord ResultFrame [value datoms]
   IFrame
   (-str [this]
-    (str "ResultFrame<value=" value ">")))
+    (str "ResultFrame<value=" value ">"))
+  ;; Basilisp's deftype* refuses a partial protocol implementation;
+  ;; the missing methods throw, as a call to them does on the JVM.
+  #?@(:lpy
+      [(-merge [this result]
+         (throw (ex-info "IFrame/-merge is not implemented for ResultFrame" {})))
+       (-run [this context]
+         (throw (ex-info "IFrame/-run is not implemented for ResultFrame" {})))]))
 
 (defrecord MultivalAttrFrame [acc ^PullAttr attr datoms]
   IFrame
@@ -70,7 +77,12 @@
         (recur (conj! acc (:v datom)) (next-seq datoms)))))
   
   (-str [this]
-    (str "MultivalAttrFrame<attr=" (attr-str attr) ">")))
+    (str "MultivalAttrFrame<attr=" (attr-str attr) ">"))
+  ;; Basilisp's deftype* refuses a partial protocol implementation;
+  ;; the missing method throws, as a call to it does on the JVM.
+  #?@(:lpy
+      [(-merge [this result]
+         (throw (ex-info "IFrame/-merge is not implemented for MultivalAttrFrame" {})))]))
 
 (defrecord MultivalRefAttrFrame [seen recursion-limits acc pattern ^PullAttr attr datoms]
   IFrame

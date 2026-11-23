@@ -18,7 +18,7 @@
 #?(:cljs nil
    :default
    (defmacro log [& body]
-     (when (System/getProperty "eve.db.ds.debug")
+     (when #?(:clj (System/getProperty "eve.db.ds.debug") :default nil)
        `(when *debug*
           (println ~@body)))))
 
@@ -27,7 +27,7 @@
    (defmacro raise [& fragments]
      (let [msgs (butlast fragments)
            data (last fragments)]
-       `(throw (ex-info (str ~@(map (fn [m#] (if (string? m#) m# (list 'pr-str m#))) msgs)) ~data)))))
+       `(throw (ex-info (str ~@(map (fn [m] (if (string? m) m (list 'pr-str m))) msgs)) ~data)))))
 
 #?(:cljs nil
    :default

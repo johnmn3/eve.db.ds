@@ -27,6 +27,20 @@
      (containsKey [_ k] (.containsKey key-value k))
      (entryAt [_ k]     (.entryAt key-value k))
      (assoc [this k v]  (assoc-lru this k v)))
+   :lpy
+   (deftype LRU [key-value gen-key key-gen gen limit]
+     basilisp.lang.interfaces/IAssociative
+     (val-at [_ & args]
+       (case (count args)
+         1 (get key-value (nth args 0))
+         2 (get key-value (nth args 0) (nth args 1))))
+     (contains [_ k] (contains? key-value k))
+     (entry [_ k]     (find key-value k))
+     (assoc [this k v]  (assoc-lru this k v))
+     (empty [_] (LRU. {} {} {} 0 limit))
+     (seq [_] (seq key-value))
+     (__iter__ [_] (python/iter (seq key-value)))
+     (cons [this e] (assoc-lru this (key e) (val e))))
    ;; A reader with neither :cljs nor :clj in its features (let-go:
    ;; #{:lg} + :default) selected no arm at all before — the type and
    ;; its ->LRU factory were never defined while the fns below

@@ -16,11 +16,11 @@
 
 (defn- resolves? [h]
   (try (d/datoms h :eavt) true
-       (catch #?(:clj Throwable :cljs :default) _ false)))
+       (catch #?(:clj Throwable :cljs :default :lpy python/BaseException :default Throwable) _ false)))
 
 (defn- not-kept? [h]
   (try (d/datoms h :eavt) false
-       (catch #?(:clj Throwable :cljs :default) e
+       (catch #?(:clj Throwable :cljs :default :lpy python/BaseException :default Throwable) e
          (= :eve.db.ds/db-not-kept (:error (ex-data e))))))
 
 (defn- names [h]

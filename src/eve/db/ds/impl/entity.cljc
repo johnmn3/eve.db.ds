@@ -1,6 +1,6 @@
 (ns ^:no-doc eve.db.ds.impl.entity
-  (:refer-clojure :exclude [keys])
-  (:require [#?(:cljs cljs.core :clj clojure.core) :as c]
+  (:refer-clojure :exclude [keys get])
+  (:require [#?(:cljs cljs.core :default clojure.core) :as c]
     [eve.db.ds.db :as db]))
 
 (declare entity ->Entity equiv-entity lookup-entity touch hash-entity)
@@ -48,12 +48,12 @@
 #?(:cljs
   (unchecked-set (.-prototype ES6Iterator) cljs.core/ITER_SYMBOL
      (fn []
-       (this-as this# this#))))
+       (this-as this this))))
 
 #?(:cljs
   (unchecked-set (.-prototype ES6EntriesIterator) cljs.core/ITER_SYMBOL
      (fn []
-       (this-as this# this#))))
+       (this-as this this))))
 
 (deftype Entity [db eid touched cache handle]
   #?@(:cljs

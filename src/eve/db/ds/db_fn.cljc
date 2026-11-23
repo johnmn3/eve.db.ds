@@ -392,7 +392,7 @@
     (let [form (str "(fn " (pr-str (:db.fn/params stored)) " "
                  (:db.fn/code stored) ")")
           f    (try (sci-eval-string* (sci-ctx) form)
-                    (catch #?(:clj Throwable :cljs :default) e
+                    (catch #?(:clj Throwable :cljs :default :lpy python/BaseException :default Throwable) e
                       (throw (unwrap-sci-error e))))]
       (swap! sci-compiled assoc stored f)
       f)))
@@ -414,7 +414,7 @@
 
           (= :sci (:db.fn/kind stored))
           (try (apply (compile-sci stored) db args)
-               (catch #?(:clj Throwable :cljs :default) e
+               (catch #?(:clj Throwable :cljs :default :lpy python/BaseException :default Throwable) e
                  (throw (unwrap-sci-error e))))
 
           (= :resolve (:db.fn/kind stored))

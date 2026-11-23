@@ -123,6 +123,10 @@
    (deftype Conn [eve-atom listeners closed persistent]
      IDeref
      (-deref [this] (db this)))
+   :lpy
+   (deftype Conn [eve-atom listeners closed persistent]
+     basilisp.lang.interfaces/IDeref
+     (deref [this] (db this)))
    ;; A reader with neither :clj nor :cljs (let-go) selected no arm
    ;; before — Conn and ->Conn were never defined. The :default arm
    ;; carries the portable spelling, as in eve.db.ds.lru.

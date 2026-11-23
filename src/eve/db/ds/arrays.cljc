@@ -11,35 +11,46 @@
    ^objects aget/aset, .isArray dispatch in -collect-tuples) is
    written for the native contract and cannot run on vectors.
    This namespace restores the upstream contract for query's use.
-   See U4-STATUS.md GAP-5."
-  (:refer-clojure :exclude [make-array aget aset aclone array?]))
+   See U4-STATUS.md GAP-5.
+
+   On hosts with neither native arrays nor a JS engine, the
+   substrate is Eve's value array (eve.alpha's make-array family):
+   a mutable slot array holding any Eve value, which is exactly
+   the contract above."
+  (:refer-clojure :exclude [make-array aget aset aclone array?])
+  (:require [eve.alpha :as eve]))
 
 (defn make-array
   "A native array of n empty (nil) slots."
   [size]
   #?(:clj  (object-array size)
-     :cljs (into-array (repeat size nil))))
+     :cljs (into-array (repeat size nil))
+     :default (eve/make-array size)))
 
 (defn aget
   "The element at index i."
   [arr i]
   #?(:clj  (clojure.core/aget ^objects arr i)
-     :cljs (cljs.core/aget arr i)))
+     :cljs (cljs.core/aget arr i)
+     :default (eve/aget arr i)))
 
 (defn aset
   "Mutates arr at index i to v. Returns arr."
   [arr i v]
   #?(:clj  (do (clojure.core/aset ^objects arr i v) arr)
-     :cljs (do (cljs.core/aset arr i v) arr)))
+     :cljs (do (cljs.core/aset arr i v) arr)
+     :default (do (eve/aset arr i v) arr)))
 
 (defn aclone
   "A shallow copy of arr, independently mutable."
   [arr]
   #?(:clj  (clojure.core/aclone ^objects arr)
-     :cljs (.slice arr)))
+     :cljs (.slice arr)
+     :default (eve/aclone arr)))
 
 (defn array?
   "True when x is a native array."
   [x]
   #?(:clj  (and (some? x) (.isArray (class x)))
-     :cljs (cljs.core/array? x)))
+     :cljs (cljs.core/array? x)
+     :default (eve/value-array? x)))

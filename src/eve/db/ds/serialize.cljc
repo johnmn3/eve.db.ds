@@ -69,7 +69,8 @@
       (== ##Inf v)  [marker-inf]
       (== ##-Inf v) [marker-minus-inf]
       #?(:clj  (and (instance? Double v) (Double/isNaN ^double v))
-         :cljs (js/isNaN v)) [marker-nan]
+         :cljs (js/isNaN v)
+         :default (not (== v v))) [marker-nan]
       :else v)
     ;; freeze-fn's contract is plain host data on every host: a
     ;; delivered flat collection is converted first (transit-cljs's
