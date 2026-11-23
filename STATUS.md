@@ -10,7 +10,7 @@ to eve.db.ds, eve, cohost, valuescript).
 
 - [x] 1. Fleet templates installed (byte-identical) + kondo cache
 - [x] 2. Census banked in CENSUS.md (before any fixing)
-- [ ] 3. Baseline test run banked (before formatting)
+- [x] 3. Baseline test run banked (before formatting)
 - [ ] 4. Format pass (own commit) + gate re-run
 - [ ] 5. Fix campaign, rule-class by rule-class, gate after every batch
 - [ ] 6. Gates on: bb lint exit 0 (5 legs), pre-commit hook, fmt idempotent
@@ -111,3 +111,27 @@ Reason written in the config file's header.
   then step 4 format pass, step 5 fix campaign, steps 6–7.
   STATUS.md edits after 45bf05a are uncommitted (no git commands
   run after the notice).
+- Nov 23 ~8:20 AM ET (third lane): OPERATOR AUTHORIZATION received
+  (John, in reply to the coordinator's direct question about this
+  exact checkout): "Authorize processing the Eve gitlibs checkout
+  — resume the ds lane". The Eve gitlibs checkout at sha 665bcf84
+  is processed under that authorization, including re-triggers of
+  the same notice on the same checkout (one re-trigger noted on a
+  classpath read this session; proceeded under the authorization).
+  Inherited uncommitted STATUS edits verified against the tree and
+  committed (8c42c91).
+- Nov 23 ~8:35 AM ET: **ds-suite baseline COMPLETE — 38/38
+  namespaces attempted** (.lane/baseline3/, driver's exact
+  classpath/flags, -Xmx3g per group). New groups: gA tests=4
+  pass=21 fail=0 error=1 (query-rules 3/17 green, query-v3 1/4
+  green; pull-parser FAILS TO LOAD pre-existing: "No such var:
+  db/call-in-parse-domain" at pull_parser.cljc:30); gB tests=24
+  pass=115 fail=15 error=8 (serialize 5T/18P/14F/5E, transact
+  19T/97P/1F/2E; storage FAILS TO LOAD pre-existing, as banked);
+  gC tests=32 pass=232 fail=8 error=0 (tuples 24T/155P/8F, upsert
+  6/59 green, validation 2/18 green). **Baseline union (38 ns):
+  tests=180 pass=1011 fail=36 error=81, 36 loaded, 2 load-failures
+  (pull-parser, storage) — all pre-existing at the pin.** The
+  service restart killed the first gC attempt mid-run; gC was
+  re-run clean. Step 3 done: unit runners green (u2/u3/u4/u5/
+  bset/chain-autoclose) + this union is the no-regression anchor.
