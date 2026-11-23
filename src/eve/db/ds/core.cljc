@@ -3,6 +3,7 @@
   (:require
     [#?(:cljs cljs.reader :clj clojure.edn) :as edn]
     [eve.alpha :as eve]
+    [eve.flat.chunk :as chunk]
     [eve.db.ds.conn :as conn]
     [eve.db.ds.db :as db #?@(:cljs [:refer [Datom DB FilteredDB]])]
     [eve.db.ds.db-fn :as dbfn]
@@ -38,9 +39,12 @@
   "Realize an index iterator inside a read region so its Datoms
    arrive in their host delivery form (plan v2 §4). Returns a
    vector: upstream's lazy iterator cannot leave the region — its
-   elements are Eve values until delivered."
+   elements are Eve values until delivered. Packed as one vector, one
+   flat chunk for all of them: the same delivered vector of flat Datoms
+   as packing each alone (eve->clj per element), at one chunk's
+   header, symbol and type tables instead of one per Datom."
   [iter]
-  (eve/$ (mapv identity iter)))
+  (eve/$ (chunk/pack (mapv identity iter))))
 
 (defn- deliver-datom
   "Deliver a single Datom (or nil) in its host form."
