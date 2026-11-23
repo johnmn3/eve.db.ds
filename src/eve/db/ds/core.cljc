@@ -1,10 +1,10 @@
 (ns eve.db.ds.core
     (:refer-clojure :exclude [filter])
     (:require
-     [#?(:cljs cljs.reader :clj clojure.edn) :as edn]
+     #_{:clj-kondo/ignore [:unused-namespace]} [#?(:cljs cljs.reader :clj clojure.edn) :as edn]
      [eve.alpha :as eve]
      [eve.db.ds.conn :as conn]
-     [eve.db.ds.db :as db #?@(:cljs [:refer [Datom DB FilteredDB]])]
+     [eve.db.ds.db :as db #?@(:cljs [:refer [Datom DB]])]
      [eve.db.ds.db-fn :as dbfn]
      #?(:clj [eve.db.ds.pprint])
      [eve.db.ds.pull-api :as dp]
@@ -14,9 +14,8 @@
      [eve.db.ds.util :as util])
     #?(:clj
        (:import
-        [eve.db.ds.db Datom DB FilteredDB]
-        [eve.db.ds.impl.entity Entity]
-        [java.util UUID])))
+        [eve.db.ds.db Datom DB]
+        [eve.db.ds.impl.entity Entity])))
 
 (def ^:const ^:no-doc tx0
      db/tx0)

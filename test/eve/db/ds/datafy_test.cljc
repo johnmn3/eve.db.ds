@@ -5,9 +5,9 @@
    from eve.db.ds.impl.entity; eve.db.ds.datafy required for its
    extend-protocol on Entity."
     (:require
-     [clojure.test :as t :refer [is are deftest testing]]
+     [clojure.test :as t :refer [is deftest]]
      [eve.alpha :as eve :refer [$]]
-     [eve.db.ds.datafy :as datafy]
+
      [eve.db.ds.u4-support :as sup]
      [clojure.core.protocols :as cp]
      [eve.db.ds.impl.entity :as e]))

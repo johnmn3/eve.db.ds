@@ -2,11 +2,10 @@
     (:require
      [clojure.test :as t :refer [is are deftest testing]]
      [eve.db.ds.core :as d]
-     [eve.db.ds.db :as db]
+
      [eve.db.ds.test.core :as tdc])
     #?(:clj
-       (:import
-        [clojure.lang ExceptionInfo])))
+       (:import)))
 
 (deftest test-lookup-refs
          (let [db (d/db-with (d/empty-db {:name  {:db/unique :db.unique/identity}

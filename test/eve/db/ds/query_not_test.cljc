@@ -6,15 +6,13 @@
    U4 EXECUTION port: shared DB built inside swap! on an Eve atom at load
    (sup/init-tx-conn); every deftest runs inside one ($ ...) region."
     (:require
-     [clojure.test :as t :refer [is are deftest testing]]
+     [clojure.test :as t :refer [are deftest]]
      [eve.alpha :as eve :refer [$]]
      [eve.db.ds.query :as dq]
-     [eve.db.ds.db :as db]
-     [eve.db.ds.impl.entity :as de]
+
      [eve.db.ds.u4-support :as sup])
     #?(:clj
-       (:import
-        [clojure.lang ExceptionInfo])))
+       (:import)))
 
 (def *test-conn
      (sup/init-tx-conn nil

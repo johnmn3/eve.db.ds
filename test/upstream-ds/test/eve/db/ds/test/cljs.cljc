@@ -1,6 +1,10 @@
 (ns eve.db.ds.test.cljs
     (:require
+     ;; Both used only inside #?(:cljs ...) arms below; kondo's
+     ;; :clj pass cannot see them (dual-pass false positive).
+     #_{:clj-kondo/ignore [:unused-namespace]}
      [clojure.string :as str]
+     #_{:clj-kondo/ignore [:unused-namespace]}
      [cljs.test :as t])
     #?(:cljs
        (:require-macros

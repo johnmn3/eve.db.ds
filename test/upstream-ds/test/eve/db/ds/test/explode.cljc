@@ -1,9 +1,7 @@
 (ns eve.db.ds.test.explode
     (:require
      [clojure.test :as t :refer [is are deftest testing]]
-     [eve.db.ds.core :as d]
-     [eve.db.ds.db :as db]
-     [eve.db.ds.test.core :as tdc]))
+     [eve.db.ds.core :as d]))
 
 #?(:cljs
    (def Throwable

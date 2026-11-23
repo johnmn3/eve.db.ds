@@ -1,0 +1,5 @@
+Syntax error compiling at (REPL:1:1).
+No such var: eve.db.ds.bset-runner/run
+
+Full report at:
+/tmp/clojure-3601165850135266206.edn

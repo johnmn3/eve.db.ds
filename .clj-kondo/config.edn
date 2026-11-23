@@ -18,6 +18,15 @@
  ;; this mapping for Eve-consuming repos.
  :lint-as {eve.alpha/deftype clojure.core/deftype
            eve.deftype/deftype clojure.core/deftype}
+ ;; ── symbol-exact exclusion, same shape as the Eve lane's ──
+ ;; thrown-msg? is a clojure.test/cljs.test assert-expr DISPATCH
+ ;; symbol (defmethod t/assert-expr 'thrown-msg? at
+ ;; test/eve/db/ds/test_macros.clj:22 and the supports' :clj arms):
+ ;; it appears only as the head symbol of (is (thrown-msg? ...))
+ ;; forms and is never a var. Proven at recount2 (all 23 sites are
+ ;; inside `is` forms). Symbol-exact: any other unresolved symbol
+ ;; still errors.
+ :linters {:unresolved-symbol {:exclude [thrown-msg?]}}
  ;; ── this repo's own defining macros, taught by analyze-call hooks
  ;; (.clj-kondo/hooks/eve_db_ds.cljc): parser/deftrecord (record
  ;; types), db/defcomp (comparators), util/cond+ and util/if+

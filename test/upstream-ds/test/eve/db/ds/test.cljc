@@ -1,6 +1,6 @@
 (ns eve.db.ds.test
     (:require
-     [clojure.test :as t :refer [is are deftest testing]]
+     [clojure.test :as t]
      #?(:clj [clojure.java.shell :as sh])
      eve.db.ds.test.core
 

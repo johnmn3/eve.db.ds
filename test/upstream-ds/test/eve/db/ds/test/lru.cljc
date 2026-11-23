@@ -1,6 +1,6 @@
 (ns eve.db.ds.test.lru
     (:require
-     [clojure.test :as t :refer [is are deftest testing]]
+     [clojure.test :as t :refer [is are deftest]]
      [eve.db.ds.lru :as lru]))
 
 (deftest test-lru

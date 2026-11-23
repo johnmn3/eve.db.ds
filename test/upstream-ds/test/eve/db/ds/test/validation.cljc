@@ -1,8 +1,7 @@
 (ns eve.db.ds.test.validation
     (:require
-     [clojure.test :as t :refer [is are deftest testing]]
-     [eve.db.ds.core :as d]
-     [eve.db.ds.test.core :as tdc]))
+     [clojure.test :as t :refer [is are deftest]]
+     [eve.db.ds.core :as d]))
 
 #?(:cljs
    (def Throwable

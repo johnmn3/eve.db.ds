@@ -1,0 +1,7 @@
+=== GROUP gA: eve.db.ds.test.pull-parser eve.db.ds.test.query-rules eve.db.ds.test.query-v3 ===
+group gA exit=1
+DS-SUITE-SUMMARY host=jvm nses=3 loaded=2 tests=4 pass=21 fail=0 error=1 skipped=0
+=== GROUP gB: eve.db.ds.test.serialize eve.db.ds.test.storage eve.db.ds.test.transact ===
+group gB exit=1
+DS-SUITE-SUMMARY host=jvm nses=3 loaded=2 tests=24 pass=115 fail=15 error=8 skipped=0
+=== GROUP gC: eve.db.ds.test.tuples eve.db.ds.test.upsert eve.db.ds.test.validation ===

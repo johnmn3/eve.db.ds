@@ -1,0 +1,18 @@
+Reflection warning, eve/db/ds/db.cljc:356:13 - reference to field e can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:356:21 - reference to field a can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:356:29 - reference to field v can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:1238:8 - call to method write can't be resolved (target class is unknown).
+Reflection warning, eve/db/ds/db.cljc:1240:23 - reference to field schema can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:1240:46 - reference to field max_eid can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:1240:69 - reference to field max_tx can't be resolved.
+WARNING: filter already refers to: #'clojure.core/filter in namespace: eve.db.ds.conn, being replaced by: #'eve.db.ds.conn/filter
+WARNING: future-call already refers to: #'clojure.core/future-call in namespace: eve.db.ds.core, being replaced by: #'eve.db.ds.core/future-call
+ERROR loading eve.db.ds.test.pull-parser class clojure.lang.Compiler$CompilerException Syntax error compiling at (eve/db/ds/test/pull_parser.cljc:30:3).
+  caused by 1 class java.lang.RuntimeException No such var: db/call-in-parse-domain
+
+Testing eve.db.ds.test.query-rules
+{:suite-ns eve.db.ds.test.query-rules, :result {:test 3, :pass 17, :fail 0, :error 0}}
+
+Testing eve.db.ds.test.query-v3
+{:suite-ns eve.db.ds.test.query-v3, :result {:test 1, :pass 4, :fail 0, :error 0}}
+DS-SUITE-SUMMARY host=jvm nses=3 loaded=2 tests=4 pass=21 fail=0 error=1 skipped=0

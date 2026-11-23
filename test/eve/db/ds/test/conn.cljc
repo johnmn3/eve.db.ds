@@ -8,9 +8,8 @@
      handle, so schema reads go through the public fn.
    Everything else is upstream's test, unchanged."
     (:require
-     [clojure.test :as t :refer [is are deftest testing]]
+     [clojure.test :as t :refer [is deftest]]
      [eve.db.ds.core :as d]
-     [eve.db.ds.db :as db]
      [eve.db.ds.u3-support]))
 
 (def schema

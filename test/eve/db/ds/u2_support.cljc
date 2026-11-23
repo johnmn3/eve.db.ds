@@ -5,8 +5,8 @@
    fns, with every DB built inside swap! and every read inside $,
    per DS-IN-EVE-PLAN v2 §1. Assertions compute their values inside
    $ (fully realized) and compare outside it."
-    (:require [clojure.test :as t]
-              [eve.alpha :as eve :refer [$]]
+    (:require #_{:clj-kondo/ignore [:unused-namespace]} [clojure.test :as t]
+              [eve.alpha :as eve]
               [eve.db.ds.db :as db])
     #?(:cljs (:require-macros [eve.db.ds.test-macros])))
 

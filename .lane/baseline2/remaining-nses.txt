@@ -1,0 +1,11 @@
+eve.db.ds.test.datafy
+eve.db.ds.test.issues
+eve.db.ds.test.pull-parser
+eve.db.ds.test.query-rules
+eve.db.ds.test.query-v3
+eve.db.ds.test.serialize
+eve.db.ds.test.storage
+eve.db.ds.test.transact
+eve.db.ds.test.tuples
+eve.db.ds.test.upsert
+eve.db.ds.test.validation

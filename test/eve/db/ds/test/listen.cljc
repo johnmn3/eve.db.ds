@@ -4,7 +4,7 @@
    eve.db.ds.u3-support. The tx-data comparisons are Datom equality
    against (db/datom ...) — delivered Datoms answer it (probe P3)."
     (:require
-     [clojure.test :as t :refer [is are deftest testing]]
+     [clojure.test :as t :refer [is deftest]]
      [eve.db.ds.core :as d]
      [eve.db.ds.db :as db]
      [eve.db.ds.u3-support]))

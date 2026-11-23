@@ -1,0 +1,10 @@
+=== GROUP gA: eve.db.ds.test.pull-parser eve.db.ds.test.query-rules eve.db.ds.test.query-v3 ===
+group gA exit=1
+GROUP gA NO SUMMARY
+=== GROUP gB: eve.db.ds.test.serialize eve.db.ds.test.storage eve.db.ds.test.transact ===
+group gB exit=1
+GROUP gB NO SUMMARY
+=== GROUP gC: eve.db.ds.test.tuples eve.db.ds.test.upsert eve.db.ds.test.validation ===
+group gC exit=1
+GROUP gC NO SUMMARY
+ALL-GROUPS-DONE

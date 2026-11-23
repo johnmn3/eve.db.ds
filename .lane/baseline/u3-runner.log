@@ -1,0 +1,22 @@
+Reflection warning, eve/db/ds/db.cljc:356:13 - reference to field e can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:356:21 - reference to field a can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:356:29 - reference to field v can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:1238:8 - call to method write can't be resolved (target class is unknown).
+Reflection warning, eve/db/ds/db.cljc:1240:23 - reference to field schema can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:1240:46 - reference to field max_eid can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:1240:69 - reference to field max_tx can't be resolved.
+WARNING: filter already refers to: #'clojure.core/filter in namespace: eve.db.ds.conn, being replaced by: #'eve.db.ds.conn/filter
+WARNING: future-call already refers to: #'clojure.core/future-call in namespace: eve.db.ds.core, being replaced by: #'eve.db.ds.core/future-call
+PARKED: []
+
+Testing eve.db.ds.test.conn
+
+Testing eve.db.ds.test.listen
+
+Testing eve.db.ds.test.upsert
+
+Testing eve.db.ds.test.db-fn
+
+Ran 23 tests containing 129 assertions.
+0 failures, 0 errors.
+U3 SUMMARY: {:test 42, :pass 248, :fail 0, :error 0}

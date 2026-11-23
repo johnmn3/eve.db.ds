@@ -8,13 +8,12 @@
    d/entity -> de/entity, d/touch -> de/touch, d/entity-db -> (.-db e)."
     (:require
      [clojure.edn :as edn]
-     [clojure.test :as t :refer [is are deftest testing]]
+     [clojure.test :as t :refer [is deftest testing]]
      [eve.alpha :as eve :refer [$]]
      [eve.db.ds.impl.entity :as de]
      [eve.db.ds.u4-support :as sup])
     #?(:clj
-       (:import
-        [clojure.lang ExceptionInfo])))
+       (:import)))
 
 (t/use-fixtures :once sup/no-namespace-maps)
 

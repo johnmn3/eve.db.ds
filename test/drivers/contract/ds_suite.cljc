@@ -23,7 +23,7 @@
    from a stale basilisp cache before this driver loaded would count no
    passes — run with a fresh PYTHONPYCACHEPREFIX). On bb and basilisp load
    eve.host-completion before this namespace, as the contract gates do."
-    (:require [eve.host] [eve.atom] [eve.deftype-proto.data] [eve.db.ds.db :as ds-db] [clojure.test :as t] [clojure.string :as str])
+    (:require [eve.host] [eve.atom] [eve.deftype-proto.data] #_{:clj-kondo/ignore [:unused-namespace]} [eve.db.ds.db :as ds-db] [clojure.test :as t] #_{:clj-kondo/ignore [:unused-namespace]} [clojure.string :as str])
     #?(:lpy (:import importlib os.path sys)))
 
 #?(:lpy

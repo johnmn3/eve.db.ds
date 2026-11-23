@@ -4,14 +4,11 @@
    via u4-support, d/entity -> eve.db.ds.impl.entity/entity,
    d/filter -> u4-support/filter-db."
     (:require
-     [clojure.test :as t :refer [is are deftest testing]]
-     [eve.db.ds.query :as dq]
-     [eve.db.ds.db :as db]
-     [eve.db.ds.impl.entity :as de]
-     [eve.db.ds.u4-support :as sup])
+     [clojure.test :as t :refer [is deftest testing]]
+     [eve.db.ds.query :as dq])
+
     #?(:clj
-       (:import
-        [clojure.lang ExceptionInfo])))
+       (:import)))
 
 (defn sort-reverse [xs]
       (reverse (sort xs)))

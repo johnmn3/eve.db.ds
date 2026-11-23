@@ -1,0 +1,7 @@
+SPATH-EXIT=0 CPLEN=2872
+KONDO-CACHE-EXIT=3
+clj
+cljc
+cljs
+lock
+CACHE-GEN-DONE

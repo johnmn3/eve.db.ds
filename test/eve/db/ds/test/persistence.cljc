@@ -10,7 +10,12 @@
    directory reads the same database back) and process exit +
    fresh process (the real restart shape, via a child JVM)."
     (:require
+     ;; edn and str are used only inside #?(:clj ...) arms below;
+     ;; kondo's :cljs pass cannot see them (dual-pass false
+     ;; positive, measured at recount3).
+     #_{:clj-kondo/ignore [:unused-namespace]}
      [clojure.edn :as edn]
+     #_{:clj-kondo/ignore [:unused-namespace]}
      [clojure.string :as str]
      [clojure.test :as t :refer [is deftest]]
      [eve.db.ds.core :as d]

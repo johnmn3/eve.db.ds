@@ -5,21 +5,18 @@
      [eve.db.ds.built-ins :as built-ins]
      [eve.db.ds.core :as d]
      [eve.db.ds.db :as db]
-     [eve.db.ds.query :as dq]
      [eve.db.ds.lru :as lru]
      [me.tonsky.persistent-sorted-set.arrays :as da]
      [eve.db.ds.parser :as dp #?@(:cljs [:refer [BindColl BindIgnore BindScalar BindTuple
-                                                 Constant DefaultSrc Pattern RulesVar SrcVar Variable
+                                                 Constant DefaultSrc Pattern SrcVar Variable
                                                  Not Or And Predicate PlainSymbol]])]
      [eve.db.ds.util :as util])
     #?(:clj
        (:import
         [eve.db.ds.parser
          BindColl BindIgnore BindScalar BindTuple
-         Constant DefaultSrc Pattern RulesVar SrcVar Variable
-         Not Or And Predicate PlainSymbol]
-        [clojure.lang     IReduceInit Counted]
-        [eve.db.ds.db  Datom])))
+         Constant DefaultSrc Pattern SrcVar Variable
+         Not Or And Predicate PlainSymbol])))
 
 (declare resolve-clauses collect-rel-xf collect-to)
 

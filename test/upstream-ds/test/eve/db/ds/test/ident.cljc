@@ -1,6 +1,6 @@
 (ns eve.db.ds.test.ident
     (:require
-     [clojure.test :as t :refer [is are deftest testing]]
+     [clojure.test :as t :refer [is deftest]]
      [eve.db.ds.core :as d]))
 
 (def *db

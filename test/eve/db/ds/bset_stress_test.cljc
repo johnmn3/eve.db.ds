@@ -17,7 +17,7 @@
    including iteration counts."
     (:require [eve.alpha :as eve :refer [$]]
               [eve.db.ds.bset :as bset]
-              [clojure.test :as t :refer [is are deftest testing]]))
+              [clojure.test :as t :refer [is deftest testing]]))
 
 (def ^:private id-counter (atom 100000))
 

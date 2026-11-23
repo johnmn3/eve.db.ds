@@ -1,7 +1,7 @@
 (ns eve.db.ds.test.db
     (:require
      [clojure.data]
-     [clojure.test :as t :refer [is are deftest testing]]
+     [clojure.test :as t :refer [is deftest]]
      [eve.db.ds.core :as d]
      [eve.db.ds.db :as db :refer [defrecord-updatable]]))
 

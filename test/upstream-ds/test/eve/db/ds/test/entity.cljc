@@ -1,13 +1,12 @@
 (ns eve.db.ds.test.entity
     (:require
      [clojure.edn :as edn]
-     [clojure.test :as t :refer [is are deftest testing]]
+     [clojure.test :as t :refer [is deftest testing]]
      [eve.db.ds.core :as d]
-     [eve.db.ds.db :as db]
+
      [eve.db.ds.test.core :as tdc])
     #?(:clj
-       (:import
-        [clojure.lang ExceptionInfo])))
+       (:import)))
 
 (t/use-fixtures :once tdc/no-namespace-maps)
 

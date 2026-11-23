@@ -3,13 +3,12 @@
     (:require
      [#?(:cljs cljs.reader :clj clojure.edn) :as edn]
      [clojure.set :as set]
-     [clojure.string :as str]
+     #_{:clj-kondo/ignore [:unused-namespace]} [clojure.string :as str]
      [clojure.walk :as walk]
      [eve.db.ds.built-ins :as built-ins]
      [eve.db.ds.db :as db]
      [eve.db.ds.arrays :as da]
      [eve.db.ds.lru :as lru]
-     [eve.db.ds.impl.entity :as de]
      [eve.db.ds.parser :as dp #?@(:cljs [:refer [BindColl BindIgnore BindScalar BindTuple Constant
                                                  FindColl FindRel FindScalar FindTuple PlainSymbol
                                                  RulesVar SrcVar Variable]])]

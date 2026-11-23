@@ -6,7 +6,6 @@
     (:require
      [clojure.test :as t :refer [is are deftest testing]]
      [eve.db.ds.core :as d]
-     [eve.db.ds.db :as db]
      [eve.db.ds.u3-support :as tdc]))
 
 #?(:cljs

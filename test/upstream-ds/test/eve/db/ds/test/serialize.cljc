@@ -1,7 +1,7 @@
 (ns eve.db.ds.test.serialize
     (:require
      [clojure.edn :as edn]
-     [clojure.test :as t :refer [is are deftest testing]]
+     [clojure.test :as t :refer [is deftest testing]]
      [eve.db.ds.core :as d]
      [eve.db.ds.db :as db]
      [eve.db.ds.test.core :as tdc]

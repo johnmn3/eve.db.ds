@@ -1,10 +1,8 @@
 (ns eve.db.ds.test.query-v3
     (:require
-     [clojure.test :as t :refer [is are deftest testing]]
-     [eve.db.ds.core :as d]
-     [eve.db.ds.db :as db]
-     [eve.db.ds.query-v3 :as dq]
-     [eve.db.ds.test.core :as tdc])
+     [clojure.test :as t :refer [are deftest]]
+
+     [eve.db.ds.query-v3 :as dq])
     #?(:clj
        (:import
         [clojure.lang ExceptionInfo])))

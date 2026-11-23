@@ -13,7 +13,7 @@
    h/datoms — the same facts the upstream q assertions check
    ([e ?a ?v] empty for the retracted entities)."
     (:require
-     [clojure.test :as t :refer [is are deftest testing]]
+     [clojure.test :as t :refer [is deftest testing]]
      [eve.alpha :as eve :refer [$]]
      [eve.db.ds.db :as db]
      [eve.db.ds.u2-support :as h]))

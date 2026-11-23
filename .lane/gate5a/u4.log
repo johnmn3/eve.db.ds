@@ -1,0 +1,5 @@
+Syntax error compiling at (REPL:1:31).
+No such var: eve.db.ds.u4-runner/run
+
+Full report at:
+/tmp/clojure-9708824415763616634.edn

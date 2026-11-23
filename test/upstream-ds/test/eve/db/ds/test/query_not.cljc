@@ -1,12 +1,10 @@
 (ns eve.db.ds.test.query-not
     (:require
-     [clojure.test :as t :refer [is are deftest testing]]
-     [eve.db.ds.core :as d]
-     [eve.db.ds.db :as db]
-     [eve.db.ds.test.core :as tdc])
+     [clojure.test :as t :refer [are deftest]]
+     [eve.db.ds.core :as d])
+
     #?(:clj
-       (:import
-        [clojure.lang ExceptionInfo])))
+       (:import)))
 
 (def *test-db
      (delay

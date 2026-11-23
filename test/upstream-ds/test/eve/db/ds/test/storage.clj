@@ -2,7 +2,7 @@
     (:require
      [clojure.edn :as edn]
      [clojure.java.io :as io]
-     [clojure.test :as t :refer [is are deftest testing]]
+     [clojure.test :as t :refer [is deftest testing]]
      [cognitect.transit :as transit]
      [eve.db.ds.core :as d]
      [eve.db.ds.storage :as storage]

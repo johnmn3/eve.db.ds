@@ -1,13 +1,10 @@
 (ns eve.db.ds.test.parser-query
     (:require
-     [clojure.test :as t :refer [is are deftest testing]]
-     [eve.db.ds.core :as d]
-     [eve.db.ds.db :as db]
-     [eve.db.ds.parser :as dp]
-     [eve.db.ds.test.core :as tdc])
+     [clojure.test :as t :refer [are deftest]]
+
+     [eve.db.ds.parser :as dp])
     #?(:clj
-       (:import
-        [clojure.lang ExceptionInfo])))
+       (:import)))
 
 (deftest validation
          (are [q msg] (thrown-msg? msg (dp/parse-query q))

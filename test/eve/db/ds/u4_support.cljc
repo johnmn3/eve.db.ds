@@ -13,7 +13,7 @@
    the deleted eve.db.ds.storage; conn is U3), so slices exercise
    U4's namespaces directly on (:db @conn)."
     (:require
-     [clojure.test :as t]
+     #_{:clj-kondo/ignore [:unused-namespace]} [clojure.test :as t]
      [eve.alpha :as eve] ; loaded before impl.entity compiles: entity's
                         ; trap-row replacement calls eve.alpha/same?
                         ; fully qualified (db.cljc's own require of

@@ -1,10 +1,8 @@
 (ns eve.db.ds.test.parser-find
     (:require
-     [clojure.test :as t :refer [is are deftest testing]]
-     [eve.db.ds.core :as d]
-     [eve.db.ds.db :as db]
-     [eve.db.ds.parser :as dp]
-     [eve.db.ds.test.core :as tdc]))
+     [clojure.test :as t :refer [is deftest]]
+
+     [eve.db.ds.parser :as dp]))
 
 #?(:cljs
    (def Throwable

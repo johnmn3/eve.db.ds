@@ -23,7 +23,7 @@
     (:require
      [eve.host :refer [swap!]]
      [eve.atom :as atom]
-     [eve.core :as e]
+
      [eve.db.ds.core :as d]))
 
 (defmacro attempt

@@ -12,7 +12,7 @@
    - entity-map: an entity of a DB handle as a plain map.
    - thrown-msg?: upstream's assert-expr, unchanged."
     (:require
-     [clojure.test :as t]
+     #_{:clj-kondo/ignore [:unused-namespace]} [clojure.test :as t]
      [eve.db.ds.core :as d])
     #?(:cljs (:require-macros [eve.db.ds.test-macros])))
 

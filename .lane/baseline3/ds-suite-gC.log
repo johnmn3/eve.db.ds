@@ -1,0 +1,52 @@
+Reflection warning, eve/db/ds/db.cljc:356:13 - reference to field e can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:356:21 - reference to field a can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:356:29 - reference to field v can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:1238:8 - call to method write can't be resolved (target class is unknown).
+Reflection warning, eve/db/ds/db.cljc:1240:23 - reference to field schema can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:1240:46 - reference to field max_eid can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:1240:69 - reference to field max_tx can't be resolved.
+WARNING: filter already refers to: #'clojure.core/filter in namespace: eve.db.ds.conn, being replaced by: #'eve.db.ds.conn/filter
+WARNING: future-call already refers to: #'clojure.core/future-call in namespace: eve.db.ds.core, being replaced by: #'eve.db.ds.core/future-call
+
+Testing eve.db.ds.test.tuples
+
+FAIL in (test-schema) (tuples.cljc:16)
+expected: (= #{:session+student :year+session :semester+course+student} (:db.type/tuple (:rschema db)))
+  actual: (not (= #{:session+student :year+session :semester+course+student} nil))
+
+FAIL in (test-schema) (tuples.cljc:19)
+expected: (= {:year {:year+session 0}, :session {:year+session 1, :session+student 0}, :semester {:semester+course+student 0}, :course {:semester+course+student 1}, :student {:semester+course+student 2, :session+student 1}} (:db/attrTuples (:rschema db)))
+  actual: (not (= {:year {:year+session 0}, :session {:year+session 1, :session+student 0}, :semester {:semester+course+student 0}, :course {:semester+course+student 1}, :student {:semester+course+student 2, :session+student 1}} nil))
+
+FAIL in (test-declared-schema) (tuples.cljc:417)
+expected: (= #{:t2 :t3 :t1} (:db.type/tuple (:rschema db)))
+  actual: (not (= #{:t2 :t3 :t1} nil))
+
+FAIL in (test-declared-schema) (tuples.cljc:418)
+expected: (= #{:t1} (:db/tupleAttrs (:rschema db)))
+  actual: (not (= #{:t1} nil))
+
+FAIL in (test-declared-schema) (tuples.cljc:419)
+expected: (= #{:t2} (:db/tupleTypes (:rschema db)))
+  actual: (not (= #{:t2} nil))
+
+FAIL in (test-declared-schema) (tuples.cljc:420)
+expected: (= #{:t3} (:db/tupleType (:rschema db)))
+  actual: (not (= #{:t3} nil))
+
+FAIL in (test-declared-schema) (tuples.cljc:421)
+expected: (= {:a {:t1 0}, :b {:t1 1}} (:db/attrTuples (:rschema db)))
+  actual: (not (= {:a {:t1 0}, :b {:t1 1}} nil))
+
+FAIL in (test-declared-refs) (tuples.cljc:505)
+:db/current-tx in ref slot
+expected: (= #{[1 :name "Ivan"] [2 :ref+long [tx 7]] [2 :name "Oleg"]} (tdc/all-datoms db'))
+  actual: (not (= #{[1 :name "Ivan"] [2 :ref+long [nil 7]] [2 :name "Oleg"]} #{[2 :ref+long [536870914 7]] [1 :name "Ivan"] [2 :name "Oleg"]}))
+{:suite-ns eve.db.ds.test.tuples, :result {:test 24, :pass 155, :fail 8, :error 0}}
+
+Testing eve.db.ds.test.upsert
+{:suite-ns eve.db.ds.test.upsert, :result {:test 6, :pass 59, :fail 0, :error 0}}
+
+Testing eve.db.ds.test.validation
+{:suite-ns eve.db.ds.test.validation, :result {:test 2, :pass 18, :fail 0, :error 0}}
+DS-SUITE-SUMMARY host=jvm nses=3 loaded=3 tests=32 pass=232 fail=8 error=0 skipped=0

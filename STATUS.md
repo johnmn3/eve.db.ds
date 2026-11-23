@@ -146,3 +146,38 @@ Reason written in the config file's header.
   this box need GITLIBS=/home/hatch/.gitlibs (exec runs as root,
   whose default gitlibs is empty; without it bb tries to re-fetch
   the Eve git dep and fails).
+
+## Step 5 batch 2 — ns pruning + src unused-* (this lane, Nov 23)
+
+- thrown-msg?: all 23 sites are the clojure.test/cljs.test
+  assert-expr DISPATCH symbol (defmethod at test_macros.clj:22),
+  never a var — closed by symbol-exact config exclusion
+  `:unresolved-symbol {:exclude [thrown-msg?]}` with the reason in
+  the config header (same shape as Eve's sio__/offset__ exclusion).
+- ns pruning (58 files): unused-referred-var / unused-namespace /
+  unused-import entries removed from ns forms, driven by the JSON
+  recount (langs-aware). Recount: 685 -> 421 total.
+- FOUR dual-pass false positives found and RESTORED with per-site
+  `#_{:clj-kondo/ignore [:unused-namespace]}` + written reasons —
+  uses live only inside reader-conditional arms the other pass
+  cannot see: api_surface_test (str, d), persistence (edn, str),
+  ds_suite (ds-db, str), upstream test/cljs.cljc (str, t). Same
+  family: core's edn require (cljs arm only), query's str require
+  (clj print-method arm), u2/u3/u4 supports' clojure.test (clj
+  arms) — per-site ignores with reasons.
+- src fixes: bset dropped unused :refer [$]; core dropped
+  FilteredDB from the cljs refer + clj import and the unused UUID
+  import (squuid delegates to util); pull_api dropped the unused
+  lru require; query dropped the unused impl.entity require;
+  query_v3 dropped the unused dq require, RulesVar (comment-only)
+  from refer+import, and the fq-only IReduceInit/Counted and
+  unused Datom imports.
+- Gate after batch (.lane/gate5b/): u2 11/79, u3 42/248, u4 6/48,
+  bset 5/816, chain 5/36, u5 docline 6/32 — all baseline-identical.
+- Remaining (kondo6): 421 — unused-binding 177, unresolved-symbol
+  51, non-arg-vec-return-type-hint 35, redefined-var 27,
+  unresolved-var 19, unresolved-namespace 18, unused-value 11,
+  unused-private-var 8, unknown-map-key 8, missing-test-assertion
+  7, type-mismatch 6, missing-protocol-method 5, invalid-arity 5,
+  private-call 4, redundant-let 3, unresolved-protocol-method 2,
+  singles. Splint + Carve campaigns still owed.

@@ -9,12 +9,10 @@
      [clojure.test :as t :refer [is are deftest testing]]
      [eve.alpha :as eve :refer [$]]
      [eve.db.ds.query :as dq]
-     [eve.db.ds.db :as db]
-     [eve.db.ds.impl.entity :as de]
+
      [eve.db.ds.u4-support :as sup])
     #?(:clj
-       (:import
-        [clojure.lang ExceptionInfo])))
+       (:import)))
 
 (def *test-conn
      (sup/init-tx-conn nil

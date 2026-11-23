@@ -1,7 +1,7 @@
 (ns eve.db.ds.test.issues
     (:require
      [eve.db.ds.core :as ds]
-     [clojure.test :as t :refer [is are deftest testing]]))
+     [clojure.test :as t :refer [is deftest]]))
 
 (deftest ^{:doc "CLJS `apply` + `vector` will hold onto mutable array of arguments directly"}
  issue-262

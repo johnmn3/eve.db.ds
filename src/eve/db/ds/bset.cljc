@@ -25,7 +25,7 @@
    this namespace never derefs an atom and never reaches past
    eve.alpha."
     (:refer-clojure :exclude [conj disj count empty])
-    (:require [eve.alpha :as eve :refer [$]]))
+    (:require [eve.alpha :as eve]))
 
 ;; ---------------------------------------------------------------------------
 ;; constants (upstream: bits-per-level 5, max-len 32, min-len 16, avg 24)

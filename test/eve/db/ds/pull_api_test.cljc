@@ -9,7 +9,7 @@
    the baseline serialize ns requires the deleted eve.db.ds.storage)
    — it is commented out below and re-enters when U5 lands."
     (:require
-     [clojure.test :as t :refer [is are deftest testing]]
+     [clojure.test :as t :refer [is deftest testing]]
      [eve.alpha :as eve :refer [$]]
      [eve.db.ds.pull-api :as dp]
      [eve.db.ds.db :as db]

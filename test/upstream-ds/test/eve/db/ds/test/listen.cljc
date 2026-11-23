@@ -1,9 +1,8 @@
 (ns eve.db.ds.test.listen
     (:require
-     [clojure.test :as t :refer [is are deftest testing]]
+     [clojure.test :as t :refer [is deftest]]
      [eve.db.ds.core :as d]
-     [eve.db.ds.db :as db]
-     [eve.db.ds.test.core :as tdc]))
+     [eve.db.ds.db :as db]))
 
 (deftest test-listen!
          (let [conn    (d/create-conn)

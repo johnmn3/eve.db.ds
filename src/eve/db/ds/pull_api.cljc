@@ -3,7 +3,6 @@
      [clojure.string :as str]
      [eve.db.ds.pull-parser :as dpp]
      [eve.db.ds.db :as db #?@(:cljs [:refer [DB]])]
-     [eve.db.ds.lru :as lru]
      [eve.db.ds.util :as util]
      [eve.db.ds.bset :as set])
     #?(:clj

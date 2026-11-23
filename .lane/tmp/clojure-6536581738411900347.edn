@@ -1,0 +1,86 @@
+{:clojure.main/message
+ "Execution error (FileNotFoundException) at contract.ds-suite/eval138$loading (ds_suite.cljc:1).\nCould not locate eve/host__init.class, eve/host.clj or eve/host.cljc on classpath.\n",
+ :clojure.main/triage
+ {:clojure.error/class java.io.FileNotFoundException,
+  :clojure.error/line 1,
+  :clojure.error/cause
+  "Could not locate eve/host__init.class, eve/host.clj or eve/host.cljc on classpath.",
+  :clojure.error/symbol contract.ds-suite/eval138$loading,
+  :clojure.error/source "ds_suite.cljc",
+  :clojure.error/phase :execution},
+ :clojure.main/trace
+ {:via
+  [{:type clojure.lang.Compiler$CompilerException,
+    :message
+    "Syntax error macroexpanding at (contract/ds_suite.cljc:1:1).",
+    :data
+    {:clojure.error/phase :execution,
+     :clojure.error/line 1,
+     :clojure.error/column 1,
+     :clojure.error/source "contract/ds_suite.cljc"},
+    :at [clojure.lang.Compiler load "Compiler.java" 8177]}
+   {:type java.io.FileNotFoundException,
+    :message
+    "Could not locate eve/host__init.class, eve/host.clj or eve/host.cljc on classpath.",
+    :at [clojure.lang.RT load "RT.java" 482]}],
+  :trace
+  [[clojure.lang.RT load "RT.java" 482]
+   [clojure.lang.RT load "RT.java" 444]
+   [clojure.core$load$fn__6931 invoke "core.clj" 6189]
+   [clojure.core$load invokeStatic "core.clj" 6188]
+   [clojure.core$load doInvoke "core.clj" 6172]
+   [clojure.lang.RestFn invoke "RestFn.java" 411]
+   [clojure.core$load_one invokeStatic "core.clj" 5961]
+   [clojure.core$load_one invoke "core.clj" 5956]
+   [clojure.core$load_lib$fn__6873 invoke "core.clj" 6003]
+   [clojure.core$load_lib invokeStatic "core.clj" 6002]
+   [clojure.core$load_lib doInvoke "core.clj" 5981]
+   [clojure.lang.RestFn applyTo "RestFn.java" 145]
+   [clojure.core$apply invokeStatic "core.clj" 669]
+   [clojure.core$load_libs invokeStatic "core.clj" 6044]
+   [clojure.core$load_libs doInvoke "core.clj" 6028]
+   [clojure.lang.RestFn applyTo "RestFn.java" 140]
+   [clojure.core$apply invokeStatic "core.clj" 669]
+   [clojure.core$require invokeStatic "core.clj" 6066]
+   [clojure.core$require doInvoke "core.clj" 6066]
+   [clojure.lang.RestFn invoke "RestFn.java" 515]
+   [contract.ds_suite$eval138$loading__6812__auto____139
+    invoke
+    "ds_suite.cljc"
+    1]
+   [contract.ds_suite$eval138 invokeStatic "ds_suite.cljc" 1]
+   [contract.ds_suite$eval138 invoke "ds_suite.cljc" 1]
+   [clojure.lang.Compiler eval "Compiler.java" 7700]
+   [clojure.lang.Compiler eval "Compiler.java" 7689]
+   [clojure.lang.Compiler load "Compiler.java" 8165]
+   [clojure.lang.RT loadResourceScript "RT.java" 401]
+   [clojure.lang.RT loadResourceScript "RT.java" 392]
+   [clojure.lang.RT load "RT.java" 479]
+   [clojure.lang.RT load "RT.java" 444]
+   [clojure.core$load$fn__6931 invoke "core.clj" 6189]
+   [clojure.core$load invokeStatic "core.clj" 6188]
+   [clojure.core$load doInvoke "core.clj" 6172]
+   [clojure.lang.RestFn invoke "RestFn.java" 411]
+   [clojure.core$load_one invokeStatic "core.clj" 5961]
+   [clojure.core$load_one invoke "core.clj" 5956]
+   [clojure.core$load_lib$fn__6873 invoke "core.clj" 6003]
+   [clojure.core$load_lib invokeStatic "core.clj" 6002]
+   [clojure.core$load_lib doInvoke "core.clj" 5981]
+   [clojure.lang.RestFn applyTo "RestFn.java" 145]
+   [clojure.core$apply invokeStatic "core.clj" 669]
+   [clojure.core$load_libs invokeStatic "core.clj" 6044]
+   [clojure.core$load_libs doInvoke "core.clj" 6028]
+   [clojure.lang.RestFn applyTo "RestFn.java" 140]
+   [clojure.core$apply invokeStatic "core.clj" 669]
+   [clojure.core$require invokeStatic "core.clj" 6066]
+   [clojure.main$main_opt invokeStatic "main.clj" 515]
+   [clojure.main$main_opt invoke "main.clj" 511]
+   [clojure.main$main invokeStatic "main.clj" 665]
+   [clojure.main$main doInvoke "main.clj" 617]
+   [clojure.lang.RestFn applyTo "RestFn.java" 140]
+   [clojure.lang.Var applyTo "Var.java" 707]
+   [clojure.main main "main.java" 40]],
+  :cause
+  "Could not locate eve/host__init.class, eve/host.clj or eve/host.cljc on classpath.",
+  :phase :execution}}
+

@@ -1,0 +1,5 @@
+Execution error (FileNotFoundException) at contract.ds-suite/eval138$loading (ds_suite.cljc:1).
+Could not locate eve/host__init.class, eve/host.clj or eve/host.cljc on classpath.
+
+Full report at:
+/home/hatch/workspace/syntax-formalization/lanes/eve-db-ds/.lane/tmp/clojure-11422756787073563847.edn

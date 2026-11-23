@@ -1,13 +1,13 @@
 (ns eve.db.ds.test.core
     (:require
-     [clojure.edn :as edn]
-     [clojure.test :as t :refer [is are deftest testing]]
-     [clojure.string :as str]
+
+     [clojure.test :as t :refer [is deftest]]
+
      [clojure.walk]
      #?@(:lpy [] :default [[cognitect.transit :as transit]])
      [eve.db.ds.core :as d]
      [eve.db.ds.impl.entity :as de]
-     [eve.db.ds.db :as db :refer [defrecord-updatable]]
+
      #?(:cljs [eve.db.ds.test.cljs])))
 
 #?(:cljs

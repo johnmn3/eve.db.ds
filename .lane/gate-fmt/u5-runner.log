@@ -1,0 +1,14 @@
+Reflection warning, eve/db/ds/db.cljc:355:29 - reference to field e can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:355:37 - reference to field a can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:355:45 - reference to field v can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:1237:16 - call to method write can't be resolved (target class is unknown).
+Reflection warning, eve/db/ds/db.cljc:1239:38 - reference to field schema can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:1239:61 - reference to field max_eid can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:1239:84 - reference to field max_tx can't be resolved.
+WARNING: filter already refers to: #'clojure.core/filter in namespace: eve.db.ds.conn, being replaced by: #'eve.db.ds.conn/filter
+WARNING: future-call already refers to: #'clojure.core/future-call in namespace: eve.db.ds.core, being replaced by: #'eve.db.ds.core/future-call
+Execution error (FileNotFoundException) at eve.db.ds.u5-support/eval17244$loading (u5_support.cljc:1).
+Could not locate cognitect/transit__init.class, cognitect/transit.clj or cognitect/transit.cljc on classpath.
+
+Full report at:
+/home/hatch/workspace/syntax-formalization/lanes/eve-db-ds/.lane/tmp/clojure-18061294133310909532.edn

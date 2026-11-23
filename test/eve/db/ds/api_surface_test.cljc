@@ -15,8 +15,13 @@
    in U2-STATUS.md / U6-STATUS.md — the call is not the surface
    test's to paper over."
     (:require
+     ;; str and d are used only inside the #?(:clj ...) deftest
+     ;; below; kondo's :cljs pass cannot see those arms (dual-pass
+     ;; false positive, measured at recount3).
+     #_{:clj-kondo/ignore [:unused-namespace]}
      [clojure.string :as str]
      [clojure.test :as t :refer [is deftest]]
+     #_{:clj-kondo/ignore [:unused-namespace]}
      [eve.db.ds.core :as d]))
 
 (def api-vars

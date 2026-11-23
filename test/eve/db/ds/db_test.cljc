@@ -10,7 +10,7 @@
      DB hashes differently, repeated hashes are stable)."
     (:require
      [clojure.data]
-     [clojure.test :as t :refer [is are deftest testing]]
+     [clojure.test :as t :refer [is deftest]]
      [eve.alpha :as eve :refer [$]]
      [eve.db.ds.db :as db :refer [defrecord-updatable]]
      [eve.db.ds.u2-support :as h]

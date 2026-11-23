@@ -9,11 +9,10 @@
    sisters whose index reads throw, and queries over a slab DB outside a
    region hit the same wall."
     (:require
-     [clojure.test :as t :refer [is are deftest testing]]
+     [clojure.test :as t :refer [is deftest testing]]
      [eve.alpha :as eve :refer [$]]
      [eve.db.ds.query :as dq]
-     [eve.db.ds.db :as db]
-     [eve.db.ds.impl.entity :as de]
+
      [eve.db.ds.u4-support :as sup])
     #?(:clj
        (:import

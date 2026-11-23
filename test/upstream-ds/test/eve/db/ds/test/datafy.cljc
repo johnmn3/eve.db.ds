@@ -1,7 +1,7 @@
 (ns eve.db.ds.test.datafy
     (:require
-     [clojure.test :as t :refer [is are deftest testing]]
-     [eve.db.ds.datafy :as datafy]
+     [clojure.test :as t :refer [is deftest]]
+
      [eve.db.ds.core :as d]
      [clojure.core.protocols :as cp]
      [eve.db.ds.impl.entity :as e]))
