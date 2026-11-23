@@ -8,7 +8,6 @@
     [eve.db.ds.util :as util]
     [eve.db.ds.db-fn :as db-fn]
     [eve.db.ds.bset :as set])
-  #?(:clj (:import clojure.lang.IFn$OOL))
   #?(:cljs (:require-macros [eve.db.ds.db :refer [case-tree combine-cmp defn+ defcomp defrecord-updatable int-compare validate-attr validate-val]]
                              [eve.db.ds.util :as util]))
   (:refer-clojure :exclude [seqable? #?(:clj update)]))
@@ -350,10 +349,15 @@
 ;; without a method for Datom__Flat, pr-str fell back to the deftype's
 ;; toString, which itself calls pr-str (infinite recursion).
 #?(:clj
-   (defmethod print-method (Class/forName "eve.db.ds.db.Datom__Flat") [d, ^java.io.Writer w]
-     (.write w (str "#eve.db.ds/Datom "))
-     (binding [*out* w]
-       (pr [(.-e d) (.-a d) (.-v d) (datom-tx d) (datom-added d)]))))
+   ;; the flat sister is a class on hosts that materialize one;
+   ;; where it is not, its printing is the host's own type
+   ;; presentation and there is no class to key a method on
+   (when-let [flat (try (Class/forName "eve.db.ds.db.Datom__Flat")
+                        (catch Throwable _ nil))]
+     (defmethod print-method flat [d, ^java.io.Writer w]
+       (.write w (str "#eve.db.ds/Datom "))
+       (binding [*out* w]
+         (pr [(.-e d) (.-a d) (.-v d) (datom-tx d) (datom-added d)])))))
 
 ;; ----------------------------------------------------------------------------
 ;; datom cmp macros/funcs
@@ -467,6 +471,15 @@
     (cond
       (= x y) 0
       (and (sequential? x) (sequential? y)) (seq-compare x y)
+      ;; Maps and sets are one kind on every host, whatever class a
+      ;; host gives them: a value's class is not stable across the
+      ;; store/read boundary (a host map literal on one side, the
+      ;; stored Eve map on the other), and the class-name fallback
+      ;; below would order an insert by one rule and a seek by
+      ;; another, corrupting the index's order. Uncomparable values
+      ;; order by hash — the same rule the same-class fallback uses.
+      (and (map? x) (map? y)) (int-compare (ihash x) (ihash y))
+      (and (set? x) (set? y)) (int-compare (ihash x) (ihash y))
       ;; PORTING-DS D4 hunk (F-JOLT-CMP): core compare, not host method
       ;; calls — jolt's clojure.lang has no Numbers/compare and its
       ;; Keyword carries no compareTo method, while clojure.core/compare
@@ -522,7 +535,11 @@
               clojure.lang.IFn
               (invoke [this# ~a1 ~a2]
                 (.compare this# ~a1 ~a2))
-              IFn$OOL
+              ;; fully qualified, not imported: the name is the
+              ;; macro's only use of the class, and an :import of a
+              ;; JVM primitive interface is a load-time demand a
+              ;; non-JVM :clj host cannot meet
+              clojure.lang.IFn$OOL
               (invokePrim [this# ~a1 ~a2]
                 (.compare this# ~a1 ~a2))))))))
 
@@ -1234,10 +1251,12 @@
      ;; outside a region (pr-db's -datoms throws on delivered roots),
      ;; so the sister prints its readable fields instead of recursing
      ;; through toString → pr-str.
-     (defmethod print-method (Class/forName "eve.db.ds.db.DB__Flat") [db w]
-       (.write w (str "#eve.db.ds/DB "))
-       (binding [*out* w]
-         (pr {:schema (.-schema db) :max-eid (.-max-eid db) :max-tx (.-max-tx db)})))))
+     (when-let [flat (try (Class/forName "eve.db.ds.db.DB__Flat")
+                          (catch Throwable _ nil))]
+       (defmethod print-method flat [db w]
+         (.write w (str "#eve.db.ds/DB "))
+         (binding [*out* w]
+           (pr {:schema (.-schema db) :max-eid (.-max-eid db) :max-tx (.-max-tx db)}))))))
 
 (defn db-from-reader [{:keys [schema datoms]}]
   (init-db (map (fn [[e a v tx]] (datom e a v tx)) datoms) schema {}))
@@ -2158,7 +2177,12 @@
             (util/raise "Unknown operation at " entity ", expected :db/add, :db/retract, :db.fn/call, :db.fn/retractAttribute, :db.fn/retractEntity or an ident corresponding to an installed transaction function (e.g. {:db/ident <keyword> :db/fn <Ifn>}, usage of :db/ident requires {:db/unique :db.unique/identity} in schema)" {:error :transact/syntax, :operation op, :tx-data entity})))
        
         (datom? entity)
-        (let [[e a v tx added] entity]
+        ;; destructured through seq, not positionally: the seq form
+        ;; is [e a v tx added] on every host, and tx is only used
+        ;; when added, where the signed and seq forms agree. A
+        ;; positional destructure nth's the Datom itself, which a
+        ;; host whose Datom is not Indexed cannot do.
+        (let [[e a v tx added] (seq entity)]
           (if added
             (recur (transact-add report [:db/add e a v tx]) entities)
             (recur report (cons [:db/retract e a v] entities))))
