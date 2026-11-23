@@ -65,7 +65,7 @@
   (let [tx-before (:tx @conn)
         err       (try (d/transact! conn [[:claim-email "a@x.com" 2]])
                        nil
-                       (catch #?(:clj Throwable :cljs :default) e e))]
+                       (catch #?(:clj Throwable :cljs :default :lpy python/BaseException :default Throwable) e e))]
     (is (= "Email already claimed: a@x.com"
           #?(:clj (.getMessage err) :cljs (.-message err))))
     (is (= tx-before (:tx @conn)) "an aborted tx fn commits nothing")
@@ -197,7 +197,7 @@
         tx-before (:tx @conn)
         err  (try (d/transact! conn [[:evil]])
                   nil
-                  (catch #?(:clj Throwable :cljs :default) e e))]
+                  (catch #?(:clj Throwable :cljs :default :lpy python/BaseException :default Throwable) e e))]
     (is (some? err))
     (is (= tx-before (:tx @conn)))))
 
@@ -210,21 +210,21 @@
                         :db/fn    (d/fn-ref 'no.such.ns/fn)}])
     (let [err (try (d/transact! conn [[:ghost]])
                    nil
-                   (catch #?(:clj Throwable :cljs :default) e e))]
+                   (catch #?(:clj Throwable :cljs :default :lpy python/BaseException :default Throwable) e e))]
       (is (= :eve.db.ds/db-fn-unresolved (:error (ex-data err)))))))
 
 (deftest test-host-fn-rejected-via-with
   (let [db  (d/empty-db)
         err (try (d/with db [{:db/ident :x :db/fn (fn [db] [])}])
                  nil
-                 (catch #?(:clj Throwable :cljs :default) e e))]
+                 (catch #?(:clj Throwable :cljs :default :lpy python/BaseException :default Throwable) e e))]
     (is (= :eve.db.ds/db-fn-host-fn (:error (ex-data err))))))
 
 (deftest test-fn-in-any-value-position-rejected
   (let [conn (d/create-conn)
         err  (try (d/transact! conn [{:db/id 1 :payload (fn [] 1)}])
                   nil
-                  (catch #?(:clj Throwable :cljs :default) e e))]
+                  (catch #?(:clj Throwable :cljs :default :lpy python/BaseException :default Throwable) e e))]
     (is (= :eve.db.ds/fn-not-storable (:error (ex-data err))))
     (is (nil? (d/entity @conn 1)))))
 
@@ -243,7 +243,7 @@
       (let [tx-before (:tx @conn)
             err       (try (d/transact! conn [[:evil]])
                            nil
-                           (catch #?(:clj Throwable :cljs :default) e e))]
+                           (catch #?(:clj Throwable :cljs :default :lpy python/BaseException :default Throwable) e e))]
         (is (= :eve.db.ds/db-fn-host-fn (:error (ex-data err))))
         (is (= tx-before (:tx @conn)))
         (is (nil? (d/entid @conn :smuggled))))
