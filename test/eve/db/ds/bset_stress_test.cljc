@@ -47,7 +47,7 @@
 (def ^:dynamic *rslice-iters* 1000)
 (def ^:dynamic *overflow-len* 4000000)
 
-(defn- into-via-doseq [to from]
+(defn- into-via-doseq [_to from]
        (persistent! (reduce conj! (transient []) from)))
 
 (deftest stresstest-btset
@@ -64,12 +64,12 @@
                         a3        (disj-all! (build compare xs) compare full-rm)]
                        (testing
                         (str "Iter:" (inc i)  "/" *iters*
-                             " adds:" (str (count xs) " (" (count xs-sorted) " distinct),")
-                             " removals:" (str (count rm) " (down to " (count xs-rm) ")"))
+                             " adds:" (count xs) " (" (count xs-sorted) " distinct),"
+                             " removals:" (count rm) " (down to " (count xs-rm) ")")
                         (testing "conj, seq"
                                  (is (= (all-vec a0 compare) xs-sorted)))
                         (testing "eq"
-                                 (is (= (all-vec a0 compare) xs-sorted) xs-sorted))
+                                 (is (= (all-vec a0 compare) xs-sorted) (str "a0: " (pr-str xs-sorted))))
                         (testing "count"
                                  (is (= ($ (bset/count @a0)) (count xs-sorted))))
                         (testing "doseq"

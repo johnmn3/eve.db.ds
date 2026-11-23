@@ -222,14 +222,14 @@
                    (is (:had-birthday e)))
 
               (let [{:keys [db-after]} (d/transact! conn
-                                                    [[:db.fn/call (fn [db]
+                                                    [[:db.fn/call (fn [_db]
                                                                       [{:name "Oleg"}])]])
                     e (d/entity db-after 2)]
                    (is (= "Oleg" (:name e))))
 
               (let [{:keys [db-after
                             tempids]} (d/transact! conn
-                                                   [[:db.fn/call (fn [db]
+                                                   [[:db.fn/call (fn [_db]
                                                                      [{:db/id -1
                                                                        :name "Vera"}])]])
                     e (d/entity db-after (tempids -1))]
@@ -491,7 +491,7 @@
 
 (deftest test-db-fn-returning-entity-without-db-id-issue-474
          (let [conn   (d/create-conn {})
-               _      (d/transact! conn [[:db.fn/call (fn [db]
+               _      (d/transact! conn [[:db.fn/call (fn [_db]
                                                           [{:foo "bar"}])]])
                db     @conn]
               (is (= #{[1 :foo "bar"]} (tdc/all-datoms db)))))

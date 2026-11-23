@@ -115,7 +115,7 @@
   ;; The default macro stores a :resolve map naming a var in the
   ;; caller's namespace; the name is content-addressed
   ;; (db-fn-<12 hex>), so the same form derives the same map.
-         (let [stored (d/db-fn [db x] (+ x 1))]
+         (let [stored (d/db-fn [_db x] (+ x 1))]
               (is (= :resolve (:db.fn/kind stored)))
               (is (= 'eve.db.ds.test.db-fn
                      (symbol (namespace (:db.fn/sym stored)))))
@@ -125,7 +125,7 @@
               (is (= stored (edn-read (pr-str stored))))
     ;; deterministic: re-evaluating the same form re-registers
     ;; the same name and yields the same stored map
-              (is (= stored (d/db-fn [db x] (+ x 1))))
+              (is (= stored (d/db-fn [_db x] (+ x 1))))
     ;; and it is what actually sits in the DB as the datom value
               (let [conn (d/create-conn)]
                    (d/transact! conn [{:db/ident :plus-one :db/fn stored}])
@@ -215,7 +215,7 @@
 
 (deftest test-host-fn-rejected-via-with
          (let [db  (d/empty-db)
-               err (try (d/with db [{:db/ident :x :db/fn (fn [db] [])}])
+               err (try (d/with db [{:db/ident :x :db/fn (fn [_db] [])}])
                         nil
                         (catch #?(:clj Throwable :cljs :default) e e))]
               (is (= :eve.db.ds/db-fn-host-fn (:error (ex-data err))))))
@@ -231,8 +231,8 @@
 (defn evil-fn
       "A db fn whose RESULT smuggles a host fn: invoke validates the
    result with the same rule, so the tx still fails pre-commit."
-      [db]
-      [{:db/ident :smuggled :db/fn (fn [db] [])}])
+      [_db]
+      [{:db/ident :smuggled :db/fn (fn [_db] [])}])
 
 (deftest test-db-fn-result-is-validated
          (let [conn (d/create-conn)]

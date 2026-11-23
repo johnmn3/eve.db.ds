@@ -1,5 +1,4 @@
 (ns ^:no-doc eve.db.ds.impl.entity
-    (:refer-clojure :exclude [keys get])
     (:require [#?(:cljs cljs.core :clj clojure.core) :as c]
               [eve.alpha]
               [eve.db.ds.db :as db]))
@@ -134,7 +133,7 @@
 
              :clj
              [Object
-              (toString [e]      (pr-str (assoc @cache :db/id eid)))
+              (toString [_e]      (pr-str (assoc @cache :db/id eid)))
               (hashCode [e]      (hash-entity e))
               (equals [e o]      (equiv-entity e o))
 
@@ -146,9 +145,9 @@
               (containsKey [e k] (not= ::nf (lookup-entity e k ::nf)))
               (entryAt [e k]     (some->> (lookup-entity e k) (clojure.lang.MapEntry. k)))
 
-              (empty [e]         (throw (UnsupportedOperationException.)))
-              (assoc [e k v]     (throw (UnsupportedOperationException.)))
-              (cons  [e [k v]]   (throw (UnsupportedOperationException.)))
+              (empty [_e]         (throw (UnsupportedOperationException.)))
+              (assoc [_e _k _v]     (throw (UnsupportedOperationException.)))
+              (cons  [_e [_k _v]]   (throw (UnsupportedOperationException.)))
               (count [e]         (touch e) (count @(.-cache e)))
 
               clojure.lang.ILookup

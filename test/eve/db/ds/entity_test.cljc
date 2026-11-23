@@ -106,7 +106,7 @@
                                        [:db/add 1 :multiref  5]
                                        [:db/add 1 :multicomp 6]
                                        [:db/add 1 :multicomp 6]])
-                      (let [db' (:db @a)]
+                      (let [_db' (:db @a)]
                            (de/touch (de/entity db 1)) ;; does not throw
                            (is (= nil (:ref (de/entity db 1))))
                            (is (= nil (:comp (de/entity db 1))))

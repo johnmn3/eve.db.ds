@@ -20,7 +20,7 @@
 ; cljs compilation.
 
 #?(:clj
-   (defmethod t/assert-expr 'thrown-msg? [menv msg form]
+   (defmethod t/assert-expr 'thrown-msg? [_menv msg form]
               (let [[_ match & body] form]
                    `(try
                      ~@body

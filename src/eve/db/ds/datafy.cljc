@@ -12,7 +12,7 @@
              ref-rattrs (set (map db/reverse-ref ref-attrs))
              many-attrs (:db.cardinality/many (:rschema db-val))]
             (with-meta pulled-entity
-                       {`cp/nav (fn [coll k v]
+                       {`cp/nav (fn [_coll k v]
                                     (cond
                                      (or (and (many-attrs k) (ref-attrs k))
                                          (ref-rattrs k))
@@ -23,7 +23,7 @@
 
 (defn- navize-pulled-entity-seq [db-val entities]
        (with-meta entities
-                  {`cp/nav (fn [coll k v]
+                  {`cp/nav (fn [_coll _k v]
                                (e/entity db-val (:db/id v)))}))
 
 (defn- datafy-entity-seq [db-val entities]

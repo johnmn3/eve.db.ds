@@ -555,7 +555,7 @@
 (defn filter
       "PARKED: returns a filtered view of a DB handle. Blocked at the
    current Eve pin on FilteredDB's ^:host pred field (see above)."
-      [db pred]
+      [db _pred]
       (ensure-handle db)
       (util/raise
        "Filtered DBs are not constructible at this Eve pin: FilteredDB's ^:host pred field reads null (U2 probe2)"

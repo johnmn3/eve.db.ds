@@ -1,0 +1,25 @@
+=== LEG u2-runner START 15:02:47
+=== LEG u2-runner EXIT=0 15:04:00
+0 failures, 0 errors.
+:U2-RUNNER-RESULT {:test 11, :pass 79, :fail 0, :error 0, :type :summary}
+=== LEG u3-runner START 15:04:00
+=== LEG u3-runner EXIT=0 15:05:48
+0 failures, 0 errors.
+U3 SUMMARY: {:test 42, :pass 248, :fail 0, :error 0}
+=== LEG u4-runner START 15:05:48
+=== LEG u4-runner EXIT=0 15:07:20
+0 failures, 0 errors.
+:U4-RUNNER-RESULT {:test 6, :pass 48, :fail 0, :error 0, :type :summary}
+=== LEG u5-runner START 15:07:20
+=== LEG u5-runner EXIT=1 15:08:38
+Full report at:
+/home/hatch/workspace/syntax-formalization/lanes/eve-db-ds/.lane/tmp/clojure-5351352009621426359.edn
+=== LEG bset-runner START 15:08:38
+=== LEG bset-runner EXIT=0 15:10:41
+0 failures, 0 errors.
+:BSET-RUNNER-RESULT {:test 5, :pass 816, :fail 0, :error 0, :type :summary}
+=== LEG chain-autoclose-runner START 15:10:41
+=== LEG chain-autoclose-runner EXIT=0 15:11:45
+0 failures, 0 errors.
+CHAIN-AUTOCLOSE SUMMARY: {:test 5, :pass 36, :fail 0, :error 0}
+UNITS-DONE

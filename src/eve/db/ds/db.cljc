@@ -169,19 +169,19 @@
 ;; ----------------------------------------------------------------------------
 
 #?(:clj  (declare hash-datom)
-   :cljs (defn ^number hash-datom [d]))
+   :cljs (defn ^number hash-datom [_d]))
 
 #?(:clj  (declare equiv-datom)
-   :cljs (defn ^boolean equiv-datom [d o]))
+   :cljs (defn ^boolean equiv-datom [_d _o]))
 
 #?(:clj  (declare seq-datom)
-   :cljs (defn seq-datom [d]))
+   :cljs (defn seq-datom [_d]))
 
 #?(:clj  (declare nth-datom)
-   :cljs (defn nth-datom ([d i]) ([d i not-found])))
+   :cljs (defn nth-datom ([_d _i]) ([_d _i _not-found])))
 
 #?(:clj  (declare assoc-datom)
-   :cljs (defn assoc-datom [d k v]))
+   :cljs (defn assoc-datom [_d _k _v]))
 
 ;; A Datom's lookup, from its field values: called from inside the type's body, where e a v tx are direct
 ;; reads on either of its forms (the slab kind and its flat sister), so a lookup never reflects. The fields'
@@ -209,7 +209,7 @@
        :else
        not-found))
 #?(:clj  (declare datom?)
-   :cljs (defn datom? [x]))
+   :cljs (defn datom? [_x]))
 
 (defprotocol IDatom
              (datom-tx [this])
@@ -221,8 +221,8 @@
 #_{:clj-kondo/ignore [:missing-protocol-method]}
 (eve/deftype Datom [^:int32 e a v ^:int32 tx]
              IDatom
-             (datom-tx [d] (if (pos? tx) tx (- tx)))
-             (datom-added [d] (pos? tx))
+             (datom-tx [_d] (if (pos? tx) tx (- tx)))
+             (datom-added [_d] (pos? tx))
 
              #?@(:cljs
                  [IHash
@@ -234,8 +234,8 @@
                   (-seq [d] (seq-datom d))
 
                   ILookup
-                  (-lookup [d k] (datom-lookup e a v tx k nil))
-                  (-lookup [d k nf] (datom-lookup e a v tx k nf))
+                  (-lookup [_d k] (datom-lookup e a v tx k nil))
+                  (-lookup [_d k nf] (datom-lookup e a v tx k nf))
 
                   IIndexed
                   (-nth [this i] (nth-datom this i))
@@ -259,14 +259,14 @@
                   (hasheq [d] (int (hash-datom d)))
 
                   clojure.lang.Counted
-                  (count [d] 5)
+                  (count [_d] 5)
 
                   clojure.lang.Seqable
                   (seq [d] (seq-datom d))
 
                   clojure.lang.IPersistentCollection
                   (equiv [d o] (and (datom? o) (equiv-datom d o)))
-                  (empty [d] (throw (UnsupportedOperationException. "empty is not supported on Datom")))
+                  (empty [_d] (throw (UnsupportedOperationException. "empty is not supported on Datom")))
        ;; count lives under clojure.lang.Counted above: one method
        ;; satisfies both interfaces (same signature); listing it under
        ;; both makes eve/deftype emit a duplicate method.
@@ -277,12 +277,12 @@
                   (nth [this i not-found] (nth-datom this i not-found))
 
                   clojure.lang.ILookup
-                  (valAt [d k] (datom-lookup e a v tx k nil))
-                  (valAt [d k nf] (datom-lookup e a v tx k nf))
+                  (valAt [_d k] (datom-lookup e a v tx k nil))
+                  (valAt [_d k nf] (datom-lookup e a v tx k nf))
 
                   clojure.lang.Associative
-                  (entryAt [d k] (some->> (datom-lookup e a v tx k nil) (clojure.lang.MapEntry k)))
-                  (containsKey [e k] (#{:e :a :v :tx :added} k))
+                  (entryAt [_d k] (some->> (datom-lookup e a v tx k nil) (clojure.lang.MapEntry k)))
+                  (containsKey [_e k] (#{:e :a :v :tx :added} k))
                   (assoc [d k v] (assoc-datom d k v))]))
 
 #?(:cljs (goog/exportSymbol "eve.db.ds.db.Datom" Datom))
@@ -367,7 +367,7 @@
 
 #?(:clj
    (defmethod print-method Datom [^Datom d, ^java.io.Writer w]
-              (.write w (str "#eve.db.ds/Datom "))
+              (.write w "#eve.db.ds/Datom ")
               (binding [*out* w]
                        (pr [(:e d) (:a d) (:v d) (datom-tx d) (datom-added d)]))))
 
@@ -376,7 +376,7 @@
 ;; toString, which itself calls pr-str (infinite recursion).
 #?(:clj
    (defmethod print-method (Class/forName "eve.db.ds.db.Datom__Flat") [d, ^java.io.Writer w]
-              (.write w (str "#eve.db.ds/Datom "))
+              (.write w "#eve.db.ds/Datom ")
               (binding [*out* w]
                        (pr [(.-e d) (.-a d) (.-v d) (datom-tx d) (datom-added d)]))))
 
@@ -452,7 +452,7 @@
          :cljs (hash x)))
 
 #?(:clj  (declare value-compare)
-   :cljs (defn ^number value-compare [x y]))
+   :cljs (defn ^number value-compare [_x _y]))
 
 (defn- seq-compare [xs ys]
        (let [cx (count xs)
@@ -652,16 +652,16 @@
 ;; ----------------------------------------------------------------------------
 
 #?(:clj  (declare hash-db)
-   :cljs (defn ^number hash-db [db]))
+   :cljs (defn ^number hash-db [_db]))
 
 #?(:clj  (declare hash-fdb)
-   :cljs (defn ^number hash-fdb [db]))
+   :cljs (defn ^number hash-fdb [_db]))
 
 #?(:clj  (declare equiv-db)
-   :cljs (defn ^boolean equiv-db [db other]))
+   :cljs (defn ^boolean equiv-db [_db _other]))
 
 #?(:clj  (declare restore-db)
-   :cljs (defn restore-db [keys]))
+   :cljs (defn restore-db [_keys]))
 
 ;; A DB's lookup, from its field values: called from inside the type's body (direct field reads on either
 ;; form), as datom-lookup is for a Datom.
@@ -677,18 +677,18 @@
             not-found))
 
 #?(:clj  (declare assoc-db)
-   :cljs (defn assoc-db [db k v]))
+   :cljs (defn assoc-db [_db _k _v]))
 
 #?(:clj  (declare indexing?)
-   :cljs (defn ^boolean indexing? [db attr]))
+   :cljs (defn ^boolean indexing? [_db _attr]))
 
-#?(:cljs (defn pr-db [db w opts]))
+#?(:cljs (defn pr-db [_db _w _opts]))
 
 #?(:clj  (declare resolve-datom)
-   :cljs (defn resolve-datom [db e a v t default-e default-tx]))
+   :cljs (defn resolve-datom [_db _e _a _v _t _default-e _default-tx]))
 
 #?(:clj  (declare components->pattern)
-   :cljs (defn components->pattern [db index c0 c1 c2 c3 default-e default-tx]))
+   :cljs (defn components->pattern [_db _index _c0 _c1 _c2 _c3 _default-e _default-tx]))
 
 ;;;;;;;;;; Fast validation
 
@@ -768,9 +768,9 @@
                                                              :eavt    (set/empty)
                                                              :aevt    (set/empty)
                                                              :avet    (set/empty)}))
-                  ILookup              (-lookup [db k]     (db-lookup schema eavt aevt avet max-eid max-tx rschema k nil))
-                  (-lookup [db k nf] (db-lookup schema eavt aevt avet max-eid max-tx rschema k nf))
-                  IAssociative         (-contains-key? [db k] (contains? db-fields k))
+                  ILookup              (-lookup [_db k]     (db-lookup schema eavt aevt avet max-eid max-tx rschema k nil))
+                  (-lookup [_db k nf] (db-lookup schema eavt aevt avet max-eid max-tx rschema k nf))
+                  IAssociative         (-contains-key? [_db k] (contains? db-fields k))
                   (-assoc [db k v]   (assoc-db db k v))
                   ISeqable             (-seq  [db]        (seq {:schema  (:schema db)
                                                                 :eavt    (:eavt db)
@@ -784,15 +784,15 @@
                  :clj
                  [Object               (hashCode [db]      (int (hash-db db)))
                   clojure.lang.IHashEq (hasheq [db]        (int (hash-db db)))
-                  clojure.lang.Counted (count [db]         (set/count eavt))
+                  clojure.lang.Counted (count [_db]         (set/count eavt))
                   clojure.lang.Seqable
-                  (seq [db]           (seq {:schema  schema
-                                            :eavt    eavt
-                                            :aevt    aevt
-                                            :avet    avet
-                                            :max-eid max-eid
-                                            :max-tx  max-tx
-                                            :rschema rschema}))
+                  (seq [_db]           (seq {:schema  schema
+                                             :eavt    eavt
+                                             :aevt    aevt
+                                             :avet    avet
+                                             :max-eid max-eid
+                                             :max-tx  max-tx
+                                             :rschema rschema}))
                   clojure.lang.IPersistentCollection
        ;; count lives under clojure.lang.Counted above: one method
        ;; satisfies both interfaces (same signature); listing it under
@@ -804,14 +804,14 @@
                                         :eavt    (set/empty)
                                         :aevt    (set/empty)
                                         :avet    (set/empty)}))
-                  (cons [db key]      (throw (ex-info "eve.db.ds.DB/cons is not supported" {})))
+                  (cons [_db _key]      (throw (ex-info "eve.db.ds.DB/cons is not supported" {})))
                   clojure.lang.ILookup
-                  (valAt [db k]       (db-lookup schema eavt aevt avet max-eid max-tx rschema k nil))
-                  (valAt [db k nf]    (db-lookup schema eavt aevt avet max-eid max-tx rschema k nf))
+                  (valAt [_db k]       (db-lookup schema eavt aevt avet max-eid max-tx rschema k nil))
+                  (valAt [_db k nf]    (db-lookup schema eavt aevt avet max-eid max-tx rschema k nf))
                   clojure.lang.Associative
-                  (containsKey [db k] (contains? db-fields k))
-                  (entryAt [db k]     (when (contains? db-fields k)
-                                            (clojure.lang.MapEntry. k (db-lookup schema eavt aevt avet max-eid max-tx rschema k nil))))
+                  (containsKey [_db k] (contains? db-fields k))
+                  (entryAt [_db k]     (when (contains? db-fields k)
+                                             (clojure.lang.MapEntry. k (db-lookup schema eavt aevt avet max-eid max-tx rschema k nil))))
                   (assoc [db k v]     (assoc-db db k v))])
 
              IDB
@@ -826,7 +826,7 @@
                             avet       (:avet db)
                             pred       #?(:clj  (vpred v)
                                           :cljs #(= v %))
-                            multival?  (contains? (-attrs-by db :db.cardinality/many) a)]
+                            _multival?  (contains? (-attrs-by db :db.cardinality/many) a)]
                            (case-tree [e a (some? v) tx]
                                       [(set/slice eavt (datom e a v tx) (datom e a v tx) cmp-datoms-eavt)                   ;; e a v tx
                                        (set/slice eavt (datom e a v tx0) (datom e a v txmax) cmp-datoms-eavt)               ;; e a v _
@@ -891,7 +891,7 @@
                                       cmp-datoms-avet))
 
              clojure.data/EqualityPartition
-             (equality-partition [x] :eve.db.ds/db)
+             (equality-partition [_x] :eve.db.ds/db)
 
              clojure.data/Diff
              (diff-similar [a b]
@@ -951,41 +951,41 @@
                   clojure.lang.IPersistentCollection
                   (count [db]         (count (-datoms db :eavt nil nil nil nil)))
                   (equiv [db o]       (equiv-db db o))
-                  (cons [db [k v]]    (throw (UnsupportedOperationException. "cons is not supported on FilteredDB")))
-                  (empty [db]         (throw (UnsupportedOperationException. "empty is not supported on FilteredDB")))
+                  (cons [_db [_k _v]]    (throw (UnsupportedOperationException. "cons is not supported on FilteredDB")))
+                  (empty [_db]         (throw (UnsupportedOperationException. "empty is not supported on FilteredDB")))
 
-                  clojure.lang.ILookup (valAt [db k]       (throw (UnsupportedOperationException. "valAt/2 is not supported on FilteredDB")))
-                  (valAt [db k nf]    (throw (UnsupportedOperationException. "valAt/3 is not supported on FilteredDB")))
-                  clojure.lang.IKeywordLookup (getLookupThunk [db k]
+                  clojure.lang.ILookup (valAt [_db _k]       (throw (UnsupportedOperationException. "valAt/2 is not supported on FilteredDB")))
+                  (valAt [_db _k _nf]    (throw (UnsupportedOperationException. "valAt/3 is not supported on FilteredDB")))
+                  clojure.lang.IKeywordLookup (getLookupThunk [_db _k]
                                                               (throw (UnsupportedOperationException. "getLookupThunk is not supported on FilteredDB")))
 
                   clojure.lang.Associative
-                  (containsKey [e k]  (throw (UnsupportedOperationException. "containsKey is not supported on FilteredDB")))
-                  (entryAt [db k]     (throw (UnsupportedOperationException. "entryAt is not supported on FilteredDB")))
-                  (assoc [db k v]     (throw (UnsupportedOperationException. "assoc is not supported on FilteredDB")))])
+                  (containsKey [_e _k]  (throw (UnsupportedOperationException. "containsKey is not supported on FilteredDB")))
+                  (entryAt [_db _k]     (throw (UnsupportedOperationException. "entryAt is not supported on FilteredDB")))
+                  (assoc [_db _k _v]     (throw (UnsupportedOperationException. "assoc is not supported on FilteredDB")))])
 
              IDB
-             (-schema [db]
+             (-schema [_db]
                       (-schema unfiltered-db))
 
-             (-attrs-by [db property]
+             (-attrs-by [_db property]
                         (-attrs-by unfiltered-db property))
 
              ISearch
-             (-search [db pattern]
+             (-search [_db pattern]
                       (filter pred (-search unfiltered-db pattern)))
 
              IIndexAccess
-             (-datoms [db index c0 c1 c2 c3]
+             (-datoms [_db index c0 c1 c2 c3]
                       (filter pred (-datoms unfiltered-db index c0 c1 c2 c3)))
 
-             (-seek-datoms [db index c0 c1 c2 c3]
+             (-seek-datoms [_db index c0 c1 c2 c3]
                            (filter pred (-seek-datoms unfiltered-db index c0 c1 c2 c3)))
 
-             (-rseek-datoms [db index c0 c1 c2 c3]
+             (-rseek-datoms [_db index c0 c1 c2 c3]
                             (filter pred (-rseek-datoms unfiltered-db index c0 c1 c2 c3)))
 
-             (-index-range [db attr start end]
+             (-index-range [_db attr start end]
                            (filter pred (-index-range unfiltered-db attr start end))))
 
 (defn unfiltered-db ^DB [db]
@@ -1131,7 +1131,7 @@
                                                 :attribute a
                                                 :key :db/tupleType}))))))
 
-(defn empty-db ^DB [schema opts]
+(defn empty-db ^DB [schema _opts]
       {:pre [(or (nil? schema) (map? schema))]}
       (validate-schema schema)
       (->DB schema
@@ -1165,7 +1165,7 @@
                       res refs)]
             res))
 
-(defn init-db ^DB [datoms schema opts]
+(defn init-db ^DB [datoms schema _opts]
       (when-some [not-datom (first (drop-while datom? datoms))]
                  (util/raise "init-db expects list of Datoms, got " (type not-datom)
                              {:error :init-db}))
@@ -1279,7 +1279,7 @@
 #?(:clj
    (do
     (defn pr-db [db, ^java.io.Writer w]
-          (.write w (str "#eve.db.ds/DB {"))
+          (.write w "#eve.db.ds/DB {")
           (.write w ":schema ")
           (binding [*out* w]
                    (pr (-schema db))
@@ -1295,7 +1295,7 @@
      ;; so the sister prints its readable fields instead of recursing
      ;; through toString → pr-str.
     (defmethod print-method (Class/forName "eve.db.ds.db.DB__Flat") [db w]
-               (.write w (str "#eve.db.ds/DB "))
+               (.write w "#eve.db.ds/DB ")
                (binding [*out* w]
                         (pr {:schema (.-schema db) :max-eid (.-max-eid db) :max-tx (.-max-tx db)})))))
 
@@ -1305,16 +1305,16 @@
 ;; ----------------------------------------------------------------------------
 
 #?(:clj  (declare entid-strict)
-   :cljs (defn ^number entid-strict [db eid]))
+   :cljs (defn ^number entid-strict [_db _eid]))
 
 #?(:clj  (declare ref?)
-   :cljs (defn ^boolean ref? [db attr]))
+   :cljs (defn ^boolean ref? [_db _attr]))
 
 #?(:clj  (declare tuple?)
-   :cljs (defn ^boolean tuple? [db attr]))
+   :cljs (defn ^boolean tuple? [_db _attr]))
 
 #?(:clj  (declare resolve-tuple-refs)
-   :cljs (defn resolve-tuple-refs [db a vs context]))
+   :cljs (defn resolve-tuple-refs [_db _a _vs _context]))
 
 ;; cljs-stub idiom: the empty #?(:cljs defn) stub above is
 ;; deliberate; this is the real definition (see config header).
@@ -1590,17 +1590,17 @@
 (deftype AutoTempid [id]
          #?@(:cljs
              [IPrintWithWriter
-              (-pr-writer [d writer opts]
+              (-pr-writer [_d writer opts]
                           #_{:clj-kondo/ignore [:private-call]}
                           (pr-sequential-writer writer pr-writer "#eve.db.ds/AutoTempid [" " " "]" opts [id]))]
              :clj
              [Object
-              (toString [d]
+              (toString [_d]
                         (str "#eve.db.ds/AutoTempid [" id "]"))]))
 
 #?(:clj
    (defmethod print-method AutoTempid [^AutoTempid id, ^java.io.Writer w]
-              (.write w (str "#eve.db.ds/AutoTempid "))
+              (.write w "#eve.db.ds/AutoTempid ")
               (binding [*out* w]
                        (pr [(.-id id)]))))
 
@@ -1785,7 +1785,7 @@
                                 indexing? (update :avet (fn [s] (or (set/disj s removing cmp-datoms-avet-quick) s))))
                         db))))
 
-(defn- queue-tuple [queue tuple idx db e a v]
+(defn- queue-tuple [queue tuple idx db e _a v]
        (let [tuple-value  (or (get queue tuple)
                               (:v (first (-datoms db :eavt e tuple nil nil)))
                               (vec (repeat (-> db (-schema) (get tuple) :db/tupleAttrs count) nil)))
@@ -1999,7 +1999,7 @@
                   (map (fn [^Datom d] [:db.fn/retractEntity (:v d)]))) datoms))
 
 #?(:clj  (declare transact-tx-data-impl)
-   :cljs (defn transact-tx-data-impl [initial-report initial-es]))
+   :cljs (defn transact-tx-data-impl [_initial-report _initial-es]))
 
 (defn- retry-with-tempid [initial-report report es tempid upserted-eid]
        (if-some [eid (get (::upserted-tempids initial-report) tempid)]

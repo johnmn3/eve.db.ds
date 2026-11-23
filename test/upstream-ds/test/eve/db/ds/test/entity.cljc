@@ -88,13 +88,13 @@
                                    :db/isComponent true
                                    :db/cardinality :db.cardinality/many}}
                db     (d/empty-db schema)
-               db'    (d/db-with db
-                                 [[:db/add 1 :ref       2]
-                                  [:db/add 1 :comp      3]
-                                  [:db/add 1 :multiref  4]
-                                  [:db/add 1 :multiref  5]
-                                  [:db/add 1 :multicomp 6]
-                                  [:db/add 1 :multicomp 6]])]
+               _db'    (d/db-with db
+                                  [[:db/add 1 :ref       2]
+                                   [:db/add 1 :comp      3]
+                                   [:db/add 1 :multiref  4]
+                                   [:db/add 1 :multiref  5]
+                                   [:db/add 1 :multicomp 6]
+                                   [:db/add 1 :multicomp 6]])]
               (d/touch (d/entity db 1)) ;; does not throw
               (is (= nil (:ref (d/entity db 1))))
               (is (= nil (:comp (d/entity db 1))))

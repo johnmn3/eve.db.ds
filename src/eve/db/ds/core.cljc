@@ -857,7 +857,7 @@
       "The DB's settings map. The indexes are eve.db.ds.bset trees; the
    one setting that survives the port is the branching factor — a
    bset leaf holds up to 32 keys (plan v2 §5)."
-      [db]
+      [_db]
       {:branching-factor 32})
 
 ;; The SCI stored-fn read surface: a SCI transaction function

@@ -22,8 +22,8 @@
 ;; compiler or runtime error
 ;;
 (defrecord-updatable HashBeef [x]
-                     #?@(:cljs [IHash                (-hash  [hb] 0xBEEF)]
-                         :clj  [clojure.lang.IHashEq (hasheq [hb] 0xBEEF)]))
+                     #?@(:cljs [IHash                (-hash  [_hb] 0xBEEF)]
+                         :clj  [clojure.lang.IHashEq (hasheq [_hb] 0xBEEF)]))
 
 (deftest test-defrecord-updatable
          (is (= 0xBEEF (-> (map->HashBeef {:x :ignored}) hash))))

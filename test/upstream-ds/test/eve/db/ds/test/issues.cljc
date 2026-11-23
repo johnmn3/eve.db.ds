@@ -3,17 +3,17 @@
      [clojure.data]
      [clojure.pprint]
      [eve.db.ds.core :as ds]
-     [clojure.test :as t :refer [is deftest]]))
+     [clojure.test :as t :refer [deftest]]))
 
 (deftest ^{:doc "CLJS `apply` + `vector` will hold onto mutable array of arguments directly"}
  issue-262
          (let [db (ds/db-with (ds/empty-db)
                               [{:attr "A"} {:attr "B"}])]
-              (is (= (ds/q '[:find ?a ?b
-                             :where [_ :attr ?a]
-                             [(vector ?a) ?b]]
-                           db)
-                     #{["A" ["A"]] ["B" ["B"]]}))))
+              (t/is (= (ds/q '[:find ?a ?b
+                               :where [_ :attr ?a]
+                               [(vector ?a) ?b]]
+                             db)
+                       #{["A" ["A"]] ["B" ["B"]]}))))
 
 (deftest ^{:doc "`empty` should preserve meta of db"}
  issue-331

@@ -19,7 +19,7 @@
    a runtime multimethod there)."
     (:require [cljs.test :as t]))
 
-(defmethod t/assert-expr 'thrown-msg? [menv msg form]
+(defmethod t/assert-expr 'thrown-msg? [_menv msg form]
            (let [[_ match & body] form]
                 `(try ~@body
                       (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual nil})

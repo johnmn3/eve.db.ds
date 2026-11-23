@@ -680,7 +680,7 @@
               clojure.lang.Counted
               (count [_] (- end off))
               clojure.lang.IReduce
-              (reduce [this f]
+              (reduce [_this f]
                       (if (== off end)
                           (f)
                           (clojure.core/reduce f (eve/aget arr off) (Chunk. arr (inc off) end))))
@@ -709,7 +709,7 @@
               ICounted
               (-count [_] (- end off))
               IReduce
-              (-reduce [this f]
+              (-reduce [_this f]
                        (if (== off end)
                            (f)
                            (-reduce (Chunk. arr (inc off) end) f (eve/aget arr off))))
@@ -761,7 +761,7 @@
               (reduce [this f start]
                       (iter-reduce this f start))
               clojure.lang.IChunkedSeq
-              (chunkedFirst [this]
+              (chunkedFirst [_this]
                             (let [end-idx (if (path-same-leaf left right)
                                               (path-get right 0)
                                               (eve/alength keys))]
@@ -824,7 +824,7 @@
               (-reduce [this f start]
                        (iter-reduce this f start))
               IChunkedSeq
-              (-chunked-first [this]
+              (-chunked-first [_this]
                               (let [end-idx (if (path-same-leaf left right)
                                                 (path-get right 0)
                                                 (eve/alength keys))]

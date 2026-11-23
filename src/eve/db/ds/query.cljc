@@ -448,7 +448,7 @@
                          false))
                 true)))
 
-(defn lookup-pattern-coll [context coll pattern]
+(defn lookup-pattern-coll [_context coll pattern]
       (let [data       (filter #(matches-pattern? pattern %) coll)
             attr->idx  (->> (map vector pattern (range))
                             (filter (fn [[s _]] (free-var? s)))
@@ -521,6 +521,9 @@
                                             (da/aset static-args i v))))
                    (apply f static-args)))))
 
+;; sym is used in the :clj arm only; the signature is shared
+;; across passes (single-pass false positive).
+#_{:clj-kondo/ignore [:unused-binding]}
 (defn- resolve-sym [sym]
        #?(:cljs nil
           :clj (when (namespace sym)
@@ -599,7 +602,7 @@
 
 (def rule-seqid (atom 0))
 
-(defn expand-rule [clause context used-args]
+(defn expand-rule [clause context _used-args]
       (let [[rule & call-args] clause
             seqid              (swap! rule-seqid inc)
             branches           (get (:rules context) rule)]
@@ -977,11 +980,11 @@
                                     (tuples->return-map return-map tuples)))
 
                  FindColl
-                 (-post-process [_ return-map tuples]
+                 (-post-process [_ _return-map tuples]
                                 (into [] (map first) tuples))
 
                  FindScalar
-                 (-post-process [_ return-map tuples]
+                 (-post-process [_ _return-map tuples]
                                 (ffirst tuples))
 
                  FindTuple

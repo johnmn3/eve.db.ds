@@ -1,0 +1,20 @@
+Reflection warning, eve/db/ds/db.cljc:381:29 - reference to field e can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:381:37 - reference to field a can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:381:45 - reference to field v can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:1298:16 - call to method write can't be resolved (target class is unknown).
+Reflection warning, eve/db/ds/db.cljc:1300:38 - reference to field schema can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:1300:61 - reference to field max_eid can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:1300:84 - reference to field max_tx can't be resolved.
+PARKED: []
+
+Testing eve.db.ds.test.conn
+
+Testing eve.db.ds.test.listen
+
+Testing eve.db.ds.test.upsert
+
+Testing eve.db.ds.test.db-fn
+
+Ran 23 tests containing 129 assertions.
+0 failures, 0 errors.
+U3 SUMMARY: {:test 42, :pass 248, :fail 0, :error 0}

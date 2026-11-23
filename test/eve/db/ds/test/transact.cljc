@@ -260,14 +260,14 @@
                    (is (:had-birthday e)))
 
               (let [{:keys [db-after]} (d/transact! conn
-                                                    [[:db.fn/call (fn [db]
+                                                    [[:db.fn/call (fn [_db]
                                                                       [{:name "Oleg"}])]])
                     e (d/entity db-after 2)]
                    (is (= "Oleg" (:name e))))
 
               (let [{:keys [db-after
                             tempids]} (d/transact! conn
-                                                   [[:db.fn/call (fn [db]
+                                                   [[:db.fn/call (fn [_db]
                                                                      [{:db/id -1
                                                                        :name "Vera"}])]])
                     e (d/entity db-after (tempids -1))]
@@ -339,7 +339,7 @@
                          (d/unregister-fn! 'eve.db.ds.test.transact/inc-age)))))
          (testing "host fn form: named pre-commit rejection, DB unchanged"
                   (let [conn    (d/create-conn {:name {:db/unique :db.unique/identity}})
-                        inc-age (fn [db name] [])
+                        inc-age (fn [_db _name] [])
                         before  @conn
                         err     (try (d/transact! conn [{:db/ident :inc-age
                                                          :db/fn    inc-age}])
@@ -581,7 +581,7 @@
 
 (deftest test-db-fn-returning-entity-without-db-id-issue-474
          (let [conn   (d/create-conn {})
-               _      (d/transact! conn [[:db.fn/call (fn [db]
+               _      (d/transact! conn [[:db.fn/call (fn [_db]
                                                           [{:foo "bar"}])]])
                db     @conn]
               (is (= #{[1 :foo "bar"]} (tdc/all-datoms db)))))

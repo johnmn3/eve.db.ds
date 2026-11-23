@@ -32,15 +32,15 @@
        (nil? (get (de/entity db e) a)))
 
 (defn- and-fn [& args]
-       (reduce (fn [a b]
+       (reduce (fn [_a b]
                    (if b b (reduced b))) true args))
 
 (defn- or-fn [& args]
-       (reduce (fn [a b]
+       (reduce (fn [_a b]
                    (if b (reduced b) b)) nil args))
 
 (defn- less
-       ([x] true)
+       ([_x] true)
        ([x y] (neg? (db/value-compare x y)))
        ([x y & more]
         (if (less x y)
@@ -50,7 +50,7 @@
             false)))
 
 (defn- greater
-       ([x] true)
+       ([_x] true)
        ([x y] (pos? (db/value-compare x y)))
        ([x y & more]
         (if (greater x y)
@@ -60,7 +60,7 @@
             false)))
 
 (defn- less-equal
-       ([x] true)
+       ([_x] true)
        ([x y] (not (pos? (db/value-compare x y))))
        ([x y & more]
         (if (less-equal x y)
@@ -70,7 +70,7 @@
             false)))
 
 (defn- greater-equal
-       ([x] true)
+       ([_x] true)
        ([x y] (not (neg? (db/value-compare x y))))
        ([x y & more]
         (if (greater-equal x y)

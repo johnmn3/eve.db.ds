@@ -591,7 +591,7 @@
                 clause
                 (fn [form]
                     (if (instance? Variable form)
-                        (let [sym (:symbol form)]
+                        (let [_sym (:symbol form)]
                              (if-let [subs (get (:consts context) (:symbol form))]
                                      (Constant. subs)
                                      form))
@@ -712,7 +712,7 @@
                                            :vars  missing}))))))
 
 (defn resolve-not [context clause]
-      (let [{:keys [source vars clauses]} clause
+      (let [{:keys [_source vars clauses]} clause
             syms      (into #{} (map :symbol) vars)
             _         (check-bound context (set syms) (dp/source clause))
             context*  (-> context
@@ -722,7 +722,7 @@
            (subtract-contexts context context* syms)))
 
 (defn resolve-or [context clause]
-      (let [{:keys [source rule-vars clauses]} clause
+      (let [{:keys [_source rule-vars clauses]} clause
             {:keys [required free]}            rule-vars
             _    (check-bound context (set (map :symbol required)) (dp/source clause))
             syms (into #{} (map :symbol) (concat required free))

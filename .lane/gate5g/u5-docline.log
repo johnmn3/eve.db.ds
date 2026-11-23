@@ -1,0 +1,16 @@
+Reflection warning, eve/db/ds/db.cljc:381:29 - reference to field e can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:381:37 - reference to field a can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:381:45 - reference to field v can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:1298:16 - call to method write can't be resolved (target class is unknown).
+Reflection warning, eve/db/ds/db.cljc:1300:38 - reference to field schema can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:1300:61 - reference to field max_eid can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:1300:84 - reference to field max_tx can't be resolved.
+U5 parked/excluded: upstream print-read + init-db deftests (U2/U3 surfaces); persistent close-conn! (GAP-U5-1); cliff anchors (generator not in repo ? synthetic digests instead).
+
+Testing eve.db.ds.test.serialize
+
+Testing eve.db.ds.test.persistence
+
+Ran 6 tests containing 32 assertions.
+0 failures, 0 errors.
+U5-RESULT {:test 6, :pass 32, :fail 0, :error 0, :type :summary}

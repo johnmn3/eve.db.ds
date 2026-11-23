@@ -262,7 +262,7 @@
          (let [cnt+q (fn [query db & sources]
                          (let [*cnt (volatile! 0)
                                db'  (d/filter db
-                                              (fn [db datom]
+                                              (fn [_db _datom]
                                                   (vswap! *cnt inc)
                                                   true))
                                res  (apply d/q query db' sources)]

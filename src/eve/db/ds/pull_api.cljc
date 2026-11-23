@@ -54,7 +54,7 @@
 #_{:clj-kondo/ignore [:missing-protocol-method]}
 (defrecord ResultFrame [value datoms]
            IFrame
-           (-str [this]
+           (-str [_this]
                  (str "ResultFrame<value=" value ">")))
 
 ;; Partial protocol implementation by design: this type
@@ -63,7 +63,7 @@
 #_{:clj-kondo/ignore [:missing-protocol-method]}
 (defrecord MultivalAttrFrame [acc ^PullAttr attr datoms]
            IFrame
-           (-run [this context]
+           (-run [_this _context]
                  (loop [acc acc
                         datoms datoms]
                        (util/cond+
@@ -83,12 +83,12 @@
                         :else
                         (recur (conj! acc (:v datom)) (next-seq datoms)))))
 
-           (-str [this]
+           (-str [_this]
                  (str "MultivalAttrFrame<attr=" (attr-str attr) ">")))
 
 (defrecord MultivalRefAttrFrame [seen recursion-limits acc pattern ^PullAttr attr datoms]
            IFrame
-           (-merge [this result]
+           (-merge [_this result]
                    (MultivalRefAttrFrame.
                     seen
                     recursion-limits
@@ -117,12 +117,12 @@
                   :else
                   [this (ref-frame context seen recursion-limits pattern attr id)]))
 
-           (-str [this]
+           (-str [_this]
                  (str "MultivalAttrFrame<attr=" (attr-str attr) ">")))
 
 (defrecord AttrsFrame [seen recursion-limits acc ^PullPattern pattern ^PullAttr attr attrs datoms id]
            IFrame
-           (-merge [this result]
+           (-merge [_this result]
                    (AttrsFrame.
                     seen
                     recursion-limits
@@ -132,7 +132,7 @@
                     (next-seq attrs)
                     (not-empty (or (.-datoms ^ResultFrame result) (next-seq datoms)))
                     id))
-           (-run [this context]
+           (-run [_this context]
                  (loop [acc    acc
                         attr   attr
                         attrs  attrs
@@ -197,12 +197,12 @@
                          (next-seq attrs)
                          (next-seq datoms)))))
 
-           (-str [this]
+           (-str [_this]
                  (str "AttrsFrame<id=" id ", attr=" (attr-str attr) ", attrs=" (str/join " " (map attr-str attrs)) ">")))
 
 (defrecord ReverseAttrsFrame [seen recursion-limits acc pattern ^PullAttr attr attrs id]
            IFrame
-           (-merge [this result]
+           (-merge [_this result]
                    (ReverseAttrsFrame.
                     seen
                     recursion-limits
@@ -212,7 +212,7 @@
                     (next-seq attrs)
                     id))
 
-           (-run [this context]
+           (-run [_this context]
                  (loop [acc   acc
                         attr  attr
                         attrs attrs]
@@ -242,7 +242,7 @@
                         [(ReverseAttrsFrame. seen recursion-limits acc pattern attr attrs id)
                          (MultivalRefAttrFrame. seen recursion-limits (transient []) pattern attr datoms)])))
 
-           (-str [this]
+           (-str [_this]
                  (str "ReverseAttrsFrame<id=" id ", attr=" (attr-str attr) ", attrs=" (str/join " " (map attr-str attrs)) ">")))
 
 (defn- auto-expanding? [^PullAttr attr]

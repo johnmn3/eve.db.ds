@@ -31,7 +31,7 @@
              :median-ms (Math/round med) :per-invoke-us (Math/round (/ (* med 1000.0) N))}))
 
 (defn -main [& _]
-      (let [host-fn (fn [db n] [[:db/add 1 :n n]])
+      (let [host-fn (fn [_db n] [[:db/add 1 :n n]])
             sci-stored (d/sci-fn [db n] [[:db/add 1 :n n]])
         ;; cold: first-ever SCI invoke (context init + compile)
             cold-conn (d/create-conn)
@@ -56,7 +56,7 @@
             host-conn (d/create-conn)
             _ (d/transact! host-conn [{:db/id 1}])
         ;; compute-heavy body: where interpretation overhead shows
-            compute-host (fn [db n]
+            compute-host (fn [_db _n]
                              (loop [i 1 acc 0]
                                    (if (> i 1000) [[:db/add 1 :n acc]] (recur (inc i) (+ acc i)))))
             compute-sci (d/sci-fn [db n]
@@ -83,8 +83,8 @@
     ;; invokes of the compute body — isolates body execution cost
     ;; from the transact machinery that dominates the rows above
            (let [db      (d/empty-db)
-                 host    (fn [db n] (loop [i 1 acc 0]
-                                          (if (> i 1000) [[:db/add 1 :n acc]] (recur (inc i) (+ acc i)))))
+                 host    (fn [_db _n] (loop [i 1 acc 0]
+                                            (if (> i 1000) [[:db/add 1 :n acc]] (recur (inc i) (+ acc i)))))
                  sci-st  (d/sci-fn [db n] (loop [i 1 acc 0]
                                                 (if (> i 1000) [[:db/add 1 :n acc]] (recur (inc i) (+ acc i)))))]
                 (d/register-fn! 'dbfn-bench/micro host)

@@ -260,3 +260,23 @@ type-mismatch inference FPs (rseq on a slice Iter; @ of a plain
 value in the dead pull_parser test). :config-in measured inert
 for these classes in kondo 2026.10.26 and is not used.
 Gate (.lane/gate5f/): all unit runners baseline-identical.
+
+## Step 5 batches 6+7 — unused-binding + info classes (this lane, Nov 23)
+
+KONDO LEG GREEN: 918 -> 0 errors, 0 warnings (bb lint's kondo
+leg exits 0 cold-cache). unused-binding (183) closed by
+lang-aware renames: a two-stage driver renamed a binding to
+_<name> only where the name occurs nowhere else in its scope
+(method/arity/let form, strings+comments stripped) — textual
+proof no reader-conditional arm in any pass uses it; 179
+renames. The four residuals by hand: Datom containsKey self arg
+(a :keyword had masked the proof), two dbfn_bench compute fns
+whose n is genuinely ignored, and resolve-sym (per-site ignore
+— arg used in the :clj arm only, shared signature). Info
+classes closed: aliased-referred-var (issues now t/is
+throughout), redundant-str-call x5, redundant-nested-call x2,
+is-message-not-string (real string message), unused-excluded-var
+(entity's vestigial keys/get exclude removed). Gates
+(.lane/gate5g/ + spot): all unit runners baseline-identical.
+Remaining for bb lint: Splint (316 at census) and Carve (154),
+dprint leg, pre-commit hook.
