@@ -105,3 +105,47 @@ prebuilt :advanced bundle.
 ## Results
 
 See `Results 2026-11-23` below (appended by the run that produced them).
+
+## Results 2026-11-23 (eve 38e6da6, eve.db.ds 24d8754; journaled default; 20 s per leg; 3 reps)
+
+Correctness (series4, 18 legs, every runtime reading back from a fresh open):
+
+| combo | reps PASS | tx committed (r1/r2/r3) | notes |
+|---|---|---|---|
+| jvm | 3/3 | 1,265 / 1,297 / 1,313 | |
+| jolt | 3/3 | 1,010 / 998 / 993 | |
+| jvm×2 | 1/3 | 1,898 / 2,044 / 1,817 | r2, r3: one `:db/cas` threw after committing (known failure 2); every other check exact |
+| jolt×2 | 3/3 | 1,347 / 1,507 / 1,482 | |
+| jvm+jolt | 3/3 | 1,481 / 1,481 / 1,523 | |
+| cljs×2 | 0/3 | 975 / 780 / 946 | `d/q` nil rows (known failure 3) every rep; r3 also the cas throw |
+
+In every leg: entities = transactions, datoms = 2 + 5 × entities, shared `:n`
+= swaps, all writers saw all others, find/pull misses 0, readers agree.
+
+Median ns/op inside the shootout (ms-tick timing). Solo find/pull/mailbox
+reads have no foreign target, so they are not comparable and are left out.
+Query counts foreign entities, so its work grows with the other writers.
+
+| rt | op | solo | ×2 same rt | with the other rt |
+|---|---|---|---|---|
+| jvm | round (µs) | 15,432 | 20,932 (1.36×) | 24,307 (1.58×) |
+| jvm | transact | 4,769,468 | 6,190,624 | 5,990,279 |
+| jvm | swap | 1,105,435 | 1,418,595 | 1,204,878 |
+| jvm | deref | 19,275 | 24,344 | 21,341 |
+| jvm | reset | 1,054,074 | 1,304,160 | 1,031,097 |
+| jvm | cas | 4,138,461 | 5,027,310 | 5,213,592 |
+| jvm | scan | 6,772,870 | 9,641,200 | 8,087,378 |
+| jolt | round (µs) | 20,048 | 27,063 (1.35×) | 30,415 (1.52×) |
+| jolt | transact | 6,216,432 | 7,750,862 | 9,098,335 |
+| jolt | swap | 859,013 | 829,393 | 1,099,848 |
+| jolt | deref | 36,757 | 37,920 | 42,553 |
+| jolt | reset | 638,469 | 610,274 | 878,971 |
+| jolt | cas | 3,787,148 | 4,761,836 | 6,260,355 |
+| jolt | scan | 20,344,000 | 30,579,364 | 29,301,204 |
+| cljs | round (µs) | — | 42,324 | — |
+
+With two writers each one slows by 1.35–1.58×, which is less than the 2× that full
+serialization would give, so aggregate throughput rises (jvm 65→96
+rounds/s, jolt 50→74). Writers in a pair stay within 0–11% of each other's
+round count, so neither starves. `:db/cas` retries are 0–5%. Reads hit
+`db-not-kept` 0–10 times per 20 s writer and succeed on retry.
