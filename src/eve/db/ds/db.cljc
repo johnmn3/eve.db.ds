@@ -78,6 +78,18 @@
      (if (cljs-env? &env) then else)))
 
 #?(:cljs nil
+   ;; glj: its compiler resolves a :tag symbol it cannot find as a var
+   ;; ('number fails with "unable to resolve symbol: number"), and
+   ;; clojure.core$long is not a class there, so the number hint is
+   ;; dropped; a hint never changes the value.
+   :glj
+   (defn patch-tag [meta cljs-env?]
+     (if cljs-env?
+       meta
+       (condp = (:tag meta)
+         'boolean (assoc meta :tag (if (resolve 'java.lang.Boolean) 'java.lang.Boolean 'boolean))
+         'number  (dissoc meta :tag)
+         meta)))
    :default
    (defn patch-tag [meta cljs-env?]
      (if cljs-env?
