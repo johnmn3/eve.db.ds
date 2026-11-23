@@ -17,8 +17,8 @@
    :task (shell "clj-kondo --lint src test")}
 
   lint-splint
-  {:doc "Splint shape/smell rules"
-   :task (shell "bb splint")}
+  {:doc "Splint shape/smell rules (paths named: splint's no-arg default checked only 73 of this repo's 157 files — measured at census)"
+   :task (shell "bb splint src test")}
 
   carve-report
   {:doc "fail if any unused var is reported"
