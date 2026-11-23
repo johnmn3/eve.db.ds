@@ -27,7 +27,10 @@
             [clojure.test :as t :refer [is are deftest testing]])
   #?(:clj
      (:import
-       [clojure.lang ExceptionInfo])))
+       [clojure.lang ExceptionInfo])
+     :lpy
+     (:import
+       [basilisp.lang.exception ExceptionInfo])))
 
 ;; ---------------------------------------------------------------------------
 ;; harness
