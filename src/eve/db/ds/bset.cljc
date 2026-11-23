@@ -845,7 +845,34 @@
        IMeta
        (-meta [_] nil)
        IWithMeta
-       (-with-meta [this _] this)]))
+       (-with-meta [this _] this)]
+      :lpy
+      [basilisp.lang.interfaces/IPersistentCollection
+       (seq [this]
+         (when keys
+           (clojure.core/cons (eve/aget keys idx)
+                              (lazy-seq (seq (-iter-next this))))))
+       (cons [this x]
+         (clojure.core/cons x this))
+       (empty [_] ())
+       basilisp.lang.interfaces/IReduce
+       (reduce [_ & args]
+         (if (== 1 (count args))
+           (iter-reduce _ (first args))
+           (iter-reduce _ (first args) (second args))))
+       basilisp.lang.interfaces/IWithMeta
+       (meta [_] nil)
+       (with-meta [this _] this)
+       (__len__ [_]
+         (distance root shift left right))
+       (__iter__ [this]
+         (python/iter (or (seq this) ())))
+       (__eq__ [this other]
+         (boolean (and (sequential? other) (seq-equiv this other))))
+       (__hash__ [this]
+         (clojure.core/hash-ordered-coll this))
+       (__str__ [this]
+         (pr-str (seq this)))]))
 
 (deftype ReverseIter [root shift left right keys idx]
   #?@(:clj
@@ -936,7 +963,40 @@
        IMeta
        (-meta [_] nil)
        IWithMeta
-       (-with-meta [this _] this)]))
+       (-with-meta [this _] this)]
+      :lpy
+      [basilisp.lang.interfaces/IPersistentCollection
+       (seq [this]
+         (when keys
+           (clojure.core/cons (eve/aget keys idx)
+                              (lazy-seq (seq (-riter-next this))))))
+       (cons [this x]
+         (clojure.core/cons x this))
+       (empty [_] ())
+       basilisp.lang.interfaces/IReduce
+       (reduce [_ & args]
+         (if (== 1 (count args))
+           (riter-reduce _ (first args))
+           (riter-reduce _ (first args) (second args))))
+       basilisp.lang.interfaces/IWithMeta
+       (meta [_] nil)
+       (with-meta [this _] this)
+       (__len__ [_]
+         (distance root shift left right))
+       (__iter__ [this]
+         (python/iter (or (seq this) ())))
+       (__eq__ [this other]
+         (boolean (and (sequential? other) (seq-equiv this other))))
+       (__hash__ [this]
+         (clojure.core/hash-ordered-coll this))
+       (__str__ [this]
+         (pr-str (seq this)))]))
+
+;; basilisp's IMeta meta is a Python property; the iterators' meta is
+;; nil, installed as one (a plain (meta [_] nil) method would make
+;; (meta it) answer the bound method).
+#?(:lpy (do (python/setattr Iter "meta" (python/property (fn [_] nil)))
+            (python/setattr ReverseIter "meta" (python/property (fn [_] nil)))))
 
 ;; ---------------------------------------------------------------------------
 ;; iterator helpers
