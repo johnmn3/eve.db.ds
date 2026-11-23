@@ -3,6 +3,8 @@
   (:require
     [#?(:cljs cljs.reader :clj clojure.edn) :as edn]
     [eve.alpha :as eve]
+    [eve.crypto :as crypto]
+    [eve.net.bytes :as bytes]
     [eve.db.ds.conn :as conn]
     [eve.db.ds.db :as db #?@(:cljs [:refer [Datom DB FilteredDB]])]
     [eve.db.ds.db-fn :as dbfn]
@@ -722,18 +724,22 @@
 #?(:clj
    (defn- db-fn-var-name
      "The generated var name for a db-fn form: content-addressed
-      from the caller's namespace and the printed fn form (SHA-1,
+      from the caller's namespace and the printed fn form (SHA-256,
       first 12 hex chars, db-fn- prefixed). Deterministic: the
       same form in the same namespace always derives the same
       name, so re-evaluating a form re-interns and re-registers
       the same var; distinct forms derive distinct names. Two
       textually identical forms intentionally share one var —
-      they are the same fn."
+      they are the same fn. The digest goes through eve.crypto
+      (with eve.net.bytes for the UTF-8 bytes and the hex) rather
+      than java.security.MessageDigest directly: the bytes are
+      the same SHA-256 on every host, and a :clj-reading host
+      without a JDK provider for MessageDigest (jolt, measured)
+      still answers — the same route eve.flat.chunk's fingerprint
+      takes, for the same reason."
      [ns-sym params body]
-     (let [input  (str ns-sym " " (pr-str (list* 'fn params body)))
-           digest (.digest (java.security.MessageDigest/getInstance "SHA-1")
-                      (.getBytes input "UTF-8"))
-           hex    (format "%040x" (java.math.BigInteger. 1 digest))]
+     (let [input (str ns-sym " " (pr-str (list* 'fn params body)))
+           hex   (bytes/hex (crypto/sha256 (bytes/utf8 input)))]
        (symbol (str "db-fn-" (subs hex 0 12))))))
 
 #?(:clj

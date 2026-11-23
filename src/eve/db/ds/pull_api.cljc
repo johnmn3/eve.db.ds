@@ -8,26 +8,19 @@
     [eve.db.ds.bset :as set])
   #?(:clj
      (:import
-       [clojure.lang ISeq]
        [eve.db.ds.db Datom DB]
        [eve.db.ds.pull_parser PullAttr PullPattern])))
 
 (declare pull-impl attrs-frame ref-frame ->ReverseAttrsFrame)
 
-(defn- first-seq [#?(:clj ^ISeq xs :cljs ^seq xs)]
-  (if (nil? xs)
-    nil
-    #?(:clj (.first xs) :cljs (-first xs))))
+(defn- first-seq [xs]
+  (first xs))
 
-(defn- next-seq [#?(:clj ^ISeq xs :cljs ^seq xs)]
-  (if (nil? xs)
-    nil
-    #?(:clj (.next xs) :cljs (-next xs))))
+(defn- next-seq [xs]
+  (next xs))
 
-(defn- conj-seq [#?(:clj ^ISeq xs :cljs ^seq xs) x]
-  (if (nil? xs)
-    (list x)
-    #?(:clj (.cons xs x) :cljs (-conj xs x))))
+(defn- conj-seq [xs x]
+  (conj xs x))
 
 (defn- assoc-some! [m k v]
   (if (nil? v) m (assoc! m k v)))
