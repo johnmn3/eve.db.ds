@@ -1,5 +1,5 @@
 (ns eve.db.ds.test-macros
-  "Macro-time registration of the thrown-msg? assert-expr for
+    "Macro-time registration of the thrown-msg? assert-expr for
    ClojureScript (U6 browser finding, 2026-11-20).
 
    In modern ClojureScript, cljs.test/assert-expr is a COMPILE-TIME
@@ -17,15 +17,15 @@
    at the macro signature [menv msg form]; the JVM registration
    stays in the supports' :clj arms (clojure.test/assert-expr IS
    a runtime multimethod there)."
-  (:require [cljs.test :as t]))
+    (:require [cljs.test :as t]))
 
 (defmethod t/assert-expr 'thrown-msg? [menv msg form]
-  (let [[_ match & body] form]
-    `(try ~@body
-          (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual nil})
-          (catch :default e#
-            (let [m# (.-message e#)]
-              (if (= ~match m#)
-                (t/do-report {:type :pass, :message ~msg, :expected '~form, :actual e#})
-                (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual e#})))
-          e#))))
+           (let [[_ match & body] form]
+                `(try ~@body
+                      (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual nil})
+                      (catch :default e#
+                             (let [m# (.-message e#)]
+                                  (if (= ~match m#)
+                                      (t/do-report {:type :pass, :message ~msg, :expected '~form, :actual e#})
+                                      (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual e#})))
+                             e#))))

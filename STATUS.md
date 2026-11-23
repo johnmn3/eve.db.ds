@@ -11,7 +11,7 @@ to eve.db.ds, eve, cohost, valuescript).
 - [x] 1. Fleet templates installed (byte-identical) + kondo cache
 - [x] 2. Census banked in CENSUS.md (before any fixing)
 - [x] 3. Baseline test run banked (before formatting)
-- [ ] 4. Format pass (own commit) + gate re-run
+- [x] 4. Format pass (own commit) + gate re-run
 - [ ] 5. Fix campaign, rule-class by rule-class, gate after every batch
 - [ ] 6. Gates on: bb lint exit 0 (5 legs), pre-commit hook, fmt idempotent
 - [ ] 7. RETRO.md + push
@@ -135,3 +135,14 @@ Reason written in the config file's header.
   service restart killed the first gC attempt mid-run; gC was
   re-run clean. Step 3 done: unit runners green (u2/u3/u4/u5/
   bset/chain-autoclose) + this union is the no-regression anchor.
+- Nov 23 ~9:00 AM ET (third lane): step 4 FORMAT PASS applied —
+  fleet cljfmt fix over src+test, 154 files reformatted (the 3
+  already-clean files untouched). Gate after format: unit runners
+  u2 (11/79), u3, u4 (6/48), bset (5/816), chain-autoclose all
+  exit 0; u5 green via its DOCUMENTED deps line (6/32) — the
+  generic -Sdeps paths line cannot run u5 (no transit on that
+  classpath; measured, harness fact not a format break).
+  cljfmt check clean after fix. Environment note: bb/cljfmt on
+  this box need GITLIBS=/home/hatch/.gitlibs (exec runs as root,
+  whose default gitlibs is empty; without it bb tries to re-fetch
+  the Eve git dep and fails).

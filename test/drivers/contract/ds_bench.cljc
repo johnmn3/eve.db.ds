@@ -1,5 +1,5 @@
 (ns contract.ds-bench
-  "Eve-DataScript vs stock DataScript — the driver behind Eve's
+    "Eve-DataScript vs stock DataScript — the driver behind Eve's
    doc/performance.md section 1 table, RECONSTRUCTED in this repo.
    The original contract.ds-bench existed in no current tree (perf
    PLAN gap 1); this driver family reproduces its contract from the
@@ -57,79 +57,79 @@
    Usage (via harness/run-jvm.sh): contract.ds-bench <domain-dir> [size...]
    The dir is a scratch root and must be FRESH (each shape gets a
    fresh persistent conn under it). Default sizes: 500 1000."
-  (:require [eve.db.ds.core :as ed]))
+    (:require [eve.db.ds.core :as ed]))
 
 (def schema
-  {:name {:db/index true}
-   :friend {:db/valueType :db.type/ref
-            :db/cardinality :db.cardinality/many}})
+     {:name {:db/index true}
+      :friend {:db/valueType :db.type/ref
+               :db/cardinality :db.cardinality/many}})
 
 (defn person [n i]
-  {:db/id i
-   :name (str "person-" i)
-   :age (mod (+ (* i 37) 11) 90)
-   :friend [(inc (mod i n)) (inc (mod (+ i 7) n))]})
+      {:db/id i
+       :name (str "person-" i)
+       :age (mod (+ (* i 37) 11) 90)
+       :friend [(inc (mod i n)) (inc (mod (+ i 7) n))]})
 
 (defn people [n] (mapv #(person n %) (range 1 (inc n))))
 
 (defn datom-tuples [n]
-  (vec (mapcat (fn [{:keys [db/id name age friend]}]
-                 [[:db/add id :name name]
-                  [:db/add id :age age]
-                  [:db/add id :friend (nth friend 0)]
-                  [:db/add id :friend (nth friend 1)]])
-               (people n))))
+      (vec (mapcat (fn [{:keys [db/id name age friend]}]
+                       [[:db/add id :name name]
+                        [:db/add id :age age]
+                        [:db/add id :friend (nth friend 0)]
+                        [:db/add id :friend (nth friend 1)]])
+                   (people n))))
 
 (defn now-ms [] (double (/ (System/nanoTime) 1e6)))
 
 (defmacro timed-ms [& body]
-  `(let [t0# (now-ms) r# (do ~@body)] [(- (now-ms) t0#) r#]))
+          `(let [t0# (now-ms) r# (do ~@body)] [(- (now-ms) t0#) r#]))
 
 (def shapes [:batched-build :bulk-load :one-person-per-swap
              :one-datom-per-swap :retract-per-swap])
 
 (defn eve-shapes [root n]
-  (let [ps (people n)
-        tuples (datom-tuples n)
-        k (min 500 n)
-        conn (fn [tag]
-               (let [d (str root "/eve-" tag "-" n)]
-                 (.mkdirs (java.io.File. d))
-                 (ed/create-conn schema {:persistent d})))]
-    {:batched-build
-     (let [c (conn "batched")
-           [ms _] (timed-ms (doseq [batch (partition-all 100 ps)]
-                              (ed/transact! c batch)))]
-       ms)
-     :bulk-load
-     (let [c (conn "bulk")
-           [ms _] (timed-ms (doseq [chunk (partition-all 2000 tuples)]
-                              (ed/transact! c chunk)))]
-       ms)
-     :one-person-per-swap
-     (let [c (conn "one-person")
-           [ms _] (timed-ms (doseq [p (take k ps)]
-                              (ed/transact! c [p])))]
-       (/ ms k))
-     :one-datom-per-swap
-     (let [c (conn "one-datom")
-           [ms _] (timed-ms (doseq [i (range 1 101)]
-                              (ed/transact! c [[:db/add i :name (str "person-" i)]])))]
-       (/ ms 100))
-     :retract-per-swap
-     (let [c (conn "retract")]
-       (doseq [batch (partition-all 100 ps)]
-         (ed/transact! c batch))
-       (let [[ms _] (timed-ms (doseq [e (range 1 (inc k))]
-                                (ed/transact! c [[:db.fn/retractEntity e]])))]
-         (/ ms k)))}))
+      (let [ps (people n)
+            tuples (datom-tuples n)
+            k (min 500 n)
+            conn (fn [tag]
+                     (let [d (str root "/eve-" tag "-" n)]
+                          (.mkdirs (java.io.File. d))
+                          (ed/create-conn schema {:persistent d})))]
+           {:batched-build
+            (let [c (conn "batched")
+                  [ms _] (timed-ms (doseq [batch (partition-all 100 ps)]
+                                          (ed/transact! c batch)))]
+                 ms)
+            :bulk-load
+            (let [c (conn "bulk")
+                  [ms _] (timed-ms (doseq [chunk (partition-all 2000 tuples)]
+                                          (ed/transact! c chunk)))]
+                 ms)
+            :one-person-per-swap
+            (let [c (conn "one-person")
+                  [ms _] (timed-ms (doseq [p (take k ps)]
+                                          (ed/transact! c [p])))]
+                 (/ ms k))
+            :one-datom-per-swap
+            (let [c (conn "one-datom")
+                  [ms _] (timed-ms (doseq [i (range 1 101)]
+                                          (ed/transact! c [[:db/add i :name (str "person-" i)]])))]
+                 (/ ms 100))
+            :retract-per-swap
+            (let [c (conn "retract")]
+                 (doseq [batch (partition-all 100 ps)]
+                        (ed/transact! c batch))
+                 (let [[ms _] (timed-ms (doseq [e (range 1 (inc k))]
+                                               (ed/transact! c [[:db.fn/retractEntity e]])))]
+                      (/ ms k)))}))
 
 (defn -main [& [dir & sizes]]
-  (let [dir (or dir (str (System/getProperty "java.io.tmpdir") "/ds-bench"))
-        sizes (if (seq sizes) (mapv #(Long/parseLong %) sizes) [500 1000])]
-    (.mkdirs (java.io.File. dir))
-    (doseq [n sizes]
-      (let [rows (eve-shapes dir n)]
-        (doseq [shape shapes]
-          (println (pr-str {:arm :eve :size n :shape shape :ms (get rows shape)})))))
-    (flush)))
+      (let [dir (or dir (str (System/getProperty "java.io.tmpdir") "/ds-bench"))
+            sizes (if (seq sizes) (mapv #(Long/parseLong %) sizes) [500 1000])]
+           (.mkdirs (java.io.File. dir))
+           (doseq [n sizes]
+                  (let [rows (eve-shapes dir n)]
+                       (doseq [shape shapes]
+                              (println (pr-str {:arm :eve :size n :shape shape :ms (get rows shape)})))))
+           (flush)))

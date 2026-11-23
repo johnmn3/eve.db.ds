@@ -1,52 +1,52 @@
 (ns eve.db.ds.pprint
-  (:require
-    [eve.db.ds.db :as db]
-    [clojure.pprint :as pp])
-  (:import
-    [eve.db.ds.db Datom DB FilteredDB]))
+    (:require
+     [eve.db.ds.db :as db]
+     [clojure.pprint :as pp])
+    (:import
+     [eve.db.ds.db Datom DB FilteredDB]))
 
 (defmethod pp/simple-dispatch Datom [^Datom d]
-  (pp/pprint-logical-block :prefix "#eve.db.ds/Datom [" :suffix "]"
-    (pp/write-out (.-e d))
-    (.write ^java.io.Writer *out* " ")
-    (pp/pprint-newline :linear)
-    (pp/write-out (.-a d))
-    (.write ^java.io.Writer *out* " ")
-    (pp/pprint-newline :linear)
-    (pp/write-out (.-v d))
-    (.write ^java.io.Writer *out* " ")
-    (pp/pprint-newline :linear)
-    (pp/write-out (db/datom-tx d))
-    (.write ^java.io.Writer *out* " ")
-    (pp/pprint-newline :linear)
-    (pp/write-out (db/datom-added d))))
+           (pp/pprint-logical-block :prefix "#eve.db.ds/Datom [" :suffix "]"
+                                    (pp/write-out (.-e d))
+                                    (.write ^java.io.Writer *out* " ")
+                                    (pp/pprint-newline :linear)
+                                    (pp/write-out (.-a d))
+                                    (.write ^java.io.Writer *out* " ")
+                                    (pp/pprint-newline :linear)
+                                    (pp/write-out (.-v d))
+                                    (.write ^java.io.Writer *out* " ")
+                                    (pp/pprint-newline :linear)
+                                    (pp/write-out (db/datom-tx d))
+                                    (.write ^java.io.Writer *out* " ")
+                                    (pp/pprint-newline :linear)
+                                    (pp/write-out (db/datom-added d))))
 
 (defn- pp-db [db ^java.io.Writer w]
-  (pp/pprint-logical-block :prefix "#eve.db.ds/DB {" :suffix "}"
-    (pp/pprint-logical-block
-      (pp/write-out :schema)
-      (.write w " ")
-      (pp/pprint-newline :linear)
-      (pp/write-out (db/-schema db)))
-    (.write w ", ")
-    (pp/pprint-newline :linear)
+       (pp/pprint-logical-block :prefix "#eve.db.ds/DB {" :suffix "}"
+                                (pp/pprint-logical-block
+                                 (pp/write-out :schema)
+                                 (.write w " ")
+                                 (pp/pprint-newline :linear)
+                                 (pp/write-out (db/-schema db)))
+                                (.write w ", ")
+                                (pp/pprint-newline :linear)
 
-    (pp/pprint-logical-block
-      (pp/write-out :datoms)
-      (.write w " ")
-      (pp/pprint-newline :linear)
-      (pp/pprint-logical-block :prefix "[" :suffix "]"
-        (pp/print-length-loop [aseq (db/-datoms db :eavt nil nil nil nil)]
-          (when aseq
-            (let [^Datom d (first aseq)]
-              (pp/write-out [(.-e d) (.-a d) (.-v d) (db/datom-tx d)])
-              (when (next aseq)
-                (.write w " ")
-                (pp/pprint-newline :linear)
-                (recur (next aseq))))))))))
+                                (pp/pprint-logical-block
+                                 (pp/write-out :datoms)
+                                 (.write w " ")
+                                 (pp/pprint-newline :linear)
+                                 (pp/pprint-logical-block :prefix "[" :suffix "]"
+                                                          (pp/print-length-loop [aseq (db/-datoms db :eavt nil nil nil nil)]
+                                                                                (when aseq
+                                                                                      (let [^Datom d (first aseq)]
+                                                                                           (pp/write-out [(.-e d) (.-a d) (.-v d) (db/datom-tx d)])
+                                                                                           (when (next aseq)
+                                                                                                 (.write w " ")
+                                                                                                 (pp/pprint-newline :linear)
+                                                                                                 (recur (next aseq))))))))))
 
 (defmethod pp/simple-dispatch DB [db]
-  (pp-db db *out*))
+           (pp-db db *out*))
 
 (defmethod pp/simple-dispatch FilteredDB [db]
-  (pp-db db *out*))
+           (pp-db db *out*))

@@ -1,5 +1,5 @@
 (ns eve.db.ds.serialize
-  "DB -> plain data and back, over datoms (DS-IN-EVE-PLAN v2 §3).
+    "DB -> plain data and back, over datoms (DS-IN-EVE-PLAN v2 §3).
 
    A serialized DB is data — no Eve internals, no slab formats:
 
@@ -39,14 +39,14 @@
    a source max-eid above every live datom eid (fully retracted
    entities) is not preserved — the transaction that would install
    it does not exist in the public API."
-  #?(:cljs (:require-macros [eve.db.ds.util :as util]))
-  (:require
-    [clojure.edn :as edn]
-    [clojure.string :as str]
-    [eve.alpha :as eve :refer [$]]
-    [eve.db.ds.conn :as conn]
-    [eve.db.ds.db :as db]
-    [eve.db.ds.util :as util]))
+    #?(:cljs (:require-macros [eve.db.ds.util :as util]))
+    (:require
+     [clojure.edn :as edn]
+     [clojure.string :as str]
+     [eve.alpha :as eve :refer [$]]
+     [eve.db.ds.conn :as conn]
+     [eve.db.ds.db :as db]
+     [eve.db.ds.util :as util]))
 
 (def ^:const ^:private marker-kw 0)
 (def ^:const ^:private marker-other 1)
@@ -55,91 +55,91 @@
 (def ^:const ^:private marker-nan 4)
 
 (defn- write-v [freeze-fn v]
-  (cond
-    (string? v)  v
-    (boolean? v) v
-    (keyword? v) [marker-kw (str v)]
-    (number? v)
-    (cond
-      #?@(:clj [(or (instance? java.math.BigInteger v)
-                  (instance? java.math.BigDecimal v)
-                  (instance? clojure.lang.Ratio v)
-                  (instance? clojure.lang.BigInt v))
-                [marker-other (freeze-fn v)]])
-      (== ##Inf v)  [marker-inf]
-      (== ##-Inf v) [marker-minus-inf]
-      #?(:clj  (and (instance? Double v) (Double/isNaN ^double v))
-         :cljs (js/isNaN v)) [marker-nan]
-      :else v)
+       (cond
+        (string? v)  v
+        (boolean? v) v
+        (keyword? v) [marker-kw (str v)]
+        (number? v)
+        (cond
+         #?@(:clj [(or (instance? java.math.BigInteger v)
+                       (instance? java.math.BigDecimal v)
+                       (instance? clojure.lang.Ratio v)
+                       (instance? clojure.lang.BigInt v))
+                   [marker-other (freeze-fn v)]])
+         (== ##Inf v)  [marker-inf]
+         (== ##-Inf v) [marker-minus-inf]
+         #?(:clj  (and (instance? Double v) (Double/isNaN ^double v))
+            :cljs (js/isNaN v)) [marker-nan]
+         :else v)
     ;; freeze-fn's contract is plain host data on every host: a
     ;; delivered flat collection is converted first (transit-cljs's
     ;; writer is protocol-strict and refuses flat sisters with
     ;; "Cannot write" where transit-clj's generic Map writer does
     ;; not — U6 browser finding, 2026-11-20).
-    :else [marker-other (freeze-fn (eve/eve->clj v))]))
+        :else [marker-other (freeze-fn (eve/eve->clj v))]))
 
 (defn- thaw-kw [s]
-  (if (and (string? s) (str/starts-with? s ":"))
-    (keyword (subs s 1))
-    s))
+       (if (and (string? s) (str/starts-with? s ":"))
+           (keyword (subs s 1))
+           s))
 
 (defn- read-v [thaw-fn v]
-  (cond
-    (string? v)  v
-    (boolean? v) v
-    (number? v)  v
-    (nil? v)     nil
+       (cond
+        (string? v)  v
+        (boolean? v) v
+        (number? v)  v
+        (nil? v)     nil
     ;; a marker vector — coerced with vec first: a bare-mapper
     ;; Jackson read returns java.util.ArrayList rows, a cljs
     ;; JSON.parse returns JS arrays; neither is `sequential?`
-    :else
-    (let [[marker payload] (vec v)]
-      (condp == marker
-        marker-kw        (thaw-kw payload)
-        marker-other     (thaw-fn payload)
-        marker-inf       ##Inf
-        marker-minus-inf ##-Inf
-        marker-nan       ##NaN
-        (util/raise "Unexpected value marker " marker " in " (pr-str v)
-          {:error :serialize :value v})))))
+        :else
+        (let [[marker payload] (vec v)]
+             (condp == marker
+                    marker-kw        (thaw-kw payload)
+                    marker-other     (thaw-fn payload)
+                    marker-inf       ##Inf
+                    marker-minus-inf ##-Inf
+                    marker-nan       ##NaN
+                    (util/raise "Unexpected value marker " marker " in " (pr-str v)
+                                {:error :serialize :value v})))))
 
 (defn- field
-  "Top-level form access tolerant of JSON round-trips: keys may
+       "Top-level form access tolerant of JSON round-trips: keys may
    come back as keywords, as \"name\" strings (cheshire/jsonista
    defaults), or as \":name\" strings (a bare Jackson
    ObjectMapper writes a keyword key by its toString)."
-  [form k]
-  (let [v (get form k)]
-    (if (some? v)
-      v
-      (let [v (get form (name k))]
-        (if (some? v)
-          v
-          (get form (str k)))))))
+       [form k]
+       (let [v (get form k)]
+            (if (some? v)
+                v
+                (let [v (get form (name k))]
+                     (if (some? v)
+                         v
+                         (get form (str k)))))))
 
 (defn serializable
-  "Captures the DB a handle names as plain host data (see the ns
+      "Captures the DB a handle names as plain host data (see the ns
    docstring for the form). The handle must resolve — serializing
    an unkept, non-current DB throws :eve.db.ds/db-not-kept, like
    any other read."
-  ([db-handle]
-   (serializable db-handle {}))
-  ([db-handle {:keys [freeze-fn] :or {freeze-fn pr-str}}]
-   (conn/ensure-handle db-handle)
-   (let [dbv     (conn/resolve-db db-handle)
-         max-eid ($ (:max-eid dbv))
-         max-tx  ($ (:max-tx dbv))]
-     {:schema  (freeze-fn (eve/eve->clj (conn/schema-of db-handle)))
-      :max-eid max-eid
-      :max-tx  max-tx
-      :datoms  (mapv (fn [d]
-                       [(:e d) (str (:a d))
-                        (write-v freeze-fn (:v d))
-                        (db/datom-tx d)])
-                 (conn/datoms-of db-handle))})))
+      ([db-handle]
+       (serializable db-handle {}))
+      ([db-handle {:keys [freeze-fn] :or {freeze-fn pr-str}}]
+       (conn/ensure-handle db-handle)
+       (let [dbv     (conn/resolve-db db-handle)
+             max-eid ($ (:max-eid dbv))
+             max-tx  ($ (:max-tx dbv))]
+            {:schema  (freeze-fn (eve/eve->clj (conn/schema-of db-handle)))
+             :max-eid max-eid
+             :max-tx  max-tx
+             :datoms  (mapv (fn [d]
+                                [(:e d) (str (:a d))
+                                 (write-v freeze-fn (:v d))
+                                 (db/datom-tx d)])
+                            (conn/datoms-of db-handle))})))
 
 (defn from-serializable
-  "Rebuilds a DB from serializable's form: thaws the schema,
+      "Rebuilds a DB from serializable's form: thaws the schema,
    creates a fresh private conn with it, transacts the datoms in
    (one transact!, datoms keep their txs) and returns the new
    conn's DB handle.
@@ -151,15 +151,15 @@
    the stored v — it reads back as the datom itself (GAP-U5-2,
    U5-STATUS.md; scalar values are unaffected). The vector form
    with host values is the measured-good path."
-  ([form]
-   (from-serializable form {}))
-  ([form {:keys [thaw-fn] :or {thaw-fn edn/read-string}}]
-   (let [schema (thaw-fn (field form :schema))
-         tx-data (mapv (fn [row]
-                         (let [[e a v tx] row]
-                           [:db/add e (thaw-kw a) (read-v thaw-fn v) tx]))
-                   (field form :datoms))
-         conn   (conn/create-conn schema)]
-     (when (seq tx-data)
-       (conn/transact! conn tx-data))
-     (conn/db conn))))
+      ([form]
+       (from-serializable form {}))
+      ([form {:keys [thaw-fn] :or {thaw-fn edn/read-string}}]
+       (let [schema (thaw-fn (field form :schema))
+             tx-data (mapv (fn [row]
+                               (let [[e a v tx] row]
+                                    [:db/add e (thaw-kw a) (read-v thaw-fn v) tx]))
+                           (field form :datoms))
+             conn   (conn/create-conn schema)]
+            (when (seq tx-data)
+                  (conn/transact! conn tx-data))
+            (conn/db conn))))

@@ -1,5 +1,5 @@
 (ns eve.db.ds.u3-support
-  "Support for U3's ported slices (conn / transact / listen / upsert).
+    "Support for U3's ported slices (conn / transact / listen / upsert).
 
    The upstream slices require eve.db.ds.test.core (tdc) for three
    helpers and the thrown-msg? assert-expr. test.core cannot be used
@@ -11,16 +11,16 @@
      value; d/datoms resolves handles and delivers host Datoms).
    - entity-map: an entity of a DB handle as a plain map.
    - thrown-msg?: upstream's assert-expr, unchanged."
-  (:require
-    [clojure.test :as t]
-    [eve.db.ds.core :as d])
-  #?(:cljs (:require-macros [eve.db.ds.test-macros])))
+    (:require
+     [clojure.test :as t]
+     [eve.db.ds.core :as d])
+    #?(:cljs (:require-macros [eve.db.ds.test-macros])))
 
 (defn all-datoms [db]
-  (into #{} (map (juxt :e :a :v)) (d/datoms db :eavt)))
+      (into #{} (map (juxt :e :a :v)) (d/datoms db :eavt)))
 
 (defn entity-map [db eid]
-  (into {:db/id eid} (d/entity db eid)))
+      (into {:db/id eid} (d/entity db eid)))
 
 ;; upstream test.core's thrown-msg? assert-expr, verbatim (JVM arm).
 ;; The cljs registration lives in eve.db.ds.test-macros (a macro
@@ -32,12 +32,12 @@
 ;; before test namespaces' `is` forms macroexpand.
 #?(:clj
    (defmethod t/assert-expr 'thrown-msg? [msg form]
-     (let [[_ match & body] form]
-       `(try ~@body
-             (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual nil})
-             (catch Throwable e#
-               (let [m# (.getMessage e#)]
-                 (if (= ~match m#)
-                   (t/do-report {:type :pass, :message ~msg, :expected '~form, :actual e#})
-                   (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual e#})))
-               e#)))))
+              (let [[_ match & body] form]
+                   `(try ~@body
+                         (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual nil})
+                         (catch Throwable e#
+                                (let [m# (.getMessage e#)]
+                                     (if (= ~match m#)
+                                         (t/do-report {:type :pass, :message ~msg, :expected '~form, :actual e#})
+                                         (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual e#})))
+                                e#)))))
