@@ -17,7 +17,7 @@ mkdir -p "$WORK"
 times=()
 for i in 1 2 3 4 5; do
   D="$WORK/$LABEL-$i"
-  rm -f "$D".root "$D".slab* "$D".rmap "$D".journal 2>/dev/null
+  rm -f "$D".root "$D".slab* "$D".rmap "$D".journal "$D".jlog "$D".journal.migrated 2>/dev/null
   start=$(date +%s%N)
   timeout 1200 "$@" "$D" > "$WORK/$LABEL-$i.out" 2> "$WORK/$LABEL-$i.err"
   rc=$?
