@@ -181,7 +181,7 @@
   (when (.-prototype Entity)
     (unchecked-set (.-prototype Entity) cljs.core/ITER_SYMBOL
        (fn []
-         (this-as this# (.entries this#))))))
+         (this-as this (.entries this))))))
 
 #?(:clj
    (defmethod print-method Entity [e, ^java.io.Writer w]
