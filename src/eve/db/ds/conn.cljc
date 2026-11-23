@@ -208,7 +208,13 @@
   {:pre [(conn? conn)]}
   (reset! (.-closed conn) true)
   (when (.-persistent conn)
-    (eve/close-atom-domain! (eve/atom-domain (.-eve-atom conn))))
+    ;; close the conn atom's own domain: eve/atom-domain is the
+    ;; in-process domain CONSTRUCTOR (an atom is not its argument) —
+    ;; calling it here built a throwaway domain seeded with the atom
+    ;; and died in Eve's registry (GAP-U5-1). eve/close! closes the
+    ;; domain the atom belongs to and forgets it, so the directory
+    ;; reopens fresh.
+    (eve/close! (.-eve-atom conn)))
   conn)
 
 ;; ---------------------------------------------------------------------------
