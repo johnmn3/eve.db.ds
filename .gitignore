@@ -8,3 +8,11 @@ perf-results/
 .cljs-build/
 target/
 .shadow-cljs/
+
+# clj-kondo analysis cache is machine-local state; a stale committed
+# entry for the eve.alpha facade (whose vars are re-exported by a
+# shape kondo records only partially) made fresh clones report
+# false unresolved-var warnings — measured Nov 23: fresh clone
+# 3 errors/32 warnings with the step-1 cache, 0/0 with none.
+# Eve and valuescript gitignore it the same way.
+.clj-kondo/.cache/

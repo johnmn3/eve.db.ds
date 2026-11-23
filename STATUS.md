@@ -388,3 +388,40 @@ corruptions above; one also lost to a service restart
 mid-u4) and are not banked as evidence.
 Remaining for bb lint: Carve (55 vars at recount), dprint
 leg, pre-commit hook.
+
+## Step 5 batch 9 — Carve campaign + kondo cache correction (Nov 23)
+
+CARVE LEG GREEN: 154 at census, 55 at recount -> 0 reported
+(carve exits 0). Of the 55: 4 deleted as genuinely dead
+(query_v3/subarr — its only mention is a commented-out port
+block; query_v3/println-context — debug helper, zero refs;
+query_v3/singleton-rel — alias def, zero refs, the
+->SingletonRelation constructor remains; util/zip — zero
+refs). The other 51 are keep-listed in .carve/ignore in six
+reasoned groups: Eve-deftype-generated vars (33 + the
+unfiltered-db accessor reclassed as public surface),
+cljs exception aliases (def Exception js/Error idiom),
+public library surface (bset lookup/est-count, query's
+normalize-pattern-clause, db's unfiltered-db), util/if+
+(used inside util's own macro machinery), entry points
+reached by name (browser runner, node mains, run-regressions!,
+test-node), and the two sample-query-fn fixtures (referenced
+by qualified symbol inside query DATA). Carve's bundled
+kondo 2023.01.20 cannot load this repo's hooks (it warns so),
+so its call graph is blind to those shapes; the fleet kondo
+2026.10.26 with hooks is the analysis of record.
+Gate (.lane/gate7/ + u5 documented-deps re-run): all unit
+runners baseline-identical.
+
+KONDO CACHE CORRECTION (measured, fresh clone): the step-1
+commit tracked .clj-kondo/.cache. Its eve.alpha entry is
+partial — Eve's facade re-exports its vars in a shape kondo
+records only in part — so a fresh clone of the pushed branch
+reported 3 errors / 32 warnings (false unresolved-var on
+eve/* calls + degraded type inference in query_v3), while
+the same tree with no cache reads 0/0. The session's green
+readings used the accumulated working cache. Fix: the cache
+is untracked and gitignored, the same disposition as the
+Eve and valuescript repos, with the reason written in
+.gitignore. Fresh-clone bb lint verification follows in
+step 6.

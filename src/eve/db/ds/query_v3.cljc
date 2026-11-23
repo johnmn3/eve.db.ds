@@ -28,9 +28,6 @@
 (defn arange [start end]
       (to-array (range start end)))
 
-(defn subarr [arr start end]
-      (da/acopy arr start end (da/make-array (- end start)) 0))
-
 (defn concatv [& xs]
       (into [] cat xs))
 
@@ -359,8 +356,6 @@
          (-size       [_] 1)
          (-indexes    [_ _] (to-array []))
          (-copy-tuple [_ _ _ _ _]))
-
-(def singleton-rel ->SingletonRelation)
 
 ;;; cartesian product
 
@@ -827,14 +822,6 @@
                  Predicate
                  (-resolve-clause [clause context]
                                   (resolve-predicate context clause)))
-
-(defn println-context [context]
-      (print "{:rels")
-      (if (empty? (:rels context))
-          (println "  []")
-          (doseq [rel (:rels context)]
-                 (println " " rel)))
-      (println "  :consts" (:consts context) "}"))
 
 (defn resolve-clauses [context clauses]
       (reduce (fn [context clause]

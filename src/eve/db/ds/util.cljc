@@ -189,12 +189,6 @@
 (defn concatv [& xs]
       (into [] cat xs))
 
-(defn zip
-      ([a b]
-       (mapv vector a b))
-      ([a b & rest]
-       (apply mapv vector a b rest)))
-
 (defn removem [key-pred m]
       (persistent!
        (reduce-kv

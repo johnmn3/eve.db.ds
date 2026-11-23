@@ -1,0 +1,92 @@
+;; eve.db.ds carve exceptions — vars kept despite no static caller in
+;; src+test, in groups, each with its reason. Carve's bundled
+;; clj-kondo (2023.01.20) cannot load this repo's analyze-call hooks
+;; (it warns "file hooks/eve_db_ds not found" for defn+/defcomp/
+;; cond+/deftrecord/sci-fn/db-fn), so uses inside those macro shapes
+;; are invisible to it; the fleet clj-kondo 2026.10.26 with hooks is
+;; the analysis of record and reports none of these as unused.
+;;
+;; 1. Eve deftype-generated vars (suffixed __Flat, __from-header,
+;;    -type-id, -type-key, -offset, and the Name? predicate): emitted
+;;    by eve.alpha/deftype for every deftype; reached by Eve's type
+;;    registry and flat/slab machinery at runtime, never by source
+;;    reference. Deleting them is not possible — they are regenerated
+;;    by the macro from the deftype forms in bset.cljc, db.cljc and
+;;    the deftype laws test.
+eve.db.ds.bset/Leaf__from-header
+eve.db.ds.bset/Leaf-type-id
+eve.db.ds.bset/Leaf-offset
+eve.db.ds.bset/Leaf-type-key
+eve.db.ds.bset/Leaf?
+eve.db.ds.bset/Leaf__Flat
+eve.db.ds.bset/Node-offset
+eve.db.ds.bset/Node-type-id
+eve.db.ds.bset/Node__from-header
+eve.db.ds.bset/Node-type-key
+eve.db.ds.bset/Node__Flat
+eve.db.ds.bset/Node?
+eve.db.ds.db/Datom-type-id
+eve.db.ds.db/Datom__Flat
+eve.db.ds.db/Datom-type-key
+eve.db.ds.db/Datom__from-header
+eve.db.ds.db/Datom-offset
+eve.db.ds.db/DB__from-header
+eve.db.ds.db/DB__Flat
+eve.db.ds.db/DB-type-key
+eve.db.ds.db/DB-type-id
+eve.db.ds.db/DB-offset
+eve.db.ds.db/FilteredDB__Flat
+eve.db.ds.db/FilteredDB-offset
+eve.db.ds.db/FilteredDB-type-key
+eve.db.ds.db/FilteredDB__from-header
+eve.db.ds.db/FilteredDB-type-id
+eve.deftype-atom-laws-test/Box__Flat
+eve.deftype-atom-laws-test/Box-type-key
+eve.deftype-atom-laws-test/Box-type-id
+eve.deftype-atom-laws-test/Box-offset
+eve.deftype-atom-laws-test/Box__from-header
+eve.deftype-atom-laws-test/Box?
+;;
+;; 2. cljs exception aliases: (def Exception js/Error) and kin in
+;;    #?(:cljs ...) blocks, used as throw/catch types in the cljs
+;;    pass. Carve's bundled kondo does not credit the cljs-only
+;;    defs' uses; the fleet kondo with both passes does.
+eve.db.ds.db/Exception
+eve.db.ds.db/UnsupportedOperationException
+eve.db.ds.test.components/Throwable
+eve.db.ds.test.explode/Throwable
+eve.db.ds.test.parser-find/Throwable
+eve.db.ds.test.parser-return-map/Throwable
+;;
+;; 3. Public library surface with no in-repo caller at this pin:
+;;    bset's lookup and est-count are upstream persistent-sorted-set
+;;    API (est-count is the documented size path for Iter-backed
+;;    sets); query's normalize-pattern-clause is a public fn of the
+;;    query engine namespace. db's unfiltered-db is the public
+;;    accessor that unwraps a FilteredDB to its underlying DB.
+eve.db.ds.bset/lookup
+eve.db.ds.bset/est-count
+eve.db.ds.query/normalize-pattern-clause
+eve.db.ds.db/unfiltered-db
+;;
+;; 4. util/if+ is called inside util.cljc's own macro machinery
+;;    (cond+ expands through it); hook-blind carve cannot see the
+;;    use.
+eve.db.ds.util/if+
+;;
+;; 5. Entry points reached by name from outside static analysis:
+;;    the browser runner's run-suite/init are called from the test
+;;    page; contract.one-cljs/main is the node entry; the query-v3
+;;    test's run-regressions! is a script entry; eve.db.ds.test's
+;;    test-node is invoked by name to shell to the node test runner.
+eve.db.ds.browser-runner-main/run-suite
+eve.db.ds.browser-runner-main/init
+contract.one-cljs/main
+eve-db-ds-query-v3-test/run-regressions!
+eve.db.ds.test/test-node
+;;
+;; 6. Referenced by qualified symbol inside query DATA (the stored
+;;    query-fn fixtures): the query engine resolves the symbol at
+;;    runtime; no static call exists.
+eve.db.ds.query-fns-test/sample-query-fn
+eve.db.ds.test.query-fns/sample-query-fn
