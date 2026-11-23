@@ -367,6 +367,22 @@
   ([e a v tx] (->Datom e a v tx))
   ([e a v tx added] (->Datom e a v (if added tx (- tx)))))
 (defn datom? [x] (Datom? x))
+
+;; A slice's bound (bset/slice from/to, find-datom's, init-max-eid's): what the cmp-datoms-* comparators read — :e :a
+;; :v by lookup and datom-tx / datom-added — and nothing else. A bound is only compared, never stored or returned, so it
+;; need not be an eve Datom: ->Datom outside a swap builds the flat sister's whole chunk (eve.flat.sister/
+;; construct-flat; 47% of find-1000 and 64% of pull-1000 on jolt), and inside one it allocates a slab block. The tx
+;; is kept as datom keeps it (its sign the added flag).
+(defrecord DatomBound [e a v tx]
+  IDatom
+  (datom-tx [_] (if (pos? tx) tx (- tx)))
+  (datom-added [_] (pos? tx)))
+
+(defn datom-bound
+  "A slice bound with datom's fields (DatomBound, above)."
+  [e a v tx]
+  (->DatomBound e a v tx))
+
 (defn+ ^:private hash-datom [d]
   (-> (hash (:e d))
     (combine-hashes (hash (:a d)))
@@ -986,32 +1002,32 @@
                         :default #(= v %))
           multival?  (contains? (-attrs-by db :db.cardinality/many) a)]
       (case-tree [e a (some? v) tx]
-        [(set/slice eavt (datom e a v tx) (datom e a v tx) cmp-datoms-eavt)                   ;; e a v tx
-         (set/slice eavt (datom e a v tx0) (datom e a v txmax) cmp-datoms-eavt)               ;; e a v _
-         (->> (set/slice eavt (datom e a nil tx0) (datom e a nil txmax) cmp-datoms-eavt)      ;; e a _ tx
+        [(set/slice eavt (datom-bound e a v tx) (datom-bound e a v tx) cmp-datoms-eavt)                   ;; e a v tx
+         (set/slice eavt (datom-bound e a v tx0) (datom-bound e a v txmax) cmp-datoms-eavt)               ;; e a v _
+         (->> (set/slice eavt (datom-bound e a nil tx0) (datom-bound e a nil txmax) cmp-datoms-eavt)      ;; e a _ tx
            (eduction (filter (fn [^Datom d] (= tx (datom-tx d))))))
-         (set/slice eavt (datom e a nil tx0) (datom e a nil txmax) cmp-datoms-eavt)           ;; e a _ _
-         (->> (set/slice eavt (datom e nil nil tx0) (datom e nil nil txmax) cmp-datoms-eavt)  ;; e _ v tx
+         (set/slice eavt (datom-bound e a nil tx0) (datom-bound e a nil txmax) cmp-datoms-eavt)           ;; e a _ _
+         (->> (set/slice eavt (datom-bound e nil nil tx0) (datom-bound e nil nil txmax) cmp-datoms-eavt)  ;; e _ v tx
            (eduction (filter (fn [^Datom d] (and (pred (:v d))
                                                 (= tx (datom-tx d)))))))
-         (->> (set/slice eavt (datom e nil nil tx0) (datom e nil nil txmax) cmp-datoms-eavt)  ;; e _ v _
+         (->> (set/slice eavt (datom-bound e nil nil tx0) (datom-bound e nil nil txmax) cmp-datoms-eavt)  ;; e _ v _
            (eduction (filter (fn [^Datom d] (pred (:v d))))))
-         (->> (set/slice eavt (datom e nil nil tx0) (datom e nil nil txmax) cmp-datoms-eavt)  ;; e _ _ tx
+         (->> (set/slice eavt (datom-bound e nil nil tx0) (datom-bound e nil nil txmax) cmp-datoms-eavt)  ;; e _ _ tx
            (eduction (filter (fn [^Datom d] (= tx (datom-tx d))))))
-         (set/slice eavt (datom e nil nil tx0) (datom e nil nil txmax) cmp-datoms-eavt)       ;; e _ _ _
+         (set/slice eavt (datom-bound e nil nil tx0) (datom-bound e nil nil txmax) cmp-datoms-eavt)       ;; e _ _ _
          (if (indexing? db a)                                                 ;; _ a v tx
-           (->> (set/slice avet (datom e0 a v tx0) (datom emax a v txmax) cmp-datoms-avet)
+           (->> (set/slice avet (datom-bound e0 a v tx0) (datom-bound emax a v txmax) cmp-datoms-avet)
              (eduction (filter (fn [^Datom d] (= tx (datom-tx d))))))
-           (->> (set/slice aevt (datom e0 a nil tx0) (datom emax a nil txmax) cmp-datoms-aevt)
+           (->> (set/slice aevt (datom-bound e0 a nil tx0) (datom-bound emax a nil txmax) cmp-datoms-aevt)
              (eduction (filter (fn [^Datom d] (and (pred (:v d))
                                                   (= tx (datom-tx d))))))))
          (if (indexing? db a)                                                 ;; _ a v _
-           (set/slice avet (datom e0 a v tx0) (datom emax a v txmax) cmp-datoms-avet)
-           (->> (set/slice aevt (datom e0 a nil tx0) (datom emax a nil txmax) cmp-datoms-aevt)
+           (set/slice avet (datom-bound e0 a v tx0) (datom-bound emax a v txmax) cmp-datoms-avet)
+           (->> (set/slice aevt (datom-bound e0 a nil tx0) (datom-bound emax a nil txmax) cmp-datoms-aevt)
              (eduction (filter (fn [^Datom d] (pred (:v d)))))))
-         (->> (set/slice aevt (datom e0 a nil tx0) (datom emax a nil txmax) cmp-datoms-aevt)  ;; _ a _ tx
+         (->> (set/slice aevt (datom-bound e0 a nil tx0) (datom-bound emax a nil txmax) cmp-datoms-aevt)  ;; _ a _ tx
            (eduction (filter (fn [^Datom d] (= tx (datom-tx d))))))
-         (set/slice aevt (datom e0 a nil tx0) (datom emax a nil txmax) cmp-datoms-aevt)       ;; _ a _ _
+         (set/slice aevt (datom-bound e0 a nil tx0) (datom-bound emax a nil txmax) cmp-datoms-aevt)       ;; _ a _ _
          (filter (fn [^Datom d] (and (pred (:v d))
                                   (= tx (datom-tx d)))) (set/slice eavt nil nil cmp-datoms-eavt))                 ;; _ _ v tx
          (filter (fn [^Datom d] (pred (:v d))) (set/slice eavt nil nil cmp-datoms-eavt))                         ;; _ _ v _
@@ -1030,14 +1046,14 @@
     (validate-indexed db index c0 c1 c2 c3)
     (set/slice (get db index)
       (components->pattern db index c0 c1 c2 c3 e0 tx0)
-      (datom emax nil nil txmax)
+      (datom-bound emax nil nil txmax)
       (index-cmp index)))
 
   (-rseek-datoms [db index c0 c1 c2 c3]
     (validate-indexed db index c0 c1 c2 c3)
     (set/rslice (get db index)
       (components->pattern db index c0 c1 c2 c3 emax txmax)
-      (datom e0 nil nil tx0)
+      (datom-bound e0 nil nil tx0)
       (index-cmp index)))
 
   (-index-range [db attr start end]
@@ -1314,16 +1330,16 @@
   (let [max     #(if (and %2 (> %2 %1)) %2 %1)
         max-eid (some->
                   (set/rslice eavt
-                    (datom (dec tx0) nil nil txmax)
-                    (datom e0 nil nil tx0)
+                    (datom-bound (dec tx0) nil nil txmax)
+                    (datom-bound e0 nil nil tx0)
                     cmp-datoms-eavt)
                   first :e)
         res     (max e0 max-eid)
         max-ref (fn [attr]
                   (some->
                     (set/rslice avet
-                      (datom (dec tx0) attr (dec tx0) txmax)
-                      (datom e0 attr e0 tx0)
+                      (datom-bound (dec tx0) attr (dec tx0) txmax)
+                      (datom-bound e0 attr e0 tx0)
                       cmp-datoms-avet)
                     first :v))
         refs    (:db.type/ref rschema)
@@ -1472,7 +1488,7 @@
 (defn+ resolve-datom [db e a v t default-e default-tx]
   (when (some? a)
     (validate-attr a (list 'resolve-datom 'db e a v t)))
-  (datom
+  (datom-bound
     (if (some? e) (entid-strict db e) default-e)
     a
     (cond
