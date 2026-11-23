@@ -75,3 +75,14 @@
                                             and-node then-node else-node])]))
           (api/list-node [(api/token-node 'if) cond-node then-node else-node]))]
     {:node new-node}))
+
+(defn defn+
+  "eve.db.ds.db/defn+: (defn+ name & fdecl) expands to a defn of
+   exactly that shape (on cljs preceded by a ^:declared defn with
+   the same arglists). The plain defn rewrite is the faithful
+   call-site model."
+  [{:keys [node]}]
+  (let [[_ & rest] (:children node)
+        new-node (api/list-node
+                   (list* (api/token-node 'defn) rest))]
+    {:node new-node}))

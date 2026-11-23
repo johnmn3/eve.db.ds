@@ -1,0 +1,686 @@
+src/eve/db/ds/bset.cljc:28:42: warning: #'eve.alpha/$ is referred but never used
+src/eve/db/ds/bset.cljc:237:8: warning: Unused private var eve.db.ds.bset/lookup-range
+src/eve/db/ds/bset.cljc:690:24: warning: unused binding this
+src/eve/db/ds/bset.cljc:719:25: warning: unused binding this
+src/eve/db/ds/bset.cljc:767:30: warning: unused binding this
+src/eve/db/ds/bset.cljc:830:32: warning: unused binding this
+src/eve/db/ds/bset.cljc:838:16: warning: Unresolved protocol method: -chunked-next
+src/eve/db/ds/bset.cljc:929:16: warning: Unresolved protocol method: -hash
+src/eve/db/ds/bset.cljc:1022:8: warning: Unused private var eve.db.ds.bset/riter-reduce
+src/eve/db/ds/built_ins.cljc:35:21: warning: unused binding a
+src/eve/db/ds/built_ins.cljc:39:21: warning: unused binding a
+src/eve/db/ds/built_ins.cljc:43:10: warning: unused binding x
+src/eve/db/ds/built_ins.cljc:53:10: warning: unused binding x
+src/eve/db/ds/built_ins.cljc:63:10: warning: unused binding x
+src/eve/db/ds/built_ins.cljc:73:10: warning: unused binding x
+src/eve/db/ds/conn.cljc:554:1: warning: filter already refers to #'cljs.core/filter
+src/eve/db/ds/conn.cljc:554:1: warning: filter already refers to #'clojure.core/filter
+src/eve/db/ds/conn.cljc:557:11: warning: unused binding pred
+src/eve/db/ds/core.cljc:4:33: warning: namespace clojure.edn is required but never used
+src/eve/db/ds/core.cljc:7:55: warning: #'eve.db.ds.db/FilteredDB is referred but never used
+src/eve/db/ds/core.cljc:17:32: warning: Unused import FilteredDB
+src/eve/db/ds/core.cljc:19:20: warning: Unused import UUID
+src/eve/db/ds/core.cljc:107:8: warning: Prefer placing return type hint on arg vector: DB
+src/eve/db/ds/core.cljc:375:8: warning: Prefer placing return type hint on arg vector: Datom
+src/eve/db/ds/core.cljc:652:8: warning: Prefer placing return type hint on arg vector: DB
+src/eve/db/ds/core.cljc:687:4: warning: future-call already refers to #'clojure.core/future-call
+src/eve/db/ds/core.cljc:861:8: warning: unused binding db
+src/eve/db/ds/datafy.cljc:15:38: warning: unused binding coll
+src/eve/db/ds/datafy.cljc:26:33: warning: unused binding coll
+src/eve/db/ds/datafy.cljc:26:38: warning: unused binding k
+src/eve/db/ds/db.cljc:43:1: warning: array? already refers to #'cljs.core/array?
+src/eve/db/ds/db.cljc:50:19: warning: Prefer placing return type hint on arg vector: Boolean
+src/eve/db/ds/db.cljc:70:8: warning: Unused private var eve.db.ds.db/cljs-env?
+src/eve/db/ds/db.cljc:88:47: error: Unresolved symbol: clojure.core$long
+src/eve/db/ds/db.cljc:169:36: warning: unused binding d
+src/eve/db/ds/db.cljc:172:38: warning: unused binding d
+src/eve/db/ds/db.cljc:172:40: warning: unused binding o
+src/eve/db/ds/db.cljc:175:27: warning: unused binding d
+src/eve/db/ds/db.cljc:178:28: warning: unused binding d
+src/eve/db/ds/db.cljc:178:30: warning: unused binding i
+src/eve/db/ds/db.cljc:178:36: warning: unused binding d
+src/eve/db/ds/db.cljc:178:38: warning: unused binding i
+src/eve/db/ds/db.cljc:178:40: warning: unused binding not-found
+src/eve/db/ds/db.cljc:181:29: warning: unused binding d
+src/eve/db/ds/db.cljc:181:31: warning: unused binding k
+src/eve/db/ds/db.cljc:181:33: warning: unused binding v
+src/eve/db/ds/db.cljc:209:24: warning: unused binding x
+src/eve/db/ds/db.cljc:217:25: warning: unused binding d
+src/eve/db/ds/db.cljc:218:28: warning: unused binding d
+src/eve/db/ds/db.cljc:230:29: warning: unused binding d
+src/eve/db/ds/db.cljc:231:29: warning: unused binding d
+src/eve/db/ds/db.cljc:237:19: warning: Missing protocol method(s): -contains-key?
+src/eve/db/ds/db.cljc:242:60: error: #'cljs.core/pr-writer is private
+src/eve/db/ds/db.cljc:254:27: warning: unused binding d
+src/eve/db/ds/db.cljc:261:27: warning: unused binding d
+src/eve/db/ds/db.cljc:272:27: warning: unused binding d
+src/eve/db/ds/db.cljc:273:27: warning: unused binding d
+src/eve/db/ds/db.cljc:276:29: warning: unused binding d
+src/eve/db/ds/db.cljc:277:33: warning: unused binding e
+src/eve/db/ds/db.cljc:282:8: warning: Prefer placing return type hint on arg vector: Datom
+src/eve/db/ds/db.cljc:287:1: warning: redefined var #'eve.db.ds.db/datom?
+src/eve/db/ds/db.cljc:295:1: warning: redefined var #'eve.db.ds.db/hash-datom
+src/eve/db/ds/db.cljc:300:1: warning: redefined var #'eve.db.ds.db/equiv-datom
+src/eve/db/ds/db.cljc:305:1: warning: redefined var #'eve.db.ds.db/seq-datom
+src/eve/db/ds/db.cljc:308:1: warning: redefined var #'eve.db.ds.db/nth-datom
+src/eve/db/ds/db.cljc:327:1: warning: redefined var #'eve.db.ds.db/assoc-datom
+src/eve/db/ds/db.cljc:327:19: warning: Prefer placing return type hint on arg vector: Datom
+src/eve/db/ds/db.cljc:339:8: warning: Prefer placing return type hint on arg vector: Datom
+src/eve/db/ds/db.cljc:344:25: info: Single argument to str already is a string
+src/eve/db/ds/db.cljc:353:25: info: Single argument to str already is a string
+src/eve/db/ds/db.cljc:429:39: warning: unused binding x
+src/eve/db/ds/db.cljc:429:41: warning: unused binding y
+src/eve/db/ds/db.cljc:464:1: warning: redefined var #'eve.db.ds.db/value-compare
+src/eve/db/ds/db.cljc:464:9: warning: Prefer placing return type hint on arg vector: number
+src/eve/db/ds/db.cljc:464:9: error: Unresolved symbol: number
+src/eve/db/ds/db.cljc:623:33: warning: unused binding db
+src/eve/db/ds/db.cljc:626:34: warning: unused binding db
+src/eve/db/ds/db.cljc:629:35: warning: unused binding db
+src/eve/db/ds/db.cljc:629:38: warning: unused binding other
+src/eve/db/ds/db.cljc:632:28: warning: unused binding keys
+src/eve/db/ds/db.cljc:648:26: warning: unused binding db
+src/eve/db/ds/db.cljc:648:29: warning: unused binding k
+src/eve/db/ds/db.cljc:648:31: warning: unused binding v
+src/eve/db/ds/db.cljc:651:36: warning: unused binding db
+src/eve/db/ds/db.cljc:651:39: warning: unused binding attr
+src/eve/db/ds/db.cljc:653:23: warning: unused binding db
+src/eve/db/ds/db.cljc:653:26: warning: unused binding w
+src/eve/db/ds/db.cljc:653:28: warning: unused binding opts
+src/eve/db/ds/db.cljc:656:31: warning: unused binding db
+src/eve/db/ds/db.cljc:656:34: warning: unused binding e
+src/eve/db/ds/db.cljc:656:36: warning: unused binding a
+src/eve/db/ds/db.cljc:656:38: warning: unused binding v
+src/eve/db/ds/db.cljc:656:40: warning: unused binding t
+src/eve/db/ds/db.cljc:656:42: warning: unused binding default-e
+src/eve/db/ds/db.cljc:656:52: warning: unused binding default-tx
+src/eve/db/ds/db.cljc:659:37: warning: unused binding db
+src/eve/db/ds/db.cljc:659:40: warning: unused binding index
+src/eve/db/ds/db.cljc:659:46: warning: unused binding c0
+src/eve/db/ds/db.cljc:659:49: warning: unused binding c1
+src/eve/db/ds/db.cljc:659:52: warning: unused binding c2
+src/eve/db/ds/db.cljc:659:55: warning: unused binding c3
+src/eve/db/ds/db.cljc:659:58: warning: unused binding default-e
+src/eve/db/ds/db.cljc:659:68: warning: unused binding default-tx
+src/eve/db/ds/db.cljc:685:9: warning: Prefer placing return type hint on arg vector: Datom
+src/eve/db/ds/db.cljc:739:50: warning: unused binding db
+src/eve/db/ds/db.cljc:740:29: warning: unused binding db
+src/eve/db/ds/db.cljc:741:57: warning: unused binding db
+src/eve/db/ds/db.cljc:755:48: warning: unused binding db
+src/eve/db/ds/db.cljc:757:25: warning: unused binding db
+src/eve/db/ds/db.cljc:775:26: warning: unused binding db
+src/eve/db/ds/db.cljc:775:29: warning: unused binding key
+src/eve/db/ds/db.cljc:777:27: warning: unused binding db
+src/eve/db/ds/db.cljc:778:27: warning: unused binding db
+src/eve/db/ds/db.cljc:780:33: warning: unused binding db
+src/eve/db/ds/db.cljc:781:29: warning: unused binding db
+src/eve/db/ds/db.cljc:797:29: warning: unused binding multival?
+src/eve/db/ds/db.cljc:862:35: warning: unused binding x
+src/eve/db/ds/db.cljc:869:1: warning: redefined var #'eve.db.ds.db/assoc-db
+src/eve/db/ds/db.cljc:919:26: warning: unused binding db
+src/eve/db/ds/db.cljc:919:30: warning: unused binding k
+src/eve/db/ds/db.cljc:919:32: warning: unused binding v
+src/eve/db/ds/db.cljc:920:27: warning: unused binding db
+src/eve/db/ds/db.cljc:922:48: warning: unused binding db
+src/eve/db/ds/db.cljc:922:51: warning: unused binding k
+src/eve/db/ds/db.cljc:923:27: warning: unused binding db
+src/eve/db/ds/db.cljc:923:30: warning: unused binding k
+src/eve/db/ds/db.cljc:923:32: warning: unused binding nf
+src/eve/db/ds/db.cljc:924:64: warning: unused binding db
+src/eve/db/ds/db.cljc:924:67: warning: unused binding k
+src/eve/db/ds/db.cljc:928:33: warning: unused binding e
+src/eve/db/ds/db.cljc:928:35: warning: unused binding k
+src/eve/db/ds/db.cljc:929:29: warning: unused binding db
+src/eve/db/ds/db.cljc:929:32: warning: unused binding k
+src/eve/db/ds/db.cljc:930:27: warning: unused binding db
+src/eve/db/ds/db.cljc:930:30: warning: unused binding k
+src/eve/db/ds/db.cljc:930:32: warning: unused binding v
+src/eve/db/ds/db.cljc:933:24: warning: unused binding db
+src/eve/db/ds/db.cljc:936:26: warning: unused binding db
+src/eve/db/ds/db.cljc:940:24: warning: unused binding db
+src/eve/db/ds/db.cljc:944:24: warning: unused binding db
+src/eve/db/ds/db.cljc:947:29: warning: unused binding db
+src/eve/db/ds/db.cljc:950:30: warning: unused binding db
+src/eve/db/ds/db.cljc:953:29: warning: unused binding db
+src/eve/db/ds/db.cljc:1099:8: warning: Prefer placing return type hint on arg vector: DB
+src/eve/db/ds/db.cljc:1099:28: warning: unused binding opts
+src/eve/db/ds/db.cljc:1133:8: warning: Prefer placing return type hint on arg vector: DB
+src/eve/db/ds/db.cljc:1133:34: warning: unused binding opts
+src/eve/db/ds/db.cljc:1155:1: warning: redefined var #'eve.db.ds.db/restore-db
+src/eve/db/ds/db.cljc:1155:9: warning: Prefer placing return type hint on arg vector: DB
+src/eve/db/ds/db.cljc:1179:1: warning: redefined var #'eve.db.ds.db/hash-db
+src/eve/db/ds/db.cljc:1179:19: warning: Prefer placing return type hint on arg vector: number
+src/eve/db/ds/db.cljc:1197:1: warning: redefined var #'eve.db.ds.db/hash-fdb
+src/eve/db/ds/db.cljc:1197:19: warning: Prefer placing return type hint on arg vector: number
+src/eve/db/ds/db.cljc:1201:1: warning: redefined var #'eve.db.ds.db/equiv-db
+src/eve/db/ds/db.cljc:1201:19: warning: Prefer placing return type hint on arg vector: boolean
+src/eve/db/ds/db.cljc:1207:4: warning: redefined var #'eve.db.ds.db/pr-db
+src/eve/db/ds/db.cljc:1210:11: error: #'cljs.core/pr-writer is private
+src/eve/db/ds/db.cljc:1214:61: error: #'cljs.core/pr-writer is private
+src/eve/db/ds/db.cljc:1221:21: info: Single argument to str already is a string
+src/eve/db/ds/db.cljc:1237:26: info: Single argument to str already is a string
+src/eve/db/ds/db.cljc:1247:38: warning: unused binding db
+src/eve/db/ds/db.cljc:1247:41: warning: unused binding eid
+src/eve/db/ds/db.cljc:1250:31: warning: unused binding db
+src/eve/db/ds/db.cljc:1250:34: warning: unused binding attr
+src/eve/db/ds/db.cljc:1253:33: warning: unused binding db
+src/eve/db/ds/db.cljc:1253:36: warning: unused binding attr
+src/eve/db/ds/db.cljc:1256:36: warning: unused binding db
+src/eve/db/ds/db.cljc:1256:39: warning: unused binding a
+src/eve/db/ds/db.cljc:1256:41: warning: unused binding vs
+src/eve/db/ds/db.cljc:1256:44: warning: unused binding context
+src/eve/db/ds/db.cljc:1258:1: warning: redefined var #'eve.db.ds.db/resolve-datom
+src/eve/db/ds/db.cljc:1271:1: warning: redefined var #'eve.db.ds.db/components->pattern
+src/eve/db/ds/db.cljc:1291:9: warning: Prefer placing return type hint on arg vector: boolean
+src/eve/db/ds/db.cljc:1294:9: warning: Prefer placing return type hint on arg vector: boolean
+src/eve/db/ds/db.cljc:1297:9: warning: Prefer placing return type hint on arg vector: boolean
+src/eve/db/ds/db.cljc:1304:1: warning: redefined var #'eve.db.ds.db/ref?
+src/eve/db/ds/db.cljc:1304:9: warning: Prefer placing return type hint on arg vector: boolean
+src/eve/db/ds/db.cljc:1307:9: warning: Prefer placing return type hint on arg vector: boolean
+src/eve/db/ds/db.cljc:1310:1: warning: redefined var #'eve.db.ds.db/indexing?
+src/eve/db/ds/db.cljc:1310:9: warning: Prefer placing return type hint on arg vector: boolean
+src/eve/db/ds/db.cljc:1313:1: warning: redefined var #'eve.db.ds.db/tuple?
+src/eve/db/ds/db.cljc:1313:9: warning: Prefer placing return type hint on arg vector: boolean
+src/eve/db/ds/db.cljc:1316:9: warning: Prefer placing return type hint on arg vector: boolean
+src/eve/db/ds/db.cljc:1319:9: warning: Prefer placing return type hint on arg vector: boolean
+src/eve/db/ds/db.cljc:1322:9: warning: Prefer placing return type hint on arg vector: boolean
+src/eve/db/ds/db.cljc:1368:20: warning: Prefer placing return type hint on arg vector: Boolean
+src/eve/db/ds/db.cljc:1376:20: warning: Prefer placing return type hint on arg vector: Boolean
+src/eve/db/ds/db.cljc:1383:1: warning: redefined var #'eve.db.ds.db/resolve-tuple-refs
+src/eve/db/ds/db.cljc:1401:9: warning: Prefer placing return type hint on arg vector: number
+src/eve/db/ds/db.cljc:1439:9: warning: Prefer placing return type hint on arg vector: boolean
+src/eve/db/ds/db.cljc:1442:1: warning: redefined var #'eve.db.ds.db/entid-strict
+src/eve/db/ds/db.cljc:1442:9: warning: Prefer placing return type hint on arg vector: number
+src/eve/db/ds/db.cljc:1449:9: warning: Prefer placing return type hint on arg vector: number
+src/eve/db/ds/db.cljc:1461:28: warning: unused binding d
+src/eve/db/ds/db.cljc:1462:56: error: #'cljs.core/pr-writer is private
+src/eve/db/ds/db.cljc:1465:26: warning: unused binding d
+src/eve/db/ds/db.cljc:1470:25: info: Single argument to str already is a string
+src/eve/db/ds/db.cljc:1477:9: warning: Prefer placing return type hint on arg vector: boolean
+src/eve/db/ds/db.cljc:1511:21: error: Unresolved symbol: op
+src/eve/db/ds/db.cljc:1511:24: error: Unresolved symbol: e
+src/eve/db/ds/db.cljc:1511:26: error: Unresolved symbol: a
+src/eve/db/ds/db.cljc:1511:28: error: Unresolved symbol: v
+src/eve/db/ds/db.cljc:1541:12: warning: Prefer placing return type hint on arg vector: Boolean
+src/eve/db/ds/db.cljc:1556:20: warning: Prefer placing return type hint on arg vector: Boolean
+src/eve/db/ds/db.cljc:1652:42: warning: unused binding a
+src/eve/db/ds/db.cljc:1681:20: warning: Prefer placing return type hint on arg vector: Boolean
+src/eve/db/ds/db.cljc:1867:39: warning: unused binding initial-report
+src/eve/db/ds/db.cljc:1867:54: warning: unused binding initial-es
+src/eve/db/ds/db.cljc:1926:1: warning: redefined var #'eve.db.ds.db/transact-tx-data-impl
+src/eve/db/ds/db.cljc:2080:34: error: Unresolved symbol: report'
+src/eve/db/ds/db.cljc:2080:42: error: Unresolved symbol: v'
+src/eve/db/ds/db.cljc:2096:33: error: Unresolved symbol: upserted-eid
+src/eve/db/ds/impl/entity.cljc:2:31: info: Unused excluded var: keys
+src/eve/db/ds/impl/entity.cljc:2:36: info: Unused excluded var: get
+src/eve/db/ds/impl/entity.cljc:116:15: warning: Missing protocol method(s): -assoc
+src/eve/db/ds/impl/entity.cljc:132:26: warning: unused binding e
+src/eve/db/ds/impl/entity.cljc:144:23: warning: unused binding e
+src/eve/db/ds/impl/entity.cljc:145:23: warning: unused binding e
+src/eve/db/ds/impl/entity.cljc:145:25: warning: unused binding k
+src/eve/db/ds/impl/entity.cljc:145:27: warning: unused binding v
+src/eve/db/ds/impl/entity.cljc:146:23: warning: unused binding e
+src/eve/db/ds/impl/entity.cljc:146:26: warning: unused binding k
+src/eve/db/ds/impl/entity.cljc:146:28: warning: unused binding v
+src/eve/db/ds/impl/entity.cljc:171:142: warning: Unresolved namespace eve.alpha. Are you missing a require?
+src/eve/db/ds/pprint.clj:39:82: error: Unresolved symbol: aseq
+src/eve/db/ds/pprint.clj:46:98: error: recur argument count mismatch (expected 2, got 1)
+src/eve/db/ds/pull_api.cljc:6:7: warning: namespace eve.db.ds.lru is required but never used
+src/eve/db/ds/pull_api.cljc:53:12: warning: Missing protocol method(s): -merge, -run
+src/eve/db/ds/pull_api.cljc:54:19: warning: unused binding this
+src/eve/db/ds/pull_api.cljc:58:12: warning: Missing protocol method(s): -merge
+src/eve/db/ds/pull_api.cljc:59:19: warning: unused binding this
+src/eve/db/ds/pull_api.cljc:59:24: warning: unused binding context
+src/eve/db/ds/pull_api.cljc:79:19: warning: unused binding this
+src/eve/db/ds/pull_api.cljc:84:21: warning: unused binding this
+src/eve/db/ds/pull_api.cljc:113:19: warning: unused binding this
+src/eve/db/ds/pull_api.cljc:118:21: warning: unused binding this
+src/eve/db/ds/pull_api.cljc:128:19: warning: unused binding this
+src/eve/db/ds/pull_api.cljc:193:19: warning: unused binding this
+src/eve/db/ds/pull_api.cljc:198:21: warning: unused binding this
+src/eve/db/ds/pull_api.cljc:208:19: warning: unused binding this
+src/eve/db/ds/pull_api.cljc:238:19: warning: unused binding this
+src/eve/db/ds/pull_parser.cljc:163:42: warning: use :else as the catch-all test expression in cond
+src/eve/db/ds/query.cljc:6:7: warning: namespace clojure.string is required but never used
+src/eve/db/ds/query.cljc:12:7: warning: namespace eve.db.ds.impl.entity is required but never used
+src/eve/db/ds/query.cljc:452:28: warning: unused binding context
+src/eve/db/ds/query.cljc:525:21: warning: unused binding sym
+src/eve/db/ds/query.cljc:603:35: warning: unused binding used-args
+src/eve/db/ds/query.cljc:759:50: error: Expected: nil or set, received: seq.
+src/eve/db/ds/query.cljc:764:50: error: Expected: nil or set, received: seq.
+src/eve/db/ds/query.cljc:981:36: warning: unused binding return-map
+src/eve/db/ds/query.cljc:985:36: warning: unused binding return-map
+src/eve/db/ds/query_v3.cljc:8:7: warning: namespace eve.db.ds.query is required but never used
+src/eve/db/ds/query_v3.cljc:12:78: warning: #'eve.db.ds.parser/RulesVar is referred but never used
+src/eve/db/ds/query_v3.cljc:19:38: warning: Unused import RulesVar
+src/eve/db/ds/query_v3.cljc:21:27: warning: Unused import IReduceInit
+src/eve/db/ds/query_v3.cljc:21:39: warning: Unused import Counted
+src/eve/db/ds/query_v3.cljc:22:24: warning: Unused import Datom
+src/eve/db/ds/query_v3.cljc:354:10: warning: Missing protocol method(s): -project, -alter-coll, -getter, -union
+src/eve/db/ds/query_v3.cljc:423:37: warning: Unused value
+src/eve/db/ds/query_v3.cljc:594:31: warning: unused binding sym
+src/eve/db/ds/query_v3.cljc:715:21: warning: unused binding source
+src/eve/db/ds/query_v3.cljc:725:21: warning: unused binding source
+src/eve/db/ds/query_v3.cljc:727:39: error: Expected: nil or set, received: seq.
+src/eve/db/ds/query_v3.cljc:785:44: error: Expected: nil or set, received: seq.
+src/eve/db/ds/query_v3.cljc:845:28: warning: redundant do
+src/eve/db/ds/query_v3.cljc:909:3: warning: Unresolved namespace t. Are you missing a require?
+src/eve/db/ds/query_v3.cljc:927:8: warning: Unresolved namespace perf. Are you missing a require?
+src/eve/db/ds/util.cljc:23:4: warning: Uninitialized var
+src/eve/db/ds/util.cljc:116:8: warning: Unused private var eve.db.ds.util/rand-bits
+test/drivers/contract/contend_aot.cljc:13:30: error: Unresolved symbol: jank
+test/drivers/contract/ds_bench.cljc:83:29: warning: Unresolved namespace System. Are you missing a require?
+test/drivers/contract/ds_bench.cljc:97:37: error: Unresolved symbol: java
+test/drivers/contract/ds_bench.cljc:129:43: warning: Unresolved namespace Long. Are you missing a require?
+test/drivers/contract/ds_bench_stock.cljc:39:29: warning: Unresolved namespace System. Are you missing a require?
+test/drivers/contract/ds_bench_stock.cljc:81:43: warning: Unresolved namespace Long. Are you missing a require?
+test/drivers/contract/ds_bench_table.cljc:24:9: error: Unresolved symbol: with-open
+test/drivers/contract/ds_bench_table.cljc:24:20: error: Unresolved symbol: r
+test/drivers/contract/ds_bench_table.cljc:24:23: error: Unresolved symbol: java
+test/drivers/contract/ds_bench_table.cljc:25:58: error: Unresolved symbol: read
+test/drivers/contract/ds_bench_table.cljc:31:17: error: Unresolved symbol: format
+test/drivers/contract/ds_bisect.cljc:6:18: error: Unresolved symbol: future
+test/drivers/contract/ds_bisect.cljc:6:47: error: Unresolved symbol: Throwable
+test/drivers/contract/ds_bisect.cljc:7:17: error: cljs.core/deref is called with 3 args but expects 1
+test/drivers/contract/ds_bisect.cljc:9:13: error: Unresolved symbol: future-cancel
+test/drivers/contract/ds_bisect.cljc:28:13: warning: Unresolved namespace System. Are you missing a require?
+test/drivers/contract/ds_contend.cljc:26:7: warning: namespace eve.core is required but never used
+test/drivers/contract/ds_dbprobe.cljc:10:8: warning: Unresolved namespace System. Are you missing a require?
+test/drivers/contract/ds_flagship.cljc:45:16: warning: Unused private var contract.ds-flagship/per-worker
+test/drivers/contract/ds_loadprobe.cljc:8:19: error: Unresolved symbol: Throwable
+test/drivers/contract/ds_loadprobe.cljc:12:8: warning: Unresolved namespace System. Are you missing a require?
+test/drivers/contract/ds_order.cljc:16:8: warning: Unresolved namespace System. Are you missing a require?
+test/drivers/contract/ds_probe.cljc:18:34: error: Unresolved symbol: StackOverflowError
+test/drivers/contract/ds_probe.cljc:22:34: error: Unresolved symbol: Throwable
+test/drivers/contract/ds_probe2.cljc:17:34: error: Unresolved symbol: StackOverflowError
+test/drivers/contract/ds_probe2.cljc:19:34: error: Unresolved symbol: Throwable
+test/drivers/contract/ds_pullprobe.cljc:32:8: warning: Unresolved namespace System. Are you missing a require?
+test/drivers/contract/ds_suite.cljc:26:63: warning: namespace eve.db.ds.db is required but never used
+test/drivers/contract/ds_suite.cljc:26:109: warning: namespace clojure.string is required but never used
+test/drivers/contract/ds_suite.cljc:83:8: warning: Unused private var contract.ds-suite/test-vars-for
+test/drivers/contract/ds_suite.cljc:222:28: error: Unresolved symbol: alter-var-root
+test/drivers/contract/ds_suite.cljc:223:83: warning: Unresolved var: ds-db/process-sio
+test/drivers/contract/ds_trace.cljc:10:20: error: Unresolved symbol: Throwable
+test/drivers/contract/ds_trace.cljc:13:13: warning: Unresolved namespace System. Are you missing a require?
+test/drivers/contract/ds_window.cljc:62:8: warning: Unused private var contract.ds-window/base-tx
+test/drivers/contract/native_sqrt.cljc:9:19: error: Unresolved symbol: ns-resolve
+test/drivers/contract/one_aot.cljc:29:30: error: Unresolved symbol: jank
+test/drivers/contract/one_db_aot.cljc:8:30: error: Unresolved symbol: jank
+test/drivers/contract/pss_suite.cljc:28:55: warning: Unresolved var: t/*report-counters*
+test/drivers/contract/serialize_portable.cljc:20:43: warning: Unresolved var: ser/read-edn
+test/drivers/contract/serialize_portable.cljc:29:41: warning: Unresolved var: ser/exact-number?
+test/drivers/dbfn_bench.clj:34:26: warning: unused binding db
+test/drivers/dbfn_bench.clj:35:35: error: Unresolved symbol: db
+test/drivers/dbfn_bench.clj:35:38: error: Unresolved symbol: n
+test/drivers/dbfn_bench.clj:59:31: warning: unused binding db
+test/drivers/dbfn_bench.clj:59:34: warning: unused binding n
+test/drivers/dbfn_bench.clj:86:31: warning: unused binding db
+test/drivers/dbfn_bench.clj:86:34: warning: unused binding n
+test/drivers/deps.edn:5:9: warning: Libs must be qualified, change cheshire => cheshire/cheshire
+test/drivers/flagship/jank_entry_db.cljc:11:16: warning: unused binding args
+test/drivers/flagship/jank_entry_db.cljc:12:16: error: eve.db.ds.db/empty-db is called with 0 args but expects 2
+test/drivers/flagship/jank_entry_db.cljc:13:17: warning: Unresolved var: db/db-with
+test/drivers/flagship/jank_entry_db.cljc:14:23: warning: Unresolved var: db/datoms
+test/drivers/flagship/jank_entry_db.cljc:15:17: warning: Unresolved var: db/entity
+test/drivers/probe_glj_load.clj:20:11: warning: duplicate require of eve.atom
+test/eve/db/ds/api_surface_test.cljc:18:7: warning: namespace clojure.string is required but never used
+test/eve/db/ds/api_surface_test.cljc:20:7: warning: namespace eve.db.ds.core is required but never used
+test/eve/db/ds/api_surface_test.cljc:37:29: error: Unresolved symbol: ns-resolve
+test/eve/db/ds/bset_stress_test.cljc:20:46: warning: #'cljs.test/are is referred but never used
+test/eve/db/ds/bset_stress_test.cljc:20:46: warning: #'clojure.test/are is referred but never used
+test/eve/db/ds/bset_stress_test.cljc:50:24: warning: unused binding to
+test/eve/db/ds/bset_stress_test.cljc:53:20: warning: Unused value
+test/eve/db/ds/bset_stress_test.cljc:70:39: info: Redundant nested call: str
+test/eve/db/ds/bset_stress_test.cljc:71:43: info: Redundant nested call: str
+test/eve/db/ds/bset_stress_test.cljc:75:73: info: Test assertion message should be a string
+test/eve/db/ds/bset_stress_test.cljc:107:46: error: Expected: vector or sorted map, received: seq or nil.
+test/eve/db/ds/bset_test.cljc:50:8: warning: Unused private var eve.db.ds.bset-test/disj-all!
+test/eve/db/ds/components_test.cljc:16:37: warning: #'cljs.test/are is referred but never used
+test/eve/db/ds/components_test.cljc:16:37: warning: #'clojure.test/are is referred but never used
+test/eve/db/ds/components_test.cljc:30:15: error: Unresolved symbol: thrown-msg?
+test/eve/db/ds/datafy_test.cljc:8:37: warning: #'cljs.test/are is referred but never used
+test/eve/db/ds/datafy_test.cljc:8:37: warning: #'clojure.test/are is referred but never used
+test/eve/db/ds/datafy_test.cljc:8:49: warning: #'cljs.test/testing is referred but never used
+test/eve/db/ds/datafy_test.cljc:8:49: warning: #'clojure.test/testing is referred but never used
+test/eve/db/ds/datafy_test.cljc:10:7: warning: namespace eve.db.ds.datafy is required but never used
+test/eve/db/ds/db_test.cljc:13:37: warning: #'cljs.test/are is referred but never used
+test/eve/db/ds/db_test.cljc:13:37: warning: #'clojure.test/are is referred but never used
+test/eve/db/ds/db_test.cljc:13:49: warning: #'cljs.test/testing is referred but never used
+test/eve/db/ds/db_test.cljc:13:49: warning: #'clojure.test/testing is referred but never used
+test/eve/db/ds/db_test.cljc:24:22: error: Unresolved symbol: HashBeef
+test/eve/db/ds/db_test.cljc:24:32: error: Unresolved symbol: x
+test/eve/db/ds/db_test.cljc:25:54: error: cljs.core/-hash is called with 2 args but expects 1
+test/eve/db/ds/db_test.cljc:25:63: error: Unresolved symbol: hb
+test/eve/db/ds/db_test.cljc:26:55: error: Unresolved symbol: hasheq
+test/eve/db/ds/db_test.cljc:26:63: error: Unresolved symbol: hb
+test/eve/db/ds/db_test.cljc:29:29: error: Unresolved symbol: map->HashBeef
+test/eve/db/ds/entity_test.cljc:11:37: warning: #'cljs.test/are is referred but never used
+test/eve/db/ds/entity_test.cljc:11:37: warning: #'clojure.test/are is referred but never used
+test/eve/db/ds/entity_test.cljc:17:23: warning: Unused import ExceptionInfo
+test/eve/db/ds/entity_test.cljc:110:29: warning: unused binding db'
+test/eve/db/ds/entity_test.cljc:128:28: error: Unresolved symbol: thrown-msg?
+test/eve/db/ds/index_test.cljc:73:29: error: Unresolved symbol: thrown-msg?
+test/eve/db/ds/pull_api_test.cljc:12:37: warning: #'cljs.test/are is referred but never used
+test/eve/db/ds/pull_api_test.cljc:12:37: warning: #'clojure.test/are is referred but never used
+test/eve/db/ds/query_aggregates_test.cljc:7:37: warning: #'cljs.test/are is referred but never used
+test/eve/db/ds/query_aggregates_test.cljc:7:37: warning: #'clojure.test/are is referred but never used
+test/eve/db/ds/query_aggregates_test.cljc:9:7: warning: namespace eve.db.ds.db is required but never used
+test/eve/db/ds/query_aggregates_test.cljc:10:7: warning: namespace eve.db.ds.impl.entity is required but never used
+test/eve/db/ds/query_aggregates_test.cljc:11:7: warning: namespace eve.db.ds.u4-support is required but never used
+test/eve/db/ds/query_aggregates_test.cljc:14:23: warning: Unused import ExceptionInfo
+test/eve/db/ds/query_find_specs_test.cljc:9:37: warning: #'cljs.test/are is referred but never used
+test/eve/db/ds/query_find_specs_test.cljc:9:37: warning: #'clojure.test/are is referred but never used
+test/eve/db/ds/query_find_specs_test.cljc:12:7: warning: namespace eve.db.ds.db is required but never used
+test/eve/db/ds/query_find_specs_test.cljc:13:7: warning: namespace eve.db.ds.impl.entity is required but never used
+test/eve/db/ds/query_find_specs_test.cljc:17:23: warning: Unused import ExceptionInfo
+test/eve/db/ds/query_fns_test.cljc:12:7: warning: namespace eve.db.ds.db is required but never used
+test/eve/db/ds/query_fns_test.cljc:317:15: error: Unresolved symbol: thrown-msg?
+test/eve/db/ds/query_not_test.cljc:9:34: warning: #'cljs.test/is is referred but never used
+test/eve/db/ds/query_not_test.cljc:9:34: warning: #'clojure.test/is is referred but never used
+test/eve/db/ds/query_not_test.cljc:9:49: warning: #'cljs.test/testing is referred but never used
+test/eve/db/ds/query_not_test.cljc:9:49: warning: #'clojure.test/testing is referred but never used
+test/eve/db/ds/query_not_test.cljc:12:7: warning: namespace eve.db.ds.db is required but never used
+test/eve/db/ds/query_not_test.cljc:13:7: warning: namespace eve.db.ds.impl.entity is required but never used
+test/eve/db/ds/query_not_test.cljc:17:23: warning: Unused import ExceptionInfo
+test/eve/db/ds/query_not_test.cljc:196:32: error: Unresolved symbol: thrown-msg?
+test/eve/db/ds/query_or_test.cljc:9:49: warning: #'cljs.test/testing is referred but never used
+test/eve/db/ds/query_or_test.cljc:9:49: warning: #'clojure.test/testing is referred but never used
+test/eve/db/ds/query_or_test.cljc:12:7: warning: namespace eve.db.ds.db is required but never used
+test/eve/db/ds/query_or_test.cljc:13:7: warning: namespace eve.db.ds.impl.entity is required but never used
+test/eve/db/ds/query_or_test.cljc:242:23: error: Unresolved symbol: thrown-msg?
+test/eve/db/ds/query_pull_test.cljc:12:7: warning: namespace eve.db.ds.db is required but never used
+test/eve/db/ds/query_pull_test.cljc:13:7: warning: namespace eve.db.ds.impl.entity is required but never used
+test/eve/db/ds/query_pull_test.cljc:17:23: warning: Unused import ExceptionInfo
+test/eve/db/ds/query_return_map_test.cljc:9:37: warning: #'cljs.test/are is referred but never used
+test/eve/db/ds/query_return_map_test.cljc:9:37: warning: #'clojure.test/are is referred but never used
+test/eve/db/ds/query_return_map_test.cljc:9:49: warning: #'cljs.test/testing is referred but never used
+test/eve/db/ds/query_return_map_test.cljc:9:49: warning: #'clojure.test/testing is referred but never used
+test/eve/db/ds/query_return_map_test.cljc:12:7: warning: namespace eve.db.ds.db is required but never used
+test/eve/db/ds/query_return_map_test.cljc:13:7: warning: namespace eve.db.ds.impl.entity is required but never used
+test/eve/db/ds/query_return_map_test.cljc:17:23: warning: Unused import ExceptionInfo
+test/eve/db/ds/query_rules_test.cljc:14:37: warning: #'cljs.test/are is referred but never used
+test/eve/db/ds/query_rules_test.cljc:14:37: warning: #'clojure.test/are is referred but never used
+test/eve/db/ds/query_rules_test.cljc:17:7: warning: namespace eve.db.ds.db is required but never used
+test/eve/db/ds/query_rules_test.cljc:18:7: warning: namespace eve.db.ds.impl.entity is required but never used
+test/eve/db/ds/query_rules_test.cljc:22:23: warning: Unused import ExceptionInfo
+test/eve/db/ds/query_rules_test.cljc:178:24: error: Unresolved symbol: thrown-msg?
+test/eve/db/ds/query_test.cljc:12:37: warning: #'cljs.test/are is referred but never used
+test/eve/db/ds/query_test.cljc:12:37: warning: #'clojure.test/are is referred but never used
+test/eve/db/ds/query_test.cljc:15:7: warning: namespace eve.db.ds.db is required but never used
+test/eve/db/ds/query_test.cljc:16:7: warning: namespace eve.db.ds.impl.entity is required but never used
+test/eve/db/ds/query_test.cljc:126:28: error: Unresolved symbol: thrown-msg?
+test/eve/db/ds/query_test.cljc:283:65: warning: unused binding db
+test/eve/db/ds/query_test.cljc:283:68: warning: unused binding datom
+test/eve/db/ds/test/db_fn.cljc:43:16: error: Unresolved symbol: db
+test/eve/db/ds/test/db_fn.cljc:43:19: error: Unresolved symbol: email
+test/eve/db/ds/test/db_fn.cljc:43:25: error: Unresolved symbol: owner
+test/eve/db/ds/test/db_fn.cljc:118:36: error: Unresolved symbol: x
+test/eve/db/ds/test/db_fn.cljc:142:58: error: Unresolved symbol: eid
+test/eve/db/ds/test/db_fn.cljc:196:62: warning: Unresolved namespace eve.db.ds.db. Are you missing a require?
+test/eve/db/ds/test/db_fn.cljc:218:63: warning: unused binding db
+test/eve/db/ds/test/db_fn.cljc:234:8: warning: unused binding db
+test/eve/db/ds/test/db_fn.cljc:235:41: warning: unused binding db
+test/eve/db/ds/test/persistence.cljc:13:7: warning: namespace clojure.edn is required but never used
+test/eve/db/ds/test/persistence.cljc:14:7: warning: namespace clojure.string is required but never used
+test/eve/db/ds/test/serialize.cljc:82:29: warning: Unresolved var: js-form->clj
+test/eve/db/ds/test/serialize.cljc:100:20: warning: Unresolved var: roundtrips-to?
+test/eve/db/ds/test/transact.cljc:211:20: error: Unresolved symbol: thrown-msg?
+test/eve/db/ds/test/transact.cljc:263:72: warning: unused binding db
+test/eve/db/ds/test/transact.cljc:270:71: warning: unused binding db
+test/eve/db/ds/test/transact.cljc:304:20: warning: Unresolved var: db-ident-fn-scenario
+test/eve/db/ds/test/transact.cljc:306:30: error: Unresolved symbol: db
+test/eve/db/ds/test/transact.cljc:306:30: warning: Unresolved var: db
+test/eve/db/ds/test/transact.cljc:337:38: warning: unused binding db
+test/eve/db/ds/test/transact.cljc:337:41: warning: unused binding name
+test/eve/db/ds/test/transact.cljc:477:10: warning: Unused value: "db.fn/retractEntity retracts attributes of adjacent entities issue-294"
+test/eve/db/ds/test/transact.cljc:579:60: warning: unused binding db
+test/eve/db/ds/test/upsert.cljc:204:15: warning: Redundant let expression.
+test/eve/db/ds/test_macros.clj:22:40: warning: unused binding menv
+test/eve/db/ds/u2_support.cljc:8:16: warning: namespace cljs.test is required but never used
+test/eve/db/ds/u2_support.cljc:9:42: warning: #'eve.alpha/$ is referred but never used
+test/eve/db/ds/u3_support.cljc:15:7: warning: namespace cljs.test is required but never used
+test/eve/db/ds/u4_support.cljc:16:7: warning: namespace cljs.test is required but never used
+test/eve/deftype_atom_laws_test.cljc:34:1: warning: ->Box already refers to #'cljs.core/->Box
+test/eve/deftype_atom_laws_test.cljc:34:1: warning: Box already refers to #'cljs.core/Box
+test/upstream-ds/test/eve/db/ds/test.cljc:3:34: warning: #'cljs.test/is is referred but never used
+test/upstream-ds/test/eve/db/ds/test.cljc:3:34: warning: #'clojure.test/is is referred but never used
+test/upstream-ds/test/eve/db/ds/test.cljc:3:37: warning: #'cljs.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test.cljc:3:37: warning: #'clojure.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test.cljc:3:41: warning: #'cljs.test/deftest is referred but never used
+test/upstream-ds/test/eve/db/ds/test.cljc:3:41: warning: #'clojure.test/deftest is referred but never used
+test/upstream-ds/test/eve/db/ds/test.cljc:3:49: warning: #'cljs.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test.cljc:3:49: warning: #'clojure.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/cljs.cljc:3:7: warning: namespace clojure.string is required but never used
+test/upstream-ds/test/eve/db/ds/test/cljs.cljc:4:7: warning: namespace cljs.test is required but never used
+test/upstream-ds/test/eve/db/ds/test/cljs.cljc:19:43: warning: unused binding menv
+test/upstream-ds/test/eve/db/ds/test/components.cljc:4:37: warning: #'cljs.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/components.cljc:4:37: warning: #'clojure.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/components.cljc:6:7: warning: namespace eve.db.ds.db is required but never used
+test/upstream-ds/test/eve/db/ds/test/components.cljc:15:15: error: Unresolved symbol: thrown-msg?
+test/upstream-ds/test/eve/db/ds/test/conn.cljc:5:7: warning: namespace eve.db.ds.db is required but never used
+test/upstream-ds/test/eve/db/ds/test/conn.cljc:6:7: warning: namespace eve.db.ds.test.core is required but never used
+test/upstream-ds/test/eve/db/ds/test/conn.cljc:11:37: warning: #'cljs.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/conn.cljc:11:37: warning: #'clojure.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/conn.cljc:11:49: warning: #'cljs.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/conn.cljc:11:49: warning: #'clojure.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/core.cljc:3:7: warning: namespace clojure.edn is required but never used
+test/upstream-ds/test/eve/db/ds/test/core.cljc:4:37: warning: #'cljs.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/core.cljc:4:37: warning: #'clojure.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/core.cljc:4:49: warning: #'cljs.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/core.cljc:4:49: warning: #'clojure.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/core.cljc:5:7: warning: namespace clojure.string is required but never used
+test/upstream-ds/test/eve/db/ds/test/core.cljc:10:7: warning: namespace eve.db.ds.db is required but never used
+test/upstream-ds/test/eve/db/ds/test/core.cljc:10:35: warning: #'eve.db.ds.db/defrecord-updatable is referred but never used
+test/upstream-ds/test/eve/db/ds/test/datafy.cljc:3:37: warning: #'cljs.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/datafy.cljc:3:37: warning: #'clojure.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/datafy.cljc:3:49: warning: #'cljs.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/datafy.cljc:3:49: warning: #'clojure.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/datafy.cljc:4:7: warning: namespace eve.db.ds.datafy is required but never used
+test/upstream-ds/test/eve/db/ds/test/db.cljc:4:37: warning: #'cljs.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/db.cljc:4:37: warning: #'clojure.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/db.cljc:4:49: warning: #'cljs.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/db.cljc:4:49: warning: #'clojure.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/db.cljc:13:22: error: Unresolved symbol: HashBeef
+test/upstream-ds/test/eve/db/ds/test/db.cljc:13:32: error: Unresolved symbol: x
+test/upstream-ds/test/eve/db/ds/test/db.cljc:14:54: error: cljs.core/-hash is called with 2 args but expects 1
+test/upstream-ds/test/eve/db/ds/test/db.cljc:14:63: error: Unresolved symbol: hb
+test/upstream-ds/test/eve/db/ds/test/db.cljc:15:55: error: Unresolved symbol: hasheq
+test/upstream-ds/test/eve/db/ds/test/db.cljc:15:63: error: Unresolved symbol: hb
+test/upstream-ds/test/eve/db/ds/test/db.cljc:18:29: error: Unresolved symbol: map->HashBeef
+test/upstream-ds/test/eve/db/ds/test/entity.cljc:4:37: warning: #'cljs.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/entity.cljc:4:37: warning: #'clojure.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/entity.cljc:6:7: warning: namespace eve.db.ds.db is required but never used
+test/upstream-ds/test/eve/db/ds/test/entity.cljc:10:23: warning: Unused import ExceptionInfo
+test/upstream-ds/test/eve/db/ds/test/entity.cljc:92:16: warning: unused binding db'
+test/upstream-ds/test/eve/db/ds/test/entity.cljc:114:20: error: Unresolved symbol: thrown-msg?
+test/upstream-ds/test/eve/db/ds/test/explode.cljc:5:7: warning: namespace eve.db.ds.db is required but never used
+test/upstream-ds/test/eve/db/ds/test/explode.cljc:6:7: warning: namespace eve.db.ds.test.core is required but never used
+test/upstream-ds/test/eve/db/ds/test/explode.cljc:61:20: error: Unresolved symbol: thrown-msg?
+test/upstream-ds/test/eve/db/ds/test/filter.cljc:5:7: warning: namespace eve.db.ds.db is required but never used
+test/upstream-ds/test/eve/db/ds/test/filter.cljc:6:7: warning: namespace eve.db.ds.test.core is required but never used
+test/upstream-ds/test/eve/db/ds/test/ident.cljc:3:37: warning: #'cljs.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/ident.cljc:3:37: warning: #'clojure.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/ident.cljc:3:49: warning: #'cljs.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/ident.cljc:3:49: warning: #'clojure.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/index.cljc:5:7: warning: namespace eve.db.ds.db is required but never used
+test/upstream-ds/test/eve/db/ds/test/index.cljc:6:7: warning: namespace eve.db.ds.test.core is required but never used
+test/upstream-ds/test/eve/db/ds/test/index.cljc:55:29: error: Unresolved symbol: thrown-msg?
+test/upstream-ds/test/eve/db/ds/test/issues.cljc:4:37: warning: #'cljs.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/issues.cljc:4:37: warning: #'clojure.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/issues.cljc:4:49: warning: #'cljs.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/issues.cljc:4:49: warning: #'clojure.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/issues.cljc:22:15: info: Var is is referred but used via alias: t
+test/upstream-ds/test/eve/db/ds/test/issues.cljc:33:18: info: Var is is referred but used via alias: t
+test/upstream-ds/test/eve/db/ds/test/issues.cljc:33:42: warning: Unresolved namespace clojure.pprint. Are you missing a require?
+test/upstream-ds/test/eve/db/ds/test/issues.cljc:42:15: info: Var is is referred but used via alias: t
+test/upstream-ds/test/eve/db/ds/test/issues.cljc:43:25: warning: Unresolved namespace clojure.data. Are you missing a require?
+test/upstream-ds/test/eve/db/ds/test/issues.cljc:49:15: info: Var is is referred but used via alias: t
+test/upstream-ds/test/eve/db/ds/test/issues.cljc:71:15: info: Var is is referred but used via alias: t
+test/upstream-ds/test/eve/db/ds/test/issues.cljc:72:15: info: Var is is referred but used via alias: t
+test/upstream-ds/test/eve/db/ds/test/issues.cljc:74:15: info: Var is is referred but used via alias: t
+test/upstream-ds/test/eve/db/ds/test/issues.cljc:75:15: info: Var is is referred but used via alias: t
+test/upstream-ds/test/eve/db/ds/test/issues.cljc:96:15: info: Var is is referred but used via alias: t
+test/upstream-ds/test/eve/db/ds/test/issues.cljc:98:15: info: Var is is referred but used via alias: t
+test/upstream-ds/test/eve/db/ds/test/issues.cljc:126:15: info: Var is is referred but used via alias: t
+test/upstream-ds/test/eve/db/ds/test/issues.cljc:127:15: info: Var is is referred but used via alias: t
+test/upstream-ds/test/eve/db/ds/test/issues.cljc:129:15: info: Var is is referred but used via alias: t
+test/upstream-ds/test/eve/db/ds/test/issues.cljc:130:15: info: Var is is referred but used via alias: t
+test/upstream-ds/test/eve/db/ds/test/issues.cljc:133:15: info: Var is is referred but used via alias: t
+test/upstream-ds/test/eve/db/ds/test/issues.cljc:134:15: info: Var is is referred but used via alias: t
+test/upstream-ds/test/eve/db/ds/test/issues.cljc:135:15: info: Var is is referred but used via alias: t
+test/upstream-ds/test/eve/db/ds/test/issues.cljc:172:22: info: Var is is referred but used via alias: t
+test/upstream-ds/test/eve/db/ds/test/issues.cljc:174:22: info: Var is is referred but used via alias: t
+test/upstream-ds/test/eve/db/ds/test/issues.cljc:177:29: info: Var is is referred but used via alias: t
+test/upstream-ds/test/eve/db/ds/test/listen.cljc:6:7: warning: namespace eve.db.ds.test.core is required but never used
+test/upstream-ds/test/eve/db/ds/test/listen.cljc:7:37: warning: #'cljs.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/listen.cljc:7:37: warning: #'clojure.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/listen.cljc:7:49: warning: #'cljs.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/listen.cljc:7:49: warning: #'clojure.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/lookup_refs.cljc:5:7: warning: namespace eve.db.ds.db is required but never used
+test/upstream-ds/test/eve/db/ds/test/lookup_refs.cljc:9:23: warning: Unused import ExceptionInfo
+test/upstream-ds/test/eve/db/ds/test/lookup_refs.cljc:23:31: error: Unresolved symbol: thrown-msg?
+test/upstream-ds/test/eve/db/ds/test/lru.cljc:3:49: warning: #'cljs.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/lru.cljc:3:49: warning: #'clojure.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/parser.cljc:3:49: warning: #'cljs.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/parser.cljc:3:49: warning: #'clojure.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/parser.cljc:4:7: warning: namespace eve.db.ds.core is required but never used
+test/upstream-ds/test/eve/db/ds/test/parser.cljc:5:7: warning: namespace eve.db.ds.db is required but never used
+test/upstream-ds/test/eve/db/ds/test/parser.cljc:7:7: warning: namespace eve.db.ds.test.core is required but never used
+test/upstream-ds/test/eve/db/ds/test/parser_find.cljc:3:37: warning: #'cljs.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/parser_find.cljc:3:37: warning: #'clojure.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/parser_find.cljc:3:49: warning: #'cljs.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/parser_find.cljc:3:49: warning: #'clojure.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/parser_find.cljc:4:7: warning: namespace eve.db.ds.core is required but never used
+test/upstream-ds/test/eve/db/ds/test/parser_find.cljc:5:7: warning: namespace eve.db.ds.db is required but never used
+test/upstream-ds/test/eve/db/ds/test/parser_find.cljc:7:7: warning: namespace eve.db.ds.test.core is required but never used
+test/upstream-ds/test/eve/db/ds/test/parser_query.cljc:3:34: warning: #'cljs.test/is is referred but never used
+test/upstream-ds/test/eve/db/ds/test/parser_query.cljc:3:34: warning: #'clojure.test/is is referred but never used
+test/upstream-ds/test/eve/db/ds/test/parser_query.cljc:3:49: warning: #'cljs.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/parser_query.cljc:3:49: warning: #'clojure.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/parser_query.cljc:4:7: warning: namespace eve.db.ds.core is required but never used
+test/upstream-ds/test/eve/db/ds/test/parser_query.cljc:5:7: warning: namespace eve.db.ds.db is required but never used
+test/upstream-ds/test/eve/db/ds/test/parser_query.cljc:7:7: warning: namespace eve.db.ds.test.core is required but never used
+test/upstream-ds/test/eve/db/ds/test/parser_query.cljc:10:23: warning: Unused import ExceptionInfo
+test/upstream-ds/test/eve/db/ds/test/parser_query.cljc:13:24: error: Unresolved symbol: thrown-msg?
+test/upstream-ds/test/eve/db/ds/test/parser_return_map.cljc:3:37: warning: #'cljs.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/parser_return_map.cljc:3:37: warning: #'clojure.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/parser_return_map.cljc:4:7: warning: namespace eve.db.ds.core is required but never used
+test/upstream-ds/test/eve/db/ds/test/parser_return_map.cljc:6:7: warning: namespace eve.db.ds.db is required but never used
+test/upstream-ds/test/eve/db/ds/test/parser_return_map.cljc:7:7: warning: namespace eve.db.ds.test.core is required but never used
+test/upstream-ds/test/eve/db/ds/test/parser_return_map.cljc:27:24: error: Unresolved symbol: thrown-msg?
+test/upstream-ds/test/eve/db/ds/test/parser_rules.cljc:3:49: warning: #'cljs.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/parser_rules.cljc:3:49: warning: #'clojure.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/parser_rules.cljc:4:7: warning: namespace eve.db.ds.core is required but never used
+test/upstream-ds/test/eve/db/ds/test/parser_rules.cljc:5:7: warning: namespace eve.db.ds.db is required but never used
+test/upstream-ds/test/eve/db/ds/test/parser_rules.cljc:7:7: warning: namespace eve.db.ds.test.core is required but never used
+test/upstream-ds/test/eve/db/ds/test/parser_where.cljc:3:49: warning: #'cljs.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/parser_where.cljc:3:49: warning: #'clojure.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/parser_where.cljc:4:7: warning: namespace eve.db.ds.core is required but never used
+test/upstream-ds/test/eve/db/ds/test/parser_where.cljc:5:7: warning: namespace eve.db.ds.db is required but never used
+test/upstream-ds/test/eve/db/ds/test/parser_where.cljc:7:7: warning: namespace eve.db.ds.test.core is required but never used
+test/upstream-ds/test/eve/db/ds/test/pull_api.cljc:3:37: warning: #'cljs.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/pull_api.cljc:3:37: warning: #'clojure.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/pull_api.cljc:5:7: warning: namespace eve.db.ds.db is required but never used
+test/upstream-ds/test/eve/db/ds/test/pull_api.cljc:6:7: warning: namespace eve.db.ds.test.core is required but never used
+test/upstream-ds/test/eve/db/ds/test/pull_api.cljc:396:15: warning: Redundant let expression.
+test/upstream-ds/test/eve/db/ds/test/pull_api.cljc:571:55: warning: Unresolved namespace clojure.edn. Are you missing a require?
+test/upstream-ds/test/eve/db/ds/test/pull_parser.cljc:3:34: warning: #'cljs.test/is is referred but never used
+test/upstream-ds/test/eve/db/ds/test/pull_parser.cljc:3:34: warning: #'clojure.test/is is referred but never used
+test/upstream-ds/test/eve/db/ds/test/pull_parser.cljc:7:7: warning: namespace eve.db.ds.test.core is required but never used
+test/upstream-ds/test/eve/db/ds/test/pull_parser.cljc:30:8: warning: Unresolved var: db/call-in-parse-domain
+test/upstream-ds/test/eve/db/ds/test/pull_parser.cljc:50:48: warning: Unresolved var: dpp/register-xform!
+test/upstream-ds/test/eve/db/ds/test/pull_parser.cljc:72:104: error: Expected: deref, received: associative collection.
+test/upstream-ds/test/eve/db/ds/test/pull_parser.cljc:154:39: error: Unresolved symbol: thrown-msg?
+test/upstream-ds/test/eve/db/ds/test/query.cljc:3:37: warning: #'cljs.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/query.cljc:3:37: warning: #'clojure.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/query.cljc:5:7: warning: namespace eve.db.ds.db is required but never used
+test/upstream-ds/test/eve/db/ds/test/query.cljc:6:7: warning: namespace eve.db.ds.test.core is required but never used
+test/upstream-ds/test/eve/db/ds/test/query.cljc:114:20: error: Unresolved symbol: thrown-msg?
+test/upstream-ds/test/eve/db/ds/test/query.cljc:266:52: warning: unused binding db
+test/upstream-ds/test/eve/db/ds/test/query.cljc:266:55: warning: unused binding datom
+test/upstream-ds/test/eve/db/ds/test/query_aggregates.cljc:3:37: warning: #'cljs.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/query_aggregates.cljc:3:37: warning: #'clojure.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/query_aggregates.cljc:5:7: warning: namespace eve.db.ds.db is required but never used
+test/upstream-ds/test/eve/db/ds/test/query_aggregates.cljc:6:7: warning: namespace eve.db.ds.test.core is required but never used
+test/upstream-ds/test/eve/db/ds/test/query_find_specs.cljc:3:37: warning: #'cljs.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/query_find_specs.cljc:3:37: warning: #'clojure.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/query_find_specs.cljc:5:7: warning: namespace eve.db.ds.db is required but never used
+test/upstream-ds/test/eve/db/ds/test/query_find_specs.cljc:6:7: warning: namespace eve.db.ds.test.core is required but never used
+test/upstream-ds/test/eve/db/ds/test/query_fns.cljc:5:7: warning: namespace eve.db.ds.db is required but never used
+test/upstream-ds/test/eve/db/ds/test/query_fns.cljc:6:7: warning: namespace eve.db.ds.test.core is required but never used
+test/upstream-ds/test/eve/db/ds/test/query_fns.cljc:307:15: error: Unresolved symbol: thrown-msg?
+test/upstream-ds/test/eve/db/ds/test/query_not.cljc:3:34: warning: #'cljs.test/is is referred but never used
+test/upstream-ds/test/eve/db/ds/test/query_not.cljc:3:34: warning: #'clojure.test/is is referred but never used
+test/upstream-ds/test/eve/db/ds/test/query_not.cljc:3:49: warning: #'cljs.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/query_not.cljc:3:49: warning: #'clojure.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/query_not.cljc:5:7: warning: namespace eve.db.ds.db is required but never used
+test/upstream-ds/test/eve/db/ds/test/query_not.cljc:6:7: warning: namespace eve.db.ds.test.core is required but never used
+test/upstream-ds/test/eve/db/ds/test/query_not.cljc:9:23: warning: Unused import ExceptionInfo
+test/upstream-ds/test/eve/db/ds/test/query_not.cljc:183:24: error: Unresolved symbol: thrown-msg?
+test/upstream-ds/test/eve/db/ds/test/query_or.cljc:3:49: warning: #'cljs.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/query_or.cljc:3:49: warning: #'clojure.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/query_or.cljc:5:7: warning: namespace eve.db.ds.db is required but never used
+test/upstream-ds/test/eve/db/ds/test/query_or.cljc:6:7: warning: namespace eve.db.ds.test.core is required but never used
+test/upstream-ds/test/eve/db/ds/test/query_or.cljc:229:15: error: Unresolved symbol: thrown-msg?
+test/upstream-ds/test/eve/db/ds/test/query_pull.cljc:5:7: warning: namespace eve.db.ds.db is required but never used
+test/upstream-ds/test/eve/db/ds/test/query_pull.cljc:6:7: warning: namespace eve.db.ds.test.core is required but never used
+test/upstream-ds/test/eve/db/ds/test/query_return_map.cljc:3:37: warning: #'cljs.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/query_return_map.cljc:3:37: warning: #'clojure.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/query_return_map.cljc:3:49: warning: #'cljs.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/query_return_map.cljc:3:49: warning: #'clojure.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/query_return_map.cljc:5:7: warning: namespace eve.db.ds.db is required but never used
+test/upstream-ds/test/eve/db/ds/test/query_return_map.cljc:6:7: warning: namespace eve.db.ds.test.core is required but never used
+test/upstream-ds/test/eve/db/ds/test/query_rules.cljc:3:37: warning: #'cljs.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/query_rules.cljc:3:37: warning: #'clojure.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/query_rules.cljc:5:7: warning: namespace eve.db.ds.db is required but never used
+test/upstream-ds/test/eve/db/ds/test/query_rules.cljc:6:7: warning: namespace eve.db.ds.test.core is required but never used
+test/upstream-ds/test/eve/db/ds/test/query_rules.cljc:162:24: error: Unresolved symbol: thrown-msg?
+test/upstream-ds/test/eve/db/ds/test/query_v3.cljc:3:34: warning: #'cljs.test/is is referred but never used
+test/upstream-ds/test/eve/db/ds/test/query_v3.cljc:3:34: warning: #'clojure.test/is is referred but never used
+test/upstream-ds/test/eve/db/ds/test/query_v3.cljc:3:49: warning: #'cljs.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/query_v3.cljc:3:49: warning: #'clojure.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/query_v3.cljc:4:7: warning: namespace eve.db.ds.core is required but never used
+test/upstream-ds/test/eve/db/ds/test/query_v3.cljc:5:7: warning: namespace eve.db.ds.db is required but never used
+test/upstream-ds/test/eve/db/ds/test/query_v3.cljc:7:7: warning: namespace eve.db.ds.test.core is required but never used
+test/upstream-ds/test/eve/db/ds/test/serialize.cljc:4:37: warning: #'cljs.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/serialize.cljc:4:37: warning: #'clojure.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/serialize.cljc:17:45: warning: Unresolved namespace cljs.reader. Are you missing a require?
+test/upstream-ds/test/eve/db/ds/test/storage.clj:5:37: warning: #'clojure.test/are is referred but never used
+test/upstream-ds/test/eve/db/ds/test/storage.clj:65:25: warning: Unresolved var: d/store
+test/upstream-ds/test/eve/db/ds/test/storage.clj:67:35: warning: Unresolved var: d/restore
+test/upstream-ds/test/eve/db/ds/test/storage.clj:84:38: warning: Unused value
+test/upstream-ds/test/eve/db/ds/test/storage.clj:84:38: warning: missing test assertion
+test/upstream-ds/test/eve/db/ds/test/storage.clj:86:38: warning: Unused value
+test/upstream-ds/test/eve/db/ds/test/storage.clj:86:38: warning: missing test assertion
+test/upstream-ds/test/eve/db/ds/test/storage.clj:92:47: warning: Unused value
+test/upstream-ds/test/eve/db/ds/test/storage.clj:92:47: warning: missing test assertion
+test/upstream-ds/test/eve/db/ds/test/storage.clj:117:38: warning: Unused value
+test/upstream-ds/test/eve/db/ds/test/storage.clj:117:38: warning: missing test assertion
+test/upstream-ds/test/eve/db/ds/test/storage.clj:120:38: warning: Unused value
+test/upstream-ds/test/eve/db/ds/test/storage.clj:120:38: warning: missing test assertion
+test/upstream-ds/test/eve/db/ds/test/storage.clj:123:38: warning: Unused value
+test/upstream-ds/test/eve/db/ds/test/storage.clj:123:38: warning: missing test assertion
+test/upstream-ds/test/eve/db/ds/test/storage.clj:134:38: warning: Unused value
+test/upstream-ds/test/eve/db/ds/test/storage.clj:134:38: warning: missing test assertion
+test/upstream-ds/test/eve/db/ds/test/storage.clj:157:8: warning: Unresolved var: d/file-storage
+test/upstream-ds/test/eve/db/ds/test/storage.clj:211:39: warning: Unresolved var: d/addresses
+test/upstream-ds/test/eve/db/ds/test/storage.clj:221:26: warning: Unresolved var: d/collect-garbage
+test/upstream-ds/test/eve/db/ds/test/storage.clj:273:28: warning: Unresolved var: d/restore-conn
+test/upstream-ds/test/eve/db/ds/test/transact.cljc:225:72: warning: unused binding db
+test/upstream-ds/test/eve/db/ds/test/transact.cljc:232:71: warning: unused binding db
+test/upstream-ds/test/eve/db/ds/test/transact.cljc:392:10: warning: Unused value: "db.fn/retractEntity retracts attributes of adjacent entities issue-294"
+test/upstream-ds/test/eve/db/ds/test/transact.cljc:494:60: warning: unused binding db
+test/upstream-ds/test/eve/db/ds/test/tuples.cljc:17:38: warning: Unknown key :rschema in map with keys :atom, :tx
+test/upstream-ds/test/eve/db/ds/test/tuples.cljc:24:38: warning: Unknown key :rschema in map with keys :atom, :tx
+test/upstream-ds/test/eve/db/ds/test/tuples.cljc:26:20: error: Unresolved symbol: thrown-msg?
+test/upstream-ds/test/eve/db/ds/test/tuples.cljc:417:53: warning: Unknown key :rschema in map with keys :atom, :tx
+test/upstream-ds/test/eve/db/ds/test/tuples.cljc:418:45: warning: Unknown key :rschema in map with keys :atom, :tx
+test/upstream-ds/test/eve/db/ds/test/tuples.cljc:419:45: warning: Unknown key :rschema in map with keys :atom, :tx
+test/upstream-ds/test/eve/db/ds/test/tuples.cljc:420:44: warning: Unknown key :rschema in map with keys :atom, :tx
+test/upstream-ds/test/eve/db/ds/test/tuples.cljc:421:62: warning: Unknown key :rschema in map with keys :atom, :tx
+test/upstream-ds/test/eve/db/ds/test/tuples.cljc:673:35: warning: Unknown key :schema in map with keys :atom, :tx
+test/upstream-ds/test/eve/db/ds/test/upsert.cljc:5:7: warning: namespace eve.db.ds.db is required but never used
+test/upstream-ds/test/eve/db/ds/test/upsert.cljc:200:15: warning: Redundant let expression.
+test/upstream-ds/test/eve/db/ds/test/validation.cljc:3:49: warning: #'cljs.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/validation.cljc:3:49: warning: #'clojure.test/testing is referred but never used
+test/upstream-ds/test/eve/db/ds/test/validation.cljc:5:7: warning: namespace eve.db.ds.test.core is required but never used
+linting took 10102ms, errors: 89, warnings: 566

@@ -27,4 +27,18 @@
  :hooks {:analyze-call {eve.db.ds.parser/deftrecord hooks.eve-db-ds/deftrecord
                         eve.db.ds.db/defcomp hooks.eve-db-ds/defcomp
                         eve.db.ds.util/cond+ hooks.eve-db-ds/cond+
-                        eve.db.ds.util/if+ hooks.eve-db-ds/if+}}}
+                        eve.db.ds.util/if+ hooks.eve-db-ds/if+
+                        eve.db.ds.db/defn+ hooks.eve-db-ds/defn+
+                        ;; Eve deftype needs the Eve lane's analyze-call
+                        ;; hook (.clj-kondo/hooks/eve_deftype.clj, copied
+                        ;; from SeniorCareMarket/eve's Phase 2 lane —
+                        ;; the same hook Eve ships in its kondo export):
+                        ;; :lint-as to clojure.core/deftype cannot model
+                        ;; Eve deftype's #?@ protocol-group vectors or
+                        ;; per-pass protocol translation, and reads the
+                        ;; Datom/DB/FilteredDB bodies as hundreds of
+                        ;; unresolved symbols + unused bindings (measured
+                        ;; at recount2: db.cljc alone carried 190
+                        ;; findings, nearly all inside eve/deftype forms).
+                        eve.alpha/deftype hooks.eve-deftype/deftype
+                        eve.deftype/deftype hooks.eve-deftype/deftype}}}
