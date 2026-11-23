@@ -20,6 +20,13 @@
                  "clojure.core/read-string" #(binding [*data-readers* (merge *data-readers* d/data-readers)]
                                                       (read-string %))])})
 
+;; `readers` is defined directly above; test/ and
+;; test/upstream-ds/ define this same namespace
+;; (eve.db.ds.test.serialize), and kondo's registry holds the
+;; other copy's vars in some analysis orders, leaving this
+;; file's `readers` unresolved (the duplicate-ns artifact —
+;; see batch 5). Per-deftest ignore for that artifact only.
+#_{:clj-kondo/ignore [:unresolved-var]}
 (deftest test-pr-read
          (doseq [[r read-fn] readers]
                 (testing r

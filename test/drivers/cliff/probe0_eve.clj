@@ -4,6 +4,12 @@
 ;; Prints used blocks per bitmap class (0-5) every N/10 swaps. A leak is a class that grows by ~1 block a swap
 ;; (eve dcba2ee, in-process: class 0 at 10,341 blocks after 10,000 swaps); fixed, every class cycles with no drift.
 ;; EVE_READ_END=commit reads in C (no view pins): the count is then the reclaim alone, not the GC's cadence.
+;; This script and test/drivers/probe_glj_load.clj are both
+;; ns-less (kondo's implicit `user` ns) and both require
+;; eve.atom at top level; kondo reports the second as a
+;; duplicate require of the shared ns. Standalone scripts —
+;; the require is real in each.
+#_{:clj-kondo/ignore [:duplicate-require]}
 (require '[eve.atom :as ea] '[eve.slab-io :as slab] '[eve.deftype-proto.alloc :as alloc] '[eve.mem :as mem])
 (def N (Long/parseLong (or (first *command-line-args*) "10000")))
 (def mode (or (second *command-line-args*) "heap"))
