@@ -54,7 +54,7 @@
   ;; cljs.core has no *' var: an unqualified *' compiled to a
   ;; bset-local var and killed the browser bundle at load
   ;; (measured 2026-11-21). The taken values are identical.
-  (vec (take 13 (iterate (fn [x] #?(:cljs (* 32 x) :clj (*' 32 x))) 1))))
+  (vec (take 13 (iterate (fn [x] #?(:cljs (* 32 x) :clj (*' 32 x) :default (* 32 x))) 1))))
 
 (def ^:const empty-path 0)
 
