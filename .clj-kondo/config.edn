@@ -16,7 +16,8 @@
  ;; narcis (Phase 1 RETRO item 1); proposed upstream homes: Eve ships
  ;; clj-kondo exports for its macros, or the fleet template gains
  ;; this mapping for Eve-consuming repos.
- :lint-as {eve.alpha/deftype clojure.core/deftype
+ :lint-as {clojure.pprint/print-length-loop clojure.core/loop
+           eve.alpha/deftype clojure.core/deftype
            eve.deftype/deftype clojure.core/deftype}
  ;; ── symbol-exact exclusion, same shape as the Eve lane's ──
  ;; thrown-msg? is a clojure.test/cljs.test assert-expr DISPATCH
@@ -42,6 +43,9 @@
                         eve.db.ds.util/cond+ hooks.eve-db-ds/cond+
                         eve.db.ds.util/if+ hooks.eve-db-ds/if+
                         eve.db.ds.db/defn+ hooks.eve-db-ds/defn+
+                        eve.db.ds.db/defrecord-updatable hooks.eve-db-ds/defrecord-updatable
+                        eve.db.ds.core/sci-fn hooks.eve-db-ds/sci-fn
+                        eve.db.ds.core/db-fn hooks.eve-db-ds/db-fn
                         ;; Eve deftype needs the Eve lane's analyze-call
                         ;; hook (.clj-kondo/hooks/eve_deftype.clj, copied
                         ;; from SeniorCareMarket/eve's Phase 2 lane —

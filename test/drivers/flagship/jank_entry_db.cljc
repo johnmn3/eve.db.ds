@@ -8,6 +8,11 @@
 (def base-tx (mapv (fn [i] {:db/id i :name (str "base-" i) :age (+ 20 i)})
                    (range 1 11)))
 
+;; Stale probe entry: it calls a db-level API shape (0-arg
+;; empty-db, db/db-with, db/datoms, db/entity) that does not
+;; exist at this pin — those live in eve.db.ds.core with handle
+;; semantics. Recorded here; not run by any gate in this repo.
+#_{:clj-kondo/ignore [:invalid-arity :unresolved-var]}
 (defn -main [& args]
       (let [d0 (db/empty-db)
             d1 (db/db-with d0 base-tx)

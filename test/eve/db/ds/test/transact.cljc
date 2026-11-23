@@ -295,6 +295,11 @@
             (is (= (:age e) 32))
             (is (:had-birthday e))))
 
+;; Duplicate-ns artifact: test/upstream-ds defines this same
+;; namespace (eve.db.ds.test.serialize / .transact) and kondo's
+;; registry holds that copy, so this file's own definitions read
+;; as unresolved. The vars are defined in this file (grep-proven).
+#_{:clj-kondo/ignore [:unresolved-symbol :unresolved-var]}
 (deftest test-db-ident-fn
   ;; Reshaped per John's rulings (2026-11-20): the feature stays,
   ;; as stored DATA, in every invocation kind. Upstream's host-fn

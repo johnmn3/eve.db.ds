@@ -2,11 +2,21 @@
     (:require [eve.host] [eve.atom]
               [eve.db.ds.core :as d] [eve.db.ds.db :as db]
               [me.tonsky.persistent-sorted-set :as pss]))
+;; Host driver for clj-family seats (clj/jank/lpy/bb), never
+;; compiled as CLJS: kondo's cljs pass reads the host/:default
+;; arms and cannot resolve host names (System, Throwable, future,
+;; jank classes). Per-form ignore for that pass artifact.
+#_{:clj-kondo/ignore [:invalid-arity :unresolved-symbol]}
 (defn attempt [label f]
       (let [fut (future (try {:ok (f)} (catch Throwable t {:threw (str (type t) " " (.getMessage t))})))
             res (deref fut 15000 ::timeout)]
            (println {:case label :res res})
            (future-cancel fut)))
+;; Host driver for clj-family seats (clj/jank/lpy/bb), never
+;; compiled as CLJS: kondo's cljs pass reads the host/:default
+;; arms and cannot resolve host names (System, Throwable, future,
+;; jank classes). Per-form ignore for that pass artifact.
+#_{:clj-kondo/ignore [:unresolved-namespace]}
 (defn -main [& _]
       (let [conn (d/create-conn)]
            (d/transact! conn [{:db/id 1 :name "Ivan" :age 34}

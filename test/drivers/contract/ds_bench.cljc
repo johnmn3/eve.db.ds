@@ -80,6 +80,11 @@
                         [:db/add id :friend (nth friend 1)]])
                    (people n))))
 
+;; Host driver for clj-family seats (clj/jank/lpy/bb), never
+;; compiled as CLJS: kondo's cljs pass reads the host/:default
+;; arms and cannot resolve host names (System, Throwable, future,
+;; jank classes). Per-form ignore for that pass artifact.
+#_{:clj-kondo/ignore [:unresolved-namespace]}
 (defn now-ms [] (double (/ (System/nanoTime) 1e6)))
 
 (defmacro timed-ms [& body]
@@ -88,6 +93,11 @@
 (def shapes [:batched-build :bulk-load :one-person-per-swap
              :one-datom-per-swap :retract-per-swap])
 
+;; Host driver for clj-family seats (clj/jank/lpy/bb), never
+;; compiled as CLJS: kondo's cljs pass reads the host/:default
+;; arms and cannot resolve host names (System, Throwable, future,
+;; jank classes). Per-form ignore for that pass artifact.
+#_{:clj-kondo/ignore [:unresolved-symbol]}
 (defn eve-shapes [root n]
       (let [ps (people n)
             tuples (datom-tuples n)
@@ -124,6 +134,11 @@
                                                (ed/transact! c [[:db.fn/retractEntity e]])))]
                       (/ ms k)))}))
 
+;; Host driver for clj-family seats (clj/jank/lpy/bb), never
+;; compiled as CLJS: kondo's cljs pass reads the host/:default
+;; arms and cannot resolve host names (System, Throwable, future,
+;; jank classes). Per-form ignore for that pass artifact.
+#_{:clj-kondo/ignore [:unresolved-namespace]}
 (defn -main [& [dir & sizes]]
       (let [dir (or dir (str (System/getProperty "java.io.tmpdir") "/ds-bench"))
             sizes (if (seq sizes) (mapv #(Long/parseLong %) sizes) [500 1000])]

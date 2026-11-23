@@ -5,6 +5,11 @@
 (defn- bits [x]
        (mapv #(bit-and 255 %) (seq (enc/f64-le-bytes x))))
 
+;; Host driver for clj-family seats (clj/jank/lpy/bb), never
+;; compiled as CLJS: kondo's cljs pass reads the host/:default
+;; arms and cannot resolve host names (System, Throwable, future,
+;; jank classes). Per-form ignore for that pass artifact.
+#_{:clj-kondo/ignore [:unresolved-symbol]}
 (defn -main [& _]
       (let [sqrt (ns-resolve 'eve.db.ds.built-ins 'sqrt)
             variance (get built-ins/aggregates 'variance)

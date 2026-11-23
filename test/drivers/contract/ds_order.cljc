@@ -1,6 +1,11 @@
 (ns contract.ds-order
     (:require [eve.host] [eve.atom] [eve.db.ds.core :as d]
               [me.tonsky.persistent-sorted-set :as set]))
+;; Host driver for clj-family seats (clj/jank/lpy/bb), never
+;; compiled as CLJS: kondo's cljs pass reads the host/:default
+;; arms and cannot resolve host names (System, Throwable, future,
+;; jank classes). Per-form ignore for that pass artifact.
+#_{:clj-kondo/ignore [:unresolved-namespace]}
 (defn -main [& _]
       (let [db (d/db-with (d/empty-db)
                           [{:db/id 1 :name "Ivan" :age 17 :sex :male :aka "IV"}

@@ -5,6 +5,7 @@
      [eve.db.ds.core :as d]
      [eve.db.ds.db :as db]
      [eve.db.ds.test.core :as tdc]
+     #?(:cljs [cljs.reader])
      #?(:clj [cheshire.core :as cheshire])
      #?(:clj [jsonista.core :as jsonista]))
     #?(:clj

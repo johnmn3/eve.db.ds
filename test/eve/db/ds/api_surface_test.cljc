@@ -37,6 +37,9 @@
 
 (def additive-vars '[keep! release! close-conn!])
 
+;; ns-resolve is clj-only; this deftest runs on clj hosts.
+;; Kondo's cljs pass over this file is fictitious.
+#_{:clj-kondo/ignore [:unresolved-symbol]}
 (deftest test-all-api-vars-exist
          (doseq [v (concat api-vars additive-vars)]
                 (is (some? (ns-resolve 'eve.db.ds.core v)) (str "missing public var: " v))))

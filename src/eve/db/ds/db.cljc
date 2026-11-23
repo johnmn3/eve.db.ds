@@ -80,6 +80,9 @@
              (if (cljs-env? &env) then else)))
 
 #?(:clj
+   ;; clojure.core$long below is Clojure's $-class symbol form: it
+   ;; resolves as-is (measured) and is defn+'s tag value for `long`.
+   #_{:clj-kondo/ignore [:unresolved-symbol]}
    (defn patch-tag [meta cljs-env?]
          (if cljs-env?
              meta
@@ -212,6 +215,10 @@
              (datom-tx [this])
              (datom-added [this]))
 
+;; Eve deftype protocol groups do not map 1:1 onto the
+;; cljs.core protocol registry kondo checks against; the
+;; groups as written are the type's contract on this pass.
+#_{:clj-kondo/ignore [:missing-protocol-method]}
 (eve/deftype Datom [^:int32 e a v ^:int32 tx]
              IDatom
              (datom-tx [d] (if (pos? tx) tx (- tx)))
@@ -485,7 +492,7 @@
 ;; defn+ name hint is load-bearing: patch-tag translates the
 ;; lowercase tag per pass; on the arg vector it bypasses
 ;; patch-tag and CLJ compilation fails (measured, gate5c).
-#_{:clj-kondo/ignore [:redefined-var :non-arg-vec-return-type-hint]}
+#_{:clj-kondo/ignore [:redefined-var :non-arg-vec-return-type-hint :unresolved-symbol]}
 (defn+ ^number value-compare [x y]
        (try
         (cond

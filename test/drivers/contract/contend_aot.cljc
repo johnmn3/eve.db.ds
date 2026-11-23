@@ -8,6 +8,11 @@
               [eve.process :as proc]
               [contract.ds-contend]))
 
+;; Host driver for clj-family seats (clj/jank/lpy/bb), never
+;; compiled as CLJS: kondo's cljs pass reads the host/:default
+;; arms and cannot resolve host names (System, Throwable, future,
+;; jank classes). Per-form ignore for that pass artifact.
+#_{:clj-kondo/ignore [:unresolved-symbol]}
 (defn -main [& args]
       (let [code (try (apply contract.ds-contend/-main args) 0
                       (catch jank.runtime.object_ref e

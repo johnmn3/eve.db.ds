@@ -99,9 +99,12 @@
                                     ($ (some-> (bset/rslice @a2 30000 -10 compare) rseq reverse vec)))))
                         (is (= ($ (vec (bset/slice @a from to compare))) (vec expected)))
                         (is (= ($ (vec (bset/slice @a from to compare))) (vec expected))) ;; checking IReduce on Iter
+                        ;; kondo's rseq spec knows only vector/sorted-map; a bset
+                        ;; slice is an Iter and is reversible by protocol (the point
+                        ;; of the rseq checks below).
                         (is (= ($ (into-via-doseq [] (bset/slice @a from to compare))) (vec expected)))
                         (is (= ($ (vec (rseq (bset/slice @a from to compare)))) (reverse expected)))
-                        (is (= ($ (vec (rseq (rseq (bset/slice @a from to compare))))) (vec expected)))))))
+                        (is (= ($ (vec (rseq #_{:clj-kondo/ignore [:type-mismatch]} (rseq (bset/slice @a from to compare))))) (vec expected)))))))
 
 (deftest stresstest-rslice
          (println "  testing stresstest-rslice...")

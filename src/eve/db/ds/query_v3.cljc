@@ -3,7 +3,6 @@
     (:require
      [clojure.set :as set]
      [eve.db.ds.built-ins :as built-ins]
-     [eve.db.ds.core :as d]
      [eve.db.ds.db :as db]
      [eve.db.ds.lru :as lru]
      [me.tonsky.persistent-sorted-set.arrays :as da]
@@ -347,6 +346,10 @@
 
 ;;; SingletonRelation
 
+;; Partial protocol implementation by design: this type
+;; implements the methods its role uses; the protocol's
+;; remaining methods are never invoked on it (upstream shape).
+#_{:clj-kondo/ignore [:missing-protocol-method]}
 (deftype SingletonRelation []
          IRelation
          (-symbols    [_] [])
@@ -711,7 +714,7 @@
 (defn resolve-not [context clause]
       (let [{:keys [source vars clauses]} clause
             syms      (into #{} (map :symbol) vars)
-            _         (check-bound context syms (dp/source clause))
+            _         (check-bound context (set syms) (dp/source clause))
             context*  (-> context
                           (project-context syms) ;; sub-context will only see symbols Not is joined by
                           (upd-default-source clause)
@@ -721,7 +724,7 @@
 (defn resolve-or [context clause]
       (let [{:keys [source rule-vars clauses]} clause
             {:keys [required free]}            rule-vars
-            _    (check-bound context (map :symbol required) (dp/source clause))
+            _    (check-bound context (set (map :symbol required)) (dp/source clause))
             syms (into #{} (map :symbol) (concat required free))
             context*  (-> context
                           (project-context syms)
@@ -779,7 +782,7 @@
                            [sym i])
             args-syms (map first sym+idx)
             args-idxs (mapa second sym+idx)
-            _         (check-bound context args-syms form)]
+            _         (check-bound context (set args-syms) form)]
            (if (empty? args-syms) ;; only constants
                (if (apply f (vec args-arr))
                    context
@@ -899,59 +902,4 @@
                              (map :symbol (:qwith parsed-q)))]
            (native-coll (collect-to context syms (fast-set) [(map vec)]))))
 
-(comment
- (t/test-ns 'eve.db.ds.test.query-v3)
 
- (let [query   '[:find  ?lid ?status ?starttime ?endtime (min ?paid) (distinct ?studentinfo) ?lgid
-                 :in    $ ?tid ?week ?list
-                 :where [?lid :lesson/teacherid ?tid]
-                 [?lid :lesson/week ?week]
-                 [?lid :lesson/lessongroupid ?lgid]
-                 [?eid :enrollment/lessongroup_id ?lgid]
-                 [?eid :enrollment/student_id ?sid]
-                 [?iid :invoice/enrollment_id ?eid]
-                 [?sid :student/firstname ?fname]
-                 [?sid :student/lastname ?lname]
-                 [?iid :invoice/paid ?paid]
-                 [?lid :lesson/status ?status]
-                 [?lid :lesson/starttime ?starttime]
-                 [?lid :lesson/endtime ?endtime]
-                 [(?list ?sid ?fname ?lname) ?studentinfo]]
-       parsed (dp/parse-query query)]
-      (perf/minibench "postwalk"
-                      (dp/postwalk parsed identity))
-      (perf/minibench "parse-query"
-                      (dp/parse-query query))
-      (perf/minibench "substitute-constants"
-                      (substitute-constants (first (:where parsed)) {:consts {'?tid 7}})))
-
- (defn random-man []
-       {:name      (rand-nth ["Ivan" "Petr" "Sergei" "Oleg" "Yuri" "Dmitry" "Fedor" "Denis"])
-        :last-name (rand-nth ["Ivanov" "Petrov" "Sidorov" "Kovalev" "Kuznetsov" "Voronoi"])
-        :sex       (rand-nth [:male :female])
-        :age       (rand-int 10)
-        :salary    (rand-int 100000)})
-
- (defn bench [name q & args]
-       (println "\n---\n")
-       (perf/minibench (str "OLD " name) (apply d/q q args))
-       (perf/minibench (str "NEW " name) (apply eve.db.ds.query-v3/q q args))
-       nil)
-
- (do
-  #_(require '[eve.db.ds.query-v3 :as q] :reload)
-
-  (def db (d/db-with (d/empty-db) (repeatedly 10000 random-man)))
-
-  (bench "q2 const"
-         '[:find  ?e
-           :where [?e :name "Ivan"]
-           [?e :age 1]]
-         db)
-
-  #_(bench "q2 const in"
-           '[:find ?e
-             :in $ ?n
-             :where [?e :name "Ivan"]
-             [?e :age ?n]]
-           db 1)))

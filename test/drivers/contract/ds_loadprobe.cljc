@@ -2,6 +2,11 @@
     "Load eve.db.ds.db/core standalone and print the full cause chain
    (successor lane: D5 verification probe)."
     (:require [eve.host] [eve.atom]))
+;; Host driver for clj-family seats (clj/jank/lpy/bb), never
+;; compiled as CLJS: kondo's cljs pass reads the host/:default
+;; arms and cannot resolve host names (System, Throwable, future,
+;; jank classes). Per-form ignore for that pass artifact.
+#_{:clj-kondo/ignore [:unresolved-namespace :unresolved-symbol]}
 (defn -main [& _]
       (try (require 'eve.db.ds.core)
            (println {:load :ok :filtereddb-var (some? (resolve 'eve.db.ds.db/FilteredDB))})

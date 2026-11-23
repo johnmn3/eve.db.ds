@@ -195,6 +195,10 @@
             (println {:suite-ns n :result r})
             (assoc r :loaded 1 :skipped (if @load-only? 0 (count (filter #(skip-reason n %) (vals (ns-interns n))))))))
 
+;; Host driver for clj-family seats (clj/jank/lpy/bb), never
+;; compiled as CLJS: kondo's cljs pass reads the host/:default
+;; arms and cannot resolve host names (System, Throwable, future,
+;; jank classes). Per-form ignore for that pass artifact.
 (defn- in-test-domain
        "Operator ruling (2026-11-12): the suite driver binds the process
    domain around each namespace's load + run. Upstream's tests
@@ -214,6 +218,7 @@
        (f))
 
 #?(:cljs
+   #_{:clj-kondo/ignore [:unresolved-symbol :unresolved-var]}
    (defn- run-one
           "A promise of the counts for namespace n."
           [n]

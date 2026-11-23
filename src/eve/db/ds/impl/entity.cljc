@@ -1,6 +1,7 @@
 (ns ^:no-doc eve.db.ds.impl.entity
     (:refer-clojure :exclude [keys get])
     (:require [#?(:cljs cljs.core :clj clojure.core) :as c]
+              [eve.alpha]
               [eve.db.ds.db :as db]))
 
 (declare entity ->Entity equiv-entity lookup-entity touch hash-entity)
@@ -55,6 +56,10 @@
                   (fn []
                       (this-as this# this#))))
 
+;; Partial protocol implementation by design: this type
+;; implements the methods its role uses; the protocol's
+;; remaining methods are never invoked on it (upstream shape).
+#_{:clj-kondo/ignore [:missing-protocol-method]}
 (deftype Entity [db eid touched cache handle]
          #?@(:cljs
              [Object

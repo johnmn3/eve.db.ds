@@ -18,6 +18,11 @@
               [contract.one]
               [contract.one-mat]))
 
+;; Host driver for clj-family seats (clj/jank/lpy/bb), never
+;; compiled as CLJS: kondo's cljs pass reads the host/:default
+;; arms and cannot resolve host names (System, Throwable, future,
+;; jank classes). Per-form ignore for that pass artifact.
+#_{:clj-kondo/ignore [:unresolved-symbol]}
 (defn -main [& args]
       (let [code (try (let [[flag dir] args]
                            (cond (= "--mat" flag) (contract.one-mat/-main dir)

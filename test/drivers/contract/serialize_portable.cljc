@@ -15,6 +15,10 @@
 (defn datoms [db]
       (mapv (fn [x] [(:e x) (:a x) (:v x) (:tx x)]) (d/datoms db :eavt)))
 
+;; ser/read-edn and ser/exact-number? do not exist at this
+;; pin — the driver probes for them via #' precisely to record
+;; that gap (it prints EXACT-NUMBER-UNSUPPORTED when absent).
+#_{:clj-kondo/ignore [:unresolved-var]}
 (defn exact-numbers []
       (doseq [token ["9007199254740993N" "1/3" "1.2300M"]]
              (let [result (try {:value (#'ser/read-edn token)}

@@ -48,11 +48,19 @@
 (defn- attr-str [attr]
        (or (:as attr) (:name attr)))
 
+;; Partial protocol implementation by design: this type
+;; implements the methods its role uses; the protocol's
+;; remaining methods are never invoked on it (upstream shape).
+#_{:clj-kondo/ignore [:missing-protocol-method]}
 (defrecord ResultFrame [value datoms]
            IFrame
            (-str [this]
                  (str "ResultFrame<value=" value ">")))
 
+;; Partial protocol implementation by design: this type
+;; implements the methods its role uses; the protocol's
+;; remaining methods are never invoked on it (upstream shape).
+#_{:clj-kondo/ignore [:missing-protocol-method]}
 (defrecord MultivalAttrFrame [acc ^PullAttr attr datoms]
            IFrame
            (-run [this context]

@@ -20,6 +20,11 @@
       [:one-datom-per-swap "one datom per swap (ms per swap; ×100)"]
       [:retract-per-swap "retract one entity per swap (ms per swap; first 500)"]])
 
+;; Host driver for clj-family seats (clj/jank/lpy/bb), never
+;; compiled as CLJS: kondo's cljs pass reads the host/:default
+;; arms and cannot resolve host names (System, Throwable, future,
+;; jank classes). Per-form ignore for that pass artifact.
+#_{:clj-kondo/ignore [:unresolved-symbol]}
 (defn- read-rows [file]
        (with-open [r (java.io.PushbackReader. (java.io.FileReader. file))]
                   (doall (take-while some? (repeatedly #(read {:eof nil} r))))))
@@ -28,6 +33,11 @@
        (let [s (sort xs) n (count s)]
             (nth s (quot n 2))))
 
+;; Host driver for clj-family seats (clj/jank/lpy/bb), never
+;; compiled as CLJS: kondo's cljs pass reads the host/:default
+;; arms and cannot resolve host names (System, Throwable, future,
+;; jank classes). Per-form ignore for that pass artifact.
+#_{:clj-kondo/ignore [:unresolved-symbol]}
 (defn- fmt [x] (format "%.2f" (double x)))
 
 (defn -main [& [eve-files stock-files]]

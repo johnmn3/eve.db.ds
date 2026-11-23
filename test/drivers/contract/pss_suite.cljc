@@ -13,6 +13,9 @@
               [eve.atom]
               [clojure.test :as t]))
 
+;; t/*report-counters* exists in the host test libs this
+;; driver runs on; kondo's cljs.test model lacks the var.
+#_{:clj-kondo/ignore [:unresolved-var]}
 (defn -main [& [mode & [ns-name var-name]]]
   ;; mode "one" <ns> <var>: run a single test var in this (fresh) process —
   ;; used to separate a slab-capacity failure from a behavior failure: each

@@ -1,5 +1,7 @@
 (ns eve.db.ds.test.issues
     (:require
+     [clojure.data]
+     [clojure.pprint]
      [eve.db.ds.core :as ds]
      [clojure.test :as t :refer [is deftest]]))
 

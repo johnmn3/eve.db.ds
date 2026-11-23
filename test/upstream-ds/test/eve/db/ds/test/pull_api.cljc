@@ -1,5 +1,6 @@
 (ns eve.db.ds.test.pull-api
     (:require
+     [clojure.edn]
      [clojure.test :as t :refer [is deftest testing]]
      [eve.db.ds.core :as d]))
 

@@ -234,3 +234,29 @@ ignore). :config-in was tried for storage and does NOT govern
 in kondo 2026.10.26 (measured here, matches the cohost lane's
 note) — removed. Gate (.lane/gate5e/): all unit runners
 baseline-identical incl. u5 docline 6/32.
+
+## Step 5 batch 5 — unresolved family + protocol/type (this lane, Nov 23)
+
+Recount 308 -> 213, zero errors. Real fixes: cond+ hook now
+models :let inside (and ...) tests (if+ semantics — bindings
+scope over the rest of the test and the clause body); hooks
+added for db/defrecord-updatable, core/sci-fn (body is SCI data
+— quoted-fn model) and core/db-fn (plain fn model);
+clojure.pprint/print-length-loop taught via :lint-as loop;
+entity.cljc gained its missing [eve.alpha] require; upstream
+issues/pull_api/serialize gained missing requires
+(clojure.data, clojure.pprint, clojure.edn, cljs.reader);
+query_v3's scratch (comment ...) block deleted (it referenced
+unrequired t/perf namespaces and was the only user of the
+eve.db.ds.core require, which went with it); check-bound call
+sites pass real sets. Per-site/per-form ignores with measured
+reasons: the driver family's fictitious cljs pass (~25 forms),
+duplicate-ns artifacts (serialize/transact — the upstream tree
+defines the same namespaces), pull_parser's baseline-dead call
+sites, storage's helper, partial protocol implementations
+(pull frames, SingletonRelation, Entity), Eve-deftype protocol
+groups (Datom, bset Iter/ReverseIter), pr-writer-style
+type-mismatch inference FPs (rseq on a slice Iter; @ of a plain
+value in the dead pull_parser test). :config-in measured inert
+for these classes in kondo 2026.10.26 and is not used.
+Gate (.lane/gate5f/): all unit runners baseline-identical.

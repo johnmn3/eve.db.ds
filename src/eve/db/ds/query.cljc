@@ -755,12 +755,12 @@
        (condp looks-like? clause
               [[symbol? '*]] ;; predicate [(pred ?a ?b ?c)]
               (do
-               (check-bound (bound-vars context) (filter free-var? (nfirst clause)) clause)
+               (check-bound (bound-vars context) (set (filter free-var? (nfirst clause))) clause)
                (filter-by-pred context clause))
 
               [[symbol? '*] '_] ;; function [(fn ?a ?b) ?res]
               (do
-               (check-bound (bound-vars context) (filter free-var? (nfirst clause)) clause)
+               (check-bound (bound-vars context) (set (filter free-var? (nfirst clause))) clause)
                (bind-by-fn context clause))
 
               [source? '*] ;; source + anything

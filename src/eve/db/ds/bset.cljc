@@ -723,6 +723,10 @@
                                           (recur val' (inc n))))
                                  val)))]))
 
+;; Eve deftype protocol groups do not map 1:1 onto the
+;; cljs.core protocol registry kondo checks against; the
+;; groups as written are the type's contract on this pass.
+#_{:clj-kondo/ignore [:unresolved-protocol-method]}
 (deftype Iter [root shift left right keys idx]
          #?@(:clj
              [clojure.lang.ISeq
@@ -840,6 +844,10 @@
               IWithMeta
               (-with-meta [this _] this)]))
 
+;; Eve deftype protocol groups do not map 1:1 onto the
+;; cljs.core protocol registry kondo checks against; the
+;; groups as written are the type's contract on this pass.
+#_{:clj-kondo/ignore [:unresolved-protocol-method]}
 (deftype ReverseIter [root shift left right keys idx]
          #?@(:clj
              [clojure.lang.ISeq

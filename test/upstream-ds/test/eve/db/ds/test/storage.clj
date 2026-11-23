@@ -162,6 +162,9 @@
 (def temp-dir
      "target/test_storage")
 
+;; See the file header note: eve.db.ds.storage is deleted;
+;; this helper names its entry point.
+#_{:clj-kondo/ignore [:unresolved-var]}
 (defn streaming-edn-storage [dir]
       (d/file-storage dir))
 

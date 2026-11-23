@@ -54,6 +54,10 @@
       [d/tx0      :txInstant 0xdeadbeef]
       [30 :url    "https://"]])
 
+;; Duplicate-ns artifact: test/upstream-ds defines this same
+;; namespace (eve.db.ds.test.serialize / .transact) and kondo's
+;; registry holds that copy, so this file's own definitions read
+;; as unresolved. The vars are defined in this file (grep-proven).
 (def schema
      {:name    {} ;; nothing special about name
       :aka     {:db/cardinality :db.cardinality/many}
@@ -65,6 +69,7 @@
       :attach  {}}) ;; should skip index
 
 #?(:cljs
+   #_{:clj-kondo/ignore [:unresolved-var]}
    (defn- js-form->clj
           "JSON.parse output -> plain cljs data, for the JSON legs below.
       Two Eve-browser-runtime interop facts shape these legs (U6
@@ -93,6 +98,11 @@
        (= (u5s/content-via-conn source)
           (u5s/content-via-core restored)))
 
+;; Duplicate-ns artifact: test/upstream-ds defines this same
+;; namespace (eve.db.ds.test.serialize / .transact) and kondo's
+;; registry holds that copy, so this file's own definitions read
+;; as unresolved. The vars are defined in this file (grep-proven).
+#_{:clj-kondo/ignore [:unresolved-var]}
 (deftest serialize
          (let [db (d/db-with
                    (d/empty-db schema)

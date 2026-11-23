@@ -36,6 +36,11 @@
                         [:db/add id :friend (nth friend 1)]])
                    (people n))))
 
+;; Host driver for clj-family seats (clj/jank/lpy/bb), never
+;; compiled as CLJS: kondo's cljs pass reads the host/:default
+;; arms and cannot resolve host names (System, Throwable, future,
+;; jank classes). Per-form ignore for that pass artifact.
+#_{:clj-kondo/ignore [:unresolved-namespace]}
 (defn now-ms [] (double (/ (System/nanoTime) 1e6)))
 
 (defmacro timed-ms [& body]
@@ -77,6 +82,11 @@
                                                (swap! a (fn [db] (sd/db-with db [[:db.fn/retractEntity e]])))))]
                       (/ ms k)))}))
 
+;; Host driver for clj-family seats (clj/jank/lpy/bb), never
+;; compiled as CLJS: kondo's cljs pass reads the host/:default
+;; arms and cannot resolve host names (System, Throwable, future,
+;; jank classes). Per-form ignore for that pass artifact.
+#_{:clj-kondo/ignore [:unresolved-namespace]}
 (defn -main [& sizes]
       (let [sizes (if (seq sizes) (mapv #(Long/parseLong %) sizes) [500 1000])]
            (doseq [n sizes]
