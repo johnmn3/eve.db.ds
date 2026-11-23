@@ -8,3 +8,9 @@ perf-results/
 .cljs-build/
 target/
 .shadow-cljs/
+/.glj-cp/
+/.jvm-aot-artifact
+/.cljs-aot-artifact
+/.jolt-aot-artifact
+/.jank-aot-artifact
+/results/

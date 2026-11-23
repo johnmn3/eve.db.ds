@@ -3,10 +3,12 @@
   (:require
     [#?(:cljs cljs.reader :clj clojure.edn) :as edn]
     [eve.alpha :as eve]
+    [eve.flat.chunk :as chunk]
     [eve.db.ds.conn :as conn]
     [eve.db.ds.db :as db #?@(:cljs [:refer [Datom DB FilteredDB]])]
     [eve.db.ds.db-fn :as dbfn]
     #?(:clj [eve.db.ds.pprint])
+    #?(:jolt [eve.db.ds.sha1 :as sha1])
     [eve.db.ds.pull-api :as dp]
     [eve.db.ds.query :as dq]
     [eve.db.ds.serialize :as serialize]
@@ -37,9 +39,12 @@
   "Realize an index iterator inside a read region so its Datoms
    arrive in their host delivery form (plan v2 §4). Returns a
    vector: upstream's lazy iterator cannot leave the region — its
-   elements are Eve values until delivered."
+   elements are Eve values until delivered. Packed as one vector, one
+   flat chunk for all of them: the same delivered vector of flat Datoms
+   as packing each alone (eve->clj per element), at one chunk's
+   header, symbol and type tables instead of one per Datom."
   [iter]
-  (eve/$ (mapv identity iter)))
+  (eve/$ (chunk/pack (mapv identity iter))))
 
 (defn- deliver-datom
   "Deliver a single Datom (or nil) in its host form."
@@ -731,9 +736,11 @@
       they are the same fn."
      [ns-sym params body]
      (let [input  (str ns-sym " " (pr-str (list* 'fn params body)))
-           digest (.digest (java.security.MessageDigest/getInstance "SHA-1")
-                      (.getBytes input "UTF-8"))
-           hex    (format "%040x" (java.math.BigInteger. 1 digest))]
+           ;; jolt has no JDK provider for MessageDigest: the portable
+           ;; SHA-1 answers the same digits (eve.db.ds.sha1)
+           hex    #?(:jolt (sha1/sha1-hex input)
+                     :clj  (format "%040x" (java.math.BigInteger. 1 (.digest (java.security.MessageDigest/getInstance "SHA-1")
+                                                                              (.getBytes input "UTF-8")))))]
        (symbol (str "db-fn-" (subs hex 0 12))))))
 
 #?(:clj

@@ -22,7 +22,8 @@
 (defn- next-seq [#?(:clj ^ISeq xs :cljs ^seq xs)]
   (if (nil? xs)
     nil
-    #?(:clj (.next xs) :cljs (-next xs))))
+    ;; jolt's ArraySeq has no .next field: the core fn there
+    #?(:jolt (next xs) :clj (.next xs) :cljs (-next xs))))
 
 (defn- conj-seq [#?(:clj ^ISeq xs :cljs ^seq xs) x]
   (if (nil? xs)
@@ -216,7 +217,8 @@
         :let [name   (.-name attr)
               db     (.-db ^Context context)
               datoms (if (instance? DB db)
-                       (set/slice (.-avet ^DB db) (db/datom db/e0 name id db/tx0) (db/datom db/emax name id db/txmax) db/cmp-datoms-avet)
+                       (set/slice (.-avet ^DB db) (db/datom-bound db/e0 name id db/tx0)
+                                  (db/datom-bound db/emax name id db/txmax) db/cmp-datoms-avet)
                        (db/-search db [nil name id]))]
 
         :do (visit context :db.pull/reverse nil name id)
@@ -271,7 +273,8 @@
   (let [db (.-db context)
         datoms (util/cond+
                  (and (.-wildcard? pattern) (instance? DB db))
-                 (set/slice (.-eavt ^DB db) (db/datom id nil nil db/tx0) (db/datom id nil nil db/txmax) db/cmp-datoms-eavt)
+                 (set/slice (.-eavt ^DB db) (db/datom-bound id nil nil db/tx0)
+                            (db/datom-bound id nil nil db/txmax) db/cmp-datoms-eavt)
                  
                  (.-wildcard? pattern)
                  (db/-search db [id])
@@ -283,7 +286,8 @@
                        to   (.-name ^PullAttr (.-last-attr pattern))]
                  
                  (instance? DB db)
-                 (set/slice (.-eavt ^DB db) (db/datom id from nil db/tx0) (db/datom id to nil db/txmax) db/cmp-datoms-eavt)
+                 (set/slice (.-eavt ^DB db) (db/datom-bound id from nil db/tx0)
+                            (db/datom-bound id to nil db/txmax) db/cmp-datoms-eavt)
 
                  :else
                  (->> (db/-seek-datoms db :eavt id nil nil nil))
