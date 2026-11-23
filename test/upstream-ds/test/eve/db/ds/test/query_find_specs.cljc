@@ -22,9 +22,7 @@
                        :where [1 :name ?name]
                        [1 :age  ?age]] @*test-db)
                 ["Petr" 44]))
-         (is (= (d/q '[:find ?name .
-                       :where [1 :name ?name]] @*test-db)
-                "Petr"))
+         (is (= "Petr" (d/q '[:find ?name . :where [1 :name ?name]] @*test-db)))
 
          (testing "Multiple results get cut"
                   (is (contains?
@@ -44,6 +42,4 @@
                   (is (= (d/q '[:find [(count ?name)]
                                 :where [_ :name ?name]] @*test-db)
                          [3]))
-                  (is (= (d/q '[:find (count ?name) .
-                                :where [_ :name ?name]] @*test-db)
-                         3))))
+                  (is (= 3 (d/q '[:find (count ?name) . :where [_ :name ?name]] @*test-db)))))

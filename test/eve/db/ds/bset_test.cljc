@@ -101,9 +101,9 @@
        (let [c0 (cmp* x0 y0)
              c1 (cmp* x1 y1)]
             (cond
-             (= c0 0) c1
-             (< c0 0) -1
-             (> c0 0)  1)))
+             (zero? c0) c1
+             (neg? c0) -1
+             (pos? c0)  1)))
 
 (deftest semantic-test-btset-by
          (let [a  (build cmp-s [[:a :b] [:b :x] [:b :q] [:a :d]])
@@ -346,8 +346,8 @@
          (testing "IReduced"
                   (testing "Empty"
                            (let [a (new-conn)]
-                                (is (= 0 ($ (reduce + (bset/slice @a nil nil compare)))))
-                                (is (= 0 ($ (reduce + 0 (bset/slice @a nil nil compare)))))))
+                                (is (zero? ($ (reduce + (bset/slice @a nil nil compare)))))
+                                (is (zero? ($ (reduce + 0 (bset/slice @a nil nil compare)))))))
 
                   (testing "~3 layers"
                            (let [a (build compare (irange 0 5000))]

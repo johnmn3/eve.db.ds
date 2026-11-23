@@ -33,7 +33,7 @@
 
 (defn- and-fn [& args]
        (reduce (fn [_a b]
-                   (if b b (reduced b))) true args))
+                   (or b (reduced b))) true args))
 
 (defn- or-fn [& args]
        (reduce (fn [_a b]
@@ -125,6 +125,9 @@
             (/ sum (count coll))))
 
 (defn- aggregate-stddev [coll]
+       ;; A platform function value is selected per pass (js/Math.sqrt
+       ;; on cljs); clojure.math/sqrt cannot serve the cljs arm.
+       #_{:splint/disable [style/prefer-clj-math]}
        (#?(:cljs js/Math.sqrt :clj Math/sqrt) (aggregate-variance coll)))
 
 (defn- aggregate-min

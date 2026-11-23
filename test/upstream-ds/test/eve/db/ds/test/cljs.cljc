@@ -23,14 +23,16 @@
    (defmethod t/assert-expr 'thrown-msg? [_menv msg form]
               (let [[_ match & body] form]
                    `(try
-                     ~@body
+                     (let [res# (do ~@body)] res#)
                      (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual nil})
-                     (catch :default e#
-                            (let [m# (.-message e#)]
-                                 (if (= ~match m#)
-                                     (t/do-report {:type :pass, :message ~msg, :expected '~form, :actual e#})
-                                     (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual e#}))
-                                 e#))))))
+                     (catch
+                      :default
+                      e#
+                      (let [m# (.-message e#)]
+                           (if (= ~match m#)
+                               (t/do-report {:type :pass, :message ~msg, :expected '~form, :actual e#})
+                               (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual e#}))
+                           e#))))))
 ;; nbb has no separate Clojure macro-compilation phase. Register the same
 ;; assertion against its runtime cljs.test multimethod (test bodies unchanged).
 #?(:org.babashka/nbb

@@ -41,7 +41,7 @@
           "Run body; on any throw, answer the string ':throws <err>' (the
    ds-flagship / contend.cljc convention)."
           [& body]
-          `(try ~@body
+          `(try (let [res# (do ~@body)] res#)
                 (catch #?(:cljs :default :lpy python/Exception :jank jank.runtime.object_ref :default Exception) t#
                        (str :throws " " t#))))
 

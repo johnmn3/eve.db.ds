@@ -114,8 +114,8 @@
               (is (= [2 :age 25] ($ (dvec-or-nil (db/find-datom (:db @a) :eavt 2 :age nil nil)))))
               (is (= [2 :name "Ivan"] ($ (dvec-or-nil (db/find-datom (:db @a) :eavt 2 :name nil nil)))))
 
-              (is (= nil ($ (dvec-or-nil (db/find-datom (:db @a) :eavt 1 :name "Ivan" nil)))))
-              (is (= nil ($ (dvec-or-nil (db/find-datom (:db @a) :eavt 4 nil nil nil)))))
+              (is (nil? ($ (dvec-or-nil (db/find-datom (:db @a) :eavt 1 :name "Ivan" nil)))))
+              (is (nil? ($ (dvec-or-nil (db/find-datom (:db @a) :eavt 4 nil nil nil)))))
 
     ;; issue-477 (built/read through the harness: bset ops do not run
     ;; on delivered roots, so even the empty-db case goes through $)
@@ -123,8 +123,8 @@
                     e2 (h/new-conn)]
                    (h/build! e1 (fn [_] (db/empty-db {} {})))
                    (h/build! e2 (fn [_] (db/empty-db {:age {:db/index true}} {})))
-                   (is (= nil ($ (db/find-datom (:db @e1) :eavt nil nil nil nil))))
-                   (is (= nil ($ (db/find-datom (:db @e2) :eavt nil nil nil nil)))))))
+                   (is (nil? ($ (db/find-datom (:db @e1) :eavt nil nil nil nil))))
+                   (is (nil? ($ (db/find-datom (:db @e2) :eavt nil nil nil nil)))))))
 
 (defn- seek-conn []
        (let [a (h/new-conn)]

@@ -392,7 +392,7 @@
                        (recur
                         (next comps)
                         `(let [c# ~(first comps)]
-                              (if (== 0 c#)
+                              (if (zero? c#)
                                   ~res
                                   c#)))
                        res))))
@@ -483,7 +483,7 @@
 
                              :else
                              (let [v (value-compare x y)]
-                                  (if (= v 0)
+                                  (if (zero? v)
                                       (recur (next xs) (next ys))
                                       v)))))))))
 
@@ -504,16 +504,13 @@
       ;; is the same operation on the JVM (Numbers.compare /
       ;; Util.compare -> .compareTo) and routes through the comparator
       ;; machinery every host serves.
-         #?@(:clj  [(instance? Number x)       (compare x y)])
-         #?@(:clj  [(instance? Comparable x)   (compare x y)]
+         #?@(:clj  [(or (instance? Number x) (instance? Comparable x)) (compare x y)]
              :cljs [(satisfies? IComparable x) (-compare x y)])
          (not (class-identical? x y)) (class-compare x y)
          #?@(:cljs [(or (number? x) (string? x) (array? x) (true? x) (false? x)) (garray/defaultCompare x y)])
          :else (int-compare (ihash x) (ihash y)))
         (catch #?(:clj ClassCastException :cljs js/Error) e
-               (if (not (class-identical? x y))
-                   (class-compare x y)
-                   (throw e)))))
+               (if-not (class-identical? x y) (class-compare x y) (throw e)))))
 
 (defn value-cmp
       #?(:clj
@@ -645,9 +642,9 @@
                                  :incomparable))]
                    (cond
                     (= diff :incomparable) (recur (conj only-a first-a) (conj only-b first-b) both                (next a) (next b))
-                    (== diff 0)            (recur only-a                only-b                (conj both first-a) (next a) (next b))
-                    (< diff 0)             (recur (conj only-a first-a) only-b                both                (next a) b)
-                    (> diff 0)             (recur only-a                (conj only-b first-b) both                a        (next b)))))))
+                    (zero? diff)            (recur only-a                only-b                (conj both first-a) (next a) (next b))
+                    (neg? diff)             (recur (conj only-a first-a) only-b                both                (next a) b)
+                    (pos? diff)             (recur only-a                (conj only-b first-b) both                a        (next b)))))))
 
 ;; ----------------------------------------------------------------------------
 
@@ -742,7 +739,7 @@
           (string? v)  (fn [x] (if (string? x) (.equals ^String v x) false))
           (int? v)     (fn [x] (if (int? x) (= (long v) (long x)) false))
           (keyword? v) (fn [x] (.equals ^Object v x))
-          (nil? v)     (fn [x] (nil? x))
+          (nil? v)     nil?
           :else        (fn [x] (= v x)))))
 
 (def ^:private db-fields #{:schema :eavt :aevt :avet :max-eid :max-tx :rschema})
@@ -1184,7 +1181,7 @@
             avet-datoms (filter (fn [d] (contains? indexed (:a d))) datoms)
             avet        (build cmp-datoms-avet cmp-datoms-avet-quick avet-datoms)
             max-eid     (init-max-eid rschema eavt avet)
-            max-tx      (transduce (map (fn [^Datom d] (datom-tx d))) max tx0 (set/slice eavt nil nil cmp-datoms-eavt))]
+            max-tx      (transduce (map datom-tx) max tx0 (set/slice eavt nil nil cmp-datoms-eavt))]
            (->DB schema eavt aevt avet max-eid max-tx rschema)))
 
 ;; cljs-stub idiom: the empty #?(:cljs defn) stub above is
@@ -1807,7 +1804,7 @@
                          (update :tx-data conj datom))]
             (if (tuple-source? db a)
                 (let [e      (:e datom)
-                      v      (if (datom-added datom) (:v datom) nil)
+                      v      (when (datom-added datom) (:v datom))
                       queue  (or (-> report' ::queued-tuples (get e)) {})
                       tuples (get (-attrs-by db :db/attrTuples) a)
                       queue' (queue-tuples queue tuples db e a v)]
@@ -1873,9 +1870,9 @@
                            (multi-value? db a v)
                            (let [[insert upsert] (split a v)]
                                 [(cond-> entity'
-                                         (not (empty? insert)) (assoc a insert))
+                                         (seq insert) (assoc a insert))
                                  (cond-> upserts
-                                         (not (empty? upsert)) (assoc a upsert))])
+                                         (seq upsert) (assoc a upsert))])
 
                            :else
                            (if-some [e (resolve a v)]
@@ -1919,19 +1916,14 @@
 ;; multivals/reverse can be specified as coll or as a single value, trying to guess
 (defn- maybe-wrap-multival [db a vs]
        (cond
-    ;; not a multival context
-        (not (or (reverse-ref? a)
-                 (multival? db a)))
-        [vs]
-
-    ;; not a collection at all, so definitely a single value
-        (not (or (array? vs)
-                 (and (coll? vs) (not (map? vs)))))
-        [vs]
-
-    ;; probably lookup ref
-        (and (= (count vs) 2)
-             (is-attr? db (first vs) :db.unique/identity))
+    ;; not a multival context, or not a collection at all
+    ;; (so definitely a single value), or probably a lookup ref
+        (or (not (or (reverse-ref? a)
+                     (multival? db a)))
+            (not (or (array? vs)
+                     (and (coll? vs) (not (map? vs)))))
+            (and (= (count vs) 2)
+                 (is-attr? db (first vs) :db.unique/identity)))
         [vs]
 
         :else vs))
@@ -2032,7 +2024,7 @@
             (fn [entities eid tuples+values]
                 (reduce-kv
                  (fn [entities tuple value]
-                     (let [value   (if (every? nil? value) nil value)
+                     (let [value   (when-not (every? nil? value) value)
                            current (:v (first (-datoms db :eavt eid tuple nil nil)))]
                           (cond
                            (= value current) entities
@@ -2063,7 +2055,7 @@
 #_{:clj-kondo/ignore [:redefined-var]}
 (defn+ transact-tx-data-impl [initial-report initial-es]
        (let [initial-report' initial-report
-             has-tuples?     (not (empty? (-attrs-by (:db-after initial-report) :db/attrTuples)))
+             has-tuples?     (seq (-attrs-by (:db-after initial-report) :db/attrTuples))
              initial-es'     (if has-tuples?
                                  (interleave initial-es (repeat ::flush-tuples))
                                  initial-es)]

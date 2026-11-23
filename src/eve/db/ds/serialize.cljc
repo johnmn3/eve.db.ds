@@ -55,28 +55,17 @@
 (def ^:const ^:private marker-nan 4)
 
 (defn- write-v [freeze-fn v]
-       (cond
-        (string? v)  v
-        (boolean? v) v
-        (keyword? v) [marker-kw (str v)]
-        (number? v)
-        (cond
-         #?@(:clj [(or (instance? java.math.BigInteger v)
-                       (instance? java.math.BigDecimal v)
-                       (instance? clojure.lang.Ratio v)
-                       (instance? clojure.lang.BigInt v))
-                   [marker-other (freeze-fn v)]])
-         (== ##Inf v)  [marker-inf]
-         (== ##-Inf v) [marker-minus-inf]
-         #?(:clj  (and (instance? Double v) (Double/isNaN ^double v))
-            :cljs (js/isNaN v)) [marker-nan]
-         :else v)
-    ;; freeze-fn's contract is plain host data on every host: a
-    ;; delivered flat collection is converted first (transit-cljs's
-    ;; writer is protocol-strict and refuses flat sisters with
-    ;; "Cannot write" where transit-clj's generic Map writer does
-    ;; not — U6 browser finding, 2026-11-20).
-        :else [marker-other (freeze-fn (eve/eve->clj v))]))
+       (cond (or (string? v) (boolean? v)) v (keyword? v) [marker-kw (str v)] (number? v) (cond
+                                                                                           #?@(:clj [(or (instance? java.math.BigInteger v)
+                                                                                                         (instance? java.math.BigDecimal v)
+                                                                                                         (instance? clojure.lang.Ratio v)
+                                                                                                         (instance? clojure.lang.BigInt v))
+                                                                                                     [marker-other (freeze-fn v)]])
+                                                                                           (== ##Inf v)  [marker-inf]
+                                                                                           (== ##-Inf v) [marker-minus-inf]
+                                                                                           #?(:clj  (and (instance? Double v) (Double/isNaN ^double v))
+                                                                                              :cljs (js/isNaN v)) [marker-nan]
+                                                                                           :else v) :else [marker-other (freeze-fn (eve/eve->clj v))]))
 
 (defn- thaw-kw [s]
        (if (and (string? s) (str/starts-with? s ":"))
@@ -85,9 +74,7 @@
 
 (defn- read-v [thaw-fn v]
        (cond
-        (string? v)  v
-        (boolean? v) v
-        (number? v)  v
+        (or (string? v) (boolean? v) (number? v)) v
         (nil? v)     nil
     ;; a marker vector — coerced with vec first: a bare-mapper
     ;; Jackson read returns java.util.ArrayList rows, a cljs

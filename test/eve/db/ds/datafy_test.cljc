@@ -9,7 +9,7 @@
      [eve.alpha :as eve :refer [$]]
 
      [eve.db.ds.u4-support :as sup]
-     [clojure.core.protocols :as cp]
+     [clojure.core.protocols :as p]
      [eve.db.ds.impl.entity :as e]))
 
 (defn- test-conn []
@@ -25,14 +25,14 @@
             a))
 
 (defn- nav [coll k]
-       (cp/nav coll k (coll k)))
+       (p/nav coll k (coll k)))
 
 (defn d+n
       "Helper function to datafy/navigate for a path"
       [coll [k & ks]]
       (if (nil? k)
           coll
-          (d+n (nav (cp/datafy coll) k)
+          (d+n (nav (p/datafy coll) k)
                ks)))
 
 (deftest test-navigation

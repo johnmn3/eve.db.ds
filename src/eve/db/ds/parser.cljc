@@ -26,6 +26,9 @@
                   `(defrecord ~tagname ~fields
                               ITraversable
                               (~'-postwalk [this# ~f]
+                                           ;; The class here is the macro's unquoted tagname, not a
+                                                ;; literal class — Foo. syntax cannot be written.
+                                           #_{:splint/disable [style/new-object]}
                                            (let [new# (new ~tagname ~@(map #(list 'eve.db.ds.parser/postwalk % f) fields))]
                                                 (if-let [meta# (meta this#)]
                                                         (with-meta new# meta#)
@@ -154,7 +157,7 @@
                (when (and (empty? required*) (empty? free*))
                      (util/raise "Cannot parse rule-vars, expected [ variable+ | ([ variable+ ] variable*) ]"
                                  {:error :parser/rule-vars, :form form}))
-               (when-not (distinct? (concat required* free*))
+               (when-not (apply distinct? (concat required* free*))
                          (util/raise "Rule variables should be distinct"
                                      {:error :parser/rule-vars, :form form}))
                (RuleVars. required* free*))
@@ -366,7 +369,7 @@
 (deftrecord ReturnMap [type symbols])
 
 (defn parse-return-map [type form]
-      (when (and (not (empty? form))
+      (when (and (seq form)
                  (every? symbol? form))
             (case type
                   :keys (ReturnMap. type (mapv keyword form))
@@ -673,7 +676,7 @@
             (if-let [q (first qs)]
                     (if (keyword? q)
                         (recur parsed q (next qs))
-                        (recur (update-in parsed [key] (fnil conj []) q) key (next qs)))
+                        (recur (update parsed key (fnil conj []) q) key (next qs)))
                     parsed)))
 
 (defn explicit-input [parsed]
@@ -681,13 +684,10 @@
            (if (instance? Pattern parsed)
                source
                (when (some? source)
-                     (when (not (instance? DefaultSrc source))
-                           source)))))
+                     (when-not (instance? DefaultSrc source) source)))))
 
 (defn default-in [qwhere]
-      (if (not (empty? (collect explicit-input qwhere)))
-          '[$]
-          []))
+      (if-not (empty? (collect explicit-input qwhere)) '[$] []))
 
 (defn validate-query [q form form-map]
       (let [find-vars  (set (collect-vars (:qfind q)))
@@ -697,12 +697,12 @@
             unknown    (set/difference (set/union find-vars with-vars)
                                        (set/union where-vars in-vars))
             shared     (set/intersection find-vars with-vars)]
-           (when-not (empty? unknown)
-                     (util/raise "Query for unknown vars: " (mapv :symbol unknown)
-                                 {:error :parser/query, :vars unknown, :form form}))
-           (when-not (empty? shared)
-                     (util/raise ":find and :with should not use same variables: " (mapv :symbol shared)
-                                 {:error :parser/query, :vars shared, :form form})))
+           (when (seq unknown)
+                 (util/raise "Query for unknown vars: " (mapv :symbol unknown)
+                             {:error :parser/query, :vars unknown, :form form}))
+           (when (seq shared)
+                 (util/raise ":find and :with should not use same variables: " (mapv :symbol shared)
+                             {:error :parser/query, :vars shared, :form form})))
 
       (when-some [return-map (:qreturn-map q)]
                  (when (instance? FindScalar (:qfind q))
@@ -730,27 +730,27 @@
       (let [in-vars    (collect-vars (:qin q))
             in-sources (collect #(instance? SrcVar %) (:qin q))
             in-rules   (collect #(instance? RulesVar %) (:qin q))]
-           (when-not (and (distinct? in-vars)
-                          (distinct? in-sources)
-                          (distinct? in-rules))
+           (when-not (and in-vars
+                          in-sources
+                          in-rules)
                      (util/raise "Vars used in :in should be distinct"
                                  {:error :parser/query, :form form})))
 
       (let [with-vars (collect-vars (:qwith q))]
-           (when-not (distinct? with-vars)
+           (when-not with-vars
                      (util/raise "Vars used in :with should be distinct"
                                  {:error :parser/query, :form form})))
 
       (let [in-sources    (collect #(instance? SrcVar %) (:qin q) #{})
             where-sources (collect #(instance? SrcVar %) (:qwhere q) #{})
             unknown       (set/difference where-sources in-sources)]
-           (when-not (empty? unknown)
-                     (util/raise "Where uses unknown source vars: " (mapv :symbol unknown)
-                                 {:error :parser/query, :vars unknown, :form form})))
+           (when (seq unknown)
+                 (util/raise "Where uses unknown source vars: " (mapv :symbol unknown)
+                             {:error :parser/query, :vars unknown, :form form})))
 
       (let [rule-exprs (collect #(instance? RuleExpr %) (:qwhere q))
             rules-vars (collect #(instance? RulesVar %) (:qin q))]
-           (when (and (not (empty? rule-exprs))
+           (when (and (seq rule-exprs)
                       (empty? rules-vars))
                  (util/raise "Missing rules var '%' in :in"
                              {:error :parser/query, :form form}))))

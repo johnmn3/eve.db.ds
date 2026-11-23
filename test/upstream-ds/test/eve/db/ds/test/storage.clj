@@ -56,7 +56,7 @@
 (defn large-db [& [opts]]
       (d/db-with
        (d/empty-db nil (merge {:branching-factor 32, :ref-type :strong} opts))
-       (map #(vector :db/add % :str (str %)) (range 1 1001))))
+       (for [item (range 1 1001)] [:db/add item :str (str item)])))
 
 ;; NOTE (syntax/formalization-1): this file tests eve.db.ds.storage,
 ;; which the rewrite deleted (plan v2 §3); it cannot load at this
@@ -83,7 +83,7 @@
                         storage (make-storage {:stats true})]
                        (testing "store"
                                 (d/store db storage)
-                                (is (= 0 (count @(:*reads storage))))
+                                (is (zero? (count @(:*reads storage))))
                                 (is (= 5 (count @(:*writes storage)))))  ;; write root, tail + 1 level * 3 indexes
                        (testing "restore"
                                 (let [db' (d/restore storage)]
@@ -235,7 +235,7 @@
                         (is (= (into (set (d/addresses db))
                                      (set (d/addresses db')))
                                (set (storage/-list-addresses storage))))
-                        (is (= 0 (count @(:*deletes storage))))))
+                        (is (zero? (count @(:*deletes storage))))))
 
     ;; if we lose other refs, GC will happen
               (let [db'' (d/restore storage)]

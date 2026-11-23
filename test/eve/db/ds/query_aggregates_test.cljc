@@ -66,28 +66,19 @@
                                 [:blue [7 8]   [7 8]]})))
 
               (testing "avg aggregate"
-                       (is (= (ffirst (dq/q '[:find (avg ?x)
-                                              :in [?x ...]]
-                                            [10 15 20 35 75]))
-                              31)))
+                       (is (= 31 (ffirst (dq/q '[:find (avg ?x) :in [?x ...]] [10 15 20 35 75])))))
 
               (testing "median aggregate"
-                       (is (= (ffirst (dq/q '[:find (median ?x)
-                                              :in [?x ...]]
-                                            [10 15 20 35 75]))
-                              20)))
+                       (is (= 20 (ffirst (dq/q '[:find (median ?x) :in [?x ...]] [10 15 20 35 75])))))
 
               (testing "variance aggregate"
-                       (is (= (ffirst (dq/q '[:find (variance ?x)
-                                              :in [?x ...]]
-                                            [10 15 20 35 75]))
-                              554)))
+                       (is (= 554 (ffirst (dq/q '[:find (variance ?x) :in [?x ...]] [10 15 20 35 75])))))
 
               (testing "stddev aggregate"
-                       (is (= (ffirst (dq/q '[:find (stddev ?x)
-                                              :in [?x ...]]
-                                            [10 15 20 35 75]))
-                              23.53720459187964)))
+                       (is
+                        (=
+                         23.53720459187964
+                         (ffirst (dq/q '[:find (stddev ?x) :in [?x ...]] [10 15 20 35 75])))))
 
               (testing "Custom aggregates"
                        (let [data   [[:red 1]  [:red 2] [:red 3] [:red 4] [:red 5]

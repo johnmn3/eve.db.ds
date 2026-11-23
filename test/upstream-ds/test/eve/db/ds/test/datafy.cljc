@@ -3,7 +3,7 @@
      [clojure.test :as t :refer [is deftest]]
 
      [eve.db.ds.core :as d]
-     [clojure.core.protocols :as cp]
+     [clojure.core.protocols :as p]
      [eve.db.ds.impl.entity :as e]))
 
 (defn- test-db []
@@ -19,14 +19,14 @@
             db))
 
 (defn- nav [coll k]
-       (cp/nav coll k (coll k)))
+       (p/nav coll k (coll k)))
 
 (defn d+n
       "Helper function to datafy/navigate for a path"
       [coll [k & ks]]
       (if (nil? k)
           coll
-          (d+n (nav (cp/datafy coll) k)
+          (d+n (nav (p/datafy coll) k)
                ks)))
 
 (deftest test-navigation

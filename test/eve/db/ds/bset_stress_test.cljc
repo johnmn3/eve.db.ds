@@ -54,7 +54,7 @@
          (println "  testing stresstest-btset...")
          (dotimes [i *iters*]
                   (let [size      10000
-                        xs        (vec (repeatedly (+ 1 (rand-int size)) #(rand-int size)))
+                        xs        (vec (repeatedly (inc (rand-int size)) #(rand-int size)))
                         xs-sorted (vec (distinct (sort xs)))
                         rm        (vec (repeatedly (rand-int (* size 5)) #(rand-nth xs)))
                         full-rm   (shuffle (concat xs rm))
@@ -84,7 +84,7 @@
 (deftest stresstest-slice
          (println "  testing stresstest-slice...")
          (dotimes [i *iters*]
-                  (let [xs        (repeatedly (+ 1 (rand-int 20000)) #(rand-int 20000))
+                  (let [xs        (repeatedly (inc (rand-int 20000)) #(rand-int 20000))
                         xs-sorted (distinct (sort xs))
                         [from to] (sort [(- 10000 (rand-int 20000)) (+ 10000 (rand-int 20000))])
                         expected  (filter #(<= from % to) xs-sorted)

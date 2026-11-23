@@ -115,7 +115,7 @@
   ;; The default macro stores a :resolve map naming a var in the
   ;; caller's namespace; the name is content-addressed
   ;; (db-fn-<12 hex>), so the same form derives the same map.
-         (let [stored (d/db-fn [_db x] (+ x 1))]
+         (let [stored (d/db-fn [_db x] (inc x))]
               (is (= :resolve (:db.fn/kind stored)))
               (is (= 'eve.db.ds.test.db-fn
                      (symbol (namespace (:db.fn/sym stored)))))
@@ -125,7 +125,7 @@
               (is (= stored (edn-read (pr-str stored))))
     ;; deterministic: re-evaluating the same form re-registers
     ;; the same name and yields the same stored map
-              (is (= stored (d/db-fn [_db x] (+ x 1))))
+              (is (= stored (d/db-fn [_db x] (inc x))))
     ;; and it is what actually sits in the DB as the datom value
               (let [conn (d/create-conn)]
                    (d/transact! conn [{:db/ident :plus-one :db/fn stored}])
@@ -149,11 +149,11 @@
   ;; The SCI opt-in macro sourcifies, exactly as d/db-fn did
   ;; before the default flipped: the stored map carries the body
   ;; as a string, and it is pure data.
-         (let [stored (d/sci-fn [db x] (+ x 1))]
+         (let [stored (d/sci-fn [db x] (inc x))]
               (is (= {:db.fn/kind   :sci
                       :db.fn/lang   :clojure
                       :db.fn/params '[db x]
-                      :db.fn/code   "(+ x 1)"}
+                      :db.fn/code   "(inc x)"}
                      stored))
               (is (dbfn/stored-fn? stored))
               (is (= stored (edn-read (pr-str stored))))))

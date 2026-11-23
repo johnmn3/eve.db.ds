@@ -56,10 +56,10 @@
 (defn build!
       "Replace the atom's DB with an empty DB over schema, transacted
    with each of txs in order — all inside swap!."
+      ([a txs] (build! a nil txs))
       ([a schema txs]
        (swap! a (fn [_] {:db (reduce db-with (db/empty-db schema {}) txs)}))
-       a)
-      ([a txs] (build! a nil txs)))
+       a))
 
 (defn build1!
       "build! with a single tx-data collection."
@@ -102,7 +102,7 @@
    inside a $ body too (measured, u4-logs/probe4 S1); re-read
    (:db @a) afterwards for the new version."
       [a tx]
-      (swap! a (fn [m] (assoc m :db (db-with (:db m) tx))))
+      (swap! a (fn [m] (update m :db db-with tx)))
       a)
 
 (defn no-namespace-maps [f]
@@ -112,11 +112,14 @@
 #?(:clj
    (defmethod t/assert-expr 'thrown-msg? [msg form]
               (let [[_ match & body] form]
-                   `(try ~@body
-                         (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual nil})
-                         (catch Throwable e#
-                                (let [m# (.getMessage e#)]
-                                     (if (= ~match m#)
-                                         (t/do-report {:type :pass, :message ~msg, :expected '~form, :actual e#})
-                                         (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual e#})))
-                                e#)))))
+                   `(try
+                     (let [res# (do ~@body)] res#)
+                     (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual nil})
+                     (catch
+                      Throwable
+                      e#
+                      (let [m# (.getMessage e#)]
+                           (if (= ~match m#)
+                               (t/do-report {:type :pass, :message ~msg, :expected '~form, :actual e#})
+                               (t/do-report {:type :fail, :message ~msg, :expected '~form, :actual e#})))
+                      e#)))))

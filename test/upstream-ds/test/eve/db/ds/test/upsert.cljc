@@ -22,7 +22,7 @@
                                                        :db/type        :db.type/ref}})
                                   [ivan petr dima olga])
                pull    (fn [tx e]
-                           (d/pull (:db-after tx) ['* {[:ref :xform #(:db/id %)] [:db/id]}] e))
+                           (d/pull (:db-after tx) ['* {[:ref :xform :db/id] [:db/id]}] e))
                tempids (fn [tx]
                            (dissoc (:tempids tx) :db/current-tx))]
               (testing "upsert, no tempid"

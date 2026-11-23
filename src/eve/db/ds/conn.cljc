@@ -459,11 +459,12 @@
                                                              (:max-eid db-after0) (inc ceil)
                                                              (:rschema db-after0))
                                                     db-after0)
-                                      tx-data   (into []
-                                                      (concat
-                                                       (map (fn [d] (db/datom (:e d) (:a d) (:v d) (db/datom-tx d) false))
-                                                            (db/-datoms db-before :eavt nil nil nil nil))
-                                                       (db/-datoms db-after :eavt nil nil nil nil)))]
+                                      tx-data   (vec
+                                                 (concat
+                                                  (map
+                                                   (fn [d] (db/datom (:e d) (:a d) (:v d) (db/datom-tx d) false))
+                                                   (db/-datoms db-before :eavt nil nil nil nil))
+                                                  (db/-datoms db-after :eavt nil nil nil nil)))]
                                      (vreset! *raw {:before-tx (:max-tx db-before)
                                                     :after     db-after
                                                     :tx-data   tx-data})
@@ -490,7 +491,7 @@
       (swap! (:atom db-handle)
              (fn [m]
                  (if (= (:tx db-handle) (:max-tx (:db m)))
-                     (assoc m :db (db/with-schema (:db m) schema))
+                     (update m :db db/with-schema schema)
                      (if (contains? (:kept m) (:tx db-handle))
                          (update m :kept update (:tx db-handle) db/with-schema schema)
                          (not-kept! (:tx db-handle) (:max-tx (:db m)))))))
@@ -500,7 +501,7 @@
       {:pre [(conn? conn)]}
       (check-open conn)
       (swap! (.-eve-atom conn)
-             (fn [m] (assoc m :db (db/with-schema (:db m) schema))))
+             (fn [m] (update m :db db/with-schema schema)))
       (db conn))
 
 ;; ---------------------------------------------------------------------------
@@ -561,6 +562,9 @@
        "Filtered DBs are not constructible at this Eve pin: FilteredDB's ^:host pred field reads null (U2 probe2)"
        {:error :eve.db.ds/filter-blocked :pin "323bfe35901f3f892921eecd41fc5e85be4ef8ec"}))
 
+;; Public API name (the DataScript-compatible surface, pinned
+;; by api_surface_test); naming/predicate's rename would break it.
+#_{:splint/disable [naming/predicate]}
 (defn is-filtered
       "Returns true if this database was filtered using filter."
       [x]

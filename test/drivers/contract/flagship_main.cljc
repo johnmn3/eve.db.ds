@@ -12,6 +12,10 @@
      [contract.ds-flagship :as flagship]
      [contract.ds-window :as window]))
 
+;; Splint's let-do print flattens the reader-conditional body
+;; below into (do (run) nil); the actual body is a #? form whose
+;; :default arm needs its do. Per-site disable for the misread.
+#_{:splint/disable [style/let-do]}
 (defn -main [& args]
   ;; fs3run8 window modes (seed/go/window/counters) dispatch to
   ;; contract.ds-window; the classic rounds stay on contract.ds-flagship.

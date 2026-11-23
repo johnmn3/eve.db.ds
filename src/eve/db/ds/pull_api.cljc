@@ -14,14 +14,12 @@
 (declare pull-impl attrs-frame ref-frame ->ReverseAttrsFrame)
 
 (defn- first-seq [#?(:clj ^ISeq xs :cljs ^seq xs)]
-       (if (nil? xs)
-           nil
-           #?(:clj (.first xs) :cljs (-first xs))))
+       (when-not (nil? xs)
+                 #?(:clj (.first xs) :cljs (-first xs))))
 
 (defn- next-seq [#?(:clj ^ISeq xs :cljs ^seq xs)]
-       (if (nil? xs)
-           nil
-           #?(:clj (.next xs) :cljs (-next xs))))
+       (when-not (nil? xs)
+                 #?(:clj (.next xs) :cljs (-next xs))))
 
 (defn- conj-seq [#?(:clj ^ISeq xs :cljs ^seq xs) x]
        (if (nil? xs)
@@ -293,7 +291,7 @@
                     (set/slice (.-eavt ^DB db) (db/datom id from nil db/tx0) (db/datom id to nil db/txmax) db/cmp-datoms-eavt)
 
                     :else
-                    (->> (db/-seek-datoms db :eavt id nil nil nil))
+                    (db/-seek-datoms db :eavt id nil nil nil)
                     (take-while
                      (fn [^Datom d]
                          (and

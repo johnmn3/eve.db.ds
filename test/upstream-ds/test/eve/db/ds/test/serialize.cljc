@@ -24,11 +24,11 @@
          (doseq [[r read-fn] readers]
                 (testing r
                          (let [d (db/datom 1 :name "Oleg" 17 true)]
-                              (is (= (pr-str d) "#eve.db.ds/Datom [1 :name \"Oleg\" 17 true]"))
+                              (is (= "#eve.db.ds/Datom [1 :name \"Oleg\" 17 true]" (pr-str d)))
                               (is (= d (read-fn (pr-str d)))))
 
                          (let [d (db/datom 1 :name 3)]
-                              (is (= (pr-str d) "#eve.db.ds/Datom [1 :name 3 536870912 true]"))
+                              (is (= "#eve.db.ds/Datom [1 :name 3 536870912 true]" (pr-str d)))
                               (is (= d (read-fn (pr-str d)))))
 
                          (let [db (-> (d/empty-db {:name {:db/unique :db.unique/identity}})

@@ -14,8 +14,11 @@
     (:gen-class))
 
 (defn -main [& args]
+      ;; A probe main: catching Throwable is the point — it must
+      ;; report the failure as data and set the exit code, not die.
       (let [code (try (apply contract.one/-main args)
                       0
+                      #_{:splint/disable [lint/catch-throwable]}
                       (catch Throwable e
                              (println (pr-str {:mark :ONE-UBERJAR-ERROR
                                                :error (ex-message e)

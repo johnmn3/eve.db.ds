@@ -42,8 +42,8 @@
                    (-> db (d/filter long-akas) (d/filter remove-ivan)) #{["Great"] ["II"]})
 
               (testing "Entities"
-                       (is (= (:password (d/entity db 1)) "<SECRET>"))
-                       (is (= (:password (d/entity (d/filter db remove-pass) 1) ::not-found) ::not-found))
+                       (is (= "<SECRET>" (:password (d/entity db 1))))
+                       (is (= ::not-found (:password (d/entity (d/filter db remove-pass) 1) ::not-found)))
                        (is (= (:aka (d/entity db 2)) #{"Terrible" "IV"}))
                        (is (= (:aka (d/entity (d/filter db long-akas) 2)) #{"Terrible"})))
 

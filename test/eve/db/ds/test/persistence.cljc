@@ -114,4 +114,4 @@
                              :cljs (catch :default e (:error (ex-data e)))))))
     ;; a fresh in-memory conn starts empty: nothing persisted
               (let [conn2 (d/create-conn u5s/gen-schema)]
-                   (is (= 0 (count (d/datoms (d/db conn2) :eavt)))))))
+                   (is (zero? (count (d/datoms (d/db conn2) :eavt)))))))

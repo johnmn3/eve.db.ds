@@ -32,9 +32,7 @@
                                 :where [1 :name ?name]
                                 [1 :age  ?age]] db)
                         ["Petr" 44]))
-                 (is (= (dq/q '[:find ?name .
-                                :where [1 :name ?name]] db)
-                        "Petr"))
+                 (is (= "Petr" (dq/q '[:find ?name . :where [1 :name ?name]] db)))
 
                  (testing "Multiple results get cut"
                           (is (contains?
@@ -54,6 +52,4 @@
                           (is (= (dq/q '[:find [(count ?name)]
                                          :where [_ :name ?name]] db)
                                  [3]))
-                          (is (= (dq/q '[:find (count ?name) .
-                                         :where [_ :name ?name]] db)
-                                 3))))))
+                          (is (= 3 (dq/q '[:find (count ?name) . :where [_ :name ?name]] db)))))))

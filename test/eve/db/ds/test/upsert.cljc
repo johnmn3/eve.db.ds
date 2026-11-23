@@ -25,6 +25,13 @@
                                                        :db/type        :db.type/ref}})
                                   [ivan petr dima olga])
                pull    (fn [tx e]
+                           ;; The :xform in this quoted pull pattern is
+                           ;; DATA: the fn literal is the transform
+                           ;; value. Splint's fn-wrapper suggestion
+                           ;; would replace it with the keyword :db/id,
+                           ;; which resolve-xform cannot resolve as a
+                           ;; fn (measured: 27 u3 errors).
+                           #_{:splint/disable [lint/fn-wrapper]}
                            (d/pull (:db-after tx) ['* {[:ref :xform #(:db/id %)] [:db/id]}] e))
                tempids (fn [tx]
                            (dissoc (:tempids tx) :db/current-tx))]

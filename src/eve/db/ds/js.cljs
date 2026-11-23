@@ -81,8 +81,8 @@
 (defn ^:export init_db [datoms & [schema]]
       (d/init-db (map js->Datom datoms) (schema->clj schema)))
 
-(def ^:export serializable #(serialize/serializable % {:freeze-kw identity}))
-(def ^:export from_serializable #(serialize/from-serializable % {:thaw-kw identity}))
+(defn ^:export serializable [x] (serialize/serializable x {:freeze-kw identity}))
+(defn ^:export from_serializable [x] (serialize/from-serializable x {:thaw-kw identity}))
 
 (defn ^:export q [query & sources]
       (let [query   (cljs.reader/read-string query)

@@ -1,5 +1,6 @@
 (ns eve.db.ds.util
     (:refer-clojure :exclude [find])
+    #?(:cljs (:require [clojure.string]))
     #?(:clj
        (:import
         [java.util UUID])))
@@ -123,7 +124,7 @@
                 c (count s)]
                (cond
                 (> c l) (subs s 0 l)
-                (< c l) (str (apply str (repeat (- l c) "0")) s)
+                (< c l) (str (clojure.string/join (repeat (- l c) "0")) s)
                 :else   s))))
 
 (defn squuid

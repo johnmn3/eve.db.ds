@@ -13,7 +13,7 @@
 (deftest test-ways-to-create-conn
          (let [conn (d/create-conn)]
               (is (= #{} (set (d/datoms @conn :eavt))))
-              (is (= nil (:schema @conn))))
+              (is (nil? (:schema @conn))))
 
          (let [conn (d/create-conn schema)]
               (is (= #{} (set (d/datoms @conn :eavt))))
@@ -21,7 +21,7 @@
 
          (let [conn (d/conn-from-datoms datoms)]
               (is (= datoms (set (d/datoms @conn :eavt))))
-              (is (= nil (:schema @conn))))
+              (is (nil? (:schema @conn))))
 
          (let [conn (d/conn-from-datoms datoms schema)]
               (is (= datoms (set (d/datoms @conn :eavt))))
@@ -29,7 +29,7 @@
 
          (let [conn (d/conn-from-db (d/init-db datoms))]
               (is (= datoms (set (d/datoms @conn :eavt))))
-              (is (= nil (:schema @conn))))
+              (is (nil? (:schema @conn))))
 
          (let [conn (d/conn-from-db (d/init-db datoms schema))]
               (is (= datoms (set (d/datoms @conn :eavt))))

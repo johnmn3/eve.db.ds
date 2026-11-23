@@ -4,4 +4,55 @@
 ; A rule is disabled only fleet-wide, here, with the reason recorded —
 ; never per repo to make a repo pass. Where a Splint rule duplicates a
 ; clj-kondo idiom linter, the dedup choice is recorded here too.
-{}
+;
+; ── Repo-local exceptions (eve.db.ds, Phase 2; proposed to the fleet
+; in RETRO.md). Splint 1.25 has no per-path config: a rule is excepted
+; per file through the rule's :excludes matchers, so every excepted
+; file is named below and every other file keeps every rule.
+;
+; lint/prefer-method-values (6 files): the suggestion is not
+; actionable as printed — in all 38 findings here it emits a literal
+; CLASS placeholder ((CLASS/.write ...) etc.), because the receiver's
+; class is not known to it. The receivers are java.io.Writer in the
+; pprint port, Eve host values in the cliff probes and the storage
+; record, and JS values in the smoke — none has a static class
+; Splint can name. Same defect the valuescript lane measured.
+;
+; naming/lisp-case (1 file): src/eve/db/ds/js.cljs IS the JavaScript
+; API surface; its snake_case names (empty_db, init_db, db_with,
+; pull_many, ...) mirror DataScript's published JS API, which JS
+; consumers call by those exact names.
+;
+; naming/single-segment-namespace (3 files): leaf driver/test
+; namespaces whose single-segment names are their harness identity
+; (clojure -M -m dbfn-bench; the nbb probe; the query-v3 test at the
+; test root). Nothing requires them as libraries.
+;
+; style/prefer-clj-math (test/drivers/**): bench/driver programs call
+; the host's Math directly by design — native_sqrt asserts bit-exact
+; Math/sqrt results (the interop is its subject) and the bench tables
+; round timings with Math/round on every host, several of which have
+; no clojure.math. The one src site (built_ins' per-pass sqrt
+; function value) carries a per-site disable with its reason.
+;
+; lint/assoc-fn (src/eve/db/ds/inline.clj): that file DEFINES the
+; inline `update` macro; Splint's suggestion rewrites its bodies to
+; call `update` — the macro itself — which is infinite macroexpansion
+; (measured: StackOverflowError compiling every consumer). The
+; assoc/get bodies are the implementation, not a recreation.
+;
+; NOTE (measured): Splint 1.25's local-config rule keys must be
+; qualified SYMBOLS, not keywords — merge-config filters local rules
+; by qualified-symbol?, so :lint/... keys are silently dropped.
+{lint/prefer-method-values {:excludes ["src/eve/db/ds/pprint\\.clj$"
+                                        "test/drivers/cliff/build_probe\\.clj$"
+                                        "test/drivers/cliff/probe0_eve\\.clj$"
+                                        "test/eve/db/ds/bset_stress_smoke\\.clj$"
+                                        "test/eve/db/ds/test_macros\\.clj$"
+                                        "test/upstream-ds/test/eve/db/ds/test/storage\\.clj$"]}
+ naming/lisp-case {:excludes ["src/eve/db/ds/js\\.cljs$"]}
+ style/prefer-clj-math {:excludes ["test/drivers/.*"]}
+ lint/assoc-fn {:excludes ["src/eve/db/ds/inline\\.clj$"]}
+ naming/single-segment-namespace {:excludes ["test/drivers/contract/nbb_probe\\.cljc$"
+                                              "test/drivers/dbfn_bench\\.clj$"
+                                              "test/eve_db_ds_query_v3_test\\.cljc$"]}}

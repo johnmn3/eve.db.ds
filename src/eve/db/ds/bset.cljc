@@ -154,8 +154,7 @@
              (loop [i 0]
                    (cond
                     (== i len) true
-                    (not (== 0 (cmp (eve/aget a1 (+ i a1-from))
-                                    (eve/aget a2 (+ i a2-from))))) false
+                    (not (zero? (cmp (eve/aget a1 (+ i a1-from)) (eve/aget a2 (+ i a2-from))))) false
                     :else (recur (inc i)))))))
 
 (defn- check-n-splice [cmp a from to new-a]
@@ -230,7 +229,7 @@
        (let [a-l (eve/alength a)
              idx (binary-search-l cmp a (dec a-l) key)]
             (if (and (< idx a-l)
-                     (== 0 (cmp (eve/aget a idx) key)))
+                     (zero? (cmp (eve/aget a idx) key)))
                 idx
                 -1)))
 
@@ -377,7 +376,7 @@
             (cond
       ;; element already here
              (and (< idx keys-l)
-                  (== 0 (cmp key (eve/aget slots idx))))
+                  (zero? (cmp key (eve/aget slots idx))))
              nil
 
       ;; splitting
@@ -440,7 +439,7 @@
                                  (let [lims         (node-lims node)
                                        children     (node-children node)
                                        left-idx     (if left-child  (dec idx) idx)
-                                       right-idx    (if right-child (+ 2 idx) (+ 1 idx))
+                                       right-idx    (if right-child (+ 2 idx) (inc idx))
                                        new-lims     (check-n-splice cmp lims     left-idx right-idx (arr-map node-lim-key disjned))
                                        new-children (splice             children left-idx right-idx disjned)]
                                       (rotate (node-from-parts new-children new-lims) root? left right)))))))
@@ -478,19 +477,11 @@
                 (let [sub-path (-next-path (node-child node idx) path (dec level))]
                      (if (nil? sub-path)
           ;; nested node overflow
-                         (if (< (inc idx) (node-children-count node))
-            ;; advance current node idx, reset subsequent indexes
-                             (path-set empty-path level (inc idx))
-            ;; current node overflow
-                             nil)
+                         (when (< (inc idx) (node-children-count node)) (path-set empty-path level (inc idx)))
           ;; keep current idx
                          (path-set sub-path level idx)))
       ;; leaf
-                (if (< (inc idx) (eve/alength (:slots node)))
-        ;; advance leaf idx
-                    (path-set empty-path 0 (inc idx))
-        ;; leaf overflow
-                    nil))))
+                (when (< (inc idx) (eve/alength (:slots node))) (path-set empty-path 0 (inc idx))))))
 
 (defn- -rpath
        "Rightmost path possible starting from node and going deeper."
@@ -519,11 +510,11 @@
        (let [idx (path-get path level)]
             (cond
       ;; leaf overflow
-             (and (== 0 level) (== 0 idx))
+             (and (zero? level) (zero? idx))
              nil
 
       ;; leaf
-             (== 0 level)
+             (zero? level)
              (path-set empty-path 0 (dec idx))
 
       ;; branch that was overflow before
@@ -538,7 +529,7 @@
                    (path-set path' level idx)
 
           ;; nested overflow + this node overflow
-                   (== 0 idx)
+                   (zero? idx)
                    nil
 
           ;; nested overflow, advance current idx, reset subsequent indexes
@@ -550,7 +541,7 @@
        "Path representing the previous item before `path` in natural
    traversal order. Will overflow at leaf if at beginning of tree."
        [root shift path]
-       (if (> (path-get path (inc shift)) 0) ;; overflow
+       (if (pos? (path-get path (inc shift))) ;; overflow
            (-rpath root path shift)
            (or
             (-prev-path root path shift)
@@ -567,24 +558,17 @@
                     (-distance (node-child node idx-l) left right (dec level))
                     (loop [level level
                            res   (- idx-r idx-l)]
-                          (if (== 0 level)
+                          (if (zero? level)
                               res
                               (recur (dec level) (* res avg-len)))))
                 (- idx-r idx-l))))
 
 (defn- distance [root shift path-l path-r]
-       (cond
-        (path-eq path-l path-r)
-        0
-
-        (path-eq (path-inc path-l) path-r)
-        1
-
-        (path-eq (next-path root shift path-l) path-r)
-        1
-
-        :else
-        (-distance root path-l path-r shift)))
+       (condp path-eq path-r
+              path-l 0
+              (path-inc path-l) 1
+              (next-path root shift path-l) 1
+              (-distance root path-l path-r shift)))
 
 ;; seek paths
 
@@ -598,12 +582,10 @@
                   path  empty-path
                   level shift]
                  (let [keys-l (node-len node)]
-                      (if (== 0 level)
+                      (if (zero? level)
                           (let [keys (:slots node)
                                 idx  (binary-search-l cmp keys (dec keys-l) key)]
-                               (if (== keys-l idx)
-                                   nil
-                                   (path-set path 0 idx)))
+                               (when-not (== keys-l idx) (path-set path 0 idx)))
                           (let [idx (lim-idx-l node cmp key)]
                                (recur
                                 (node-child node idx)
@@ -621,7 +603,7 @@
                   path  empty-path
                   level shift]
                  (let [keys-l (node-len node)]
-                      (if (== 0 level)
+                      (if (zero? level)
                           (let [keys (:slots node)
                                 idx  (binary-search-r cmp keys (dec keys-l) key)]
                                (path-set path 0 idx))
@@ -972,7 +954,7 @@
 
 (defn- -riter-next [^ReverseIter it]
        (when (.-keys it)
-             (if (> (.-idx it) 0)
+             (if (pos? (.-idx it))
       ;; can use cached array to advance
                  (let [right' (path-dec (.-right it))]
                       (when (path-lt (.-left it) right')
@@ -1043,7 +1025,7 @@
                            (reduced? new-acc)
                            @new-acc
 
-                           (> idx 0) ;; can use cached array to advance
+                           (pos? idx) ;; can use cached array to advance
                            (let [right' (path-dec right)]
                                 (if (path-lt (.-left it) right')
                                     (recur right' keys (dec idx) new-acc)
@@ -1135,15 +1117,13 @@
       "The set with key removed, or nil if key was not present."
       [root key cmp]
       (let [new-roots (node-disj root cmp key true nil nil)]
-           (if (nil? new-roots) ;; nothing changed, key wasn't in the set
-               nil
-               (let [new-root (eve/aget new-roots 0)]
-                    (if (and (node? new-root)
-                             (== 1 (node-children-count new-root)))
+           (when-not (nil? new-roots) (let [new-root (eve/aget new-roots 0)]
+                                           (if (and (node? new-root)
+                                                    (== 1 (node-children-count new-root)))
           ;; root has one child, make him new root
-                        (node-child new-root 0)
+                                               (node-child new-root 0)
           ;; keeping root level
-                        new-root)))))
+                                               new-root)))))
 
 (defn lookup
       "The stored key equal to key under cmp, or nil."

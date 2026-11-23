@@ -448,8 +448,7 @@
 (deftest test-lookup-ref-pull
          (is (= {:name "Petr" :aka ["Devil" "Tupen"]}
                 (d/pull @*test-db '[:name :aka] [:name "Petr"])))
-         (is (= nil
-                (d/pull @*test-db '[:name :aka] [:name "NotInDatabase"])))
+         (is (nil? (d/pull @*test-db '[:name :aka] [:name "NotInDatabase"])))
          (is (= [nil {:aka ["Devil" "Tupen"]} nil nil nil]
                 (d/pull-many @*test-db
                              '[:aka]
@@ -475,7 +474,7 @@
 
          (testing ":xform on cardinality/one ref issue-455"
                   (is (= {:name "David" :father "Petr"}
-                         (d/pull @*test-db [:name {[:father :xform #(:name %)] ['*]}] 2))))
+                         (d/pull @*test-db [:name {[:father :xform :name] ['*]}] 2))))
 
          (testing ":xform on reverse ref"
                   (is (= {:name "Petr" :_father ["David" "Thomas"]}
@@ -483,7 +482,7 @@
 
          (testing ":xform on reverse component ref"
                   (is (= {:name "Part A.A" :_part "Part A"}
-                         (d/pull @*test-db [:name {[:_part :xform #(:name %)] [:name]}] 11))))
+                         (d/pull @*test-db [:name {[:_part :xform :name] [:name]}] 11))))
 
          (testing "missing attrs are processed by xform"
                   (is (= {:normal [nil]

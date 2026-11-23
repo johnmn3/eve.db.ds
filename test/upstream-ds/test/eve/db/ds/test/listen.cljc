@@ -31,5 +31,4 @@
                       (db/datom 1 :name "Alex"   (+ d/tx0 3) false)  ;; update -> retract
                       (db/datom 1 :name "Alex2"  (+ d/tx0 3) true)   ;;         + add
                       (db/datom 4 :name "Evgeny" (+ d/tx0 3) false)]))
-              (is (= (:tx-meta (second @reports))
-                     nil))))
+              (is (nil? (:tx-meta (second @reports))))))

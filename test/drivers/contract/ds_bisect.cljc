@@ -32,7 +32,7 @@
                 (attempt :filter-lazy #(vals (take 10 (filter (fn [x] (pred (.-v x))) sl))))
                 (attempt :eduction-map #(vals (take 10 (eduction (map identity) sl))))
                 (attempt :eduction-filter #(vals (take 10 (eduction (filter (fn [x] (pred (.-v x)))) sl))))
-                (attempt :into-vec-slice #(vals (into [] sl)))
+                (attempt :into-vec-slice #(vals (vec sl)))
                 (attempt :reduce-slice #(reduce (fn [a x] (conj a (.-v x))) [] sl))
                 (println {:done true}))
            (System/exit 0)))

@@ -16,7 +16,7 @@
    is a reader conditional: basilisp rejects (catch Throwable ..) — there
    Throwable is a Var, not a class type."
           [& body]
-          `(try ~@body
+          `(try (let [res# (do ~@body)] res#)
                 (catch #?(:cljs :default :lpy python/Exception :jank jank.runtime.object_ref :default Exception) t#
                        (str :throws " " t#))))
 
@@ -55,8 +55,8 @@
                              (attempt (first (clojure.core/seq s1)))])
             (row :equiv-self (= s1 s1))
             (row :equiv-indep (= s1 s2))
-            (row :equiv-host-set (= s1 (into #{} (range 200))))
-            (row :equiv-host-set-rev (= (into #{} (range 200)) s1))
+            (row :equiv-host-set (= s1 (set (range 200))))
+            (row :equiv-host-set-rev (= (set (range 200)) s1))
             (row :hash (attempt (hash s1)))
             (row :print-small (pr-str (pss/sorted-set 1 2 3)))
             (row :print-empty (pr-str s0))

@@ -47,7 +47,7 @@
              :name       name
              :xform      identity
              :multival?  (when multival? true)
-             :limit      (if multival? 1000 nil)
+             :limit      (when multival? 1000)
              :ref?       (when ref? true)
              :component? (when component? true)
              :pattern    (cond
@@ -163,7 +163,7 @@
                                          :else (keyword name))))
                    attrs       (if (and
                                     (.-wildcard? result)
-                                    (not (some db-id? (.-attrs result))))
+                                    (not-any? db-id? (.-attrs result)))
                                    (conj attrs default-db-id-attr)
                                    attrs)
                    attrs       (list* (sort-by key-fn attrs))

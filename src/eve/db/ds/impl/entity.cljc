@@ -75,7 +75,7 @@
               (values [this]
                       (es6-iterator (map second (js-seq this))))
               (has [this attr]
-                   (not (nil? (.get this attr))))
+                   (some? (.get this attr)))
               (get [this attr]
                    (if (= attr ":db/id")
                        eid

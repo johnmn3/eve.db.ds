@@ -1,6 +1,7 @@
 (ns ^:no-doc eve.db.ds.query-v3
     #?(:cljs (:require-macros [eve.db.ds.util :as util]))
     (:require
+     [clojure.string]
      [clojure.set :as set]
      [eve.db.ds.built-ins :as built-ins]
      [eve.db.ds.db :as db]
@@ -138,7 +139,7 @@
 
                clojure.lang.IPersistentCollection
                clojure.lang.IPersistentSet
-               (contains [_ k] (.contains set k))
+               (contains [_ k] (clojure.string/includes? set k))
 
                clojure.lang.Counted
                (count [_] (.size set))
@@ -468,18 +469,16 @@
                    tuples)
 
               BindColl
-              (if (not (db/seqable? source))
-                  (util/raise "Cannot bind value " source " to collection " (dp/source binding)
-                              {:error :query/binding, :value source, :binding (dp/source binding)})
-                  (let [inner-binding (:binding binding)]
-                       (case (count source)
-                             0 []
-                             1 (bind! tuples inner-binding (first source) indexes)
-                             (into [] ;; TODO fast-arr
-                                   (comp (map #(bind! tuples inner-binding % indexes))
-                                         cat
-                                         (map da/aclone))
-                                   source))))
+              (if-not (db/seqable? source) (util/raise "Cannot bind value " source " to collection " (dp/source binding)
+                                                       {:error :query/binding, :value source, :binding (dp/source binding)}) (let [inner-binding (:binding binding)]
+                                                                                                                                  (case (count source)
+                                                                                                                                        0 []
+                                                                                                                                        1 (bind! tuples inner-binding (first source) indexes)
+                                                                                                                                        (into [] ;; TODO fast-arr
+                                                                                                                                              (comp (map #(bind! tuples inner-binding % indexes))
+                                                                                                                                                    cat
+                                                                                                                                                    (map da/aclone))
+                                                                                                                                              source))))
 
               BindTuple
               (let [bindings (:bindings binding)]
@@ -508,21 +507,21 @@
        {:pre [(== (-size rel) 1)]}
        (let [tuple (-fold rel (fn [_ t] t) nil)]
             (into {}
-                  (map #(vector % ((-getter rel %) tuple)) (-symbols rel)))))
+                  (for [item (-symbols rel)] [item ((-getter rel item) tuple)]))))
 
 (defn- resolve-in [context [binding value]]
        (cond
         (and (instance? BindScalar binding)
              (instance? SrcVar (:variable binding)))
-        (update-in context [:sources] assoc (get-in binding [:variable :symbol]) value)
+        (update context :sources assoc (get-in binding [:variable :symbol]) value)
     ;;     (and (instance? BindScalar binding)
     ;;          (instance? RulesVar (:variable binding)))
     ;;       (assoc context :rules (parse-rules value))
         :else
         (let [rel (bind binding value)]
              (if (== 1 (-size rel))
-                 (update-in context [:consts] merge (rel->consts rel))
-                 (update-in context [:rels] conj rel)))))
+                 (update context :consts merge (rel->consts rel))
+                 (update context :rels conj rel)))))
 
 (defn resolve-ins [context bindings values]
       (when (not= (count bindings) (count values))
@@ -620,7 +619,7 @@
             (update context :rels conj rel)))
 
 (defn hash-join-rel [context rel]
-      (if (== 0 (-size rel))
+      (if (zero? (-size rel))
           empty-context
           (let [syms                    (set (-symbols rel))
                 [related-rels context*] (extract-rels context syms)]

@@ -36,7 +36,7 @@
           "Run body; on any throw, answer the string ':throws <err>' (reader-
    conditional catch class, the contend.cljc convention)."
           [& body]
-          `(try ~@body
+          `(try (let [res# (do ~@body)] res#)
                 (catch #?(:cljs :default :lpy python/Exception :jank jank.runtime.object_ref :default Exception) t#
                        (str :throws " " t#))))
 

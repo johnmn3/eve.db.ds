@@ -494,8 +494,7 @@
          ($ (let [db (tdb)]
                  (is (= {:name "Petr" :aka ["Devil" "Tupen"]}
                         (dp/pull db '[:name :aka] [:name "Petr"])))
-                 (is (= nil
-                        (dp/pull db '[:name :aka] [:name "NotInDatabase"])))
+                 (is (nil? (dp/pull db '[:name :aka] [:name "NotInDatabase"])))
                  (is (= [nil {:aka ["Devil" "Tupen"]} nil nil nil]
                         (dp/pull-many db
                                       '[:aka]
@@ -522,7 +521,7 @@
 
                  (testing ":xform on cardinality/one ref issue-455"
                           (is (= {:name "David" :father "Petr"}
-                                 (dp/pull db [:name {[:father :xform #(:name %)] ['*]}] 2))))
+                                 (dp/pull db [:name {[:father :xform :name] ['*]}] 2))))
 
                  (testing ":xform on reverse ref"
                           (is (= {:name "Petr" :_father ["David" "Thomas"]}
@@ -530,7 +529,7 @@
 
                  (testing ":xform on reverse component ref"
                           (is (= {:name "Part A.A" :_part "Part A"}
-                                 (dp/pull db [:name {[:_part :xform #(:name %)] [:name]}] 11))))
+                                 (dp/pull db [:name {[:_part :xform :name] [:name]}] 11))))
 
                  (testing "missing attrs are processed by xform"
                           (is (= {:normal [nil]

@@ -90,9 +90,9 @@
          (testing "keeps tx number"
                   (let [db (-> (d/empty-db)
                                (d/db-with [(d/datom 1 :name "Oleg")
-                                           (d/datom 1 :age  17 (+ 1 d/tx0))
+                                           (d/datom 1 :age  17 (inc d/tx0))
                                            [:db/add 1 :aka  "x" (+ 2 d/tx0)]]))]
-                       (is (= [[1 :age  17     (+ 1 d/tx0)]
+                       (is (= [[1 :age  17     (inc d/tx0)]
                                [1 :aka  "x"    (+ 2 d/tx0)]
                                [1 :name "Oleg" d/tx0]]
                               (map (juxt :e :a :v :tx)
@@ -205,9 +205,9 @@
          (let [conn (d/create-conn)]
               (d/transact! conn [[:db/add 1 :weight 200]])
               (d/transact! conn [[:db.fn/cas 1 :weight 200 300]])
-              (is (= (:weight (d/entity @conn 1)) 300))
+              (is (= 300 (:weight (d/entity @conn 1))))
               (d/transact! conn [[:db/cas 1 :weight 300 400]])
-              (is (= (:weight (d/entity @conn 1)) 400))
+              (is (= 400 (:weight (d/entity @conn 1))))
               (is (thrown-msg? ":db.fn/cas failed on datom [1 :weight 400], expected 200"
                                (d/transact! conn [[:db.fn/cas 1 :weight 200 210]]))))
 
@@ -222,7 +222,7 @@
          (let [conn (d/create-conn)]
               (d/transact! conn [[:db/add 1 :name "Ivan"]])
               (d/transact! conn [[:db.fn/cas 1 :age nil 42]])
-              (is (= (:age (d/entity @conn 1)) 42))
+              (is (= 42 (:age (d/entity @conn 1))))
               (is (thrown-msg? ":db.fn/cas failed on datom [1 :age 42], expected nil"
                                (d/transact! conn [[:db.fn/cas 1 :age nil 4711]]))))
 
@@ -256,7 +256,7 @@
                                (d/transact! conn [[:db.fn/call inc-age "Bob"]])))
               (let [{:keys [db-after]} (d/transact! conn [[:db.fn/call inc-age "Petr"]])
                     e (d/entity db-after 1)]
-                   (is (= (:age e) 32))
+                   (is (= 32 (:age e)))
                    (is (:had-birthday e)))
 
               (let [{:keys [db-after]} (d/transact! conn
@@ -292,7 +292,7 @@
                         (d/transact! conn [[:inc-age "Bob"]])))
        (d/transact! conn [[:inc-age "Petr"]])
        (let [e (d/entity @conn 1)]
-            (is (= (:age e) 32))
+            (is (= 32 (:age e)))
             (is (:had-birthday e))))
 
 ;; Duplicate-ns artifact: test/upstream-ds defines this same
@@ -365,7 +365,7 @@
                           {-1 1
                            -2 2
                            "Serg" 3
-                           :db/current-tx (+ d/tx0 1)}))
+                           :db/current-tx (inc d/tx0)}))
                    (is (= #{[1 :name "Ivan"]
                             [1 :age 19]
                             [2 :name "Petr"]
@@ -422,7 +422,7 @@
                       -2 3
                       "B" 4
                       -3 5
-                      :db/current-tx (+ d/tx0 1)}
+                      :db/current-tx (inc d/tx0)}
                      (:tempids tx)))
               (is (= (d/q q @conn "Sergey") #{["Ivan"] ["Petr"]}))
               (is (= (d/q q @conn "Boris") #{["Oleg"]}))
@@ -458,14 +458,14 @@
                                                        [:db/add -1 :created-at tx-tempid]])]
                               (is (= (d/q '[:find ?e ?a ?v :where [?e ?a ?v]] @conn)
                                      #{[1 :name "X"]
-                                       [1 :created-at (+ d/tx0 1)]
-                                       [(+ d/tx0 1) :prop1 "prop1"]
-                                       [(+ d/tx0 1) :prop2 "prop2"]
+                                       [1 :created-at (inc d/tx0)]
+                                       [(inc d/tx0) :prop1 "prop1"]
+                                       [(inc d/tx0) :prop2 "prop2"]
                                        [2 :name "Y"]
-                                       [2 :created-at (+ d/tx0 1)]}))
+                                       [2 :created-at (inc d/tx0)]}))
                               (is (= (assoc {-1             2
-                                             :db/current-tx (+ d/tx0 1)}
-                                            tx-tempid (+ d/tx0 1))
+                                             :db/current-tx (inc d/tx0)}
+                                            tx-tempid (inc d/tx0))
                                      (:tempids tx1)))
                               (let [tx2   (d/transact! conn [[:db/add tx-tempid :prop3 "prop3"]])
                                     tx-id (get-in tx2 [:tempids tx-tempid])]

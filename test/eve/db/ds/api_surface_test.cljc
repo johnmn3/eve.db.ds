@@ -64,11 +64,12 @@
                              (cond
                    ;; Functions are code, not data (data-readers' values
                    ;; are the library's own reader fns, as upstream's).
-                              (fn? v) nil
-                   ;; A §4 handle {:atom a :tx n} is a sanctioned leaf:
-                   ;; the Eve atom inside it is the identity token the
-                   ;; plan itself puts in users' hands, not a leak.
-                              (and (map? v) (= #{:atom :tx} (set (keys v)))) nil
+                              (or (fn? v)
+                                  ;; A §4 handle {:atom a :tx n} is a
+                                  ;; sanctioned leaf: the Eve atom inside
+                                  ;; it is the identity token the plan
+                                  ;; itself puts in users' hands.
+                                  (and (map? v) (= #{:atom :tx} (set (keys v))))) nil
                               (or (map? v) (set? v) (sequential? v))
                               (doseq [e (if (map? v) (concat (keys v) (vals v)) v)] (walk e))
                               (some? v)

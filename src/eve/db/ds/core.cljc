@@ -1,6 +1,7 @@
 (ns eve.db.ds.core
     (:refer-clojure :exclude [filter future-call])
     (:require
+     [clojure.string]
      #_{:clj-kondo/ignore [:unused-namespace]} [#?(:cljs cljs.reader :clj clojure.edn) :as edn]
      [eve.alpha :as eve]
      [eve.db.ds.conn :as conn]
@@ -45,9 +46,9 @@
        (when (some? d)
              (eve/$ (identity d))))
 
-(def ^{:tag Entity
-       :arglists '([db eid])
-       :doc "Retrieves an entity by its id from database. Entities are lazy map-like structures to navigate DataScript database content.
+(defn ^{:tag Entity
+        :arglists '([db eid])
+        :doc "Retrieves an entity by its id from database. Entities are lazy map-like structures to navigate DataScript database content.
 
              For `eid` pass entity id or lookup attr:
              
@@ -95,13 +96,13 @@
              - Comparing entities just compares their ids. Be careful when comparing entities taken from different dbs or from different versions of the same db.
              - Accessed entity attributes are cached on entity itself (except backward references).
              - When printing, only cached attributes (the ones you have accessed before) are printed. See [[touch]]."}
- entity (fn [db eid] (de/entity (resolve-db-arg db) eid (when (conn/handle? db) db))))
+ entity [db eid] (de/entity (resolve-db-arg db) eid (when (conn/handle? db) db)))
 
-(def ^{:arglists '([db eid])
-       :doc "Given lookup ref `[unique-attr value]`, returns numberic entity id.
+(defn ^{:arglists '([db eid])
+        :doc "Given lookup ref `[unique-attr value]`, returns numberic entity id.
 
              If entity does not exist, returns `nil`."}
- entid (fn [db eid] (db/entid (resolve-db-arg db) eid)))
+ entid [db eid] (db/entid (resolve-db-arg db) eid))
 
 (defn entity-db
       "Returns a db that entity was created from."
@@ -123,8 +124,8 @@
 
 ; Pull
 
-(def ^{:arglists '([db selector eid])
-       :doc "Fetches data from database using recursive declarative description. See [docs.datomic.com/on-prem/pull.html](https://docs.datomic.com/on-prem/pull.html).
+(defn ^{:arglists '([db selector eid])
+        :doc "Fetches data from database using recursive declarative description. See [docs.datomic.com/on-prem/pull.html](https://docs.datomic.com/on-prem/pull.html).
 
              Unlike [[entity]], returns plain Clojure map (not lazy).
 
@@ -135,12 +136,11 @@
                  ;     :name    \"Ivan\"
                  ;     :likes   [:pizza]
                  ;     :friends [{:db/id 2, :name \"Oleg\"}]}"}
- pull (fn
-       ([db selector eid] (dp/pull (resolve-db-arg db) selector eid))
-       ([db selector eid opts] (dp/pull (resolve-db-arg db) selector eid opts))))
+ pull ([db selector eid] (dp/pull (resolve-db-arg db) selector eid))
+      ([db selector eid opts] (dp/pull (resolve-db-arg db) selector eid opts)))
 
-(def ^{:arglists '([db selector eids])
-       :doc "Same as [[pull]], but accepts sequence of ids and returns sequence of maps.
+(defn ^{:arglists '([db selector eids])
+        :doc "Same as [[pull]], but accepts sequence of ids and returns sequence of maps.
 
              Usage:
 
@@ -149,15 +149,13 @@
              ; => [{:db/id 1, :name \"Ivan\"}
              ;     {:db/id 2, :name \"Oleg\"}]
              ```"}
- pull-many (fn
-            ([db selector eids] (dp/pull-many (resolve-db-arg db) selector eids))
-            ([db selector eids opts] (dp/pull-many (resolve-db-arg db) selector eids opts))))
+ pull-many ([db selector eids] (dp/pull-many (resolve-db-arg db) selector eids))
+      ([db selector eids opts] (dp/pull-many (resolve-db-arg db) selector eids opts)))
 
 ; Query
 
-(def
- ^{:arglists '([query & inputs])
-   :doc "Executes a datalog query. See [docs.datomic.com/on-prem/query.html](https://docs.datomic.com/on-prem/query.html).
+(defn ^{:arglists '([query & inputs])
+        :doc "Executes a datalog query. See [docs.datomic.com/on-prem/query.html](https://docs.datomic.com/on-prem/query.html).
 
           Usage:
           
@@ -167,8 +165,8 @@
              db)
           ; => #{[\"fries\"] [\"candy\"] [\"pie\"] [\"pizza\"]}
           ```"}
- q (fn [query & inputs]
-       (apply dq/q query (map resolve-db-arg inputs))))
+ q [query & inputs]
+      (apply dq/q query (map resolve-db-arg inputs)))
 
 ; Creating DB
 
@@ -247,12 +245,14 @@
 
 ; Schema
 
-(def ^{:arglists '([db])
-       :doc "Returns a schema of a database."}
- schema (fn [db] (if (conn/handle? db) (conn/schema-of db) (db/-schema db))))
+(defn ^{:arglists '([db])
+        :doc "Returns a schema of a database."}
+ schema [db] (if (conn/handle? db) (conn/schema-of db) (db/-schema db)))
 
 ; Filtered db
 
+;; Public API name (see conn.cljc); pinned by api_surface_test.
+#_{:splint/disable [naming/predicate]}
 (defn is-filtered
       "Returns `true` if this database was filtered using [[filter]], `false` otherwise."
       [x]
@@ -795,7 +795,7 @@
              [params & body]
              (list 'eve.db.ds.db-fn/sci-fn
                    (list 'quote params)
-                   (apply str (interpose "\n" (map pr-str body))))))
+                   (clojure.string/join "\n" (map pr-str body)))))
 
 (def ^{:arglists '([sym])
        :doc "Builds a stored transaction function that resolves a
