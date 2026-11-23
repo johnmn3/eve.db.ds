@@ -437,3 +437,22 @@ installed in the fleet shape (cljfmt check + clj-kondo on
 staged Clojure files only; Splint/Carve stay in the full
 gate per the plan) and enabled in this clone via
 core.hooksPath.
+
+## Step 7 — final verification + retro (Nov 23)
+
+bb lint exit 0 in the lane (.lane/final-lint.log) AND in a
+fresh clone of the pushed branch (kondo 0/0, Splint 0,
+Carve exit 0, cljfmt check green, dprint check green).
+cljfmt fix twice = no-op. Two fresh-clone-only kondo
+warnings (analysis-order artifacts of the duplicate-ns and
+shared-user-ns shapes) closed with per-site ignores naming
+the artifact. Final unit gate (.lane/gate8/ + u5 via its
+documented deps line): u2 11/79, u3 42/248, u4 6/48,
+u5 6/32, bset 5/816, chain-autoclose 5/36 — all
+baseline-identical to the step-3 baseline. RETRO.md written
+(five fleet findings: Splint symbol-key config, Splint
+suggestions are not source, committed kondo caches are a
+liability, duplicate-ns/user-ns order sensitivity, Carve's
+hook blindness; plus the two real defects found — parser's
+dead rule-vars check and three missing clojure.string
+requires). Lane complete; NOT merged to main.
