@@ -181,3 +181,30 @@ Reason written in the config file's header.
   7, type-mismatch 6, missing-protocol-method 5, invalid-arity 5,
   private-call 4, redundant-let 3, unresolved-protocol-method 2,
   singles. Splint + Carve campaigns still owed.
+
+## Step 5 batch 3 — redefined-var + type hints (this lane, Nov 23)
+
+- redefined-var (27) closed: conn's `filter`, core's
+  `future-call`, db's `array?` and the laws test's Box/->Box are
+  public definitions shadowing clojure.core — closed by adding
+  the names to each ns's :refer-clojure :exclude. The 21
+  eve.db.ds.db vars are upstream's cljs-stub idiom (empty
+  #?(:cljs defn) stub early + real defn+ later): kondo 2026.10.26
+  does NOT honor :exclude for redefined-var (measured), so each
+  site carries a per-site ignore with the reason; stacked
+  discards do not compose (measured), so the 8 sites needing two
+  ignores carry one merged discard.
+- non-arg-vec-return-type-hint (35) closed: hints moved to arg
+  vectors for plain defn/defn- sites and for defn+ sites with
+  class tags (^DB, ^Datom). For defn+ sites with lowercase tags
+  (^number, ^boolean — 19) the name position is LOAD-BEARING:
+  defn+'s patch-tag translates the tag per pass, and moving it
+  to the arg vector broke CLJ compilation ("Unable to resolve
+  classname: number", gate5c) — those sites carry per-site
+  ignores with the measured reason. The five spliced-name sites
+  in db.cljc (seqable?, tuple-ref-slot?, resolved-eid?, tempid?,
+  tuple-has-tempids?) now splice [name ^Type [args]] per pass.
+- find-datom (core) carries ^Datom on every arity's arg vector.
+- Gate (.lane/gate5d/): u2 11/79, u3 42/248, u4 6/48, bset
+  5/816, chain 5/36, u5 docline 6/32 — baseline-identical.
+  Recount: 421 -> 359.

@@ -1,0 +1,8 @@
+Reflection warning, eve/db/ds/db.cljc:372:29 - reference to field e can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:372:37 - reference to field a can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:372:45 - reference to field v can't be resolved.
+Syntax error (IllegalArgumentException) compiling fn* at (eve/db/ds/db.cljc:484:1).
+Unable to resolve classname: number
+
+Full report at:
+/home/hatch/workspace/syntax-formalization/lanes/eve-db-ds/.lane/tmp/clojure-11445224447249088208.edn

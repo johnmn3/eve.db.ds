@@ -1,0 +1,113 @@
+{:clojure.main/message
+ "Syntax error (IllegalArgumentException) compiling fn* at (eve/db/ds/db.cljc:484:1).\nUnable to resolve classname: number\n",
+ :clojure.main/triage
+ {:clojure.error/phase :compile-syntax-check,
+  :clojure.error/line 484,
+  :clojure.error/column 1,
+  :clojure.error/source "db.cljc",
+  :clojure.error/symbol fn*,
+  :clojure.error/path "eve/db/ds/db.cljc",
+  :clojure.error/class java.lang.IllegalArgumentException,
+  :clojure.error/cause "Unable to resolve classname: number"},
+ :clojure.main/trace
+ {:via
+  [{:type clojure.lang.Compiler$CompilerException,
+    :message
+    "Syntax error compiling fn* at (eve/db/ds/db.cljc:484:1).",
+    :data
+    {:clojure.error/phase :compile-syntax-check,
+     :clojure.error/line 484,
+     :clojure.error/column 1,
+     :clojure.error/source "eve/db/ds/db.cljc",
+     :clojure.error/symbol fn*},
+    :at [clojure.lang.Compiler analyzeSeq "Compiler.java" 7638]}
+   {:type java.lang.IllegalArgumentException,
+    :message "Unable to resolve classname: number",
+    :at
+    [clojure.lang.Compiler$HostExpr tagToClass "Compiler.java" 1124]}],
+  :trace
+  [[clojure.lang.Compiler$HostExpr tagToClass "Compiler.java" 1124]
+   [clojure.lang.Compiler tagClass "Compiler.java" 9219]
+   [clojure.lang.Compiler$FnMethod parse "Compiler.java" 5891]
+   [clojure.lang.Compiler$FnExpr parse "Compiler.java" 4546]
+   [clojure.lang.Compiler analyzeSeq "Compiler.java" 7628]
+   [clojure.lang.Compiler analyze "Compiler.java" 7321]
+   [clojure.lang.Compiler analyzeSeq "Compiler.java" 7618]
+   [clojure.lang.Compiler analyze "Compiler.java" 7321]
+   [clojure.lang.Compiler access$200 "Compiler.java" 43]
+   [clojure.lang.Compiler$DefExpr$Parser parse "Compiler.java" 589]
+   [clojure.lang.Compiler analyzeSeq "Compiler.java" 7630]
+   [clojure.lang.Compiler analyze "Compiler.java" 7321]
+   [clojure.lang.Compiler analyze "Compiler.java" 7277]
+   [clojure.lang.Compiler eval "Compiler.java" 7704]
+   [clojure.lang.Compiler load "Compiler.java" 8165]
+   [clojure.lang.RT loadResourceScript "RT.java" 401]
+   [clojure.lang.RT loadResourceScript "RT.java" 392]
+   [clojure.lang.RT load "RT.java" 479]
+   [clojure.lang.RT load "RT.java" 444]
+   [clojure.core$load$fn__6931 invoke "core.clj" 6189]
+   [clojure.core$load invokeStatic "core.clj" 6188]
+   [clojure.core$load doInvoke "core.clj" 6172]
+   [clojure.lang.RestFn invoke "RestFn.java" 411]
+   [clojure.core$load_one invokeStatic "core.clj" 5961]
+   [clojure.core$load_one invoke "core.clj" 5956]
+   [clojure.core$load_lib$fn__6873 invoke "core.clj" 6003]
+   [clojure.core$load_lib invokeStatic "core.clj" 6002]
+   [clojure.core$load_lib doInvoke "core.clj" 5981]
+   [clojure.lang.RestFn applyTo "RestFn.java" 145]
+   [clojure.core$apply invokeStatic "core.clj" 669]
+   [clojure.core$load_libs invokeStatic "core.clj" 6044]
+   [clojure.core$load_libs doInvoke "core.clj" 6028]
+   [clojure.lang.RestFn applyTo "RestFn.java" 140]
+   [clojure.core$apply invokeStatic "core.clj" 669]
+   [clojure.core$require invokeStatic "core.clj" 6066]
+   [clojure.core$require doInvoke "core.clj" 6066]
+   [clojure.lang.RestFn invoke "RestFn.java" 515]
+   [eve.db.ds.db_test$eval158$loading__6812__auto____159
+    invoke
+    "db_test.cljc"
+    1]
+   [eve.db.ds.db_test$eval158 invokeStatic "db_test.cljc" 1]
+   [eve.db.ds.db_test$eval158 invoke "db_test.cljc" 1]
+   [clojure.lang.Compiler eval "Compiler.java" 7700]
+   [clojure.lang.Compiler eval "Compiler.java" 7689]
+   [clojure.lang.Compiler load "Compiler.java" 8165]
+   [clojure.lang.RT loadResourceScript "RT.java" 401]
+   [clojure.lang.RT loadResourceScript "RT.java" 392]
+   [clojure.lang.RT load "RT.java" 479]
+   [clojure.lang.RT load "RT.java" 444]
+   [clojure.core$load$fn__6931 invoke "core.clj" 6189]
+   [clojure.core$load invokeStatic "core.clj" 6188]
+   [clojure.core$load doInvoke "core.clj" 6172]
+   [clojure.lang.RestFn invoke "RestFn.java" 411]
+   [clojure.core$load_one invokeStatic "core.clj" 5961]
+   [clojure.core$load_one invoke "core.clj" 5956]
+   [clojure.core$load_lib$fn__6873 invoke "core.clj" 6003]
+   [clojure.core$load_lib invokeStatic "core.clj" 6002]
+   [clojure.core$load_lib doInvoke "core.clj" 5981]
+   [clojure.lang.RestFn applyTo "RestFn.java" 145]
+   [clojure.core$apply invokeStatic "core.clj" 669]
+   [clojure.core$load_libs invokeStatic "core.clj" 6044]
+   [clojure.core$load_libs doInvoke "core.clj" 6028]
+   [clojure.lang.RestFn applyTo "RestFn.java" 140]
+   [clojure.core$apply invokeStatic "core.clj" 669]
+   [clojure.core$require invokeStatic "core.clj" 6066]
+   [clojure.core$require doInvoke "core.clj" 6066]
+   [clojure.lang.RestFn invoke "RestFn.java" 411]
+   [eve.db.ds.u2_runner$_main invokeStatic "u2_runner.clj" 13]
+   [eve.db.ds.u2_runner$_main doInvoke "u2_runner.clj" 8]
+   [clojure.lang.RestFn invoke "RestFn.java" 400]
+   [clojure.lang.AFn applyToHelper "AFn.java" 152]
+   [clojure.lang.RestFn applyTo "RestFn.java" 135]
+   [clojure.lang.Var applyTo "Var.java" 707]
+   [clojure.core$apply invokeStatic "core.clj" 667]
+   [clojure.main$main_opt invokeStatic "main.clj" 515]
+   [clojure.main$main_opt invoke "main.clj" 511]
+   [clojure.main$main invokeStatic "main.clj" 665]
+   [clojure.main$main doInvoke "main.clj" 617]
+   [clojure.lang.RestFn applyTo "RestFn.java" 140]
+   [clojure.lang.Var applyTo "Var.java" 707]
+   [clojure.main main "main.java" 40]],
+  :cause "Unable to resolve classname: number",
+  :phase :compile-syntax-check}}
+

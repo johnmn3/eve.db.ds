@@ -1,5 +1,5 @@
 (ns eve.db.ds.core
-    (:refer-clojure :exclude [filter])
+    (:refer-clojure :exclude [filter future-call])
     (:require
      #_{:clj-kondo/ignore [:unused-namespace]} [#?(:cljs cljs.reader :clj clojure.edn) :as edn]
      [eve.alpha :as eve]
@@ -103,9 +103,9 @@
              If entity does not exist, returns `nil`."}
  entid (fn [db eid] (db/entid (resolve-db-arg db) eid)))
 
-(defn ^DB entity-db
+(defn entity-db
       "Returns a db that entity was created from."
-      [^Entity entity]
+      ^DB [^Entity entity]
       {:pre [(de/entity? entity)]}
       (.-db entity))
 
@@ -367,14 +367,14 @@
      - `:avet` only contains datoms for references, `:db/unique` and `:db/index` attributes."
       ([db index]             {:pre [(some? db)]} (deliver-datoms (db/-datoms (resolve-db-arg db) index nil nil nil nil)))
       ([db index c0]          {:pre [(some? db)]} (deliver-datoms (db/-datoms (resolve-db-arg db) index c0  nil nil nil)))
-      ([db index c0 c1]       {:pre [(some? db)]} (deliver-datoms (db/-datoms (resolve-db-arg db) index c0  c1  nil nil)))
-      ([db index c0 c1 c2]    {:pre [(some? db)]} (deliver-datoms (db/-datoms (resolve-db-arg db) index c0  c1  c2  nil)))
-      ([db index c0 c1 c2 c3] {:pre [(some? db)]} (deliver-datoms (db/-datoms (resolve-db-arg db) index c0  c1  c2  c3))))
+      (^Datom [db index c0 c1]       {:pre [(some? db)]} (deliver-datoms (db/-datoms (resolve-db-arg db) index c0  c1  nil nil)))
+      (^Datom [db index c0 c1 c2]    {:pre [(some? db)]} (deliver-datoms (db/-datoms (resolve-db-arg db) index c0  c1  c2  nil)))
+      (^Datom [db index c0 c1 c2 c3] {:pre [(some? db)]} (deliver-datoms (db/-datoms (resolve-db-arg db) index c0  c1  c2  c3))))
 
-(defn ^Datom find-datom
+(defn find-datom
       "Same as [[datoms]], but only returns single datom. Faster than `(first (datoms ...))`"
-      ([db index]             {:pre [(some? db)]} (deliver-datom (db/find-datom (resolve-db-arg db) index nil nil nil nil)))
-      ([db index c0]          {:pre [(some? db)]} (deliver-datom (db/find-datom (resolve-db-arg db) index c0  nil nil nil)))
+      (^Datom [db index]             {:pre [(some? db)]} (deliver-datom (db/find-datom (resolve-db-arg db) index nil nil nil nil)))
+      (^Datom [db index c0]          {:pre [(some? db)]} (deliver-datom (db/find-datom (resolve-db-arg db) index c0  nil nil nil)))
       ([db index c0 c1]       {:pre [(some? db)]} (deliver-datom (db/find-datom (resolve-db-arg db) index c0  c1  nil nil)))
       ([db index c0 c1 c2]    {:pre [(some? db)]} (deliver-datom (db/find-datom (resolve-db-arg db) index c0  c1  c2  nil)))
       ([db index c0 c1 c2 c3] {:pre [(some? db)]} (deliver-datom (db/find-datom (resolve-db-arg db) index c0  c1  c2  c3))))
@@ -648,11 +648,11 @@
       [_db tempids tempid]
       (get tempids tempid))
 
-(defn ^DB db
+(defn db
       "Returns the underlying immutable database value from a connection.
    
    Exists for Datomic API compatibility. Prefer using `@conn` directly if possible."
-      [conn]
+      ^DB [conn]
       {:pre [(conn? conn)]}
       @conn)
 

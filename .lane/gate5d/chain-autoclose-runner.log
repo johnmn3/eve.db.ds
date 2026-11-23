@@ -1,0 +1,13 @@
+Reflection warning, eve/db/ds/db.cljc:372:29 - reference to field e can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:372:37 - reference to field a can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:372:45 - reference to field v can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:1287:16 - call to method write can't be resolved (target class is unknown).
+Reflection warning, eve/db/ds/db.cljc:1289:38 - reference to field schema can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:1289:61 - reference to field max_eid can't be resolved.
+Reflection warning, eve/db/ds/db.cljc:1289:84 - reference to field max_tx can't be resolved.
+
+Testing eve.db.ds.test.chain-autoclose
+
+Ran 5 tests containing 36 assertions.
+0 failures, 0 errors.
+CHAIN-AUTOCLOSE SUMMARY: {:test 5, :pass 36, :fail 0, :error 0}

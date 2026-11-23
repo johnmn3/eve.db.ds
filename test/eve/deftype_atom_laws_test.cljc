@@ -25,6 +25,7 @@
      clojure -M:laws -e \"(require 'eve.deftype-atom-laws-test)
                          (clojure.test/run-tests 'eve.deftype-atom-laws-test)\"
    Row results are recorded in docs/LAWS-RESULTS.md."
+    (:refer-clojure :exclude [->Box Box])
     (:require [clojure.test :as t :refer [deftest is]]
               [eve.alpha :as eve :refer [$]]))
 

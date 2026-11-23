@@ -30,6 +30,7 @@
    (it is an immutable Eve value, not a delivered sister) — measured,
    u3-logs/probe1.log P2/P4. Datoms are delivered through a region so
    they arrive in their flat delivery form (probe1 P3)."
+    (:refer-clojure :exclude [filter])
     #?(:cljs (:require-macros [eve.db.ds.util :as util]))
     (:require
      [eve.alpha :as eve :refer [$]]

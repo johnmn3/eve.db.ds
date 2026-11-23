@@ -27,6 +27,10 @@
  ;; inside `is` forms). Symbol-exact: any other unresolved symbol
  ;; still errors.
  :linters {:unresolved-symbol {:exclude [thrown-msg?]}}
+ ;; redefined-var is NOT excluded here — kondo 2026.10.26 does
+ ;; not honor :exclude for that linter (measured). The 21
+ ;; cljs-stub-idiom sites in eve.db.ds.db carry per-site ignores
+ ;; with reasons instead.
  ;; ── this repo's own defining macros, taught by analyze-call hooks
  ;; (.clj-kondo/hooks/eve_db_ds.cljc): parser/deftrecord (record
  ;; types), db/defcomp (comparators), util/cond+ and util/if+

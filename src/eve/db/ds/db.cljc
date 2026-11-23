@@ -11,7 +11,7 @@
     #?(:clj (:import clojure.lang.IFn$OOL))
     #?(:cljs (:require-macros [eve.db.ds.db :refer [case-tree combine-cmp defn+ defcomp defrecord-updatable int-compare validate-attr validate-val]]
                               [eve.db.ds.util :as util]))
-    (:refer-clojure :exclude [seqable? #?(:clj update)]))
+    (:refer-clojure :exclude [seqable? array? #?(:clj update)]))
 
 #?(:clj (set! *warn-on-reflection* true))
 
@@ -47,9 +47,8 @@
        #?(:clj  (and (some? x) (.isArray (class x)))
           :cljs (js/Array.isArray x)))
 
-(defn #?@(:clj  [^Boolean seqable?]
-          :cljs [^boolean seqable?])
-      [x]
+(defn #?@(:clj  [seqable? ^Boolean [x]]
+          :cljs [seqable? ^boolean [x]])
       (and (not (string? x))
            #?(:cljs (or (cljs.core/seqable? x)
                         (array? x))
@@ -279,11 +278,14 @@
 
 #?(:cljs (goog/exportSymbol "eve.db.ds.db.Datom" Datom))
 
-(defn ^Datom datom
-      ([e a v] (->Datom e a v tx0))
-      ([e a v tx] (->Datom e a v tx))
-      ([e a v tx added] (->Datom e a v (if added tx (- tx)))))
+(defn datom
+      (^Datom [e a v] (->Datom e a v tx0))
+      (^Datom [e a v tx] (->Datom e a v tx))
+      (^Datom [e a v tx added] (->Datom e a v (if added tx (- tx)))))
 
+;; cljs-stub idiom: the empty #?(:cljs defn) stub above is
+;; deliberate; this is the real definition (see config header).
+#_{:clj-kondo/ignore [:redefined-var]}
 (defn datom? [x] (Datom? x))
 
 ;; The Datom helpers below are deliberately UNHINTED (the baseline
@@ -292,19 +294,31 @@
 ;; the comparand can both be sister values, and a ^Datom hint makes
 ;; the field reads cast them to the slab class and throw
 ;; ClassCastException. Field reads work on both forms.
+;; cljs-stub idiom: the empty #?(:cljs defn) stub above is
+;; deliberate; this is the real definition (see config header).
+#_{:clj-kondo/ignore [:redefined-var]}
 (defn+ ^:private hash-datom [d]
        (-> (hash (:e d))
            (combine-hashes (hash (:a d)))
            (combine-hashes (hash (:v d)))))
 
+;; cljs-stub idiom: the empty #?(:cljs defn) stub above is
+;; deliberate; this is the real definition (see config header).
+#_{:clj-kondo/ignore [:redefined-var]}
 (defn+ ^:private equiv-datom [d o]
        (and (== (:e d) (:e o))
             (= (:a d) (:a o))
             (= (:v d) (:v o))))
 
+;; cljs-stub idiom: the empty #?(:cljs defn) stub above is
+;; deliberate; this is the real definition (see config header).
+#_{:clj-kondo/ignore [:redefined-var]}
 (defn+ ^:private seq-datom [d]
        (list (:e d) (:a d) (:v d) (datom-tx d) (datom-added d)))
 
+;; cljs-stub idiom: the empty #?(:cljs defn) stub above is
+;; deliberate; this is the real definition (see config header).
+#_{:clj-kondo/ignore [:redefined-var]}
 (defn+ ^:private nth-datom
        ([d ^long i]
         (case i
@@ -324,7 +338,10 @@
               4 (datom-added d)
               not-found)))
 
-(defn+ ^:private ^Datom assoc-datom [d k v]
+;; cljs-stub idiom: the empty #?(:cljs defn) stub above is
+;; deliberate; this is the real definition (see config header).
+#_{:clj-kondo/ignore [:redefined-var]}
+(defn+ ^:private assoc-datom ^Datom [d k v]
        (case k
              :e     (datom v       (:a d) (:v d) (datom-tx d) (datom-added d))
              :a     (datom (:e d) v       (:v d) (datom-tx d) (datom-added d))
@@ -336,7 +353,7 @@
 ;; printing and reading
 ;; #datomic/DB {:schema <map>, :datoms <vector of [e a v tx]>}
 
-(defn ^Datom datom-from-reader [vec]
+(defn datom-from-reader ^Datom [vec]
       (apply datom vec))
 
 #?(:clj
@@ -461,6 +478,12 @@
                                       (recur (next xs) (next ys))
                                       v)))))))))
 
+;; cljs-stub idiom: the empty #?(:cljs defn) stub above is
+;; deliberate; this is the real definition (see config header).
+;; defn+ name hint is load-bearing: patch-tag translates the
+;; lowercase tag per pass; on the arg vector it bypasses
+;; patch-tag and CLJ compilation fails (measured, gate5c).
+#_{:clj-kondo/ignore [:redefined-var :non-arg-vec-return-type-hint]}
 (defn+ ^number value-compare [x y]
        (try
         (cond
@@ -682,7 +705,7 @@
 (defprotocol ISearch
              (-search [data pattern]))
 
-(defn- ^Datom fsearch [data pattern]
+(defn- fsearch ^Datom [data pattern]
        (first (-search data pattern)))
 
 (defprotocol IIndexAccess
@@ -866,6 +889,9 @@
                            (diff-sorted (set/slice (:eavt a) nil nil cmp-datoms-eavt)
                                         (set/slice (:eavt b) nil nil cmp-datoms-eavt) cmp-datoms-eav-quick)))
 
+;; cljs-stub idiom: the empty #?(:cljs defn) stub above is
+;; deliberate; this is the real definition (see config header).
+#_{:clj-kondo/ignore [:redefined-var]}
 (defn+ ^:private assoc-db [db k v]
        (case k
              :schema  (->DB v (:eavt db) (:aevt db) (:avet db) (:max-eid db) (:max-tx db) (:rschema db))
@@ -1096,7 +1122,7 @@
                                                 :attribute a
                                                 :key :db/tupleType}))))))
 
-(defn ^DB empty-db [schema opts]
+(defn empty-db ^DB [schema opts]
       {:pre [(or (nil? schema) (map? schema))]}
       (validate-schema schema)
       (->DB schema
@@ -1130,7 +1156,7 @@
                       res refs)]
             res))
 
-(defn ^DB init-db [datoms schema opts]
+(defn init-db ^DB [datoms schema opts]
       (when-some [not-datom (first (drop-while datom? datoms))]
                  (util/raise "init-db expects list of Datoms, got " (type not-datom)
                              {:error :init-db}))
@@ -1152,7 +1178,10 @@
             max-tx      (transduce (map (fn [^Datom d] (datom-tx d))) max tx0 (set/slice eavt nil nil cmp-datoms-eavt))]
            (->DB schema eavt aevt avet max-eid max-tx rschema)))
 
-(defn+ ^DB restore-db [{:keys [schema eavt aevt avet max-eid max-tx] :as keys}]
+;; cljs-stub idiom: the empty #?(:cljs defn) stub above is
+;; deliberate; this is the real definition (see config header).
+#_{:clj-kondo/ignore [:redefined-var]}
+(defn+ restore-db ^DB [{:keys [schema eavt aevt avet max-eid max-tx] :as keys}]
        (->DB schema
              eavt
              aevt
@@ -1176,6 +1205,12 @@
               (= (first xs) (first ys)) (recur (next xs) (next ys))
               :else false)))
 
+;; cljs-stub idiom: the empty #?(:cljs defn) stub above is
+;; deliberate; this is the real definition (see config header).
+;; defn+ name hint is load-bearing: patch-tag translates the
+;; lowercase tag per pass; on the arg vector it bypasses
+;; patch-tag and CLJ compilation fails (measured, gate5c).
+#_{:clj-kondo/ignore [:redefined-var :non-arg-vec-return-type-hint]}
 (defn+ ^:private ^number hash-db [^DB db]
   ;; No cache: the baseline's mutable hash atom is gone with the type
   ;; swap (§3), so the hash is recomputed from the schema and the ordered
@@ -1194,16 +1229,31 @@
            (catch #?(:clj Throwable :cljs :default) _
                   (#?(:clj System/identityHashCode :cljs goog/getUid) db))))
 
+;; cljs-stub idiom: the empty #?(:cljs defn) stub above is
+;; deliberate; this is the real definition (see config header).
+;; defn+ name hint is load-bearing: patch-tag translates the
+;; lowercase tag per pass; on the arg vector it bypasses
+;; patch-tag and CLJ compilation fails (measured, gate5c).
+#_{:clj-kondo/ignore [:redefined-var :non-arg-vec-return-type-hint]}
 (defn+ ^:private ^number hash-fdb [^FilteredDB db]
        (combine-hashes (hash (-schema db))
                        (hash (vec (-datoms db :eavt nil nil nil nil)))))
 
+;; cljs-stub idiom: the empty #?(:cljs defn) stub above is
+;; deliberate; this is the real definition (see config header).
+;; defn+ name hint is load-bearing: patch-tag translates the
+;; lowercase tag per pass; on the arg vector it bypasses
+;; patch-tag and CLJ compilation fails (measured, gate5c).
+#_{:clj-kondo/ignore [:redefined-var :non-arg-vec-return-type-hint]}
 (defn+ ^:private ^boolean equiv-db [db other]
        (and (or (DB? other) (FilteredDB? other))
             (= (-schema db) (-schema other))
             (equiv-db-index (-datoms db :eavt nil nil nil nil) (-datoms other :eavt nil nil nil nil))))
 
 #?(:cljs
+   ;; cljs-stub idiom: the empty #?(:cljs defn) stub above is
+   ;; deliberate; this is the real definition (see config header).
+   #_{:clj-kondo/ignore [:redefined-var]}
    (defn+ pr-db [db w opts]
           (-write w "#eve.db.ds/DB {")
           (-write w ":schema ")
@@ -1255,6 +1305,9 @@
 #?(:clj  (declare resolve-tuple-refs)
    :cljs (defn resolve-tuple-refs [db a vs context]))
 
+;; cljs-stub idiom: the empty #?(:cljs defn) stub above is
+;; deliberate; this is the real definition (see config header).
+#_{:clj-kondo/ignore [:redefined-var]}
 (defn+ resolve-datom [db e a v t default-e default-tx]
        (when (some? a)
              (validate-attr a (list 'resolve-datom 'db e a v t)))
@@ -1268,6 +1321,9 @@
          :else         v)
         (if (some? t) (entid-strict db t) default-tx)))
 
+;; cljs-stub idiom: the empty #?(:cljs defn) stub above is
+;; deliberate; this is the real definition (see config header).
+#_{:clj-kondo/ignore [:redefined-var]}
 (defn+ components->pattern [db index c0 c1 c2 c3 default-e default-tx]
        (case index
              :eavt (resolve-datom db c0 c1 c2 c3 default-e default-tx)
@@ -1288,12 +1344,24 @@
 
 (defrecord TxReport [db-before db-after tx-data tempids tx-meta])
 
+;; defn+ name hint is load-bearing: patch-tag translates the
+;; lowercase tag per pass; on the arg vector it bypasses
+;; patch-tag and CLJ compilation fails (measured, gate5c).
+#_{:clj-kondo/ignore [:non-arg-vec-return-type-hint]}
 (defn+ ^boolean is-attr? [db attr property]
        (contains? (-attrs-by db property) attr))
 
+;; defn+ name hint is load-bearing: patch-tag translates the
+;; lowercase tag per pass; on the arg vector it bypasses
+;; patch-tag and CLJ compilation fails (measured, gate5c).
+#_{:clj-kondo/ignore [:non-arg-vec-return-type-hint]}
 (defn+ ^boolean multival? [db attr]
        (is-attr? db attr :db.cardinality/many))
 
+;; defn+ name hint is load-bearing: patch-tag translates the
+;; lowercase tag per pass; on the arg vector it bypasses
+;; patch-tag and CLJ compilation fails (measured, gate5c).
+#_{:clj-kondo/ignore [:non-arg-vec-return-type-hint]}
 (defn+ ^boolean multi-value? [db attr value]
        (and
         (is-attr? db attr :db.cardinality/many)
@@ -1301,24 +1369,58 @@
          (array? value)
          (and (coll? value) (not (map? value))))))
 
+;; cljs-stub idiom: the empty #?(:cljs defn) stub above is
+;; deliberate; this is the real definition (see config header).
+;; defn+ name hint is load-bearing: patch-tag translates the
+;; lowercase tag per pass; on the arg vector it bypasses
+;; patch-tag and CLJ compilation fails (measured, gate5c).
+#_{:clj-kondo/ignore [:redefined-var :non-arg-vec-return-type-hint]}
 (defn+ ^boolean ref? [db attr]
        (is-attr? db attr :db.type/ref))
 
+;; defn+ name hint is load-bearing: patch-tag translates the
+;; lowercase tag per pass; on the arg vector it bypasses
+;; patch-tag and CLJ compilation fails (measured, gate5c).
+#_{:clj-kondo/ignore [:non-arg-vec-return-type-hint]}
 (defn+ ^boolean component? [db attr]
        (is-attr? db attr :db/isComponent))
 
+;; cljs-stub idiom: the empty #?(:cljs defn) stub above is
+;; deliberate; this is the real definition (see config header).
+;; defn+ name hint is load-bearing: patch-tag translates the
+;; lowercase tag per pass; on the arg vector it bypasses
+;; patch-tag and CLJ compilation fails (measured, gate5c).
+#_{:clj-kondo/ignore [:redefined-var :non-arg-vec-return-type-hint]}
 (defn+ ^boolean indexing? [db attr]
        (is-attr? db attr :db/index))
 
+;; cljs-stub idiom: the empty #?(:cljs defn) stub above is
+;; deliberate; this is the real definition (see config header).
+;; defn+ name hint is load-bearing: patch-tag translates the
+;; lowercase tag per pass; on the arg vector it bypasses
+;; patch-tag and CLJ compilation fails (measured, gate5c).
+#_{:clj-kondo/ignore [:redefined-var :non-arg-vec-return-type-hint]}
 (defn+ ^boolean tuple? [db attr]
        (is-attr? db attr :db.type/tuple))
 
+;; defn+ name hint is load-bearing: patch-tag translates the
+;; lowercase tag per pass; on the arg vector it bypasses
+;; patch-tag and CLJ compilation fails (measured, gate5c).
+#_{:clj-kondo/ignore [:non-arg-vec-return-type-hint]}
 (defn+ ^boolean tuple-source? [db attr]
        (is-attr? db attr :db/attrTuples))
 
+;; defn+ name hint is load-bearing: patch-tag translates the
+;; lowercase tag per pass; on the arg vector it bypasses
+;; patch-tag and CLJ compilation fails (measured, gate5c).
+#_{:clj-kondo/ignore [:non-arg-vec-return-type-hint]}
 (defn+ ^boolean composite-tuple? [db attr]
        (is-attr? db attr :db/tupleAttrs))
 
+;; defn+ name hint is load-bearing: patch-tag translates the
+;; lowercase tag per pass; on the arg vector it bypasses
+;; patch-tag and CLJ compilation fails (measured, gate5c).
+#_{:clj-kondo/ignore [:non-arg-vec-return-type-hint]}
 (defn+ ^boolean reverse-ref? [attr]
        (cond
         (keyword? attr)
@@ -1365,21 +1467,22 @@
                               (util/raise "Attribute " a " expected a vector, got: " v " in " context
                                           {:error :transact/syntax, :attribute a, :value v, :context context}))))))
 
-(defn- #?@(:clj  [^Boolean tuple-ref-slot?]
-           :cljs [^boolean tuple-ref-slot?])
-       [db schema-a idx]
+(defn- #?@(:clj  [tuple-ref-slot? ^Boolean [db schema-a idx]]
+           :cljs [tuple-ref-slot? ^boolean [db schema-a idx]])
        (cond
         (:db/tupleAttrs schema-a) (ref? db (nth (:db/tupleAttrs schema-a) idx nil))
         (:db/tupleTypes schema-a) (= :db.type/ref (nth (:db/tupleTypes schema-a) idx nil))
         :else                     (= :db.type/ref (:db/tupleType schema-a))))
 
-(defn- #?@(:clj  [^Boolean resolved-eid?]
-           :cljs [^boolean resolved-eid?])
-       [x]
+(defn- #?@(:clj  [resolved-eid? ^Boolean [x]]
+           :cljs [resolved-eid? ^boolean [x]])
        (or
         (nil? x)
         (and (number? x) (not (neg? x)))))
 
+;; cljs-stub idiom: the empty #?(:cljs defn) stub above is
+;; deliberate; this is the real definition (see config header).
+#_{:clj-kondo/ignore [:redefined-var]}
 (defn+ resolve-tuple-refs
        "Resolves lookup refs and idents in ref slots of a tuple value.
    Read path: no tempids, unresolved refs raise"
@@ -1398,6 +1501,10 @@
                                    v)))
                           vs))))
 
+;; defn+ name hint is load-bearing: patch-tag translates the
+;; lowercase tag per pass; on the arg vector it bypasses
+;; patch-tag and CLJ compilation fails (measured, gate5c).
+#_{:clj-kondo/ignore [:non-arg-vec-return-type-hint]}
 (defn+ ^number entid [db eid]
        {:pre [(db? db)]}
        (cond
@@ -1436,9 +1543,19 @@
         (util/raise "Expected number or lookup ref for entity id, got " eid
                     {:error :entity-id/syntax, :entity-id eid})))
 
+;; defn+ name hint is load-bearing: patch-tag translates the
+;; lowercase tag per pass; on the arg vector it bypasses
+;; patch-tag and CLJ compilation fails (measured, gate5c).
+#_{:clj-kondo/ignore [:non-arg-vec-return-type-hint]}
 (defn+ ^boolean numeric-eid-exists? [db eid]
        (= eid (-> (-seek-datoms db :eavt eid nil nil nil) first :e)))
 
+;; cljs-stub idiom: the empty #?(:cljs defn) stub above is
+;; deliberate; this is the real definition (see config header).
+;; defn+ name hint is load-bearing: patch-tag translates the
+;; lowercase tag per pass; on the arg vector it bypasses
+;; patch-tag and CLJ compilation fails (measured, gate5c).
+#_{:clj-kondo/ignore [:redefined-var :non-arg-vec-return-type-hint]}
 (defn+ ^number entid-strict [db eid]
        (or
         (entid db eid)
@@ -1446,6 +1563,10 @@
                     {:error :entity-id/missing
                      :entity-id eid})))
 
+;; defn+ name hint is load-bearing: patch-tag translates the
+;; lowercase tag per pass; on the arg vector it bypasses
+;; patch-tag and CLJ compilation fails (measured, gate5c).
+#_{:clj-kondo/ignore [:non-arg-vec-return-type-hint]}
 (defn+ ^number entid-some [db eid]
        (when (some? eid)
              (entid-strict db eid)))
@@ -1474,6 +1595,10 @@
 (defn auto-tempid []
       (AutoTempid. (swap! *last-auto-tempid inc)))
 
+;; defn+ name hint is load-bearing: patch-tag translates the
+;; lowercase tag per pass; on the arg vector it bypasses
+;; patch-tag and CLJ compilation fails (measured, gate5c).
+#_{:clj-kondo/ignore [:non-arg-vec-return-type-hint]}
 (defn+ ^boolean auto-tempid? [x]
        (instance? AutoTempid x))
 
@@ -1538,8 +1663,8 @@
        (inc (long (:max-eid db))))
 
 #?(:clj
-   (defn- ^Boolean tx-id?
-          [e]
+   (defn- tx-id?
+          ^Boolean [e]
           (or (identical? :db/current-tx e)
               (.equals ":db/current-tx" e) ;; for eve.db.ds.js interop
               (.equals "datomic.tx" e)
@@ -1553,9 +1678,8 @@
               (= e "datomic.tx")
               (= e "eve.db.ds.tx"))))
 
-(defn- #?@(:clj  [^Boolean tempid?]
-           :cljs [^boolean tempid?])
-       [x]
+(defn- #?@(:clj  [tempid? ^Boolean [x]]
+           :cljs [tempid? ^boolean [x]])
        (or
         (and (number? x) (neg? x))
         (string? x)
@@ -1678,9 +1802,8 @@
                      (update report' ::queued-tuples assoc e queue'))
                 report')))
 
-(defn- #?@(:clj  [^Boolean tuple-has-tempids?]
-           :cljs [^boolean tuple-has-tempids?])
-       [db a vs]
+(defn- #?@(:clj  [tuple-has-tempids? ^Boolean [db a vs]]
+           :cljs [tuple-has-tempids? ^boolean [db a vs]])
        (and
         (sequential? vs)
         (let [schema-a (-> db -schema (get a))]
@@ -1923,6 +2046,9 @@
                                    {:error :transact/syntax, :tempids unused})))
               (dissoc report ::value-tempids ::tx-redundant)))
 
+;; cljs-stub idiom: the empty #?(:cljs defn) stub above is
+;; deliberate; this is the real definition (see config header).
+#_{:clj-kondo/ignore [:redefined-var]}
 (defn+ transact-tx-data-impl [initial-report initial-es]
        (let [initial-report' initial-report
              has-tuples?     (not (empty? (-attrs-by (:db-after initial-report) :db/attrTuples)))
