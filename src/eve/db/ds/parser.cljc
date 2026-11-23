@@ -11,7 +11,10 @@
   (-collect      [_ pred acc])
   (-collect-vars [_ acc])
   (-postwalk     [_ f]))
-(defmacro deftrecord
+
+#?(:cljs nil
+   :default
+   (defmacro deftrecord
      "Augment all eve.db.ds.parser/ records with default implementation of ITraversable"
      [tagname fields & rest]
      (let [f    (gensym "f")
@@ -49,7 +52,7 @@
          `(do ~record-form
               (def ~tagname
                 (type (~(symbol (str "->" (name tagname))) ~@(map (constantly nil) fields)))))
-         record-form)))
+         record-form))))
 (defn of-size? [form size]
   (and (sequential? form)
     (= (count form) size)))

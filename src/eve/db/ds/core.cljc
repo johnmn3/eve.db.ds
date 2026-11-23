@@ -639,6 +639,9 @@
 #?(:clj
    (defn- future-call [f]
      (future (f)))
+   :default
+   (defn- future-call [f]
+     (future (f)))
    :cljs
    (defn- future-call [f]
      (let [res      (atom nil)
@@ -725,7 +728,10 @@
          (list 'def vname (list* 'fn params body))
          (list 'eve.db.ds.db-fn/register-fn! (list 'quote fq-sym) vname)
          (list 'eve.db.ds.db-fn/resolve-fn (list 'quote fq-sym))))))
-(defmacro sci-fn
+
+#?(:cljs nil
+   :default
+   (defmacro sci-fn
      "Builds a stored transaction function as DATA, the SCI kind —
       the explicit opt-in (the default is a host fn; see
       [[db-fn]]). The fn body is sourcified at macro time into a
@@ -747,7 +753,7 @@
      [params & body]
      (list 'eve.db.ds.db-fn/sci-fn
        (list 'quote params)
-       (apply str (interpose "\n" (map pr-str body)))))
+       (apply str (interpose "\n" (map pr-str body))))))
 (def ^{:arglists '([sym])
        :doc "Builds a stored transaction function that resolves a
              host fn by name at transact time:

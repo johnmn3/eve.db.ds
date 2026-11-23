@@ -1,29 +1,41 @@
 (ns eve.db.ds.util
   (:refer-clojure :exclude [find])
-  #?(:clj
-     (:import
-       [java.util UUID])))
+  (:require [eve.uuid :as euuid]))
+
 (def ^:dynamic *debug*
   false)
-#?(:clj
+
+;; The macro family below is spelled once, under :default: every
+;; reader that is not compiling the cljs runtime face selects it —
+;; :clj readers (JVM, jank, glojure, bb) by falling through to
+;; :default, and hosts whose feature set carries neither :clj nor
+;; :cljs (let-go: #{:lg} + :default) the same way. Under a bare
+;; #?(:clj ...) the macros never existed on let-go and every
+;; consumer failed at its first macro call (Can't resolve
+;; util/raise). cljs consumers pull the macros via :require-macros,
+;; whose macro-side load reads this file with :clj features and so
+;; selects :default as well; the cljs runtime face selects nil.
+#?(:cljs nil
+   :default
    (defmacro log [& body]
      (when (System/getProperty "eve.db.ds.debug")
        `(when *debug*
           (println ~@body)))))
-#?(:cljs
-   (defmacro log [& body]
-     `(when *debug*
-        (println ~@body))))
-;; (ungated: the macro belt is portable syntax machinery;
-;;  interpreted seats read no :clj arm, so the gate hid it from them)
-(defmacro raise [& fragments]
+
+#?(:cljs nil
+   :default
+   (defmacro raise [& fragments]
      (let [msgs (butlast fragments)
            data (last fragments)]
-       `(throw (ex-info (str ~@(map (fn [m#] (if (string? m#) m# (list 'pr-str m#))) msgs)) ~data))))
-(def ^:private ^:dynamic *if+-syms)
-;; (ungated: the macro belt is portable syntax machinery;
-;;  interpreted seats read no :clj arm, so the gate hid it from them)
-(defn- if+-rewrite-cond-impl [cond]
+       `(throw (ex-info (str ~@(map (fn [m#] (if (string? m#) m# (list 'pr-str m#))) msgs)) ~data)))))
+
+#?(:cljs nil
+   :default
+   (def ^:private ^:dynamic *if+-syms))
+
+#?(:cljs nil
+   :default
+   (defn- if+-rewrite-cond-impl [cond]
      (clojure.core/cond
        (empty? cond)
        true
@@ -47,20 +59,23 @@
        :else
        (list 'and
          (first cond)
-         (if+-rewrite-cond-impl (next cond)))))
-;; (ungated: the macro belt is portable syntax machinery;
-;;  interpreted seats read no :clj arm, so the gate hid it from them)
-(defn- if+-rewrite-cond [cond]
+         (if+-rewrite-cond-impl (next cond))))))
+
+#?(:cljs nil
+   :default
+   (defn- if+-rewrite-cond [cond]
      (binding [*if+-syms (volatile! [])]
-       [(if+-rewrite-cond-impl cond) @*if+-syms]))
-;; (ungated: the macro belt is portable syntax machinery;
-;;  interpreted seats read no :clj arm, so the gate hid it from them)
-(defn- flatten-1 [xs]
+       [(if+-rewrite-cond-impl cond) @*if+-syms])))
+
+#?(:cljs nil
+   :default
+   (defn- flatten-1 [xs]
      (vec
-       (mapcat identity xs)))
-;; (ungated: the macro belt is portable syntax machinery;
-;;  interpreted seats read no :clj arm, so the gate hid it from them)
-(defmacro if+
+       (mapcat identity xs))))
+
+#?(:cljs nil
+   :default
+   (defmacro if+
      "Allows sharing local variables between condition and then clause.
       
       Use `:let [...]` form (not nested!) inside `and` condition and its bindings
@@ -95,66 +110,45 @@
                         [binding (list 'deref sym)]))
                 ~then)
               ~else)))
-       (list 'if cond then else)))
-;; (ungated: the macro belt is portable syntax machinery;
-;;  interpreted seats read no :clj arm, so the gate hid it from them)
-(defmacro cond+ [& clauses]
+       (list 'if cond then else))))
+
+#?(:cljs nil
+   :default
+   (defmacro cond+ [& clauses]
      (when-some [[test expr & rest] clauses]
        (case test
          :do   `(do ~expr (util/cond+ ~@rest))
          :let  `(let ~expr (util/cond+ ~@rest))
          :some `(or ~expr (util/cond+ ~@rest))
-         `(util/if+ ~test ~expr (util/cond+ ~@rest)))))
-;; (ungated: the macro belt is portable syntax machinery;
-;;  interpreted seats read no :clj arm, so the gate hid it from them)
-(defmacro some-of
+         `(util/if+ ~test ~expr (util/cond+ ~@rest))))))
+
+#?(:cljs nil
+   :default
+   (defmacro some-of
      ([] nil)
      ([x] x)
      ([x & more]
-      `(let [x# ~x] (if (nil? x#) (some-of ~@more) x#))))
-(defn- rand-bits [pow]
-  (rand-int (bit-shift-left 1 pow)))
-#?(:cljs
-   (defn- to-hex-string [n l]
-     (let [s (.toString n 16)
-           c (count s)]
-       (cond
-         (> c l) (subs s 0 l)
-         (< c l) (str (apply str (repeat (- l c) "0")) s)
-         :else   s))))
+      `(let [x# ~x] (if (nil? x#) (some-of ~@more) x#)))))
+
+;; squuid routes through Eve's portable eve.uuid: one construction
+;; on every host (semi-sequential v4 — high 32 bits are unsigned
+;; Unix seconds, the rest from a random v4). The old per-host arms
+;; named host-only spellings on both faces (java.util.UUID bit
+;; surgery on :clj; a bare (uuid <string>) — cljs.core/uuid — on
+;; :cljs), and hosts whose core is not cljs.core hold no uuid var
+;; (squint's SCI: "Unable to resolve symbol: uuid"). eve.uuid's
+;; squuid is the same construction (it documents DataScript's
+;; Clojure default as its model) and returns the host's native
+;; UUID on each seat.
 (defn squuid
-  ([]
-   (squuid #?(:clj  (System/currentTimeMillis)
-              :cljs (.getTime (js/Date.)))))
-  ([msec]
-   #?(:clj
-      (let [uuid     (UUID/randomUUID)
-            time     (int (/ msec 1000))
-            high     (.getMostSignificantBits uuid)
-            low      (.getLeastSignificantBits uuid)
-            new-high (bit-or (bit-and high 0x00000000FFFFFFFF)
-                       (bit-shift-left time 32))]
-        (UUID. new-high low))
-      :cljs
-      (uuid
-        (str
-          (-> (int (/ msec 1000))
-            (to-hex-string 8))
-          "-" (-> (rand-bits 16) (to-hex-string 4))
-          "-" (-> (rand-bits 16) (bit-and 0x0FFF) (bit-or 0x4000) (to-hex-string 4))
-          "-" (-> (rand-bits 16) (bit-and 0x3FFF) (bit-or 0x8000) (to-hex-string 4))
-          "-" (-> (rand-bits 16) (to-hex-string 4))
-          (-> (rand-bits 16) (to-hex-string 4))
-          (-> (rand-bits 16) (to-hex-string 4)))))))
+  ([] (euuid/squuid))
+  ([msec] (euuid/squuid msec)))
+
 (defn squuid-time-millis
   "Returns time that was used in [[squuid]] call, in milliseconds, rounded to the closest second."
   [uuid]
-  #?(:clj (-> (.getMostSignificantBits ^UUID uuid)
-            (bit-shift-right 32)
-            (* 1000))
-     :cljs (-> (subs (str uuid) 0 8)
-             (js/parseInt 16)
-             (* 1000))))
+  (euuid/squuid-time-millis uuid))
+
 (defn distinct-by [f coll]
   (->>
     (reduce
