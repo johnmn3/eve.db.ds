@@ -64,4 +64,3 @@ in PORTING-DS.md (Eve-surface adaptation / host-quirk workaround / NONE).
   `scripts/vendor_upstream_ds.sh --check` regenerates into a temp dir and
   diffs (exit 1 on any difference).
 - **Driver:** `contract.ds-suite` (test/drivers/contract/ds_suite.cljc).
-

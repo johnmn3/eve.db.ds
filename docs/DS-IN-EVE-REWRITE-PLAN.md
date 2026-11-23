@@ -1,10 +1,10 @@
 # eve.db.ds — DS in Eve: Ground-Up Rewrite Plan
 
 **Author:** ds-lanes seat (Toby), Nov 19 2026, on John's order of
-13:13 ET: *"We need a new impl plan written that rewrites eve.db.ds
+13:13 ET: _"We need a new impl plan written that rewrites eve.db.ds
 from the ground up to adhere to the original goals, which was ds in
 eve. Then, when we have an actual plan for ds in eve, we'll impl
-that, word for word."*
+that, word for word."_
 
 **Supersedes** `DS-EVE-ATOM-IMPL-PLAN.md` (the salvage plan: adopt
 the old lib, swap its conn, audit its calls). That plan's evidence —
@@ -73,7 +73,7 @@ forever as a value, queryable with `d/q` / `d/pull` directly.
 What it is not is a window into the atom. John's §7.1 ruling
 governs the other direction: **retention inside the atom is
 reachability inside the atom** — if the library (or a user) wants
-an old DB to survive *as the atom's own state*, the reference to
+an old DB to survive _as the atom's own state_, the reference to
 it must itself live in an Eve atom. The library stores no old DBs
 anywhere; tx-reports carry delivered copies. The README states
 this rule where users see it (already landed on the salvage

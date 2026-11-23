@@ -5,26 +5,26 @@ regressions. They still count as errors; none are hidden or made passes.
 Producer attribution is provisional where noted; no Eve defect is proven.
 No upstream assertion bodies changed. No further HashBeef retry was attempted.
 
-| Host | Namespace | Producer | Exact error / context |
-|---|---|---|---|
-| JVM | storage | eve.db.ds src | `Unable to resolve var: storage/tail-addr` (CompilerException at storage.clj:247:5) |
-| bb | query-v3 | eve.db.ds src | `Unable to resolve symbol: clojure.lang.ITransientAssociative` |
-| bb | serialize | test harness | `Could not locate jsonista/core.bb, jsonista/core.clj or jsonista/core.cljc on classpath.` |
-| bb | storage | eve.db.ds src | `Unable to resolve var: storage/tail-addr` |
-| basilisp | db | test harness | `error occurred during inlining`: CLJ/CLJS-only HashBeef declaration; missing map->HashBeef; exact exception below |
-| basilisp | parser | test harness | `error occurred during macroexpansion`: exception-type assertion imports/aliases lack :lpy wiring; exact exception below |
-| basilisp | parser-rules | test harness | `error occurred during macroexpansion`: exception-type assertion imports/aliases lack :lpy wiring; exact exception below |
-| basilisp | parser-where | test harness | `error occurred during macroexpansion`: exception-type assertion imports/aliases lack :lpy wiring; exact exception below |
-| basilisp | pull-api | test harness | `error occurred during macroexpansion`: clojure.edn/read-string dependency in upstream test; exact exception below |
-| basilisp | query | test harness | `error occurred during macroexpansion`: exception-type assertion imports/aliases lack :lpy wiring; exact exception below |
-| basilisp | query-fns | test harness | `error occurred during macroexpansion`: exception-type assertion imports/aliases lack :lpy wiring; exact exception below |
-| basilisp | query-or | test harness | `error occurred during macroexpansion`: exception-type assertion imports/aliases lack :lpy wiring; exact exception below |
-| basilisp | query-v3 | test harness | `error occurred during macroexpansion`: exception-type assertion imports/aliases lack :lpy wiring; exact exception below |
-| basilisp | serialize | test harness | `error occurred during macroexpansion`: exception-type assertion imports/aliases lack :lpy wiring; exact exception below |
-| basilisp | tuples | test harness | `error occurred during macroexpansion`: exception-type assertion imports/aliases lack :lpy wiring; exact exception below |
-| basilisp | validation | test harness | `error occurred during macroexpansion`: exception-type assertion imports/aliases lack :lpy wiring; exact exception below |
-| basilisp | upsert | test harness | `error occurred during macroexpansion`: exception-type assertion imports/aliases lack :lpy wiring; exact exception below |
-| basilisp | datafy | eve.db.ds src; Eve/type-translation boundary unconfirmed | `error occurred during macroexpansion`: datafy.cljc extends cp/Datafiable on Entity; exact exception below |
+| Host     | Namespace    | Producer                                                 | Exact error / context                                                                                                    |
+| -------- | ------------ | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| JVM      | storage      | eve.db.ds src                                            | `Unable to resolve var: storage/tail-addr` (CompilerException at storage.clj:247:5)                                      |
+| bb       | query-v3     | eve.db.ds src                                            | `Unable to resolve symbol: clojure.lang.ITransientAssociative`                                                           |
+| bb       | serialize    | test harness                                             | `Could not locate jsonista/core.bb, jsonista/core.clj or jsonista/core.cljc on classpath.`                               |
+| bb       | storage      | eve.db.ds src                                            | `Unable to resolve var: storage/tail-addr`                                                                               |
+| basilisp | db           | test harness                                             | `error occurred during inlining`: CLJ/CLJS-only HashBeef declaration; missing map->HashBeef; exact exception below       |
+| basilisp | parser       | test harness                                             | `error occurred during macroexpansion`: exception-type assertion imports/aliases lack :lpy wiring; exact exception below |
+| basilisp | parser-rules | test harness                                             | `error occurred during macroexpansion`: exception-type assertion imports/aliases lack :lpy wiring; exact exception below |
+| basilisp | parser-where | test harness                                             | `error occurred during macroexpansion`: exception-type assertion imports/aliases lack :lpy wiring; exact exception below |
+| basilisp | pull-api     | test harness                                             | `error occurred during macroexpansion`: clojure.edn/read-string dependency in upstream test; exact exception below       |
+| basilisp | query        | test harness                                             | `error occurred during macroexpansion`: exception-type assertion imports/aliases lack :lpy wiring; exact exception below |
+| basilisp | query-fns    | test harness                                             | `error occurred during macroexpansion`: exception-type assertion imports/aliases lack :lpy wiring; exact exception below |
+| basilisp | query-or     | test harness                                             | `error occurred during macroexpansion`: exception-type assertion imports/aliases lack :lpy wiring; exact exception below |
+| basilisp | query-v3     | test harness                                             | `error occurred during macroexpansion`: exception-type assertion imports/aliases lack :lpy wiring; exact exception below |
+| basilisp | serialize    | test harness                                             | `error occurred during macroexpansion`: exception-type assertion imports/aliases lack :lpy wiring; exact exception below |
+| basilisp | tuples       | test harness                                             | `error occurred during macroexpansion`: exception-type assertion imports/aliases lack :lpy wiring; exact exception below |
+| basilisp | validation   | test harness                                             | `error occurred during macroexpansion`: exception-type assertion imports/aliases lack :lpy wiring; exact exception below |
+| basilisp | upsert       | test harness                                             | `error occurred during macroexpansion`: exception-type assertion imports/aliases lack :lpy wiring; exact exception below |
+| basilisp | datafy       | eve.db.ds src; Eve/type-translation boundary unconfirmed | `error occurred during macroexpansion`: datafy.cljc extends cp/Datafiable on Entity; exact exception below               |
 
 ## Exact Basilisp exceptions
 

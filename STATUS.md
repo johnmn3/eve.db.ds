@@ -8,13 +8,13 @@ to eve.db.ds, eve, cohost, valuescript).
 
 ## Steps
 
-- [x] 1. Fleet templates installed (byte-identical) + kondo cache
-- [x] 2. Census banked in CENSUS.md (before any fixing)
-- [x] 3. Baseline test run banked (before formatting)
-- [x] 4. Format pass (own commit) + gate re-run
-- [ ] 5. Fix campaign, rule-class by rule-class, gate after every batch
-- [ ] 6. Gates on: bb lint exit 0 (5 legs), pre-commit hook, fmt idempotent
-- [ ] 7. RETRO.md + push
+- [x]1. Fleet templates installed (byte-identical) + kondo cache
+- [x]2. Census banked in CENSUS.md (before any fixing)
+- [x]3. Baseline test run banked (before formatting)
+- [x]4. Format pass (own commit) + gate re-run
+- [ ]5. Fix campaign, rule-class by rule-class, gate after every batch
+- [ ]6. Gates on: bb lint exit 0 (5 legs), pre-commit hook, fmt idempotent
+- [ ]7. RETRO.md + push
 
 ## Named config exception
 
@@ -214,7 +214,7 @@ Reason written in the config file's header.
 Recount 359 -> 308. Closed: cond-else (pull_parser's `:eles` was
 a typo for `:else` — same semantics, now honest), redundant-do,
 redundant-let x3 (merged binding vectors), uninitialized-var
-(*if+-syms* nil root; always bound by if+ before any read),
+(_if+-syms_ nil root; always bound by if+ before any read),
 deps.edn (cheshire qualified), unused-value (query_v3 fold
 branch rewritten to assoc! form; bset-stress into-via-doseq now
 a reduce; transact "docstrings" that deftest does not consume
@@ -332,6 +332,7 @@ qualified-symbol?, so :lint/... keys are silently dropped and
 DRIVER CORRUPTIONS FOUND BY THE GATE AND REPAIRED (the
 span-matching driver pasted Splint's printed suggestions,
 which are not always valid source):
+
 1. inline.clj: lint/assoc-fn rewrote the body of the `update`
    MACRO ITSELF to call `update` — infinite macroexpansion,
    StackOverflowError compiling every consumer of db.cljc.
@@ -361,8 +362,8 @@ which are not always valid source):
    errors). Pattern restored; per-site disable with the
    reason at the site. Found by bisect (src halves clean,
    test/eve half guilty), not by the grep audit.
-A tree-wide grep for splint/unquote and %N# artifacts found
-no other pasted-printer sites.
+   A tree-wide grep for splint/unquote and %N# artifacts found
+   no other pasted-printer sites.
 
 ## Correction to batches 6+7 (Nov 23)
 
@@ -425,3 +426,14 @@ is untracked and gitignored, the same disposition as the
 Eve and valuescript repos, with the reason written in
 .gitignore. Fresh-clone bb lint verification follows in
 step 6.
+
+## Step 6 — dprint leg + pre-commit hook (Nov 23)
+
+dprint.json installed (fleet shape: markdown plugin over
+**/*.md). `dprint fmt` formatted 27 markdown files (the
+repo's docs had never been dprint-formatted; mechanical
+reflow only); `dprint check` exits 0. .githooks/pre-commit
+installed in the fleet shape (cljfmt check + clj-kondo on
+staged Clojure files only; Splint/Carve stay in the full
+gate per the plan) and enabled in this clone via
+core.hooksPath.

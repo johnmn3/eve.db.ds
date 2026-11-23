@@ -15,16 +15,16 @@ clojure -M:laws -e "(require 'eve.deftype-atom-laws-test)
 
 ## Row results
 
-| # | Row | Result |
-|---|---|---|
-| E1 | `@a` returns the deftype value | **GREEN** |
-| E2 | `add-watch` + `swap!` | **GREEN** (watch fired once, delivered new value reads correctly) |
-| E3 | `compare-and-set!` | **RED** — returns `false`, no throw; the atom keeps the old value |
-| E4 | `reset!` with a deftype built inside a swap | **GREEN** |
-| E5 | `($ …)` value still correct after 1,000 swaps | **GREEN** — and verified flat, see below |
-| E6 | `eve/same?` | **PENDING** — `eve/same?` does not exist in eve.alpha at this pin (EVE-FIX F3); the deftest self-reports pending and passes vacuously |
-| E7 | old root kept beside new one stays readable | **GREEN** |
-| E8 | transact flow never uses `swap!`'s return | **GREEN** |
+| #  | Row                                           | Result                                                                                                                                |
+| -- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| E1 | `@a` returns the deftype value                | **GREEN**                                                                                                                             |
+| E2 | `add-watch` + `swap!`                         | **GREEN** (watch fired once, delivered new value reads correctly)                                                                     |
+| E3 | `compare-and-set!`                            | **RED** — returns `false`, no throw; the atom keeps the old value                                                                     |
+| E4 | `reset!` with a deftype built inside a swap   | **GREEN**                                                                                                                             |
+| E5 | `($ …)` value still correct after 1,000 swaps | **GREEN** — and verified flat, see below                                                                                              |
+| E6 | `eve/same?`                                   | **PENDING** — `eve/same?` does not exist in eve.alpha at this pin (EVE-FIX F3); the deftest self-reports pending and passes vacuously |
+| E7 | old root kept beside new one stays readable   | **GREEN**                                                                                                                             |
+| E8 | transact flow never uses `swap!`'s return     | **GREEN**                                                                                                                             |
 
 ## The E3 mechanism (measured, not inferred)
 
@@ -73,7 +73,7 @@ resolved for this repo's pin):
 
 Provenance: Eve tree f4a1c3ae97ee76f2651ce600a857675aa5c227ef
 (release/eve-0.9.3.3 tip), JDK 21 (~/workspace/tools/jdk-21),
-clojure CLI ~/.local/bin, CLJ_CONFIG=~/workspace/eve-env/cljconfig,
+clojure CLI ~~/.local/bin, CLJ_CONFIG=~~/workspace/eve-env/cljconfig,
 fresh-staging JVM runs of the committed test file plus three
 discriminator probes (field shapes, nesting shapes, identity of
 repeated reads), 2026-11-19.

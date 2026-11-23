@@ -105,20 +105,20 @@ the median of 3 fresh-process reps. The Eve arm is a **persistent**
 conn: every write is journaled to disk. The stock arm is stock
 DataScript 1.8.1, which is **in-memory only**.
 
-| Shape | Eve | Stock | |
-|---|---|---|---|
-| **500 people** | | | |
+| Shape                                      | Eve     | Stock  |     |
+| ------------------------------------------ | ------- | ------ | --- |
+| **500 people**                             |         |        |     |
 | batched build, 100-person swaps (total ms) | 3360.63 | 222.33 | 15× |
-| bulk-load, 2,000-datom swaps (total ms) | 1588.80 | 48.89 | 32× |
-| one person per swap (ms per swap) | 4.22 | 0.22 | 19× |
-| one datom per swap (ms per swap) | 0.70 | 0.05 | 14× |
-| retract one entity per swap (ms per swap) | 3.04 | 0.22 | 14× |
-| **1000 people** | | | |
-| batched build, 100-person swaps (total ms) | 1718.96 | 98.05 | 18× |
-| bulk-load, 2,000-datom swaps (total ms) | 1277.04 | 49.68 | 26× |
-| one person per swap (ms per swap) | 1.95 | 0.09 | 21× |
-| one datom per swap (ms per swap) | 0.61 | 0.03 | 22× |
-| retract one entity per swap (ms per swap) | 2.00 | 0.08 | 25× |
+| bulk-load, 2,000-datom swaps (total ms)    | 1588.80 | 48.89  | 32× |
+| one person per swap (ms per swap)          | 4.22    | 0.22   | 19× |
+| one datom per swap (ms per swap)           | 0.70    | 0.05   | 14× |
+| retract one entity per swap (ms per swap)  | 3.04    | 0.22   | 14× |
+| **1000 people**                            |         |        |     |
+| batched build, 100-person swaps (total ms) | 1718.96 | 98.05  | 18× |
+| bulk-load, 2,000-datom swaps (total ms)    | 1277.04 | 49.68  | 26× |
+| one person per swap (ms per swap)          | 1.95    | 0.09   | 21× |
+| one datom per swap (ms per swap)           | 0.61    | 0.03   | 22× |
+| retract one entity per swap (ms per swap)  | 2.00    | 0.08   | 25× |
 
 Read the table with the asymmetry in plain view. The Eve numbers buy
 durability on every write: the journal, the slab, the disk. The stock
@@ -269,14 +269,14 @@ unqualified, as `d/<name>`, or as `eve.db.ds.core/<name>`. The explicit
 map form is `d/function`, Datomic's function shape: `(d/function
 {:lang :clojure, :params [db name], :code "<body>"})`.
 
-| | host kind | SCI kind |
-|---|---|---|
-| Travels with the DB | No — the receiving process must register (or be able to resolve) the same fn | Yes — the source is in the DB; any process that can read the DB can run the fn |
-| Setup | `register-fn!` per fn (or a resolvable var, JVM); `d/db-fn` registers its own var for you | None |
-| Body can use | Anything the host fn can do | The sandboxed read API above + clojure.core's safe surface |
-| Sandbox | No — it is host code; only install fns you trust | Yes — a stored fn cannot reach host internals |
-| Invoke cost | Host speed, no compile | One compile per distinct fn (~10–15 ms, measured on a shared cell), then interpreted — about 2–3× host cost for a tight body; through `transact!`, under the transaction noise |
-| Browser | Works via the registry (no `requiring-resolve` in ClojureScript) | Works — SCI is a `.cljc` library |
+|                     | host kind                                                                                 | SCI kind                                                                                                                                                                       |
+| ------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Travels with the DB | No — the receiving process must register (or be able to resolve) the same fn              | Yes — the source is in the DB; any process that can read the DB can run the fn                                                                                                 |
+| Setup               | `register-fn!` per fn (or a resolvable var, JVM); `d/db-fn` registers its own var for you | None                                                                                                                                                                           |
+| Body can use        | Anything the host fn can do                                                               | The sandboxed read API above + clojure.core's safe surface                                                                                                                     |
+| Sandbox             | No — it is host code; only install fns you trust                                          | Yes — a stored fn cannot reach host internals                                                                                                                                  |
+| Invoke cost         | Host speed, no compile                                                                    | One compile per distinct fn (~10–15 ms, measured on a shared cell), then interpreted — about 2–3× host cost for a tight body; through `transact!`, under the transaction noise |
+| Browser             | Works via the registry (no `requiring-resolve` in ClojureScript)                          | Works — SCI is a `.cljc` library                                                                                                                                               |
 
 **Default: the host kind.** It is what `d/db-fn` — the constructor a
 user reaches for first — builds: host speed, the full API, no sandbox.
@@ -333,15 +333,15 @@ constructors `db-fn`, `fn-ref`, `register-fn!`, `unregister-fn!`. The
 full guide, with the handle semantics spelled out per function, is
 [docs/GUIDE.md](docs/GUIDE.md).
 
-| Group | Vars |
-|---|---|
-| Connections | `create-conn`, `conn?`, `conn-from-db`, `conn-from-datoms`, `close-conn!` *(additive)* |
-| Transacting | `transact!`, `transact`, `transact-async`, `listen!`, `unlisten!`, `reset-conn!`, `reset-schema!`, `resolve-tempid`, `tempid` |
-| DB values | `db`, `db?`, `keep!` *(additive)*, `release!` *(additive)*, `empty-db`, `init-db`, `db-with`, `with`, `filter`, `is-filtered`, `with-schema`, `schema` |
-| Transaction functions | `db-fn` *(macro, additive)*, `fn-ref` *(additive)*, `function`, `register-fn!` *(additive)*, `unregister-fn!` *(additive)* |
-| Query & indexes | `q`, `datoms`, `seek-datoms`, `rseek-datoms`, `find-datom`, `index-range`, `entid` |
-| Entities & pull | `entity`, `entity-db`, `touch`, `pull`, `pull-many` |
-| Datoms & misc | `datom`, `datom?`, `serializable`, `from-serializable`, `data-readers`, `settings`, `squuid`, `squuid-time-millis`, `tx0` |
+| Group                 | Vars                                                                                                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Connections           | `create-conn`, `conn?`, `conn-from-db`, `conn-from-datoms`, `close-conn!` _(additive)_                                                                 |
+| Transacting           | `transact!`, `transact`, `transact-async`, `listen!`, `unlisten!`, `reset-conn!`, `reset-schema!`, `resolve-tempid`, `tempid`                          |
+| DB values             | `db`, `db?`, `keep!` _(additive)_, `release!` _(additive)_, `empty-db`, `init-db`, `db-with`, `with`, `filter`, `is-filtered`, `with-schema`, `schema` |
+| Transaction functions | `db-fn` _(macro, additive)_, `fn-ref` _(additive)_, `function`, `register-fn!` _(additive)_, `unregister-fn!` _(additive)_                             |
+| Query & indexes       | `q`, `datoms`, `seek-datoms`, `rseek-datoms`, `find-datom`, `index-range`, `entid`                                                                     |
+| Entities & pull       | `entity`, `entity-db`, `touch`, `pull`, `pull-many`                                                                                                    |
+| Datoms & misc         | `datom`, `datom?`, `serializable`, `from-serializable`, `data-readers`, `settings`, `squuid`, `squuid-time-millis`, `tx0`                              |
 
 ## License
 

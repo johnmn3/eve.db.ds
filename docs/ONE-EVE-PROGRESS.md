@@ -60,12 +60,12 @@ All eight gates below were run against the same local Eve checkout `/workspace/d
 - bb: `adapters/types/bb` keeps `IPersistentMap` methods and `Iterable` in SciMap mode; `adapters/completion/bb` `lookup-ns?` carves out `eve.db.ds.*` so keyword/`get` on Datom rewrite to `eve.core/get`.
 - nbb analysis: JS `eve.encoding` is missing `unsupported` (it has only no-arg `throw-unsupported`; the Java and Python encoding adapters already define `unsupported`, and FilteredDB calls `(throw (enc/unsupported msg))` at `db.cljc:1685`). This is an Eve JS encoding gap, not a missing cljs require in eve.db.ds — `[eve.encoding :as enc]` is already unconditional. Local overlay adds `(defn unsupported [msg] (js/Error. msg))`, same contract as `illegal-argument` on that adapter.
 
-| Host | only-core | lru-portable | Notes |
-|------|-----------|--------------|-------|
-| JVM (Java 21, Clojure 1.12.6) | PASS `ONLY-CORE-OK #{["Ivan"] ["Petr"]} 5` | PASS `LRU-PORTABLE-OK` | no overlays |
-| basilisp 0.5.1 | PASS `ONLY-CORE-OK #{["Ivan"] ["Petr"]} 5` | PASS `LRU-PORTABLE-OK` | re-run after `f3eefdae` (`System/exit` driver fix); no overlays |
-| bb 1.13.226 | PASS `ONLY-CORE-OK #{["Ivan"] ["Petr"]} 5` | PASS `LRU-PORTABLE-OK` | depends on the two bb Eve overlays above, being landed on the Eve dev tree's work branch by another worker |
-| nbb 1.6.214 | FAIL after analysis fix | PASS `LRU-PORTABLE-OK` | with the JS `unsupported` overlay, FilteredDB analysis succeeds; `db-with` then fails in Eve `adapters/slab/module/src/eve/process_slab.cljs` `alloc-from-slab` at `mem/load-i32` (`No implementation of method: :-load-i32 of protocol: #'eve.mem/IMemRegion found for:` — empty type, consistent with a nil `:region` from `wasm/get-slab-instance`). Eve-worker follow-up; not fixed in eve.db.ds. |
+| Host                          | only-core                                  | lru-portable           | Notes                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ----------------------------- | ------------------------------------------ | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| JVM (Java 21, Clojure 1.12.6) | PASS `ONLY-CORE-OK #{["Ivan"] ["Petr"]} 5` | PASS `LRU-PORTABLE-OK` | no overlays                                                                                                                                                                                                                                                                                                                                                                                           |
+| basilisp 0.5.1                | PASS `ONLY-CORE-OK #{["Ivan"] ["Petr"]} 5` | PASS `LRU-PORTABLE-OK` | re-run after `f3eefdae` (`System/exit` driver fix); no overlays                                                                                                                                                                                                                                                                                                                                       |
+| bb 1.13.226                   | PASS `ONLY-CORE-OK #{["Ivan"] ["Petr"]} 5` | PASS `LRU-PORTABLE-OK` | depends on the two bb Eve overlays above, being landed on the Eve dev tree's work branch by another worker                                                                                                                                                                                                                                                                                            |
+| nbb 1.6.214                   | FAIL after analysis fix                    | PASS `LRU-PORTABLE-OK` | with the JS `unsupported` overlay, FilteredDB analysis succeeds; `db-with` then fails in Eve `adapters/slab/module/src/eve/process_slab.cljs` `alloc-from-slab` at `mem/load-i32` (`No implementation of method: :-load-i32 of protocol: #'eve.mem/IMemRegion found for:` — empty type, consistent with a nil `:region` from `wasm/get-slab-instance`). Eve-worker follow-up; not fixed in eve.db.ds. |
 
 Do not commit those overlays into this repo.
 
@@ -77,12 +77,12 @@ Do not commit those overlays into this repo.
 
 ### Four-host matrix against this pin
 
-| Host | only-core | lru-portable |
-|------|-----------|--------------|
+| Host                          | only-core                                  | lru-portable           |
+| ----------------------------- | ------------------------------------------ | ---------------------- |
 | JVM (Java 21, Clojure 1.12.6) | PASS `ONLY-CORE-OK #{["Ivan"] ["Petr"]} 5` | PASS `LRU-PORTABLE-OK` |
-| basilisp 0.5.1 | PASS `ONLY-CORE-OK #{["Ivan"] ["Petr"]} 5` | PASS `LRU-PORTABLE-OK` |
-| bb 1.13.226 | PASS `ONLY-CORE-OK #{["Ivan"] ["Petr"]} 5` | PASS `LRU-PORTABLE-OK` |
-| nbb 1.6.214 | PASS `ONLY-CORE-OK #{["Ivan"] ["Petr"]} 5` | PASS `LRU-PORTABLE-OK` |
+| basilisp 0.5.1                | PASS `ONLY-CORE-OK #{["Ivan"] ["Petr"]} 5` | PASS `LRU-PORTABLE-OK` |
+| bb 1.13.226                   | PASS `ONLY-CORE-OK #{["Ivan"] ["Petr"]} 5` | PASS `LRU-PORTABLE-OK` |
+| nbb 1.6.214                   | PASS `ONLY-CORE-OK #{["Ivan"] ["Petr"]} 5` | PASS `LRU-PORTABLE-OK` |
 
 Counts unchanged: **342/376** host branches, **0/20** plain types. open-other (~230) and vm's data/memory rows are still open.
 
@@ -149,6 +149,7 @@ Reviewed every glue reason added in those batches against John's bar (only real 
 Held up as real host glue (148, including three `:inline` rows the batch-12 table parse missed plus 25 query_v3 parser `instance?` class-name rows): loader/require-macros/:import, F-CLJE-DECLARE declare and macro twins, compiler flags and `:inline` metadata, basilisp protocol stubs and analysis declares, print-method, parser `instance?` class-name dispatch (imported short name vs qualified type; bb parser types are SciMap so this is not a casual `satisfies?` fold), data-reader registration, requiring-resolve / resolve-sym, the lpy defprotocol `:extend-via-metadata` carve-out, and the cljs issue-262 apply+vector workaround.
 
 Reclassified, vm's existing data/memory rows untouched:
+
 - **data (44):** DB/FilteredDB/conn type tests; hashCombine; Datom/compare host exceptions; vpred; query_v3 java.util fast collections; squuid clock/UUID; seqable?; class-identical?/class-name/ihash; bb search-result; clje -schema and IAssociative; db?; find-datom comparator; tx-id?; serialize amap/big-numeric/inf/PSS settings; tuple-key-fn multi-attr keys (#270/#272 sit in the same reader form as vm data #271 — foldable to `mapv` only once vm reclassifies #271).
 - **memory (10):** vanilla storage API on conn/core (`restore-conn`, `store!`, `addresses`, `file-storage`, …). The storage ns already says a DB lives in an Eve atom.
 - **threading (4):** transact/future-call host IDeref reify (jank already uses `eve.host-completion`) and serialize's clj/cljr lock around freeze.
@@ -193,11 +194,11 @@ bb needed a load-order prelude: `#?(:bb [eve.host-completion])` in `eve.db.ds.co
 
 Four-host only-core + lru-portable + transact-realized vs `:dev` Eve `07644bea15` (logs in `/tmp/gates-pin-07644d`):
 
-| host | only-core | lru-portable | transact-realized |
-| --- | --- | --- | --- |
-| JVM | ONLY-CORE-OK | LRU-PORTABLE-OK | TRANSACT-REALIZED-OK |
-| bb | ONLY-CORE-OK | LRU-PORTABLE-OK | TRANSACT-REALIZED-OK |
-| nbb | ONLY-CORE-OK | LRU-PORTABLE-OK | TRANSACT-REALIZED-OK |
+| host     | only-core    | lru-portable    | transact-realized    |
+| -------- | ------------ | --------------- | -------------------- |
+| JVM      | ONLY-CORE-OK | LRU-PORTABLE-OK | TRANSACT-REALIZED-OK |
+| bb       | ONLY-CORE-OK | LRU-PORTABLE-OK | TRANSACT-REALIZED-OK |
+| nbb      | ONLY-CORE-OK | LRU-PORTABLE-OK | TRANSACT-REALIZED-OK |
 | basilisp | ONLY-CORE-OK | LRU-PORTABLE-OK | TRANSACT-REALIZED-OK |
 
 nbb is the host Eve could not test; `(realized? (d/transact conn …))` is true there on this pin. basilisp cold-loads of `eve.db.ds.core` can take ~107s even with `--disable-ns-cache`; do not treat a 90s timeout as a failure.

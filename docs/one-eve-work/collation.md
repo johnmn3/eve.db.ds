@@ -63,11 +63,11 @@ no grok job was posted during collation.
 
 Final tree gate results (all PASS):
 
-| Host | only-core | lru-portable | transact-realized | native-sqrt bits |
-|---|---|---|---|---|
-| JVM | PASS | PASS | PASS | PASS |
-| bb | PASS | PASS | PASS | PASS |
-| nbb | PASS | PASS | PASS | PASS |
-| basilisp | PASS | PASS | PASS | PASS |
+| Host     | only-core | lru-portable | transact-realized | native-sqrt bits |
+| -------- | --------- | ------------ | ----------------- | ---------------- |
+| JVM      | PASS      | PASS         | PASS              | PASS             |
+| bb       | PASS      | PASS         | PASS              | PASS             |
+| nbb      | PASS      | PASS         | PASS              | PASS             |
+| basilisp | PASS      | PASS         | PASS              | PASS             |
 
 No failed test invocation during collation. The final run exits 0.

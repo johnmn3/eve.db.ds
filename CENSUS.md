@@ -15,32 +15,32 @@ contract.ds-suite).
 
 By scope: src 443, upstream-ds 283, test-other 192.
 
-| count | rule |
-|---|---|
-| 208 | unresolved-symbol |
-| 177 | unused-binding |
-| 134 | unresolved-var |
-| 128 | unused-referred-var |
-| 96 | unused-namespace |
-| 20 | aliased-referred-var (info) |
-| 18 | unresolved-namespace |
-| 17 | unused-import |
-| 16 | unexpected-recur (error) |
-| 14 | non-arg-vec-return-type-hint |
-| 11 | invalid-arity (error) |
-| 11 | unused-value |
-| 9 | type-mismatch |
-| 8 | unused-private-var |
-| 8 | unknown-map-key |
-| 7 | redefined-var |
-| 7 | missing-test-assertion |
-| 5 | missing-protocol-method |
-| 5 | redundant-str-call (info) |
-| 4 | private-call (error) |
-| 3 | redundant-let |
-| 2 | unresolved-protocol-method |
-| 2 | unused-excluded-var |
-| 2 | redundant-nested-call |
+| count  | rule                                                                                           |
+| ------ | ---------------------------------------------------------------------------------------------- |
+| 208    | unresolved-symbol                                                                              |
+| 177    | unused-binding                                                                                 |
+| 134    | unresolved-var                                                                                 |
+| 128    | unused-referred-var                                                                            |
+| 96     | unused-namespace                                                                               |
+| 20     | aliased-referred-var (info)                                                                    |
+| 18     | unresolved-namespace                                                                           |
+| 17     | unused-import                                                                                  |
+| 16     | unexpected-recur (error)                                                                       |
+| 14     | non-arg-vec-return-type-hint                                                                   |
+| 11     | invalid-arity (error)                                                                          |
+| 11     | unused-value                                                                                   |
+| 9      | type-mismatch                                                                                  |
+| 8      | unused-private-var                                                                             |
+| 8      | unknown-map-key                                                                                |
+| 7      | redefined-var                                                                                  |
+| 7      | missing-test-assertion                                                                         |
+| 5      | missing-protocol-method                                                                        |
+| 5      | redundant-str-call (info)                                                                      |
+| 4      | private-call (error)                                                                           |
+| 3      | redundant-let                                                                                  |
+| 2      | unresolved-protocol-method                                                                     |
+| 2      | unused-excluded-var                                                                            |
+| 2      | redundant-nested-call                                                                          |
 | 1 each | cond-else, redundant-do, uninitialized-var, deps.edn, duplicate-require, is-message-not-string |
 
 Worst files: src/eve/db/ds/db.cljc 211, parser.cljc 56,

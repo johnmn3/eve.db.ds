@@ -6,10 +6,10 @@ Eve :dev pin: `ec22aba4c0ddf4f2ff58f26b04d654d53f247d61`.
 Both worker tips were already based on the current impl tip. They are
 incorporated by non-fast-forward merges, no conflict resolution required:
 
-| worker | tip | merge commit | files |
-|---|---|---|---|
-| d1 | `1d02cecaaae23a5ac31778fbae7e68e20541f79e` | `eedd0d8cff0abbbd35d3004bb1bef4712e616fe7` | `serialize.cljc`, `db.cljc` (JS-array lookup-ref deleted), `contract.serialize-portable`, `docs/one-eve-work/d1.md` |
-| d2 | `20e23037a6c4e9fa199948a440d5f536dba0f448` | `6469ba9d3dbd2f7342645c5b26e3f2b9721c6f93` | `query_v3.cljc`, `test/eve_db_ds_query_v3_test.cljc`, `docs/one-eve-work/d2.md` |
+| worker | tip                                        | merge commit                               | files                                                                                                               |
+| ------ | ------------------------------------------ | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| d1     | `1d02cecaaae23a5ac31778fbae7e68e20541f79e` | `eedd0d8cff0abbbd35d3004bb1bef4712e616fe7` | `serialize.cljc`, `db.cljc` (JS-array lookup-ref deleted), `contract.serialize-portable`, `docs/one-eve-work/d1.md` |
+| d2     | `20e23037a6c4e9fa199948a440d5f536dba0f448` | `6469ba9d3dbd2f7342645c5b26e3f2b9721c6f93` | `query_v3.cljc`, `test/eve_db_ds_query_v3_test.cljc`, `docs/one-eve-work/d2.md`                                     |
 
 No overlapping paths. `ort` merged both cleanly. Per-row logs remain in
 `d1.md` and `d2.md`.
@@ -49,12 +49,12 @@ DataScript suite was run here.
 
 Final tree gate results (2026-11-11 10:10–10:12 ET), all PASS, exit 0:
 
-| Host | only-core | lru-portable | transact-realized | serialize-portable | query_v3 regressions |
-|---|---|---|---|---|---|
-| JVM | PASS | PASS | PASS | PASS, exact `N`/`M`/ratio OK | PASS, 12 checks |
-| bb | PASS | PASS | PASS | PASS, exact `N`/`M`/ratio OK | PASS, 12 checks |
-| nbb | PASS | PASS | PASS | PASS, exact tokens explicitly rejected | PASS, 12 checks |
-| basilisp | PASS | PASS | PASS | PASS, exact tokens explicitly rejected | PASS, 12 checks |
+| Host     | only-core | lru-portable | transact-realized | serialize-portable                     | query_v3 regressions |
+| -------- | --------- | ------------ | ----------------- | -------------------------------------- | -------------------- |
+| JVM      | PASS      | PASS         | PASS              | PASS, exact `N`/`M`/ratio OK           | PASS, 12 checks      |
+| bb       | PASS      | PASS         | PASS              | PASS, exact `N`/`M`/ratio OK           | PASS, 12 checks      |
+| nbb      | PASS      | PASS         | PASS              | PASS, exact tokens explicitly rejected | PASS, 12 checks      |
+| basilisp | PASS      | PASS         | PASS              | PASS, exact tokens explicitly rejected | PASS, 12 checks      |
 
 The four `SERIALIZE-WIRE` lines are byte-identical. nbb/basilisp exact-number
 lines are the intended guard, not a completed cross-host numeric semantic.
@@ -67,10 +67,10 @@ queries, then 5 samples of 100 queries. Compile/load excluded.
 `eve.db.ds.query/q` and `eve.db.ds.query-v3/q` both returned the same
 correct 100-row set. Logs: `/tmp/collation-2a/bench.log`.
 
-| engine | 100-query samples (ms) | median ms/query |
-|---|---|---:|
-| `eve.db.ds.query/q` | 55.405, 35.171, 28.665, 36.623, 26.439 | 0.352 |
-| `eve.db.ds.query-v3/q` | 307.141, 208.424, 323.287, 189.873, 209.053 | 2.091 |
+| engine                 | 100-query samples (ms)                      | median ms/query |
+| ---------------------- | ------------------------------------------- | --------------: |
+| `eve.db.ds.query/q`    | 55.405, 35.171, 28.665, 36.623, 26.439      |           0.352 |
+| `eve.db.ds.query-v3/q` | 307.141, 208.424, 323.287, 189.873, 209.053 |           2.091 |
 
 v3 median 2.091 ms/query is in line with d2's post-port 2.015 on this
 query. It is **not** in line with the main engine: v3 is 5.94× slower
