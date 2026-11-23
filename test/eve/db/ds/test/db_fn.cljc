@@ -67,7 +67,7 @@
                        nil
                        (catch #?(:clj Throwable :cljs :default :lpy python/BaseException :default Throwable) e e))]
     (is (= "Email already claimed: a@x.com"
-          #?(:clj (.getMessage err) :cljs (.-message err))))
+          (ex-message err)))
     (is (= tx-before (:tx @conn)) "an aborted tx fn commits nothing")
     (is (nil? (:email (d/entity @conn 2)))))
   (d/transact! conn [[:claim-email "b@x.com" 2]])
