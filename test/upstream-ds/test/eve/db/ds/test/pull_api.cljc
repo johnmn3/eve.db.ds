@@ -390,27 +390,26 @@
                      (d/pull recursion-db '[:db/id {:friend 2 :enemy 2}] 1))))
 
          (let [empty (d/empty-db {:part {:db/valueType :db.type/ref}
-                                  :spec {:db/valueType :db.type/ref}})]
-              (let [db (d/db-with empty [[:db/add 1 :part 2]
-                                         [:db/add 2 :part 3]
-                                         [:db/add 3 :part 1]
-                                         [:db/add 1 :spec 2]
-                                         [:db/add 2 :spec 1]])]
-                   (is (= (d/pull db '[:db/id {:part ...} {:spec ...}] 1)
-                          {:db/id 1,
-                           :spec {:db/id 2
-                                  :spec {:db/id 1,
-                                         :spec {:db/id 2}, :part {:db/id 2}}
-                                  :part {:db/id 3,
-                                         :part {:db/id 1,
-                                                :spec {:db/id 2},
-                                                :part {:db/id 2}}}}
-                           :part {:db/id 2
-                                  :spec {:db/id 1, :spec {:db/id 2}, :part {:db/id 2}}
-                                  :part {:db/id 3,
-                                         :part {:db/id 1,
-                                                :spec {:db/id 2},
-                                                :part {:db/id 2}}}}})))))
+                                  :spec {:db/valueType :db.type/ref}}) db (d/db-with empty [[:db/add 1 :part 2]
+                                                                                            [:db/add 2 :part 3]
+                                                                                            [:db/add 3 :part 1]
+                                                                                            [:db/add 1 :spec 2]
+                                                                                            [:db/add 2 :spec 1]])]
+              (is (= (d/pull db '[:db/id {:part ...} {:spec ...}] 1)
+                     {:db/id 1,
+                      :spec {:db/id 2
+                             :spec {:db/id 1,
+                                    :spec {:db/id 2}, :part {:db/id 2}}
+                             :part {:db/id 3,
+                                    :part {:db/id 1,
+                                           :spec {:db/id 2},
+                                           :part {:db/id 2}}}}
+                      :part {:db/id 2
+                             :spec {:db/id 1, :spec {:db/id 2}, :part {:db/id 2}}
+                             :part {:db/id 3,
+                                    :part {:db/id 1,
+                                           :spec {:db/id 2},
+                                           :part {:db/id 2}}}}}))))
 
 (deftest test-deep-recursion
          (let [start 100

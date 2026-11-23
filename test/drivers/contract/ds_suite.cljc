@@ -80,6 +80,9 @@
                    "basilisp" "No Transit implementation is supplied on the Basilisp test classpath"
                    nil)))
 
+;; Used from the :lpy and :cljs arms of test-ns* below; the :clj
+;; path goes through t/test-ns directly (single-pass false positive).
+#_{:clj-kondo/ignore [:unused-private-var]}
 (defn- test-vars-for [n]
        (let [vs (->> (vals (ns-interns n))
                      (filter #(or (:test (meta %)) (:basilisp.test/test (meta %))))

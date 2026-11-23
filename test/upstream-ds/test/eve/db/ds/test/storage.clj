@@ -58,6 +58,15 @@
        (d/empty-db nil (merge {:branching-factor 32, :ref-type :strong} opts))
        (map #(vector :db/add % :str (str %)) (range 1 1001))))
 
+;; NOTE (syntax/formalization-1): this file tests eve.db.ds.storage,
+;; which the rewrite deleted (plan v2 §3); it cannot load at this
+;; pin (baseline fact) and is retained as the upstream record.
+;; The three deftests below carry ignores for the findings that
+;; follow from that: unresolved storage vars, and the assertion
+;; idiom (bare (vec (d/datoms ...)) probes between `is` forms)
+;; reading as unused values / missing assertions.
+
+#_{:clj-kondo/ignore [:unused-value :missing-test-assertion :unresolved-var]}
 (deftest test-basics
          (testing "empty db"
                   (let [db      (d/empty-db)
@@ -204,6 +213,7 @@
                                                                    (is (= (:aevt db) (:aevt db')))
                                                                    (is (= (:avet db) (:avet db')))))))))))
 
+#_{:clj-kondo/ignore [:unused-value :missing-test-assertion :unresolved-var]}
 (deftest test-gc
          (let [storage (make-storage {:stats true})]
               (let [db (large-db {:storage storage})]
@@ -235,6 +245,7 @@
                        (d/collect-garbage storage)
                        (is (pos? (count (storage/-list-addresses storage)))))))
 
+#_{:clj-kondo/ignore [:unused-value :missing-test-assertion :unresolved-var]}
 (deftest test-conn
          (let [storage (make-storage {:stats true})
                conn    (d/create-conn nil {:storage          storage

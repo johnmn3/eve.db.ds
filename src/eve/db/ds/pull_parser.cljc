@@ -160,7 +160,7 @@
                                         (cond
                                          (keyword? name) name
                                          (= ":" (subs name 0 1)) (keyword (subs name 1))
-                                         :eles (keyword name))))
+                                         :else (keyword name))))
                    attrs       (if (and
                                     (.-wildcard? result)
                                     (not (some db-id? (.-attrs result))))

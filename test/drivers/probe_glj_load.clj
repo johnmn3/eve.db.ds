@@ -17,5 +17,9 @@
 (println :p7-deftype-data) (flush)
 (require 'eve.deftype-proto.data)
 (println :p8-eve-atom) (flush)
+;; kondo merges ns-less top-level scripts into one implicit user
+;; ns, so this require reads as a duplicate of probe0_eve.clj's;
+;; each script runs standalone and needs its own.
+#_{:clj-kondo/ignore [:duplicate-require]}
 (require 'eve.atom)
 (println :probe-v2-complete true)

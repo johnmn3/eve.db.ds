@@ -208,3 +208,29 @@ Reason written in the config file's header.
 - Gate (.lane/gate5d/): u2 11/79, u3 42/248, u4 6/48, bset
   5/816, chain 5/36, u5 docline 6/32 — baseline-identical.
   Recount: 421 -> 359.
+
+## Step 5 batch 4 — small classes (this lane, Nov 23)
+
+Recount 359 -> 308. Closed: cond-else (pull_parser's `:eles` was
+a typo for `:else` — same semantics, now honest), redundant-do,
+redundant-let x3 (merged binding vectors), uninitialized-var
+(*if+-syms* nil root; always bound by if+ before any read),
+deps.edn (cheshire qualified), unused-value (query_v3 fold
+branch rewritten to assoc! form; bset-stress into-via-doseq now
+a reduce; transact "docstrings" that deftest does not consume
+became comments), unused-private-var x8 (lookup-range, base-tx,
+disj-all!, per-worker deleted as dead; riter-reduce moved into
+its :clj arm — JVM parity only; rand-bits into its :cljs arm;
+cljs-env? into a :clj arm; test-vars-for per-site ignore — used
+from :lpy/:cljs arms), private-call x4 (cljs.core/pr-writer,
+the IPrintWithWriter entry, per-site ignores), unknown-map-key
+x8 (tuples: kondo infers the conn-handle shape for vars holding
+real DB values; per-deftest ignores), storage.clj's 20 findings
+(the file tests the deleted eve.db.ds.storage, cannot load,
+retained as upstream record — three per-deftest ignores with
+the reason in a file header note), duplicate-require (two
+ns-less probe scripts share kondo's implicit user ns; per-site
+ignore). :config-in was tried for storage and does NOT govern
+in kondo 2026.10.26 (measured here, matches the cohost lane's
+note) — removed. Gate (.lane/gate5e/): all unit runners
+baseline-identical incl. u5 docline 6/32.

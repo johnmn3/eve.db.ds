@@ -473,8 +473,8 @@
                                    (is (= (into {} (d/entity @conn tx-id))
                                           {:prop4 "prop4"})))))))
 
+;; db.fn/retractEntity retracts attributes of adjacent entities issue-294
 (deftest test-transient-issue-294
-         "db.fn/retractEntity retracts attributes of adjacent entities issue-294"
          (let [db (reduce #(d/db-with %1 [{:db/id %2 :a1 1 :a2 2 :a3 3}])
                           (d/empty-db)
                           (range 1 10))

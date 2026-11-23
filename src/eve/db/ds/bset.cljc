@@ -234,13 +234,6 @@
                 idx
                 -1)))
 
-(defn- lookup-range [cmp a key]
-       (let [a-l (eve/alength a)
-             idx (binary-search-l cmp a (dec a-l) key)]
-            (if (== idx a-l)
-                -1
-                idx)))
-
 ;; ---------------------------------------------------------------------------
 ;; the two types
 
@@ -1019,39 +1012,40 @@
                                  (recur left' (keys-for (.-root it) (.-shift it) left') (path-get left' 0) new-acc)
                                  new-acc))))))))
 
-(defn- riter-reduce
-  ;; JVM parity only (upstream's JVM reverse seq is reducible; its
-  ;; cljs ReverseIter is not): a downward mirror of iter-reduce.
-       ([^ReverseIter it f]
-        (if (nil? (.-keys it))
-            (f)
-            (let [v (eve/aget (.-keys it) (.-idx it))]
-                 (if-some [nxt (-riter-next it)]
-                          (clojure.core/reduce f v nxt)
-                          v))))
-       ([^ReverseIter it f start]
-        (loop [right (.-right it)
-               keys  (.-keys it)
-               idx   (.-idx it)
-               acc   start]
-              (if (nil? keys)
-                  acc
-                  (let [new-acc (f acc (eve/aget keys idx))]
-                       (cond
-                        (reduced? new-acc)
-                        @new-acc
+#?(:clj
+   (defn- riter-reduce
+     ;; JVM parity only (upstream's JVM reverse seq is reducible; its
+     ;; cljs ReverseIter is not): a downward mirror of iter-reduce.
+          ([^ReverseIter it f]
+           (if (nil? (.-keys it))
+               (f)
+               (let [v (eve/aget (.-keys it) (.-idx it))]
+                    (if-some [nxt (-riter-next it)]
+                             (clojure.core/reduce f v nxt)
+                             v))))
+          ([^ReverseIter it f start]
+           (loop [right (.-right it)
+                  keys  (.-keys it)
+                  idx   (.-idx it)
+                  acc   start]
+                 (if (nil? keys)
+                     acc
+                     (let [new-acc (f acc (eve/aget keys idx))]
+                          (cond
+                           (reduced? new-acc)
+                           @new-acc
 
-                        (> idx 0) ;; can use cached array to advance
-                        (let [right' (path-dec right)]
-                             (if (path-lt (.-left it) right')
-                                 (recur right' keys (dec idx) new-acc)
-                                 new-acc))
+                           (> idx 0) ;; can use cached array to advance
+                           (let [right' (path-dec right)]
+                                (if (path-lt (.-left it) right')
+                                    (recur right' keys (dec idx) new-acc)
+                                    new-acc))
 
-                        :else
-                        (let [right' (prev-path (.-root it) (.-shift it) right)]
-                             (if (path-lt (.-left it) right')
-                                 (recur right' (keys-for (.-root it) (.-shift it) right') (path-get right' 0) new-acc)
-                                 new-acc))))))))
+                           :else
+                           (let [right' (prev-path (.-root it) (.-shift it) right)]
+                                (if (path-lt (.-left it) right')
+                                    (recur right' (keys-for (.-root it) (.-shift it) right') (path-get right' 0) new-acc)
+                                    new-acc)))))))))
 
 (defn- -iter-rseq [^Iter it]
        (make-riter (.-root it) (.-shift it)

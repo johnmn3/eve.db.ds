@@ -7,6 +7,9 @@
        (:import
         [clojure.lang ExceptionInfo])))
 
+;; kondo infers the conn-handle map shape {:atom :tx} for `db` here,
+;; but it holds a real DB value carrying :rschema (false positive).
+#_{:clj-kondo/ignore [:unknown-map-key]}
 (deftest test-schema
          (let [db (d/empty-db
                    {:year+session {:db/tupleAttrs [:year :session]}
@@ -407,6 +410,8 @@
 
 ;; issue-364
 
+;; Same handle-shape inference false positive as test-schema above.
+#_{:clj-kondo/ignore [:unknown-map-key]}
 (deftest test-declared-schema
          (let [db (d/empty-db
                    {:t1 {:db/tupleAttrs [:a :b]}
@@ -658,6 +663,9 @@
                                                                     :db/cardinality :db.cardinality/many}})
                                                 [{:db/id 2 :locs [[300 0] [400 0]]}]))))))
 
+;; Same handle-shape inference false positive as test-schema above
+;; (:schema read off a real DB value).
+#_{:clj-kondo/ignore [:unknown-map-key]}
 (deftest test-declared-serialize
          (let [db  (-> (d/empty-db {:name {:db/unique :db.unique/identity}
                                     :loc  {:db/valueType :db.type/tuple

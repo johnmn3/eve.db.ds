@@ -48,10 +48,7 @@
 (def ^:dynamic *overflow-len* 4000000)
 
 (defn- into-via-doseq [to from]
-       (let [res (transient [])]
-            (doseq [x from]
-                   (conj! res x))
-            (persistent! res)))
+       (persistent! (reduce conj! (transient []) from)))
 
 (deftest stresstest-btset
          (println "  testing stresstest-btset...")

@@ -417,7 +417,7 @@
                              old (get hash key)]
                             (if (nil? old)
                                 (assoc! hash key (conj! (fast-arr) t))
-                                (do (conj! old t) hash))))
+                                (assoc! hash key (conj! old t)))))
                    (transient (fast-map)))
             (persistent!))))
 
@@ -839,10 +839,7 @@
                   (let [context* (-resolve-clause clause context)]
                        (if (:empty? context*)
                            (reduced context*)
-                           (do
-                  ;;                   (println (dp/source clause) "=>")
-                  ;;                   (println-context context*)
-                            context*))))
+                           context*)))
               context clauses))
 
 (defn collect-consts [syms-indexed specimen consts]

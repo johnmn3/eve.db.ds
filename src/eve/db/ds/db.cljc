@@ -66,10 +66,11 @@
 ;;  https://github.com/Prismatic/schema/commit/e31c419c56555c83ef9ee834801e13ef3c112597
 ;;
 
-(defn- cljs-env?
-       "Take the &env from a macro, and tell whether we are expanding into cljs."
-       [env]
-       (boolean (:ns env)))
+#?(:clj
+   (defn- cljs-env?
+          "Take the &env from a macro, and tell whether we are expanding into cljs."
+          [env]
+          (boolean (:ns env))))
 
 #?(:clj
    (defmacro if-cljs
@@ -238,6 +239,7 @@
 
                   IPrintWithWriter
                   (-pr-writer [d writer opts]
+                              #_{:clj-kondo/ignore [:private-call]}
                               (pr-sequential-writer writer pr-writer
                                                     "#eve.db.ds/Datom [" " " "]"
                                                     opts [(:e d) (:a d) (:v d) (datom-tx d) (datom-added d)]))]
@@ -1257,10 +1259,12 @@
    (defn+ pr-db [db w opts]
           (-write w "#eve.db.ds/DB {")
           (-write w ":schema ")
+          #_{:clj-kondo/ignore [:private-call]}
           (pr-writer (-schema db) w opts)
           (-write w ", :datoms ")
           (pr-sequential-writer w
                                 (fn [d w opts]
+                                    #_{:clj-kondo/ignore [:private-call]}
                                     (pr-sequential-writer w pr-writer "[" " " "]" opts [(:e d) (:a d) (:v d) (datom-tx d)]))
                                 "[" " " "]" opts (-datoms db :eavt nil nil nil nil))
           (-write w "}")))
@@ -1580,6 +1584,7 @@
          #?@(:cljs
              [IPrintWithWriter
               (-pr-writer [d writer opts]
+                          #_{:clj-kondo/ignore [:private-call]}
                           (pr-sequential-writer writer pr-writer "#eve.db.ds/AutoTempid [" " " "]" opts [id]))]
              :clj
              [Object

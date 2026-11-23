@@ -47,12 +47,6 @@
                            (reduce (fn [r k] (or (bset/conj r k cmp) r)) root chunk))))
        a)
 
-(defn- disj-all! [a cmp ks]
-       (doseq [chunk (partition-all 1000 ks)]
-              (swap! a (fn [root]
-                           (reduce (fn [r k] (or (bset/disj r k cmp) r)) root chunk))))
-       a)
-
 (defn- build
        "A fresh atom holding all of ks under cmp."
        [cmp ks]

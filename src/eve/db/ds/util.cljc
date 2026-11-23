@@ -20,7 +20,7 @@
                   `(throw (ex-info (str ~@(map (fn [m#] (if (string? m#) m# (list 'pr-str m#))) msgs)) ~data)))))
 
 #?(:clj
-   (def ^:private ^:dynamic *if+-syms))
+   (def ^:private ^:dynamic *if+-syms nil))
 
 #?(:clj
    (defn- if+-rewrite-cond-impl [cond]
@@ -113,8 +113,9 @@
              ([x & more]
               `(let [x# ~x] (if (nil? x#) (some-of ~@more) x#)))))
 
-(defn- rand-bits [pow]
-       (rand-int (bit-shift-left 1 pow)))
+#?(:cljs
+   (defn- rand-bits [pow]
+          (rand-int (bit-shift-left 1 pow))))
 
 #?(:cljs
    (defn- to-hex-string [n l]
