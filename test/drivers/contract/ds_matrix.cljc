@@ -3,9 +3,10 @@
    shape code on every Eve host, behind that host's start-up. It times
    nothing itself.
 
-     bench   <dir> <label> <size>...  contract.ds-bench/eve-shapes, the
-                                      five write shapes; one
-                                      {:arm :eve ...} row per shape and size
+     bench   <dir> <label> [:shape] <size>...  contract.ds-bench/eve-shapes,
+                                      the five write shapes (or the one
+                                      named); one {:arm :eve ...} row per
+                                      shape and size
      runtime <dir> <label>            contract.ds-runtime/-main, the
                                       people-1k reads row
 
@@ -24,11 +25,20 @@
 
 (defn run [mode dir label sizes]
   (case mode
-    "bench" (doseq [n (map size sizes)]
-              (let [rows (bench/eve-shapes dir n)]
-                (doseq [shape bench/shapes]
-                  (println (pr-str {:arm :eve :host label :size n :shape shape
-                                    :ms (get rows shape)})))))
+    "bench" (let [one (bench/shape-arg (first sizes))
+                  sizes (if one (rest sizes) sizes)]
+              (doseq [n (map size sizes)]
+                (if one
+                  ;; one shape per process (scripts/ds_matrix.sh's 180 s cap)
+                  (do (println (pr-str {:arm :eve :host label :size n :shape one
+                                        :ms (bench/eve-shape dir n one)}))
+                      (flush))
+                  ;; the five shapes in order, each row printed as it
+                  ;; finishes, so a capped process keeps the shapes it ran
+                  (doseq [shape bench/shapes]
+                    (println (pr-str {:arm :eve :host label :size n :shape shape
+                                      :ms (bench/eve-shape dir n shape)}))
+                    (flush)))))
     "runtime" (rt/-main dir label)
     (println (pr-str {:fatal (str "unknown mode " mode)})))
   (flush))

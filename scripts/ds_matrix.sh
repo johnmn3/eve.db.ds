@@ -2,8 +2,9 @@
 # ds_matrix.sh — one cell of the README host table: one fresh process of
 # one host running one family of the repo's own perf shapes.
 #
-#   ds_matrix.sh <host> bench   <fresh-dir> [size...]   five write shapes
-#                                                       (contract.ds-bench)
+#   ds_matrix.sh <host> bench   <fresh-dir> [:shape] [size...]
+#                                   five write shapes, or the one named
+#                                   (:batched-build ...; contract.ds-bench)
 #   ds_matrix.sh <host> runtime <fresh-dir>             people-1k reads
 #                                                       (contract.ds-runtime)
 #
@@ -16,7 +17,8 @@
 #
 # Env: EVE_ROOT (Eve checkout, REQUIRED), DS_DIR (default: this repo),
 #      BB (default: bb on PATH), NBB, BASILISP, GLJ_EVE, JOLT, CLJS_JS
-#      (a built contract.ds-matrix-cljs node script; see below).
+#      (a built contract.ds-matrix-cljs node script; see below),
+#      CELL_TIMEOUT (seconds per process, default 180).
 #
 # cljs: build the node script once per tree pair with
 #   ds_matrix.sh cljs-build <out.js>
@@ -33,6 +35,15 @@ BB="${BB:-bb}"
 DSCP="$DS/src:$DS/lib:$DS/lib-ds-deps:$DS/test/drivers"
 NS=contract.ds-matrix
 cp_for () { EVE_ROOT="$EVE" BB="$BB" bash "$DS/harness/host-cp.sh" "$1"; }
+
+# Every perf process is capped (the README table's rule): CELL_TIMEOUT
+# seconds, 180 by default, then SIGTERM and SIGKILL 10 s later. A shape
+# that cannot finish under the cap is reported "> 3 min (timed out)",
+# never run longer to get a number. (cljs-build compiles; it is no cell.)
+if [ "$MODE" != cljs-build ] && [ -z "${DS_MATRIX_CAPPED:-}" ]; then
+  export DS_MATRIX_CAPPED=1
+  exec timeout -k 10 "${CELL_TIMEOUT:-180}" bash "$0" "$HOST" "$MODE" "$@"
+fi
 
 if [ "$MODE" = cljs-build ]; then
   OUTJS="${1:?out.js}"
@@ -51,6 +62,11 @@ case "$HOST" in
   jvm)
     if [ "$MODE" = bench ]; then exec bash "$DS/harness/run-jvm.sh" contract.ds-bench "$DIR" "$@"
     else exec bash "$DS/harness/run-jvm.sh" contract.ds-runtime "$DIR" jvm; fi ;;
+  browser)
+    # Chromium, persistent conns on Eve's OPFS tier (scripts/ds_matrix_browser.clj; build the page once
+    # with  bb scripts/ds_matrix_browser.clj build <eve> <out>  and set BROWSER_PAGE=<out>). The fresh
+    # dir names a path in the page's own fresh OPFS (a fresh Chromium profile per process).
+    exec "$BB" "$DS/scripts/ds_matrix_browser.clj" run "${BROWSER_PAGE:?BROWSER_PAGE: build the page first}" "$MODE" "/ds/$(basename "$DIR")" "$@" ;;
   bb)
     CP="$(cd "$EVE" && "$BB" classpath bb)" || exit 8
     exec "$BB" -cp "${CP#:}:$DSCP" -m $NS "$MODE" "$DIR" bb "$@" ;;

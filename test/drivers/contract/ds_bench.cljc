@@ -85,7 +85,11 @@
 (def shapes [:batched-build :bulk-load :one-person-per-swap
              :one-datom-per-swap :retract-per-swap])
 
-(defn eve-shapes [root n]
+(defn eve-shape
+  "One write shape's time at size n, on its own fresh persistent conn
+   under root (the code of each shape is unchanged; eve-shapes runs all
+   five, in order, as before)."
+  [root n shape]
   (let [ps (people n)
         tuples (datom-tuples n)
         k (min 500 n)
@@ -93,7 +97,8 @@
                (let [d (str root "/eve-" tag "-" n)]
                  #?(:jank nil :clj (.mkdirs (java.io.File. d)))
                  (ed/create-conn schema {:persistent d})))]
-    {:batched-build
+    (case shape
+     :batched-build
      (let [c (conn "batched")
            [ms _] (timed-ms (doseq [batch (partition-all 100 ps)]
                               (ed/transact! c batch)))]
@@ -119,16 +124,28 @@
          (ed/transact! c batch))
        (let [[ms _] (timed-ms (doseq [e (range 1 (inc k))]
                                 (ed/transact! c [[:db.fn/retractEntity e]])))]
-         (/ ms k)))}))
+         (/ ms k))))))
 
-(defn -main [& [dir & sizes]]
-  (let [dir (or dir #?(:jank "/tmp/ds-bench"
+(defn eve-shapes [root n]
+  (into {} (map (fn [shape] [shape (eve-shape root n shape)]) shapes)))
+
+(defn shape-arg
+  "\":batched-build\" -> :batched-build; nil for a size argument."
+  [s]
+  (when (and (string? s) (= ":" (subs s 0 1))) (keyword (subs s 1))))
+
+(defn -main [& [dir & args]]
+  (let [one (shape-arg (first args))
+        sizes (if one (rest args) args)
+        dir (or dir #?(:jank "/tmp/ds-bench"
                        :clj (str (System/getProperty "java.io.tmpdir") "/ds-bench")
                        :default "/tmp/ds-bench"))
         sizes (if (seq sizes) (mapv #?(:jank parse-long :clj #(Long/parseLong %) :default parse-long) sizes) [500 1000])]
     #?(:jank nil :clj (.mkdirs (java.io.File. dir)))
     (doseq [n sizes]
-      (let [rows (eve-shapes dir n)]
+      (if one
+        (do (println (pr-str {:arm :eve :size n :shape one :ms (eve-shape dir n one)})) (flush))
         (doseq [shape shapes]
-          (println (pr-str {:arm :eve :size n :shape shape :ms (get rows shape)})))))
+          (println (pr-str {:arm :eve :size n :shape shape :ms (eve-shape dir n shape)}))
+          (flush))))
     (flush)))

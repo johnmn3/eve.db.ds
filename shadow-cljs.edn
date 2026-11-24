@@ -12,6 +12,14 @@
    :asset-path "/js"
    :modules {:main {:init-fn eve.db.ds.browser-runner-main/init}}
    :compiler-options {:optimizations :simple :output-wrapper false :load-tests true}}
+  ;; The README host table's browser column (scripts/ds_matrix_browser.clj): contract.ds-matrix
+  ;; in a worker of an OPFS-booted page; :simple, no output wrapper, as :ds-browser.
+  :ds-matrix-browser
+  {:target :browser
+   :output-dir "target/ds-matrix-browser/public/js"
+   :asset-path "/js"
+   :modules {:main {:init-fn contract.ds-matrix-browser/init}}
+   :compiler-options {:optimizations :simple :output-wrapper false}}
   ;; The shootout's cljs leg (harness/run-cljs.sh): the one-datum
   ;; contract driver as a node script, Closure :advanced — the
   ;; recorded fast configuration of the restored setup. The harness
