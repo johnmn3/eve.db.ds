@@ -99,45 +99,49 @@ yet.
 
 ## Performance
 
-Measured on J on 2026-11-20, at this repo's main against the pinned Eve.
-The bench runs five write shapes at 500 and 1000 people; each number is
-the median of 3 fresh-process reps. The Eve arm is a **persistent**
-conn: every write is journaled to disk. The stock arm is stock
-DataScript 1.8.1, which is **in-memory only**.
+Measured on J on 2026-11-23, at this repo's main (`f35f5d0`) against Eve
+`507235b`. The bench is `scripts/ds_bench.sh`: five write shapes at 500
+and 1000 people; each number is the median of 3 fresh-process reps
+(load1 1.84→2.00). The Eve arm is a **persistent** conn: every write is
+journaled to disk. The stock arm is stock DataScript 1.8.1, which is
+**in-memory only**.
 
 | Shape | Eve | Stock | |
 |---|---|---|---|
 | **500 people** | | | |
-| batched build, 100-person swaps (total ms) | 3360.63 | 222.33 | 15× |
-| bulk-load, 2,000-datom swaps (total ms) | 1588.80 | 48.89 | 32× |
-| one person per swap (ms per swap) | 4.22 | 0.22 | 19× |
-| one datom per swap (ms per swap) | 0.70 | 0.05 | 14× |
-| retract one entity per swap (ms per swap) | 3.04 | 0.22 | 14× |
+| batched build, 100-person swaps (total ms) | 1223.27 | 62.32 | 20× |
+| bulk-load, 2,000-datom swaps (total ms) | 607.42 | 14.47 | 42× |
+| one person per swap (ms per swap) | 2.52 | 0.04 | 57× |
+| one datom per swap (ms per swap) | 0.91 | 0.01 | 67× |
+| retract one entity per swap (ms per swap) | 2.06 | 0.05 | 41× |
 | **1000 people** | | | |
-| batched build, 100-person swaps (total ms) | 1718.96 | 98.05 | 18× |
-| bulk-load, 2,000-datom swaps (total ms) | 1277.04 | 49.68 | 26× |
-| one person per swap (ms per swap) | 1.95 | 0.09 | 21× |
-| one datom per swap (ms per swap) | 0.61 | 0.03 | 22× |
-| retract one entity per swap (ms per swap) | 2.00 | 0.08 | 25× |
+| batched build, 100-person swaps (total ms) | 933.14 | 23.33 | 40× |
+| bulk-load, 2,000-datom swaps (total ms) | 932.74 | 21.00 | 44× |
+| one person per swap (ms per swap) | 1.92 | 0.02 | 78× |
+| one datom per swap (ms per swap) | 0.70 | 0.01 | 109× |
+| retract one entity per swap (ms per swap) | 2.22 | 0.02 | 110× |
 
 Read the table with the asymmetry in plain view. The Eve numbers buy
 durability on every write: the journal, the slab, the disk. The stock
 numbers buy none of it, because stock DataScript has no durable mode to
 pay for. The gap is real, and it is not dressed up here: on these write
-shapes, a durable Eve database is 14 to 32 times slower than an
+shapes, a durable Eve database is 20 to 110 times slower than an
 in-memory database that pays nothing for durability. That is the honest
 picture at this pin.
 
 Cold start is a known cost. The JVM one-datum cold total — process
 start through one datum committed to a disk-backed database — is
-**2,578 ms**, the median of 5 fresh-process runs on J. The steady runs
-sit in a 2.2 to 2.9 s band; the first run paid a one-time compile
-(10,988 ms) that the median excludes by construction.
+**1,591 ms**, the median of 5 fresh-process runs on J
+(`harness/shootout.sh` wrapping `harness/run-jvm.sh contract.one`).
+The steady runs sit in a 1,474 to 1,595 ms band; the first run paid a
+one-time compile (8,000 ms) that the median excludes by construction.
+load1 2.00→1.92.
 
-Scale: a Logseq-shaped build of 500 pages, about 95,700 datoms,
-completes. The marginal cost of the database in Eve's slab is flat:
-about 133 bytes per datom at 250 pages and at 500 pages. The database
-grows linearly, at a constant rate, with no cliff.
+Scale was not re-run at this pin: the Logseq-shaped driver that produced
+the 2026-11-20 figures (500 pages, about 95,700 datoms, about 133 bytes
+per datom at 250 pages and at 500 pages) is not in this repository
+(only a smaller stand-in, `test/drivers/cliff/build_probe.clj`, is).
+Those figures are not carried forward as current.
 
 ## Retention
 
@@ -312,7 +316,7 @@ footnote of the docs.
   pinned Eve:** Eve's ClojureScript delivery cannot materialize Datom
   values out of a read region. The JVM serialize suite is green. (Eve
   seat.)
-- **JVM cold start is about 2.6 s** (see Performance).
+- **JVM cold start is about 1.6 s** (see Performance).
 - **The library does not load on Babashka.** Loading the DB namespace
   dies in the sorted-set code with an SCI error, `Protocol not found:
   clojure.lang.IChunk` — the bset references a JVM host interface that
