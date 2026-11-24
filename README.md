@@ -99,6 +99,55 @@ yet.
 
 ## Performance
 
+### Every Eve host
+
+One table: each of this repo's perf shapes (rows) on each Eve host (columns), on one box, in one sitting. Every number is a time in milliseconds; the row names the unit (a total, or per swap / per transaction). Each cell is the median of 5 fresh processes unless it says `(n=…)`.
+
+| shape (people-1k; unit in the row) | JVM | jolt | cljs (node) | browser | bb | nbb | lpy | glj | clje | cljr | jank |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| **writes** (`contract.ds-bench`, 1,000 people) | | | | | | | | | | | |
+| batched build: 10 swaps of 100 people (ms total) | 866 (n=4) | 2,665 (n=4) | 3,343 (n=3) | no disk ¹ | 97,586 (n=1) | ds doesn't load ² | not measured yet ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | not measured yet ⁶ |
+| bulk load: 2 swaps of 2,000 datoms (ms total) | 889 (n=4) | 3,047 (n=4) | 3,476 (n=3) | no disk ¹ | 95,286 (n=1) | ds doesn't load ² | not measured yet ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | not measured yet ⁶ |
+| one person per swap (ms per swap, 500 swaps) | 1.83 (n=4) | 4.41 (n=4) | 4.99 (n=3) | no disk ¹ | 126 (n=1) | ds doesn't load ² | not measured yet ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | not measured yet ⁶ |
+| one datom per swap (ms per swap, 100 swaps) | 0.67 (n=4) | 1.43 (n=4) | 1.60 (n=3) | no disk ¹ | 26.5 (n=1) | ds doesn't load ² | not measured yet ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | not measured yet ⁶ |
+| retract one entity per swap (ms per swap, 500 swaps) | 2.12 (n=4) | 4.98 (n=4) | 5.89 (n=3) | no disk ¹ | 160 (n=1) | ds doesn't load ² | not measured yet ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | not measured yet ⁶ |
+| **reads** (`contract.ds-runtime`, people-1k) | | | | | | | | | | | |
+| open a persistent conn (ms) | 99.3 (n=4) | 55.6 (n=3) | 21.9 (n=3) | no disk ¹ | not measured yet ⁶ | ds doesn't load ² | not measured yet ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | not measured yet ⁶ |
+| build people-1k: 10 transact! of 100 (ms total) | 1,171 (n=4) | 2,530 (n=3) | 3,632 (n=3) | no disk ¹ | not measured yet ⁶ | ds doesn't load ² | not measured yet ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | not measured yet ⁶ |
+| find-datom :avet x1000 (ms total) | 132 (n=4) | 274 (n=3) | 307 (n=3) | no disk ¹ | not measured yet ⁶ | ds doesn't load ² | not measured yet ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | not measured yet ⁶ |
+| pull with a :friend join x1000 (ms total) | 106 (n=4) | 227 (n=3) | 290 (n=3) | no disk ¹ | not measured yet ⁶ | ds doesn't load ² | not measured yet ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | not measured yet ⁶ |
+| d/q, the 7 key-set queries (ms total) | 104 (n=4) | 241 (n=3) | 449 (n=3) | no disk ¹ | not measured yet ⁶ | ds doesn't load ² | not measured yet ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | not measured yet ⁶ |
+| datoms :eavt full scan, 4,000 datoms (ms) | 41.9 (n=4) | 152 (n=3) | 292 (n=3) | no disk ¹ | not measured yet ⁶ | ds doesn't load ² | not measured yet ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | not measured yet ⁶ |
+| one-datom transact! x100 (ms per tx) | 1.50 (n=4) | 2.42 (n=3) | 3.31 (n=3) | no disk ¹ | not measured yet ⁶ | ds doesn't load ² | not measured yet ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | not measured yet ⁶ |
+
+¹ browser: not run. These shapes open a `:persistent` (disk) conn and a browser has no disk domain at this Eve pin: `eve.process` reaches Node's `fs`, and Eve's own browser `disk-swap-counter` fails the same way (`require is not defined`, perf-all at `507235b` on this box). The OPFS disk tier that would give it one is being scoped separately.
+
+² nbb: `Unable to resolve symbol: util/raise` at `src/eve/db/ds/db_fn.cljc:118`. The `eve.db.ds.util` macros are defined for `:default` readers only and nbb reads `:cljs`; with that one gate opened in a scratch copy, the next wall is `Unable to resolve symbol: defn+` at `db.cljc:386`.
+
+³ glj: `eve/uuid.cljc:46:50: invalid regex: error parsing regexp: invalid or unsupported Perl syntax: (?=` (Go's regexp has no lookahead), while loading `eve.db.ds.util`.
+
+⁴ clje: `adapters/flat-io/portable/src/eve/flat_io.cljc:304:13: Unable to resolve symbol: long in this context`. With the uncommitted clje flat-io draft: `Could not dereference eve.flat-io/wBytes. There is no Erlang function to back it up.`
+
+⁵ cljr (.NET 8.0.428, Clojure.Main 1.12.6): `Syntax error (InvalidOperationException) compiling at (eve/flat_io.cljc:308:23). Unable to resolve symbol: u8 in this context`.
+
+⁶ lpy, jank, and bb's reads: the code runs (size-20 smokes: lpy about 1 s per swap; jank interpreted, rows print, then a segfault at exit), but a full lpy process takes about an hour, and the box's disk fell under 2 GB free from other workloads at 11:42 PM ET, which stopped the run before these cells came up. They land in a follow-up.
+
+How it was measured (2026-11-23, 11:08 PM ET onward): box J (8-core Intel Xeon VM, 15 GB RAM, Linux 6.12), shared with other benchmark workers; every process held the box's benchmark lock, so no two benchmarks overlapped, and load1 ran 2.1–8.8 over the cells. Pins: this repo at the commit that added the runner (`scripts/ds_matrix.sh`, on top of `d4325c6`), Eve main `441ae29`. Hosts: JVM = OpenJDK 21.0.13 + Clojure (`harness/run-jvm.sh`, AOT); jolt v0.8.28 from source; cljs = shadow-cljs 3.3.6 `:simple` on Node v24.22.1 (not `:advanced`: under `:advanced` the eve `Datom` fields the query engine binds by name are renamed and query values come back nil); bb v1.13.226 (static, so Eve's native CAS falls back to the lock-only region); lpy = Basilisp 0.5.1 on Python 3.13.5; jank = the 2026-11-20 PPA build, interpreted (`jank run-main`, JIT), and it segfaults at exit after printing its rows.
+
+What runs: the shape code is this repo's, unchanged. Writes are `contract.ds-bench/eve-shapes` (the five shapes of the Eve-vs-stock table below): 500 people, then 1,000 in the same process; the table is the 1,000 pass, so the 500 pass is its warm-up. Every shape gets its own fresh persistent (journaled, on-disk) conn. Reads are `contract.ds-runtime` (people-1k): a heap conn is built and its key set checked against the persistent one (`:keys-exact`, true on every run), then the timed reads run over the persistent conn. The JVM runs `contract.ds-bench` / `contract.ds-runtime` directly; every other host enters `contract.ds-matrix`, which calls the same functions after the host's start-up.
+
+Where a cell says `(n=…)`, the box's disk ran short (other workloads) before its fifth process. The contention shootout's solo per-op times are not in the table: its loop times cheap ops with a millisecond clock, and each host's DB grows to a different size in the same 30 s, so its cells don't compare across hosts.
+
+Reproduce one cell (one fresh process; take the median of 5):
+
+```bash
+EVE_ROOT=<eve checkout> scripts/ds_matrix.sh <jvm|jolt|cljs|bb|lpy|jank|nbb|glj|clje|cljr> bench   <fresh-dir> 500 1000
+EVE_ROOT=<eve checkout> scripts/ds_matrix.sh <host>                                    runtime <fresh-dir>
+# cljs: build once with  scripts/ds_matrix.sh cljs cljs-build out.js  then set CLJS_JS=out.js
+```
+
+### Eve vs stock DataScript (JVM)
+
 Measured on J on 2026-11-23, at this repo's main (`f35f5d0`) against Eve
 `507235b`. The bench is `scripts/ds_bench.sh`: five write shapes at 500
 and 1000 people; each number is the median of 3 fresh-process reps
