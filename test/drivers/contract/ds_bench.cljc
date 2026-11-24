@@ -57,7 +57,9 @@
    Usage (via harness/run-jvm.sh): contract.ds-bench <domain-dir> [size...]
    The dir is a scratch root and must be FRESH (each shape gets a
    fresh persistent conn under it). Default sizes: 500 1000."
-  (:require [eve.db.ds.core :as ed]))
+  (:require [eve.db.ds.core :as ed]
+            #?(:cljs [contract.ds-bench-clock :refer-macros [timed-ms]]
+               :default [contract.ds-bench-clock :refer [timed-ms]])))
 
 (def schema
   {:name {:db/index true}
@@ -80,11 +82,6 @@
                   [:db/add id :friend (nth friend 1)]])
                (people n))))
 
-(defn now-ms [] (double (/ (System/nanoTime) 1e6)))
-
-(defmacro timed-ms [& body]
-  `(let [t0# (now-ms) r# (do ~@body)] [(- (now-ms) t0#) r#]))
-
 (def shapes [:batched-build :bulk-load :one-person-per-swap
              :one-datom-per-swap :retract-per-swap])
 
@@ -94,7 +91,7 @@
         k (min 500 n)
         conn (fn [tag]
                (let [d (str root "/eve-" tag "-" n)]
-                 (.mkdirs (java.io.File. d))
+                 #?(:jank nil :clj (.mkdirs (java.io.File. d)))
                  (ed/create-conn schema {:persistent d})))]
     {:batched-build
      (let [c (conn "batched")
@@ -125,9 +122,11 @@
          (/ ms k)))}))
 
 (defn -main [& [dir & sizes]]
-  (let [dir (or dir (str (System/getProperty "java.io.tmpdir") "/ds-bench"))
-        sizes (if (seq sizes) (mapv #(Long/parseLong %) sizes) [500 1000])]
-    (.mkdirs (java.io.File. dir))
+  (let [dir (or dir #?(:jank "/tmp/ds-bench"
+                       :clj (str (System/getProperty "java.io.tmpdir") "/ds-bench")
+                       :default "/tmp/ds-bench"))
+        sizes (if (seq sizes) (mapv #?(:jank parse-long :clj #(Long/parseLong %) :default parse-long) sizes) [500 1000])]
+    #?(:jank nil :clj (.mkdirs (java.io.File. dir)))
     (doseq [n sizes]
       (let [rows (eve-shapes dir n)]
         (doseq [shape shapes]

@@ -27,7 +27,8 @@
    :friend [(inc (mod i 1000)) (inc (mod (+ i 7) 1000))]})
 
 (defn- now-ms []
-  #?(:clj (/ (double (System/nanoTime)) 1e6)
+  #?(:jank (double (clock/current-time-millis))
+     :clj (/ (double (System/nanoTime)) 1e6)
      :cljs (js/performance.now)
      :default (double (clock/current-time-millis))))
 
@@ -44,7 +45,11 @@
   (doseq [b (range 10)]
     (d/transact! conn (mapv person (range (inc (* b 100)) (inc (* (inc b) 100)))))))
 
-(defn- r2 [x] (/ (Math/round (* 100.0 x)) 100.0))
+(defn- r2 [x]
+  ;; basilisp has no Math/round (it fails at macroexpansion); same rounding
+  #?(:lpy (/ (python/round (* 100.0 x)) 100.0)
+     :jank (/ (long (+ (* 100.0 x) 0.5)) 100.0)
+     :default (/ (Math/round (* 100.0 x)) 100.0)))
 
 (defn -main [& [dir label]]
   (let [heap (d/create-conn schema)
