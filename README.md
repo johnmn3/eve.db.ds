@@ -106,19 +106,19 @@ One table: each of this repo's perf shapes (rows) on each Eve host (columns), on
 | shape (people-1k; unit in the row) | JVM | jolt | cljs (node) | browser | bb | nbb | lpy | glj | clje | cljr | jank |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | **writes** (`contract.ds-bench`, 1,000 people) | | | | | | | | | | | |
-| batched build: 10 swaps of 100 people (ms total) | 866 (n=4) | 2,665 (n=4) | 3,343 (n=3) | no disk ¹ | 97,586 (n=1) | ds doesn't load ² | not measured yet ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | not measured yet ⁶ |
-| bulk load: 2 swaps of 2,000 datoms (ms total) | 889 (n=4) | 3,047 (n=4) | 3,476 (n=3) | no disk ¹ | 95,286 (n=1) | ds doesn't load ² | not measured yet ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | not measured yet ⁶ |
-| one person per swap (ms per swap, 500 swaps) | 1.83 (n=4) | 4.41 (n=4) | 4.99 (n=3) | no disk ¹ | 126 (n=1) | ds doesn't load ² | not measured yet ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | not measured yet ⁶ |
-| one datom per swap (ms per swap, 100 swaps) | 0.67 (n=4) | 1.43 (n=4) | 1.60 (n=3) | no disk ¹ | 26.5 (n=1) | ds doesn't load ² | not measured yet ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | not measured yet ⁶ |
-| retract one entity per swap (ms per swap, 500 swaps) | 2.12 (n=4) | 4.98 (n=4) | 5.89 (n=3) | no disk ¹ | 160 (n=1) | ds doesn't load ² | not measured yet ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | not measured yet ⁶ |
+| batched build: 10 swaps of 100 people (ms total) | 874 | 2,710 | 3,404 | no disk ¹ | 97,586 (n=1) | ds doesn't load ² | running ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | running ⁶ |
+| bulk load: 2 swaps of 2,000 datoms (ms total) | 896 | 3,007 | 3,536 | no disk ¹ | 95,286 (n=1) | ds doesn't load ² | running ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | running ⁶ |
+| one person per swap (ms per swap, 500 swaps) | 1.83 | 4.40 | 5.04 | no disk ¹ | 126 (n=1) | ds doesn't load ² | running ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | running ⁶ |
+| one datom per swap (ms per swap, 100 swaps) | 0.66 | 1.45 | 1.56 | no disk ¹ | 26.5 (n=1) | ds doesn't load ² | running ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | running ⁶ |
+| retract one entity per swap (ms per swap, 500 swaps) | 2.13 | 5.01 | 5.99 | no disk ¹ | 160 (n=1) | ds doesn't load ² | running ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | running ⁶ |
 | **reads** (`contract.ds-runtime`, people-1k) | | | | | | | | | | | |
-| open a persistent conn (ms) | 99.3 (n=4) | 55.6 (n=3) | 21.9 (n=3) | no disk ¹ | not measured yet ⁶ | ds doesn't load ² | not measured yet ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | not measured yet ⁶ |
-| build people-1k: 10 transact! of 100 (ms total) | 1,171 (n=4) | 2,530 (n=3) | 3,632 (n=3) | no disk ¹ | not measured yet ⁶ | ds doesn't load ² | not measured yet ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | not measured yet ⁶ |
-| find-datom :avet x1000 (ms total) | 132 (n=4) | 274 (n=3) | 307 (n=3) | no disk ¹ | not measured yet ⁶ | ds doesn't load ² | not measured yet ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | not measured yet ⁶ |
-| pull with a :friend join x1000 (ms total) | 106 (n=4) | 227 (n=3) | 290 (n=3) | no disk ¹ | not measured yet ⁶ | ds doesn't load ² | not measured yet ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | not measured yet ⁶ |
-| d/q, the 7 key-set queries (ms total) | 104 (n=4) | 241 (n=3) | 449 (n=3) | no disk ¹ | not measured yet ⁶ | ds doesn't load ² | not measured yet ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | not measured yet ⁶ |
-| datoms :eavt full scan, 4,000 datoms (ms) | 41.9 (n=4) | 152 (n=3) | 292 (n=3) | no disk ¹ | not measured yet ⁶ | ds doesn't load ² | not measured yet ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | not measured yet ⁶ |
-| one-datom transact! x100 (ms per tx) | 1.50 (n=4) | 2.42 (n=3) | 3.31 (n=3) | no disk ¹ | not measured yet ⁶ | ds doesn't load ² | not measured yet ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | not measured yet ⁶ |
+| open a persistent conn (ms) | 117 | 68.8 | 23.8 | no disk ¹ | 115 | ds doesn't load ² | running ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | running ⁶ |
+| build people-1k: 10 transact! of 100 (ms total) | 1,176 | 2,611 | 3,798 | no disk ¹ | 92,276 | ds doesn't load ² | running ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | running ⁶ |
+| find-datom :avet x1000 (ms total) | 137 | 265 | 320 | no disk ¹ | 5,585 | ds doesn't load ² | running ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | running ⁶ |
+| pull with a :friend join x1000 (ms total) | 109 | 227 | 293 | no disk ¹ | 12,135 | ds doesn't load ² | running ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | running ⁶ |
+| d/q, the 7 key-set queries (ms total) | 104 | 241 | 504 | no disk ¹ | 4,207 | ds doesn't load ² | running ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | running ⁶ |
+| datoms :eavt full scan, 4,000 datoms (ms) | 44.6 | 148 | 292 | no disk ¹ | 2,345 | ds doesn't load ² | running ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | running ⁶ |
+| one-datom transact! x100 (ms per tx) | 1.51 | 2.48 | 3.64 | no disk ¹ | 63.1 | ds doesn't load ² | running ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | running ⁶ |
 
 ¹ browser: not run. These shapes open a `:persistent` (disk) conn and a browser has no disk domain at this Eve pin: `eve.process` reaches Node's `fs`, and Eve's own browser `disk-swap-counter` fails the same way (`require is not defined`, perf-all at `507235b` on this box). The OPFS disk tier that would give it one is being scoped separately.
 
@@ -130,13 +130,13 @@ One table: each of this repo's perf shapes (rows) on each Eve host (columns), on
 
 ⁵ cljr (.NET 8.0.428, Clojure.Main 1.12.6): `Syntax error (InvalidOperationException) compiling at (eve/flat_io.cljc:308:23). Unable to resolve symbol: u8 in this context`.
 
-⁶ lpy, jank, and bb's reads: the code runs (size-20 smokes: lpy about 1 s per swap; jank interpreted, rows print, then a segfault at exit), but a full lpy process takes about an hour, and the box's disk fell under 2 GB free from other workloads at 11:42 PM ET, which stopped the run before these cells came up. They land in a follow-up.
+⁶ lpy and jank: the code runs on both (size-20 smokes: lpy about 1 s per swap; jank interpreted, rows print, then a segfault at exit), but one full process takes up to 90 minutes. Their first processes started at 12:29 AM ET (jank, then lpy, each capped at 90 min) and their cells land in this table when they finish.
 
-How it was measured (2026-11-23, 11:08 PM ET onward): box J (8-core Intel Xeon VM, 15 GB RAM, Linux 6.12), shared with other benchmark workers; every process held the box's benchmark lock, so no two benchmarks overlapped, and load1 ran 2.1–8.8 over the cells. Pins: this repo at the commit that added the runner (`scripts/ds_matrix.sh`, on top of `d4325c6`), Eve main `441ae29`. Hosts: JVM = OpenJDK 21.0.13 + Clojure (`harness/run-jvm.sh`, AOT); jolt v0.8.28 from source; cljs = shadow-cljs 3.3.6 `:simple` on Node v24.22.1 (not `:advanced`: under `:advanced` the eve `Datom` fields the query engine binds by name are renamed and query values come back nil); bb v1.13.226 (static, so Eve's native CAS falls back to the lock-only region); lpy = Basilisp 0.5.1 on Python 3.13.5; jank = the 2026-11-20 PPA build, interpreted (`jank run-main`, JIT), and it segfaults at exit after printing its rows.
+How it was measured (2026-11-23 11:08 PM to 2026-11-24 12:30 AM ET): box J (8-core Intel Xeon VM, 15 GB RAM, Linux 6.12), shared with other benchmark workers; every process held the box's benchmark lock, so no two benchmarks overlapped, and load1 ran 1.1–8.8 over the cells. Pins: this repo at `b540744` (the commit that added the runner, `scripts/ds_matrix.sh`), Eve main `441ae29`. Hosts: JVM = OpenJDK 21.0.13 + Clojure (`harness/run-jvm.sh`, AOT); jolt v0.8.28 from source; cljs = shadow-cljs 3.3.6 `:simple` on Node v24.22.1 (not `:advanced`: under `:advanced` the eve `Datom` fields the query engine binds by name are renamed and query values come back nil); bb v1.13.226 (static, so Eve's native CAS falls back to the lock-only region); lpy = Basilisp 0.5.1 on Python 3.13.5; jank = the 2026-11-20 PPA build, interpreted (`jank run-main`, JIT), and it segfaults at exit after printing its rows.
 
 What runs: the shape code is this repo's, unchanged. Writes are `contract.ds-bench/eve-shapes` (the five shapes of the Eve-vs-stock table below): 500 people, then 1,000 in the same process; the table is the 1,000 pass, so the 500 pass is its warm-up. Every shape gets its own fresh persistent (journaled, on-disk) conn. Reads are `contract.ds-runtime` (people-1k): a heap conn is built and its key set checked against the persistent one (`:keys-exact`, true on every run), then the timed reads run over the persistent conn. The JVM runs `contract.ds-bench` / `contract.ds-runtime` directly; every other host enters `contract.ds-matrix`, which calls the same functions after the host's start-up.
 
-Where a cell says `(n=…)`, the box's disk ran short (other workloads) before its fifth process. The contention shootout's solo per-op times are not in the table: its loop times cheap ops with a millisecond clock, and each host's DB grows to a different size in the same 30 s, so its cells don't compare across hosts.
+Where a cell says `(n=…)`, it has fewer than 5 processes: bb's writes take about 12 minutes a process and lpy's and jank's far longer, so those cells were cut short to land the table; more processes land in a follow-up. The contention shootout's solo per-op times are not in the table: its loop times cheap ops with a millisecond clock, and each host's DB grows to a different size in the same 30 s, so its cells don't compare across hosts.
 
 Reproduce one cell (one fresh process; take the median of 5):
 
@@ -148,43 +148,56 @@ EVE_ROOT=<eve checkout> scripts/ds_matrix.sh <host>                             
 
 ### Eve vs stock DataScript (JVM)
 
-Measured on J on 2026-11-23, at this repo's main (`f35f5d0`) against Eve
-`507235b`. The bench is `scripts/ds_bench.sh`: five write shapes at 500
-and 1000 people; each number is the median of 3 fresh-process reps
-(load1 1.84→2.00). The Eve arm is a **persistent** conn: every write is
-journaled to disk. The stock arm is stock DataScript 1.8.1, which is
-**in-memory only**.
+Measured on J on 2026-11-24 (00:06–00:08 AM ET), at this repo's `b540744`, against Eve `441ae29`. The bench is
+`scripts/ds_bench.sh`, unchanged: five write shapes at 500 and 1000
+people; each number is the median of 3 fresh-process reps (load1
+3.97→4.56; the box is shared and every run held its benchmark lock).
+The Eve arm is a **persistent** conn: every write is journaled to disk.
+The stock arm is stock DataScript 1.8.1, which is **in-memory only**.
 
 | Shape | Eve | Stock | |
 |---|---|---|---|
 | **500 people** | | | |
-| batched build, 100-person swaps (total ms) | 1223.27 | 62.32 | 20× |
-| bulk-load, 2,000-datom swaps (total ms) | 607.42 | 14.47 | 42× |
-| one person per swap (ms per swap) | 2.52 | 0.04 | 57× |
-| one datom per swap (ms per swap) | 0.91 | 0.01 | 67× |
-| retract one entity per swap (ms per swap) | 2.06 | 0.05 | 41× |
+| batched build, 100-person swaps (total ms) | 1150.52 | 61.76 | 19× |
+| bulk-load, 2,000-datom swaps (total ms) | 605.08 | 18.07 | 33× |
+| one person per swap (ms per swap) | 2.47 | 0.05 | 48× |
+| one datom per swap (ms per swap) | 0.88 | 0.01 | 59× |
+| retract one entity per swap (ms per swap) | 2.14 | 0.05 | 43× |
 | **1000 people** | | | |
-| batched build, 100-person swaps (total ms) | 933.14 | 23.33 | 40× |
-| bulk-load, 2,000-datom swaps (total ms) | 932.74 | 21.00 | 44× |
-| one person per swap (ms per swap) | 1.92 | 0.02 | 78× |
-| one datom per swap (ms per swap) | 0.70 | 0.01 | 109× |
-| retract one entity per swap (ms per swap) | 2.22 | 0.02 | 110× |
+| batched build, 100-person swaps (total ms) | 900.82 | 30.10 | 30× |
+| bulk-load, 2,000-datom swaps (total ms) | 893.22 | 20.36 | 44× |
+| one person per swap (ms per swap) | 1.75 | 0.03 | 58× |
+| one datom per swap (ms per swap) | 0.58 | 0.01 | 61× |
+| retract one entity per swap (ms per swap) | 2.12 | 0.03 | 81× |
+
+(The ratio is from the unrounded medians, so a 0.01 stock cell can
+read as a different multiple than the rounded numbers suggest.)
+
+One `d/transact!` is one Eve swap, however many datoms it carries:
+`eve.db.ds.conn/-transact!` runs the whole `db/transact-tx-data` (every
+datom, every index) inside a single `swap!` on the conn's Eve atom
+(`src/eve/db/ds/conn.cljc:320-337`). A counter on Eve's CAS attempt
+(`eve.atom/swap-attempt-vals!`) reads 1 for one transact of 100 people
+(400 datoms), 1 for one transact of 2,000 datom tuples, 1 for one
+datom, and 10 for the 10×100 batched build. So the batched rows cost
+one journaled commit per 100-person batch, and the per-swap rows one
+commit per transaction.
 
 Read the table with the asymmetry in plain view. The Eve numbers buy
 durability on every write: the journal, the slab, the disk. The stock
 numbers buy none of it, because stock DataScript has no durable mode to
 pay for. The gap is real, and it is not dressed up here: on these write
-shapes, a durable Eve database is 20 to 110 times slower than an
+shapes, a durable Eve database is 19 to 81 times slower than an
 in-memory database that pays nothing for durability. That is the honest
 picture at this pin.
 
 Cold start is a known cost. The JVM one-datum cold total — process
 start through one datum committed to a disk-backed database — is
-**1,591 ms**, the median of 5 fresh-process runs on J
-(`harness/shootout.sh` wrapping `harness/run-jvm.sh contract.one`).
-The steady runs sit in a 1,474 to 1,595 ms band; the first run paid a
-one-time compile (8,000 ms) that the median excludes by construction.
-load1 2.00→1.92.
+**1,644 ms**, the median of 5 fresh-process runs on J
+(`harness/shootout.sh` wrapping `harness/run-jvm.sh contract.one`;
+00:08 AM ET, load1 4.55→5.05). The steady runs sit in a 1,369 to
+1,731 ms band; the first run paid a one-time compile (7,867 ms) that
+the median excludes by construction.
 
 Scale was not re-run at this pin: the Logseq-shaped driver that produced
 the 2026-11-20 figures (500 pages, about 95,700 datoms, about 133 bytes
