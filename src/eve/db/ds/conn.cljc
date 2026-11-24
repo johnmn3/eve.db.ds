@@ -310,12 +310,21 @@
 (defn- deliver-report
   "Make a raw db/TxReport public: handles for :db-before/:db-after,
    delivered host Datoms for :tx-data. :tempids and :tx-meta are
-   already host data."
+   already host data.
+
+   Called INSIDE the swap! fn that built raw, under that attempt's
+   pin: raw's DBs and datoms are slab values, :db-before's in the root
+   this commit replaces and :db-after's in the one it installs, and
+   once swap! returns nothing pins either — another process's commits
+   let the new root go and its flush frees it, so a report read after
+   swap! read freed blocks (jolt×2 contention shootout: the :cas
+   writer's transact! threw \"Unknown EVE type tag\" / \"invalid memory
+   reference\" after its commit). A retried attempt delivers again."
   [a raw]
   (assoc raw
     :db-before {:atom a :tx (:max-tx (:db-before raw))}
     :db-after  {:atom a :tx (:max-tx (:db-after raw))}
-    :tx-data   ($ (mapv identity (:tx-data raw)))))
+    :tx-data   (eve/eve->clj (mapv identity (:tx-data raw)))))
 
 (defn -transact! [^Conn conn tx-data tx-meta]
   (check-open conn)
@@ -332,9 +341,9 @@
               report    (db/transact-tx-data
                           (db/->TxReport db-before db-before [] {} tx-meta)
                           tx-data)]
-          (vreset! *raw report)
+          (vreset! *raw (deliver-report a report))
           (assoc m :db (:db-after report)))))
-    (deliver-report a @*raw)))
+    @*raw))
 
 (defn transact!
   ([^Conn conn tx-data]
@@ -417,18 +426,18 @@
                               (contains? (:kept m) p-tx)
                               (= 1 (:children p-mark))
                               (not (:held p-mark)))]
-               (vreset! *raw (if (identical? after after0)
-                               report
-                               (assoc report :db-after after)))
+               (vreset! *raw (deliver-report a (if (identical? after after0)
+                                                 report
+                                                 (assoc report :db-after after))))
                (cond-> (-> m
                          (update :kept assoc after-tx after)
                          (assoc :chain (if release?
                                          (dissoc marks p-tx)
                                          marks)))
                  release? (update :kept dissoc p-tx)))
-             (do (vreset! *raw report)
+             (do (vreset! *raw (deliver-report a report))
                  (update m :kept assoc (:max-tx after0) after0))))))
-     (deliver-report a @*raw))))
+     @*raw)))
 
 (defn db-with
   "Applies transaction to a DB handle, returning the handle to the
