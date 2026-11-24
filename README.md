@@ -138,7 +138,7 @@ How it was measured (2026-11-23 11:08 PM to 2026-11-24 4:20 AM ET): box J (8-cor
 
 What runs: the shape code is this repo's, unchanged. Writes are `contract.ds-bench/eve-shapes` (the five shapes of the Eve-vs-stock table below): 500 people, then 1,000 in the same process; the table is the 1,000 pass, so the 500 pass is its warm-up. Every shape gets its own fresh persistent (journaled, on-disk) conn. Reads are `contract.ds-runtime` (people-1k): a heap conn is built and its key set checked against the persistent one (`:keys-exact`, true on every run), then the timed reads run over the persistent conn. The JVM runs `contract.ds-bench` / `contract.ds-runtime` directly; every other host enters `contract.ds-matrix`, which calls the same functions after the host's start-up.
 
-Where a cell says `(n=…)`, it has fewer than 5 processes: jank's later processes crash (footnote ⁷), and bb's writes take about 12 minutes a process. The contention shootout's solo per-op times are not in the table: its loop times cheap ops with a millisecond clock, and each host's DB grows to a different size in the same 30 s, so its cells don't compare across hosts.
+Where a cell says `(n=…)`, it has fewer than 5 processes: jank's later processes crash (footnote ⁷). The contention shootout's solo per-op times are not in the table: its loop times cheap ops with a millisecond clock, and each host's DB grows to a different size in the same 30 s, so its cells don't compare across hosts.
 
 Reproduce one cell (one fresh process; take the median of 5):
 
