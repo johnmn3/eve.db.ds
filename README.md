@@ -106,11 +106,11 @@ One table: each of this repo's perf shapes (rows) on each Eve host (columns), on
 | shape (people-1k; unit in the row) | JVM | jolt | cljs (node) | browser | bb | nbb | lpy | glj | clje | cljr | jank |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | **writes** (`contract.ds-bench`, 1,000 people) | | | | | | | | | | | |
-| batched build: 10 swaps of 100 people (ms total) | 874 | 2,710 | 3,404 | no disk ¹ | 97,586 (n=1) | ds doesn't load ² | see ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | 90,327 (n=1) |
-| bulk load: 2 swaps of 2,000 datoms (ms total) | 896 | 3,007 | 3,536 | no disk ¹ | 95,286 (n=1) | ds doesn't load ² | see ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | 87,183 (n=1) |
-| one person per swap (ms per swap, 500 swaps) | 1.83 | 4.40 | 5.04 | no disk ¹ | 126 (n=1) | ds doesn't load ² | see ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | 121 (n=1) |
-| one datom per swap (ms per swap, 100 swaps) | 0.66 | 1.45 | 1.56 | no disk ¹ | 26.5 (n=1) | ds doesn't load ² | see ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | 25.6 (n=1) |
-| retract one entity per swap (ms per swap, 500 swaps) | 2.13 | 5.01 | 5.99 | no disk ¹ | 160 (n=1) | ds doesn't load ² | see ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | 144 (n=1) |
+| batched build: 10 swaps of 100 people (ms total) | 874 | 2,710 | 3,404 | no disk ¹ | 95,505 (n=3) | ds doesn't load ² | see ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | 90,327 (n=1) |
+| bulk load: 2 swaps of 2,000 datoms (ms total) | 896 | 3,007 | 3,536 | no disk ¹ | 93,222 (n=3) | ds doesn't load ² | see ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | 87,183 (n=1) |
+| one person per swap (ms per swap, 500 swaps) | 1.83 | 4.40 | 5.04 | no disk ¹ | 126 (n=3) | ds doesn't load ² | see ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | 121 (n=1) |
+| one datom per swap (ms per swap, 100 swaps) | 0.66 | 1.45 | 1.56 | no disk ¹ | 26.5 (n=3) | ds doesn't load ² | see ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | 25.6 (n=1) |
+| retract one entity per swap (ms per swap, 500 swaps) | 2.13 | 5.01 | 5.99 | no disk ¹ | 157 (n=3) | ds doesn't load ² | see ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | 144 (n=1) |
 | **reads** (`contract.ds-runtime`, people-1k) | | | | | | | | | | | |
 | open a persistent conn (ms) | 117 | 68.8 | 23.8 | no disk ¹ | 115 | ds doesn't load ² | see ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | reads abort ⁷ |
 | build people-1k: 10 transact! of 100 (ms total) | 1,176 | 2,611 | 3,798 | no disk ¹ | 92,276 | ds doesn't load ² | see ⁶ | ds doesn't load ³ | Eve doesn't load ⁴ | Eve doesn't compile ⁵ | reads abort ⁷ |
