@@ -128,7 +128,7 @@ One table: each of this repo's perf shapes (rows) on each Eve host (columns), on
 
 ⁴ glj: Eve now loads (the `eve/uuid.cljc` lookahead regex is fixed on Eve `e14f5a59`). ds then stops at `eve/db/ds/db.cljc:92:89: unable to resolve symbol: number` (the `'number` tag hint in the `:tag` rewrite), loading `eve.db.ds.db` from `contract.ds-matrix`.
 
-⁵ clje: `clojerl.Error: Found more than one eve/crypto` (clojerl `clj_rt.erl:162` refuses a namespace found twice on its path: Eve's `:clje` roots hold both `adapters/crypto/beam/src/eve/crypto.clje` and `adapters/crypto/portable/src/eve/crypto.cljc`). Eve's own `bb test:clje eve.keyring-test` fails the same way.
+⁵ clje, re-checked at Eve `3be577c8` (2026-11-24 1:49 PM ET, both processes, under the 180 s cap): `clojerl.Error: src/eve/flat/chunk.cljc:3507:15: Unable to resolve symbol: defseqhandle in this context`. eve.flat.chunk's handle types have no clojerl section yet (bb, lpy, glj, let-go and jank each have a hand-written one). Fixed on the way there: the duplicate `eve/crypto` on clojerl's path (`5214cb84`), and the `^long`/`^bytes` tags, the `IStringable` `str` that hid compile errors, and three `eve.flat.chunk` forms (`3be577c8`). Behind it, ds stops at `src/eve/db/ds/util.cljc:67:26: Unable to resolve symbol: volatile!` (ds code). At the table's pin `e14f5a59` the error was `Found more than one eve/crypto`.
 
 ⁶ cljr (.NET 8): Eve now compiles; ds stops at `Syntax error (ParseException) compiling try at (eve/db/ds/db_fn.cljc:394:17). Unable to resolve classname: Throwable` (the `catch` reader conditional falls to `:default Throwable` on cljr).
 
